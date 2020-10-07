@@ -26,4 +26,50 @@ paths:
           content:
             application/json:
               schema: 
-                $ref: 'http://cbdata.dila.edu.tw/v1.2/openapi/catalog-entry-response.yaml'
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/catalog-entry-response.yaml'
+  /toc:
+    get:
+      summary: 經目搜尋
+      description: >
+        經目搜尋功能會在三大部份中搜尋：
+          * 部類目錄
+          * 典籍標題（經名）
+          * 典籍內目次
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-parameters.yaml#/q'
+      responses:
+        '200':
+          description: >
+            部類目錄的搜尋結果依出現次序排序。  
+            
+            經名搜尋結果，按「CBETA 全文檢索順序」+ 典籍編號(經號)：
+              * 藏經主體
+                * T (大正藏)
+                * X (新纂卍續藏)
+              * 藏經補輯
+                * A (宋—金藏)
+                * K (宋—高麗藏)
+                * S (宋—宋藏遺珍)
+                * F (隋～明—房山石經)
+                * C (宋～清—中華藏)
+                * D (唐～清—國圖善本)
+                * U (明—洪武南藏)
+                * P (明—永樂北藏)
+                * J (明—嘉興藏)
+                * L (清—乾隆藏)
+                * G (民國—佛教大藏經)
+                * M (民國—卍正藏)
+                * N (民國新譯—南傳大藏經)
+              * 近代新編
+                * ZS (民國新編—正史佛教資料類編)
+                * I (民國新編—佛教石刻拓片百品)
+                * ZW (民國新編—藏外佛教文獻)
+                * B (民國新編、新譯—大藏經補編)
+                * GA (民國新編—中國佛寺志-A)
+                * GB (民國新編—中國佛寺志-B)
+            
+            典籍內目次搜尋結果排序同上。
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-response.yaml'
