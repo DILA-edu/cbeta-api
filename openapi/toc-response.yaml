@@ -20,9 +20,11 @@ properties:
         n:
           type: string
           description: catalog entry id
+          example: Vol-Y.032.001
         label:
           type: string
           description: catalog entry label or toc label
+          example: Y0030 雜阿含經論會編（下）
         work:
           type: string
           description: 典籍編號
