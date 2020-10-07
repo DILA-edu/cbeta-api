@@ -1,0 +1,8 @@
+q:
+  name: q
+  in: query
+  required: true
+  description: 要查詢的字串
+  example: 阿含
+  schema:
+    type: string
