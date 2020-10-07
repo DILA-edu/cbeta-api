@@ -1,11 +1,13 @@
-- name: q
+q:
+  name: q
   in: query
   required: false
   description: Catalog Entry ID
   example: CBETA.001
   schema:
     type: string
-- name: vol
+vol:
+  name: vol
   in: query
   required: false
   description: volume. This parameter is incompatible with `q`.
