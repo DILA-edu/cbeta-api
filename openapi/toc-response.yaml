@@ -20,87 +20,65 @@ properties:
         n:
           type: string
           description: catalog entry id
-          example: Vol-Y.032.001
         label:
           type: string
           description: catalog entry label or toc label
-          example: Y0030 雜阿含經論會編（下）
         work:
           type: string
           description: 典籍編號
-          example: T0001
         uuid:
           type: string
           description: 典籍之 UUID
-          example: f84c8d22-ce0c-470c-8e94-20059f4d89c2
         category:
           type: string
           description: 典籍所屬 CBETA 部類
-          example: 阿含部類
         orig_category:
           type: string
           description: 原書分類
-          example: 阿含部
         vol:
           type: string
           description: volume number (冊號)
-          example: T01
         title:
           type: string
-          example: 長阿含經
         juan:
           type: integer
           description: 典籍卷數
-          example: 22
         juan_list:
           type: string
           description: 典籍下卷號清單（卷號不一定會連續）
-          example: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22"
         zh_chars:
           type: integer
           description: 典籍中文字數
-          example: 198439
         en_words:
           type: integer
           description: 典籍英文字數
-          example: 0
         file:
           type: string
           description: 典籍之 CBETA XML 主檔名
-          example: T01n0001
         juan_start:
           type: integer
           description: 典籍之起始卷號（不一定是第一卷）
-          example: 1
         byline:
           type: string
           description: 典籍之作譯者行
-          example: 後秦 佛陀耶舍共竺佛念譯
         creators:
           type: string
           description: 作者、譯者
-          example: "佛陀耶舍,竺佛念"
         creators_with_id:
           type: string
           description: 作者、譯者 (含 DILA Authority 人名 ID)
-          example: "佛陀耶舍(A000439);竺佛念(A000435)"
         time_dynasty:
           type: string
           description: 典籍成立時間：朝代
-          example: 後秦
         time_from:
           type: integer
           description: 典籍成立時間：起始西元年
-          example: 412
         time_to:
           type: integer
           description: 典籍成立時間：結束西元年
-          example: 413
         label_path:
           type: string
           description: 目次路徑
-          example: 後集一門/諸經引證節略/雜阿含經
         lb:
           type: string
           description: 目次行號位置
-          example: 1107b21
