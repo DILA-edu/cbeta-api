@@ -1,4 +1,4 @@
-# CBETA API Deveope Group
+# CBETA API Developer Group
 
 這裡是 [CBETA API](http://cbdata.dila.edu.tw/) 開發者、使用者的討論區。
 
