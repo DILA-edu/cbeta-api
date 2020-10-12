@@ -1,3 +1,11 @@
+work:
+  name: work
+  in: query
+  required: false
+  description: 典籍編號
+  example: T0001
+  schema:
+    type: string
 q:
   name: q
   in: query

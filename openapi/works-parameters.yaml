@@ -86,4 +86,12 @@ time_end:
   example: 700
   schema:
     type: integer
+work:
+  name: work
+  in: query
+  required: false
+  description: 典籍編號
+  example: T0001
+  schema:
+    type: string
     
