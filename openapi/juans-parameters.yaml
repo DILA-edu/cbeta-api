@@ -14,3 +14,27 @@ juan:
   example: 1
   schema:
     type: integer
+work_info:
+  name: work_info
+  in: query
+  required: false
+  description: >
+    是否一併回傳「典籍資訊」
+
+    * 預設為 0: 不回傳
+    * 若設為 1: 回傳
+  example: 1
+  schema:
+    type: integer
+toc:
+  name: toc
+  in: query
+  required: false
+  description: >
+    是否一併回傳目次
+
+    * 預設為 0: 不回傳
+    * 若設為 1: 回傳
+  example: 1
+  schema:
+    type: integer

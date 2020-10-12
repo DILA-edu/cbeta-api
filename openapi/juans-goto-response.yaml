@@ -1,0 +1,36 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found
+    example: 1
+  results:
+    type: array
+    description: list of result
+    items:
+      type: object
+      properties:
+        vol:
+          type: string
+          description: 冊號
+          example: T01
+        work:
+          type: string
+          description: 典籍編號
+          example: T0001
+        file:
+          type: string
+          description: XML 檔主檔名
+          example: T01n0001
+        juan:
+          type: integer
+          description: 卷號
+          example: 1
+        lb:
+          type: string
+          description: 行號
+          example: 0001a01
+        title:
+          type: string
+          description: Work's Titie (經名)
+          example: 長阿含經
