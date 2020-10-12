@@ -5,9 +5,6 @@ info:
   description: API to access CBETA Chinese Buddhist Texts Resources.
 
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/Ray.Chou/CBETA-API/1.2
   - url: http://cbdata.dila.edu.tw/v1.2
     description: Main server
   - url: http://api.cbetaonline.cn/
@@ -73,3 +70,35 @@ paths:
             application/json:
               schema: 
                 $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-response.yaml'
+              examples:
+                objectExample:
+                  $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-response-example.yaml'
+  /works:
+    get:
+      summary: 典籍相關資訊
+      description: >
+        例：
+          * 指定冊數起迄： /works?canon=T&vol_start=1&vol_end=2
+          * 指定經號起迄： /works?canon=T&work_start=1&work_end=2
+          * 指定 嘉興藏 經號起迄： /works?canon=J&work_start=A1&work_end=A2
+          * 以作譯者 ID 搜尋： /works?creator_id=A000439
+          * 搜尋唐朝成立的佛典： /works?dynasty=唐
+          * 搜尋多個朝代： /works?dynasty=符秦,前秦
+          * 搜尋成立年代在公元 600年至700年之間的佛典： /works?time_start=600&time_end=700
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/canon'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/vol_start'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/vol_end'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/creator_id'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/creator'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/creator_name'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/dynasty'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/time_start'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/time_end'
+      responses:
+        '200':
+          description: Works Information
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-response.yaml'
