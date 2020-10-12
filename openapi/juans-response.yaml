@@ -1,0 +1,12 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found
+    example: 1
+  results:
+    type: array
+    description: list of result
+    items:
+      type: string
+      description: Juan's content in HTML format.

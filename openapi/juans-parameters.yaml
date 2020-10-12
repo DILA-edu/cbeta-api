@@ -1,16 +1,16 @@
 work:
   name: work
   in: query
-  required: false
+  required: true
   description: 典籍編號
   example: T0001
   schema:
     type: string
-q:
-  name: q
+juan:
+  name: juan
   in: query
-  required: false
-  description: 要查詢的字串
-  example: 阿含
+  required: true
+  description: 卷號
+  example: 1
   schema:
-    type: string
+    type: integer
