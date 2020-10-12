@@ -1,0 +1,89 @@
+canon:
+  name: canon
+  in: query
+  required: false
+  description: 藏經 ID
+  example: T
+  schema:
+    type: string
+vol_start:
+  name: vol_start
+  in: query
+  required: false
+  description: 起始冊號
+  example: 1
+  schema:
+    type: integer
+vol_end:
+  name: vol_end
+  in: query
+  required: false
+  description: 結束冊號
+  example: 2
+  schema:
+    type: integer
+work_start:
+  name: work_start
+  in: query
+  required: false
+  description: 起始典籍編號
+  example: 1
+  schema:
+    type: string
+work_end:
+  name: work_end
+  in: query
+  required: false
+  description: 結束典籍編號
+  example: 2
+  schema:
+    type: string
+creator_id:
+  name: creator_id
+  in: query
+  required: false
+  description: 作譯者 Authority ID
+  example: A000439
+  schema:
+    type: string
+creator:
+  name: creator
+  in: query
+  required: false
+  description: 以字串搜尋作譯者符合的典籍。不論是否已確認 ID，全部搜尋。
+  example: 竺
+  schema:
+    type: string
+creator_name:
+  name: creator_name
+  in: query
+  required: false
+  description: 以字串搜尋作譯者符合的典籍。只搜尋尚未確認 ID 的資料。
+  example: 竺
+  schema:
+    type: string
+dynasty:
+  name: dynasty
+  in: query
+  required: false
+  description: 搜尋朝代符合的典籍。多個朝代以半形逗點區隔。
+  example: 唐
+  schema:
+    type: string
+time_start:
+  name: time_start
+  in: query
+  required: false
+  description: 起始 公元年
+  example: 600
+  schema:
+    type: integer
+time_end:
+  name: time_end
+  in: query
+  required: false
+  description: 結束 公元年
+  example: 700
+  schema:
+    type: integer
+    
