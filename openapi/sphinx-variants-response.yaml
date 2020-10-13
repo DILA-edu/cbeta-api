@@ -1,0 +1,20 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of suggestions
+    example: 3
+  results:
+    type: array
+    description: list of suggestions
+    items:
+      type: object
+      properties:
+        q:
+          type: string
+          description: variant term
+          example: 著衣持盋
+        hits:
+          type: integer
+          description: q 在 CBETA 中出現的次數
+          example: 3
