@@ -61,8 +61,8 @@ time:
   name: time
   in: query
   required: false
-  description: 西元年(ex: 800) 或 西元年期間(ex: 800..900)，限制搜尋範圍在這期間成立的典籍。
-  example: 800..900
+  description: '西元年(ex: 800) 或 西元年期間(ex: 800..900)，限制搜尋範圍在這期間成立的典籍。'
+  example: '800..900'
   schema:
     type: string
 work_type:
