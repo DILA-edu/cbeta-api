@@ -1,0 +1,8 @@
+q:
+  name: q
+  in: query
+  required: true
+  description: extended syntax
+  example: 法鼓
+  schema:
+    type: string
