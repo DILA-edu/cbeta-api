@@ -1,0 +1,40 @@
+linehead:
+  name: linehead
+  in: query
+  required: true
+  description: CBETA 行首資訊
+  example: T01n0001_p0001a04
+  schema:
+    type: string
+before:
+  name: before
+  in: query
+  required: false
+  description: 指定包含前面的幾行
+  example: 2
+  schema:
+    type: integer
+after:
+  name: after
+  in: query
+  required: false
+  description: 指定包含後面的幾行
+  example: 2
+  schema:
+    type: integer
+linehead_start:
+  name: linehead_start
+  in: query
+  required: false
+  description: 行首資訊 開始
+  example: T01n0001_p0001a04
+  schema:
+    type: string
+linehead_end:
+  name: linehead_end
+  in: query
+  required: false
+  description: 行首資訊 開始
+  example: T01n0001_p0001a05
+  schema:
+    type: string

@@ -9,7 +9,7 @@ canon:
 work:
   name: work
   in: query
-  required: true
+  required: false
   description: 典籍編號
   example: 1
   schema:
@@ -17,7 +17,7 @@ work:
 juan:
   name: juan
   in: query
-  required: true
+  required: false
   description: 卷號
   example: 1
   schema:
@@ -62,4 +62,3 @@ linehead:
   example: T01n0001_p0066c25
   schema:
     type: string
-        

@@ -1,0 +1,21 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found
+    example: 1
+  results:
+    type: array
+    description: list of result
+    items:
+      type: object
+      properties:
+        linehead:
+          type: string
+          description: 行首資訊
+        html:
+          type: string
+          description: text line in HTML format
+        notes:
+          type: object
+          description: 校註。key 是校註編號，value 是校註內容。
