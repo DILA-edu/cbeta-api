@@ -1,7 +1,7 @@
 linehead:
   name: linehead
   in: query
-  required: true
+  required: false
   description: CBETA 行首資訊
   example: T01n0001_p0001a04
   schema:
