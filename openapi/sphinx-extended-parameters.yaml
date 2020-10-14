@@ -2,7 +2,35 @@ q:
   name: q
   in: query
   required: true
-  description: extended syntax
-  example: 法鼓
   schema:
     type: string
+  description: >
+    # Extended Query Syntax
+
+    例： `q="法鼓"`
+          
+    請注意上面的雙引號不可省略。
+    
+    以下範例均要做 URL encode, 例如： `"波羅蜜" | "波羅密"`
+    要編碼為 `%22波羅蜜%22%20%7C%20%22波羅密%22`
+
+    ## AND
+    
+    多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
+    
+    例： `q="法鼓" "聖嚴"`
+    
+    ## OR 運算元
+    
+    "波羅蜜" | "波羅密"
+    例： `q="波羅蜜" | "波羅密"`
+    
+    ## NOT 運算元
+    
+    例： `q="迦葉" -"迦葉佛"`
+    
+    ## 鄰近搜尋運算元
+    
+    例： `q="弟子 第一"~5`
+    
+    上例表示「弟子」跟「第一」之間距離不超過5個字。
