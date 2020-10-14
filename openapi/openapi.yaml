@@ -24,15 +24,166 @@ paths:
             application/json:
               schema: 
                 $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/catalog-entry-response.yaml'
+  /juans:
+    get:
+      summary: 典籍的某一卷
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-parameters.yaml#/work'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-parameters.yaml#/juan'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-parameters.yaml#/work_info'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-parameters.yaml#/toc'
+      responses:
+        '200':
+          description: 某一卷的文本內容 in HTML format.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-response.yaml'
+  /juans/goto:
+    get:
+      summary: Goto
+      externalDocs: 
+        url: 'https://github.com/DILA-edu/cbeta-api/blob/main/openapi/juans-goto.md'
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-parameters.yaml#/canon'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-parameters.yaml#/work'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-parameters.yaml#/juan'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-parameters.yaml#/page'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-parameters.yaml#/col'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-parameters.yaml#/line'
+      responses:
+        '200':
+          description: 回傳 Goto 所需相關資訊.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-response.yaml'
+  /lines:
+    get:
+      summary: text lines
+      description: >
+        使用範例：
+        
+          * 取得某行文字 /lines?linehead=T01n0001_p0001a04
+          * 取得某行，以及前2行，後3行： /lines?linehead=T01n0001_p0001a09&before=2&after=3
+          * 取得某段行號起迄範圍內文字： /lines?linehead_start=T01n0001_p0001a04&linehead_end=T01n0001_p0001a05
+          * 跨卷也沒問題： /lines?linehead_start=T01n0001_p0011a01&linehead_end=T01n0001_p0011a06
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/lines-parameters.yaml#/linehead'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/lines-parameters.yaml#/before'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/lines-parameters.yaml#/after'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/lines-parameters.yaml#/linehead_start'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/lines-parameters.yaml#/linehead_end'
+      responses:
+        '200':
+          description: text lines.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/lines-response.yaml'
+  /sphinx:
+    get:
+      summary: Full Text Search
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/q'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/category'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/canon'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/work'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/works'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/creator'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/dynasty'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/time'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/work_type'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/puncs'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/start'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/rows'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/order'
+      responses:
+        '200':
+          description: search results.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-response.yaml'
+  /sphinx/extended:
+    get:
+      summary: Search with Extended Query Syntax
+      description: >
+        # 使用 Sphinx 做全文檢索 (擴充模式)
+        
+        例： /sphinx/extended?q="法鼓"
+        
+        請注意上面的雙引號不可省略。
+        
+        以下範例均要做 URL encode, 例如： `"波羅蜜" | "波羅密"`
+        要編碼為 `%22波羅蜜%22%20%7C%20%22波羅密%22`
+
+        ## AND
+        
+        多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
+        
+        例： /sphinx/extended?q="法鼓" "聖嚴"
+        
+        ## OR 運算元
+        
+        "波羅蜜" | "波羅密"
+        例： /sphinx/extended?q="波羅蜜" | "波羅密"
+        
+        ## NOT 運算元
+        
+        例： /sphinx/extended?q="迦葉" -"迦葉佛"
+        
+        ## 鄰近搜尋運算元
+        
+        例： /sphinx/extended?q="弟子 第一"~5
+        
+        上例表示「弟子」跟「第一」之間距離不超過5個字。
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
+      responses:
+        '200':
+          description: search results.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-response.yaml'
+  /sphinx/variants:
+    get:
+      summary: 異體字建議
+      description: 限制搜尋範圍的參數也都可以使用，參考 /sphinx 參數說明。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 著衣持鉢
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search results.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-variants-response.yaml'
   /toc:
     get:
-      summary: 經目搜尋
+      summary: 目次 (Table of content)
       description: >
-        經目搜尋功能會在三大部份中搜尋：
+        # 目次
+        
+        ## 取得某部典籍內的目次
+        
+        例如取得 T0001 的目次: /toc?work=T0001
+        
+        ## 搜尋
+        
+        在三大部份中搜尋：
           * 部類目錄
           * 典籍標題（經名）
           * 典籍內目次
       parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-parameters.yaml#/work'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-parameters.yaml#/q'
       responses:
         '200':
@@ -78,6 +229,7 @@ paths:
       summary: 典籍相關資訊
       description: >
         例：
+          * 取得某部典籍的資訊, 取得 T0001 的資訊： /works?work=T0001
           * 指定冊數起迄： /works?canon=T&vol_start=1&vol_end=2
           * 指定經號起迄： /works?canon=T&work_start=1&work_end=2
           * 指定 嘉興藏 經號起迄： /works?canon=J&work_start=A1&work_end=A2
@@ -86,6 +238,7 @@ paths:
           * 搜尋多個朝代： /works?dynasty=符秦,前秦
           * 搜尋成立年代在公元 600年至700年之間的佛典： /works?time_start=600&time_end=700
       parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/work'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/canon'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/vol_start'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-parameters.yaml#/vol_end'
