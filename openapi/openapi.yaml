@@ -105,39 +105,41 @@ paths:
             application/json:
               schema: 
                 $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-response.yaml'
+  /sphinx/all_in_one:
+    get:
+      summary: Full Text Search
+      description: |
+        全文檢索並一次回傳 CBETA Online 前端所需的各種資料：
+
+          * 一併回傳 KWIC (Keyword in Context)
+          * 可選擇是否連同 facet 一起回傳。
+          * 分頁以卷為單位。
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/q'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-all_in_one-parameters.yaml#/facet'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/category'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/canon'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/work'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/works'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/creator'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/dynasty'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/time'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/work_type'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/puncs'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/start'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/rows'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/order'
+      responses:
+        '200':
+          description: search results.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-response.yaml'
   /sphinx/extended:
     get:
       summary: Search with Extended Query Syntax
-      description: >
-        # 使用 Sphinx 做全文檢索 (擴充模式)
-        
-        例： /sphinx/extended?q="法鼓"
-        
-        請注意上面的雙引號不可省略。
-        
-        以下範例均要做 URL encode, 例如： `"波羅蜜" | "波羅密"`
-        要編碼為 `%22波羅蜜%22%20%7C%20%22波羅密%22`
-
-        ## AND
-        
-        多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
-        
-        例： /sphinx/extended?q="法鼓" "聖嚴"
-        
-        ## OR 運算元
-        
-        "波羅蜜" | "波羅密"
-        例： /sphinx/extended?q="波羅蜜" | "波羅密"
-        
-        ## NOT 運算元
-        
-        例： /sphinx/extended?q="迦葉" -"迦葉佛"
-        
-        ## 鄰近搜尋運算元
-        
-        例： /sphinx/extended?q="弟子 第一"~5
-        
-        上例表示「弟子」跟「第一」之間距離不超過5個字。
+      description: Sphinx 做全文檢索 (擴充模式)
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
       responses:
@@ -147,6 +149,313 @@ paths:
             application/json:
               schema: 
                 $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-response.yaml'
+  /sphinx/facet/canon:
+    get:
+      summary: Faceted Search by 藏經 ID
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 法鼓
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search result
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  type: object
+                  properties:
+                    canon:
+                      type: string
+                      description: 藏經 ID
+                      example: T
+                    docs:
+                      type: integer
+                      description: number fo matched documents (卷/篇章)
+                      example: 382
+                    hits:
+                      type: integer
+                      description: number fo keyword occurences
+                      example: 569
+                    canon_name:
+                      type: string
+                      description: 藏經名稱
+                      example: 大正新脩大藏經
+  /sphinx/facet/category:
+    get:
+      summary: Faceted Search by Category (CBETA 部類)
+      description: 一部典籍可能屬於多個部類。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 法鼓
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search result
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category_id:
+                      type: integer
+                      example: 17
+                    docs:
+                      type: integer
+                      description: number fo matched documents (卷/篇章)
+                      example: 382
+                    hits:
+                      type: integer
+                      description: number fo keyword occurences
+                      example: 569
+                    category_name:
+                      type: string
+                      example: 禪宗部類
+  /sphinx/facet/creator:
+    get:
+      summary: Faceted Search by Creator ID
+      description: 根據作譯者 ID。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 法鼓
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search result
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  type: object
+                  properties:
+                    creator_id:
+                      type: string
+                      example: A001519
+                    docs:
+                      type: integer
+                      description: number fo matched documents (卷/篇章)
+                      example: 382
+                    hits:
+                      type: integer
+                      description: number fo keyword occurences
+                      example: 569
+                    creator_name:
+                      type: string
+                      example: 道宣
+  /sphinx/facet/dynasty:
+    get:
+      summary: Faceted Search by Dynasty (朝代)
+      description: 根據典籍成立的朝代。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 法鼓
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search result
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  type: object
+                  properties:
+                    dynasty:
+                      type: string
+                      example: 清
+                    docs:
+                      type: integer
+                      description: number fo matched documents (卷/篇章)
+                      example: 382
+                    hits:
+                      type: integer
+                      description: number fo keyword occurences
+                      example: 569
+  /sphinx/facet/work:
+    get:
+      summary: Faceted Search by Work
+      description: 根據典籍。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 法鼓
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search result
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  type: object
+                  properties:
+                    work:
+                      type: string
+                      description: 典籍編號 (經號)
+                      example: B0088
+                    docs:
+                      type: integer
+                      description: number fo matched documents (卷/篇章)
+                      example: 382
+                    hits:
+                      type: integer
+                      description: number fo keyword occurences
+                      example: 569
+                    title:
+                      type: string
+                      description: 典籍標題 (經名)
+                      example: 古今圖書集成選輯（上）
+  /sphinx/facet:
+    get:
+      summary: Faceted Search
+      description: 一次回傳五種 faceted search 結果： canon, category, dynasty, creator, work
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 法鼓
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search result
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  canon:
+                    type: array
+                    items:
+                      type: object
+                  category:
+                    type: array
+                    items:
+                      type: object
+                  creator:
+                    type: array
+                    items:
+                      type: object
+                  dynasty:
+                    type: array
+                    items:
+                      type: object
+                  work:
+                    type: array
+                    items:
+                      type: object
+  /sphinx/footnotes:
+    get:
+      summary: Search Footnotes
+      description: 限制搜尋範圍的參數都可以使用，參考 `/sphinx`
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/start'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/rows'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-all_in_one-parameters.yaml#/facet'
+      responses:
+        '200':
+          description: search results.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-footnotes-response.yaml'
+  /sphinx/title:
+    get:
+      summary: Search Titles
+      description: 搜尋典籍標題（經名）
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
+      responses:
+        '200':
+          description: search results.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-title-response.yaml'
+  /sphinx/sc:
+    get:
+      summary: 簡體字轉繁體，並回傳筆數
+      description: 限制搜尋範圍的參數也都可以使用，參考 /sphinx 參數說明。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要轉換的字詞。
+          example: 四圣谛
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 轉換後的繁體中文，以及 CBETA 中出現的筆數。
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  q:
+                    type: string
+                    description: 轉換後的繁體中文
+                    example: 四聖諦
+                  hits:
+                    type: integer
+                    description: CBETA 中出現的筆數
+                    example: 2860
+  /sphinx/synonym:
+    get:
+      summary: 近義詞 (near synonym) 建議
+      description: 限制搜尋範圍的參數也都可以使用，參考 /sphinx 參數說明。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字詞。
+          example: 文殊師利
+          schema:
+            type: string
+      responses:
+        '200':
+          description: search results.
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  num_found:
+                    type: integer
+                    description: number of suggestions
+                    example: 3
+                  results:
+                    type: array
+                    description: list of suggestions
+                    items:
+                      type: string
+                    example: ["滿殊尸利", "曼殊室利", "妙德", "妙首", "妙吉祥", "文殊", "妙吉祥菩薩", "妙音", "曼殊"]
   /sphinx/variants:
     get:
       summary: 異體字建議
