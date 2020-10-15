@@ -1,0 +1,108 @@
+q:
+  name: q
+  in: query
+  required: true
+  description: 要搜尋的字詞。
+  example: 法鼓
+  schema:
+    type: string
+rows:
+  name: rows
+  in: query
+  required: false
+  description: 一次回傳幾筆.
+  example: 20
+  schema:
+    type: integer
+    default: 10
+sort:
+  name: sort
+  in: query
+  required: false
+  description:
+    * 'f': forward concordance, 以關鍵字後面的字排序。
+    * 'b': backword concordance, 以關鍵字前面的字排序。
+    * 'location': 搜尋範圍在單卷之中才能使用，依關鍵字出現的位置排序。
+  schema:
+    type: string
+    default: f
+around:
+  name: around
+  in: query
+  required: false
+  description: 回傳關鍵字的前後字數
+  schema:
+    type: integer
+    default: 5
+callback:
+  name: callback
+  in: query
+  required: false
+  description: JsonP 的封裝字串，用於 Cross-site Ajax 操作時使用。
+  schema:
+    type: string
+place:
+  name: place
+  in: query
+  required: false
+  description: |
+    是否回傳地理資訊（並非全部佛典均有地理資訊）：
+    
+    * 0: 不回傳。
+    * 1: 要回傳。
+  schema:
+    type: integer
+    enum: [0, 1]
+    default: 0
+word_count:
+  name: word_count
+  in: query
+  required: false
+  description: |
+    是否回傳前綴、後綴字數統計：
+  
+      * 0: 不回傳。
+      * 1: 要回傳。
+  schema:
+    type: integer
+    enum: [0, 1]
+    default: 0
+kwic_w_punc:
+  name: kwic_w_punc
+  in: query
+  required: false
+  description: |
+    是否回傳含標點的文字
+  
+      * 0: 不回傳。
+      * 1: 要回傳。
+  schema:
+    type: integer
+    enum: [0, 1]
+    default: 1
+kwic_wo_punc:
+  name: kwic_wo_punc
+  in: query
+  required: false
+  description: |
+    是否回傳不含標點的文字
+  
+      * 0: 不回傳。
+      * 1: 要回傳。
+  schema:
+    type: integer
+    enum: [0, 1]
+    default: 0
+mark:
+  name: mark
+  in: query
+  required: false
+  description: |
+    回傳 kwic 欄位中的關鍵字前後是否加 mark 標記：
+  
+      * 0: 不加。 
+      * 1: 要加。
+  schema:
+    type: integer
+    enum: [0, 1]
+    default: 0
