@@ -1,0 +1,20 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found kwics
+    example: 2
+  results:
+    type: array
+    description: list of kwics
+    items:
+      type: object
+      properties:
+        lb:
+          type: string
+          description: 行號
+          example: 0216b12
+        kwic:
+          type: string
+          description: 關鍵字前後文。
+          example: 福。自非大聖嚴旨。安能信"

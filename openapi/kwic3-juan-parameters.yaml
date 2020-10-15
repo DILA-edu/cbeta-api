@@ -1,0 +1,24 @@
+work:
+  name: work
+  in: query
+  required: true
+  description: 典籍編號，限制搜尋範圍在某部典籍之中。
+  example: X0600
+  schema:
+    type: string
+juan:
+  name: juan
+  in: query
+  required: true
+  description: 卷號
+  example: 11
+  schema:
+    type: integer
+q:
+  name: q
+  in: query
+  required: true
+  description: 要搜尋的關鍵字，多個關鍵字以半形逗點區隔。
+  example: 法鼓,聖嚴
+  schema:
+    type: string
