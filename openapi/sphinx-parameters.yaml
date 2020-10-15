@@ -4,7 +4,9 @@ q:
   required: true
   description: |
     要搜尋的字詞，可以包含組字式。
-    例如 《新集藏經音義隨函錄(第13卷-第30卷)》卷17：「[幻-ㄠ+糸]術」(CBETA, K35, no. 1257, p. 189b6), 組字式 escape 之後：[幻-ㄠ%2B糸]
+
+    例如 《新集藏經音義隨函錄(第13卷-第30卷)》卷17：「[幻-ㄠ+糸]術」(CBETA, K35, no. 1257, p. 189b6), 組字式 escape 之後：`[幻-ㄠ%2B糸]`
+
     查詢 URL: `/sphinx?q=[幻-ㄠ%2B糸]`
   example: 法鼓
   schema:
@@ -71,6 +73,7 @@ work_type:
   required: false
   description: |
     指定只在「正文」中搜尋： `/sphinx?q=金剛&work_type=textbody`
+
     指定只在「非正文」中搜尋： `/sphinx?q=徵稿啓事&work_type=non-textbody`
   schema:
     type: string
@@ -104,18 +107,19 @@ order:
   in: query
   required: false
   description: |
-    排序，例如按照文獻成立的年代排序： /sphinx?q=法鼓&order=year
+    排序，例如按照文獻成立的年代排序： `/sphinx?q=法鼓&order=year`
 
     也可以指定多個排序欄位，例如先以年代排序、再以經號排序：
     
-    /sphinx?q=法鼓&order=time_from,time_to,work
+    `/sphinx?q=法鼓&order=time_from,time_to,work`
     
     但是排序欄位最多五個，而且如果指定了 time_from 或 time_to 會各佔兩個欄位，因為必須以 has_time_from 或 has_time_to 先排序。
     
     每一個排序欄位都可以指定使用升冪排序或降冪排序：
     
-    指定升冪排序：order=time_from+
-    指定降冪排序：order=time_from-
+      * 指定升冪排序：order=time_from+
+      * 指定降冪排序：order=time_from-
+
     可用做排序的欄位：
     
       * canon: 藏經 ID，依照 CBETA 制定的檢索順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB
