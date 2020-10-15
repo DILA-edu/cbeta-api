@@ -58,6 +58,54 @@ paths:
             application/json:
               schema: 
                 $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-response.yaml'
+  /kwic3:
+    get:
+      summary: Keyword in Context Version 3
+      description: |
+        * 回傳的 KWIC 字串含標點
+        * 回傳結果可以依「典籍編號+卷號」排序
+        * 可以選擇是否要回傳
+          * 地理資訊、經緯度座標
+          * next_word_count, prev_word_count
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/q'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/category'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/work'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/works'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-goto-parameters.yaml#/juan'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/rows'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/start'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/sort'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/around'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/callback'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/place'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/word_count'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/kwic_w_punc'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/kwic_wo_punc'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/mark'
+      responses:
+        '200':
+          description: search result.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-response.yaml'
+  /kwic3/juan:
+    get:
+      summary: 單卷 KWIC3
+      description: 在單卷範圍內做 KWIC 搜尋
+      parameters:
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-juan-parameters.yaml#/work'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-juan-parameters.yaml#/juan'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-juan-parameters.yaml#/q'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/sort'
+      responses:
+        '200':
+          description: search result.
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-juan-response.yaml'
   /lines:
     get:
       summary: text lines
