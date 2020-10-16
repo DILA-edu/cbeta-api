@@ -11,3 +11,4 @@ properties:
       description: 第一個元素是作譯者 ID，第二個元素是作譯者名稱。
       items:
         type: string
+      example: ["A000001", "金總持"]
