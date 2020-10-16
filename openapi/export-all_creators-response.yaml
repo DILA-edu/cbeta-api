@@ -1,0 +1,13 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of creators
+  results:
+    type: array
+    description: list of creators
+    items:
+      type: array
+      description: 第一個元素是作譯者 ID，第二個元素是作譯者名稱。
+      items:
+        type: string
