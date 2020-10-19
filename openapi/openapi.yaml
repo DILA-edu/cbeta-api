@@ -11,6 +11,149 @@ servers:
     description: Mirror server
 
 paths:
+  /api/collections:
+    get:
+      summary: RISE SHINE API - Get the list of all collections
+      externalDocs:
+        description: SHINE API
+        url: https://rise.mpiwg-berlin.mpg.de/pages/doc_for_resource_providers
+      responses:
+        '200':
+          description: List of Collections
+          content: 
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    uuid:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                      example: A 金藏
+                    resourceCount:
+                      type: integer
+  /api/collections/{uuid}/resources:
+    get:
+      summary: RISE SHINE API -- Get the list of all resources for a collection
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: The UUID of the Collection you wish to access
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: list of resources (works)
+          content: 
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    uuid:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                      example: "T0001 長阿含經"
+  /api/resources/{uuid}/sections:
+    get:
+      summary: RISE SHINE API -- Get the list of all sections (卷) for a resource (work)
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: The UUID of the Resource you wish to access
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: list of sections (卷)
+          content: 
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    uuid:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                      example: T0001 長阿含經 第1卷
+  /api/sections/{uuid}:
+    get:
+      summary: RISE SHINE API -- Get one section's (卷) information
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: The UUID of the Section you wish to access
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: list of sections (卷)
+          content: 
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                    example: T0001 長阿含經 第1卷
+                  parentUuid:
+                    type: string
+                    format: uuid
+                  uri:
+                    type: string
+                    description: the original uri from which the section can be fetched
+                    example: "http://cbdata.dila.edu.tw/v1.2/download/text-for-asia-network/T/T0001/T0001_001.txt"
+                  contentUnitCount:
+                    type: integer
+                    example: 1
+  /api/sections/{uuid}/content_units:
+    get:
+      summary: RISE SHINE API -- Get the list of all content units for a section (卷)
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: The UUID of the Section you wish to access
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: list of sections (卷)
+          content: 
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    uuid:
+                      type: string
+                      format: uuid
+                    title:
+                      type: string
+                      example: T0001 長阿含經 第1卷
+                    contents:
+                      type: string
+                      description: 該卷文字內容
   /catalog_entry:
     get:
       summary: Returns a catalog entry information, including its children.
@@ -24,6 +167,546 @@ paths:
             application/json:
               schema: 
                 $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/catalog-entry-response.yaml'
+  /chinese_tools/sc2tc:
+    get:
+      summary: 中文簡體轉繁體
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            example: 简体转繁体
+      responses:
+         '200':
+            description: 轉換後的繁體中文
+            content:
+              text/plain:
+                schema:
+                  type: string
+                  example: 簡體轉繁體
+  /download/cbeta-epub-{quarter}.zip:
+    get:
+      summary: 下載 CBETA 某季全部 EPUB
+      description: 只提供最新一季
+      parameters:
+        - name: quarter
+          in: path
+          description: 季編號
+          required: true
+          schema:
+            type: string
+          example: 2020q3
+      responses:
+        '200':
+          description: ZIP File
+          content:
+            application/zip:
+              schema: 
+                type: string
+                format: binary
+  /download/cbeta-mobi-{quarter}.zip:
+    get:
+      summary: 下載 CBETA 某季全部 MOBI
+      description: 只提供最新一季
+      parameters:
+        - name: quarter
+          in: path
+          description: 季編號
+          required: true
+          schema:
+            type: string
+          example: 2020q3
+      responses:
+        '200':
+          description: ZIP File
+          content:
+            application/zip:
+              schema: 
+                type: string
+                format: binary
+  /download/cbeta-pdf-{quarter}-{part}.zip:
+    get:
+      summary: 下載 CBETA 某季全部 MOBI
+      description: |
+        只提供最新一季
+        
+        # FAQ
+        
+        ## Q: 下載的 PDF 裡有總目錄嗎？
+        
+        如果您一次下載全部 pdf 的 zip 檔，解壓縮後裡面有個 `filelist_2020q1.txt` (季編號會變)，這個檔案就是總目錄，內容如下：
+        
+        
+            經號 , 冊數 , 卷數 , 經名 , 作譯者
+            =====================================================
+            A1057 , 091 , 2 , 新譯大方廣佛華嚴經音義 , 唐 慧菀述
+            A1267 , 097-098 , 17 , 大唐開元釋教廣品歷章 , 唐 玄逸撰
+            A1490 , 110 , 2 , 天聖釋教總錄 , 宋 惟淨等編修
+        
+        ## Q: PDF 檔名為什麼不是經名，而是編號呢？
+        
+        A: 早期我們都是用英文+數字，後來才嘗試改成經名。
+        
+        但經名是漢字，有些系統會處理時會變成亂碼，有些則是經名過長的問題，或是經名有組字、Unicode罕見字，有些系統無法正常讀取，
+        
+        因此還是恢復編號，才能讓最大多數人可以順利使用。
+        
+        我們也同時提供了對照表，讓有需要的人可以進一步利用。
+      parameters:
+        - name: quarter
+          in: path
+          description: 季編號
+          required: true
+          schema:
+            type: string
+          example: 2020q3
+        - name: part
+          in: path
+          description: PDF 檔案很多、很大，分成兩個 ZIP 檔。
+          required: true
+          schema:
+            type: integer
+            enum: [1, 2]
+      responses:
+        '200':
+          description: ZIP File
+          content:
+            application/zip:
+              schema: 
+                type: string
+                format: binary
+  /download/docusky/{filename}.docusky.xml:
+    get: 
+      summary: 下載 Docusky XML 格式典籍
+      parameters:
+        - name: filename
+          in: path
+          description: 典籍編號（經號） 或 典籍編號（經號）+ 卷號（三碼）
+          required: true
+          schema:
+            type: string
+          examples:
+            juan:
+              summary: 單卷
+              value: A0157_001
+            work:
+              summary: 整部典籍
+              value: A0157
+      responses:
+        '200':
+          description: XML File
+          content:
+            text/xml:
+              schema: 
+                type: string
+  /download/epub/{canon}/{work}.epub:
+    get:
+      summary: 下載 EPUB
+      parameters:
+        - name: canon
+          in: path
+          description: 藏經 ID
+          required: true
+          schema:
+            type: string
+          example: A
+        - name: work
+          in: path
+          description: 典籍編號（經號）
+          required: true
+          schema:
+            type: string
+          example: A0157
+      responses:
+        '200':
+          description: EPUB File
+          content:
+            application/epub+zip:
+              schema: 
+                type: string
+                format: binary
+  /download/footnotes/{canon}/{work}/{juan}.csv:
+    get:
+      summary: 下載某一卷文本中的校註
+      parameters:
+        - name: canon
+          in: path
+          description: 藏經 ID
+          required: true
+          schema:
+            type: string
+          example: T
+        - name: work
+          in: path
+          description: 典籍編號（經號）
+          required: true
+          schema:
+            type: string
+          example: T0001
+        - name: juan
+          in: path
+          description: 卷號（三碼）
+          required: true
+          schema:
+            type: string
+          example: 001
+      responses:
+        '200':
+          description: csv file of footnotes
+          content:
+            text/csv:
+              schema: 
+                type: string
+  /download/html/{work_juan}.html:
+    get:
+      summary: 下載某一卷 HTML (適合直接閱讀用)
+      parameters:
+        - name: work_juan
+          in: path
+          description: 典籍編號（經號） + 卷號（三碼）
+          required: true
+          schema:
+            type: string
+          example: A1057_001
+      responses:
+        '200':
+          description: HTML File
+          content:
+            text/html:
+              schema: 
+                type: string
+  /download/html/{work}.html.zip:
+    get:
+      summary: 下載某部典籍 ZIP 檔
+      description:  解壓縮之後有多個 HTML 檔，適合直接閱讀用。
+      parameters:
+        - name: work
+          in: path
+          description: 典籍編號（經號）
+          required: true
+          schema:
+            type: string
+          example: A0157
+      responses:
+        '200':
+          description: ZIP File
+          content:
+            application/zip:
+              schema: 
+                type: string
+                format: binary
+  /download/mobi/{canon}/{work}.mobi:
+    get:
+      summary: 下載 MOBI
+      parameters:
+        - name: canon
+          in: path
+          description: 藏經 ID
+          required: true
+          schema:
+            type: string
+          example: A
+        - name: work
+          in: path
+          description: 典籍編號（經號）
+          required: true
+          schema:
+            type: string
+          example: A0157
+      responses:
+        '200':
+          description: MOBI File
+          content:
+            application/x-mobipocket-ebook:
+              schema: 
+                type: string
+                format: binary
+  /download/pdf/{canon}/{work}.pdf:
+    get:
+      summary: 下載 PDF
+      parameters:
+        - name: canon
+          in: path
+          description: 藏經 ID
+          required: true
+          schema:
+            type: string
+          example: A
+        - name: work
+          in: path
+          description: 典籍編號（經號）
+          required: true
+          schema:
+            type: string
+          example: A0157
+      responses:
+        '200':
+          description: PDF File
+          content:
+            application/pdf:
+              schema: 
+                type: string
+                format: binary
+  /download/text/{work_juan}.txt.zip:
+    get:
+      summary: 下載某卷 純文字版 ZIP 檔
+      description: |
+        ## 悉曇字
+        
+        以羅馬轉寫呈現，例： /download/text/T0864A.txt.zip
+
+        ## 圖形
+        
+        以【圖：T16p0845_01.gif】表示，圖檔也一起包含在 zip 檔裡。
+        
+        例： /download/text/T0719_001.txt.zip
+        
+        ## 表格
+        
+        逐列、逐欄 分行呈現，例： /download/text/T2035_003.txt.zip
+        
+        ○四處十六會圖
+      parameters:
+        - name: work_juan
+          in: path
+          description: 典籍編號（經號）+ 卷號（三碼）
+          required: true
+          schema:
+            type: string
+          example: T0001_001
+      responses:
+        '200':
+          description: ZIP File
+          content:
+            application/zip:
+              schema: 
+                type: string
+                format: binary
+  /download/text/{work}.txt.zip:
+    get:
+      summary: 下載某部典籍 純文字版 ZIP 檔
+      parameters:
+        - name: work
+          in: path
+          description: 典籍編號（經號）
+          required: true
+          schema:
+            type: string
+          example: T0001
+      responses:
+        '200':
+          description: ZIP File
+          content:
+            application/zip:
+              schema: 
+                type: string
+                format: binary
+  /export/all_creators:
+    get:
+      summary: 全部作譯者列表
+      responses:
+        '200':
+          description: list of creators
+          content:
+            application/json:
+              schema: 
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/export-all_creators-response.yaml'
+  /export/all_creators2:
+    get:
+      summary: 全部作譯者列表 (含別名)
+      responses:
+        '200':
+          description: list of creators (including alias)
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  num_found:
+                    type: integer
+                    description: number of creators
+                  results:
+                    type: object
+                    description: hash of creators, key 是作譯者 id
+                    example:
+                      A000001:
+                        regular_name: 金總持
+                        aliases_all: ["金揔持","寶輪大師","明因妙善普濟法師"]
+  /export/all_works:
+    get:
+      summary: 全部前籍列表
+      responses:
+        '200':
+          description: list of all works
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  type: object
+                  properties:
+                    work:
+                      type: string
+                      description: 典籍編號
+                      example: T0001
+                    title:
+                      type: string
+                      description: 典籍標題（經名）
+                      example: 長阿含經
+                    juans:
+                      type: array
+                      description: 卷號列表
+                      items:
+                        type: string
+                      example: ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22"]
+  /export/check_list:
+    get:
+      summary: 嘉興藏檢查表
+      parameters:
+        - name: canon
+          in: query
+          description: 藏經 ID
+          required: true
+          schema:
+            type: string
+          example: J
+      responses:
+        '200':
+          description: 嘉興藏 典籍、卷 列表
+          content:
+            text/csv:
+              schema: 
+                type: string
+  /export/creator_strokes:
+    get:
+      summary: 範圍選擇清單-依作譯者筆劃
+      description: 供前端做「範圍選擇」樹狀目錄使用。
+      responses:
+        '200':
+          description: Tree
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of Tree Root Node
+                    example: '選擇全部'
+                  children:
+                    type: array
+                    items:
+                      type: object
+                      description: Tree Node
+  /export/creator_strokes_works:
+    get:
+      summary: 範圍選擇清單-依作譯者筆劃 (含譯著)
+      description: 供前端做「範圍選擇」樹狀目錄使用。
+      responses:
+        '200':
+          description: Tree
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of Tree Root Node
+                    example: '選擇全部'
+                  children:
+                    type: array
+                    items:
+                      type: object
+                      description: Tree Node
+  /export/dynasty:
+    get:
+      summary: 朝代列表
+      responses:
+        '200':
+          description: 全部朝代列表，及其起始年、結束年、典籍數。
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  num_found:
+                    type: integer
+                    description: number of dynasties
+                  results:
+                    type: string
+                    description: CSV
+                    example: "朝代,起始年,結束年,典籍數\n東漢,25,220,80"
+  /export/dynasty_works:
+    get:
+      summary: 範圍選擇清單-依朝代期間典籍列表
+      description: 供前端做「範圍選擇」樹狀目錄使用。
+      responses:
+        '200':
+          description: Tree
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of Tree Root Node
+                    example: '選擇全部'
+                  children:
+                    type: array
+                    items:
+                      type: object
+                      description: Tree Node
+  /export/scope_selector_by_category:
+    get:
+      summary: 範圍選擇清單-依部類
+      description: 供前端做「範圍選擇」樹狀目錄使用。
+      responses:
+        '200':
+          description: Tree
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of Tree Root Node
+                    example: '選擇全部'
+                  key:
+                    type: string
+                    description: Key of Tree Node
+                  children:
+                    type: array
+                    items:
+                      type: object
+                      description: Tree Node
+  /export/scope_selector_by_vol:
+    get:
+      summary: 範圍選擇清單-依刊本
+      description: 供前端做「範圍選擇」樹狀目錄使用。
+      responses:
+        '200':
+          description: Tree
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Title of Tree Root Node
+                    example: '選擇全部'
+                  key:
+                    type: string
+                    description: Key of Tree Node
+                  children:
+                    type: array
+                    items:
+                      type: object
+                      description: Tree Node
   /juans:
     get:
       summary: 典籍的某一卷
@@ -581,6 +1264,34 @@ paths:
               examples:
                 objectExample:
                   $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-response-example.yaml'
+  /word_seg:
+    post:
+      summary: DILA 佛典自動分詞 測試版
+      description: |
+        * 使用 CRF++ 自動分詞
+        * 不支援咒語。
+        * 使用半形斜線做為分詞區隔符號。
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                t:
+                  type: string
+              required:
+                - t
+              example:
+                t: "當觀色無常。如是觀者，則為正觀。正觀者，則生厭離；厭離者，喜貪盡；喜貪盡者，說心解脫。"
+      responses:
+         '200':
+            description: 分詞後結果
+            content:
+              text/plain:
+                schema:
+                  type: string
+                  example: /當/觀/色/無常/。/如是/觀/者/，/則/為/正觀/。/正觀/者/，/則/生/厭離/；/厭離/者/，/喜/貪/盡/；/喜/貪/盡/者/，/說/心解脫/。/
   /works:
     get:
       summary: 典籍相關資訊
