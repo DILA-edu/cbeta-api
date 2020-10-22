@@ -13,10 +13,8 @@ servers:
 paths:
   /api/collections:
     get:
-      summary: RISE SHINE API - Get the list of all collections
-      externalDocs:
-        description: SHINE API
-        url: https://rise.mpiwg-berlin.mpg.de/pages/doc_for_resource_providers
+      summary: Get the list of all collections
+      tags: [rise_shine]
       responses:
         '200':
           description: List of Collections
@@ -37,7 +35,8 @@ paths:
                       type: integer
   /api/collections/{uuid}/resources:
     get:
-      summary: RISE SHINE API -- Get the list of all resources for a collection
+      summary: Get the list of all resources for a collection
+      tags: [rise_shine]
       parameters:
         - name: uuid
           in: path
@@ -64,7 +63,8 @@ paths:
                       example: "T0001 長阿含經"
   /api/resources/{uuid}/sections:
     get:
-      summary: RISE SHINE API -- Get the list of all sections (卷) for a resource (work)
+      summary: Get the list of all sections (卷) for a resource (work)
+      tags: [rise_shine]
       parameters:
         - name: uuid
           in: path
@@ -91,7 +91,8 @@ paths:
                       example: T0001 長阿含經 第1卷
   /api/sections/{uuid}:
     get:
-      summary: RISE SHINE API -- Get one section's (卷) information
+      summary: Get one section's (卷) information
+      tags: [rise_shine]
       parameters:
         - name: uuid
           in: path
@@ -126,7 +127,8 @@ paths:
                     example: 1
   /api/sections/{uuid}/content_units:
     get:
-      summary: RISE SHINE API -- Get the list of all content units for a section (卷)
+      summary: Get the list of all content units for a section (卷)
+      tags: [rise_shine]
       parameters:
         - name: uuid
           in: path
@@ -157,6 +159,7 @@ paths:
   /catalog_entry:
     get:
       summary: Returns a catalog entry information, including its children.
+      tags: [catalog]
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/catalog-entry-parameters.yaml#/q'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/catalog-entry-parameters.yaml#/vol'
@@ -170,6 +173,7 @@ paths:
   /chinese_tools/sc2tc:
     get:
       summary: 中文簡體轉繁體
+      tags: [tool]
       parameters:
         - name: q
           in: query
@@ -188,6 +192,7 @@ paths:
   /download/cbeta-epub-{quarter}.zip:
     get:
       summary: 下載 CBETA 某季全部 EPUB
+      tags: [download]
       description: 只提供最新一季
       parameters:
         - name: quarter
@@ -208,6 +213,7 @@ paths:
   /download/cbeta-mobi-{quarter}.zip:
     get:
       summary: 下載 CBETA 某季全部 MOBI
+      tags: [download]
       description: 只提供最新一季
       parameters:
         - name: quarter
@@ -228,6 +234,7 @@ paths:
   /download/cbeta-pdf-{quarter}-{part}.zip:
     get:
       summary: 下載 CBETA 某季全部 MOBI
+      tags: [download]
       description: |
         只提供最新一季
         
@@ -279,6 +286,7 @@ paths:
   /download/docusky/{filename}.docusky.xml:
     get: 
       summary: 下載 Docusky XML 格式典籍
+      tags: [download]
       parameters:
         - name: filename
           in: path
@@ -303,6 +311,7 @@ paths:
   /download/epub/{canon}/{work}.epub:
     get:
       summary: 下載 EPUB
+      tags: [download]
       parameters:
         - name: canon
           in: path
@@ -329,6 +338,7 @@ paths:
   /download/footnotes/{canon}/{work}/{juan}.csv:
     get:
       summary: 下載某一卷文本中的校註
+      tags: [download]
       parameters:
         - name: canon
           in: path
@@ -361,6 +371,7 @@ paths:
   /download/html/{work_juan}.html:
     get:
       summary: 下載某一卷 HTML (適合直接閱讀用)
+      tags: [download]
       parameters:
         - name: work_juan
           in: path
@@ -379,6 +390,7 @@ paths:
   /download/html/{work}.html.zip:
     get:
       summary: 下載某部典籍 ZIP 檔
+      tags: [download]
       description:  解壓縮之後有多個 HTML 檔，適合直接閱讀用。
       parameters:
         - name: work
@@ -399,6 +411,7 @@ paths:
   /download/mobi/{canon}/{work}.mobi:
     get:
       summary: 下載 MOBI
+      tags: [download]
       parameters:
         - name: canon
           in: path
@@ -425,6 +438,7 @@ paths:
   /download/pdf/{canon}/{work}.pdf:
     get:
       summary: 下載 PDF
+      tags: [download]
       parameters:
         - name: canon
           in: path
@@ -451,6 +465,7 @@ paths:
   /download/text/{work_juan}.txt.zip:
     get:
       summary: 下載某卷 純文字版 ZIP 檔
+      tags: [download]
       description: |
         ## 悉曇字
         
@@ -486,6 +501,7 @@ paths:
   /download/text/{work}.txt.zip:
     get:
       summary: 下載某部典籍 純文字版 ZIP 檔
+      tags: [download]
       parameters:
         - name: work
           in: path
@@ -505,6 +521,7 @@ paths:
   /export/all_creators:
     get:
       summary: 全部作譯者列表
+      tags: [export]
       responses:
         '200':
           description: list of creators
@@ -515,6 +532,7 @@ paths:
   /export/all_creators2:
     get:
       summary: 全部作譯者列表 (含別名)
+      tags: [export]
       responses:
         '200':
           description: list of creators (including alias)
@@ -536,6 +554,7 @@ paths:
   /export/all_works:
     get:
       summary: 全部前籍列表
+      tags: [export]
       responses:
         '200':
           description: list of all works
@@ -563,6 +582,7 @@ paths:
   /export/check_list:
     get:
       summary: 嘉興藏檢查表
+      tags: [export]
       parameters:
         - name: canon
           in: query
@@ -581,6 +601,7 @@ paths:
   /export/creator_strokes:
     get:
       summary: 範圍選擇清單-依作譯者筆劃
+      tags: [export]
       description: 供前端做「範圍選擇」樹狀目錄使用。
       responses:
         '200':
@@ -602,6 +623,7 @@ paths:
   /export/creator_strokes_works:
     get:
       summary: 範圍選擇清單-依作譯者筆劃 (含譯著)
+      tags: [export]
       description: 供前端做「範圍選擇」樹狀目錄使用。
       responses:
         '200':
@@ -623,6 +645,7 @@ paths:
   /export/dynasty:
     get:
       summary: 朝代列表
+      tags: [export]
       responses:
         '200':
           description: 全部朝代列表，及其起始年、結束年、典籍數。
@@ -641,6 +664,7 @@ paths:
   /export/dynasty_works:
     get:
       summary: 範圍選擇清單-依朝代期間典籍列表
+      tags: [export]
       description: 供前端做「範圍選擇」樹狀目錄使用。
       responses:
         '200':
@@ -662,6 +686,7 @@ paths:
   /export/scope_selector_by_category:
     get:
       summary: 範圍選擇清單-依部類
+      tags: [export]
       description: 供前端做「範圍選擇」樹狀目錄使用。
       responses:
         '200':
@@ -686,6 +711,7 @@ paths:
   /export/scope_selector_by_vol:
     get:
       summary: 範圍選擇清單-依刊本
+      tags: [export]
       description: 供前端做「範圍選擇」樹狀目錄使用。
       responses:
         '200':
@@ -710,6 +736,7 @@ paths:
   /juans:
     get:
       summary: 典籍的某一卷
+      tags: [juan]
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-parameters.yaml#/work'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-parameters.yaml#/juan'
@@ -725,6 +752,7 @@ paths:
   /juans/goto:
     get:
       summary: Goto
+      tags: [juan]
       externalDocs: 
         url: 'https://github.com/DILA-edu/cbeta-api/blob/main/openapi/juans-goto.md'
       parameters:
@@ -744,6 +772,7 @@ paths:
   /kwic3:
     get:
       summary: Keyword in Context Version 3
+      tags: [kwic]
       description: |
         * 回傳的 KWIC 字串含標點
         * 回傳結果可以依「典籍編號+卷號」排序
@@ -776,6 +805,7 @@ paths:
   /kwic3/juan:
     get:
       summary: 單卷 KWIC3
+      tags: [kwic]
       description: 在單卷範圍內做 KWIC 搜尋
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-juan-parameters.yaml#/work'
@@ -792,6 +822,7 @@ paths:
   /lines:
     get:
       summary: text lines
+      tags: [line]
       description: >
         使用範例：
         
@@ -815,6 +846,7 @@ paths:
   /sphinx:
     get:
       summary: Full Text Search
+      tags: [sphinx]
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/q'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-parameters.yaml#/category'
@@ -839,6 +871,7 @@ paths:
   /sphinx/all_in_one:
     get:
       summary: Full Text Search
+      tags: [sphinx]
       description: |
         全文檢索並一次回傳 CBETA Online 前端所需的各種資料：
 
@@ -870,6 +903,7 @@ paths:
   /sphinx/extended:
     get:
       summary: Search with Extended Query Syntax
+      tags: [sphinx]
       description: Sphinx 做全文檢索 (擴充模式)
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
@@ -883,6 +917,7 @@ paths:
   /sphinx/facet/canon:
     get:
       summary: Faceted Search by 藏經 ID
+      tags: [sphinx]
       parameters:
         - name: q
           in: query
@@ -920,6 +955,7 @@ paths:
   /sphinx/facet/category:
     get:
       summary: Faceted Search by Category (CBETA 部類)
+      tags: [sphinx]
       description: 一部典籍可能屬於多個部類。
       parameters:
         - name: q
@@ -956,6 +992,7 @@ paths:
   /sphinx/facet/creator:
     get:
       summary: Faceted Search by Creator ID
+      tags: [sphinx]
       description: 根據作譯者 ID。
       parameters:
         - name: q
@@ -992,6 +1029,7 @@ paths:
   /sphinx/facet/dynasty:
     get:
       summary: Faceted Search by Dynasty (朝代)
+      tags: [sphinx]
       description: 根據典籍成立的朝代。
       parameters:
         - name: q
@@ -1025,6 +1063,7 @@ paths:
   /sphinx/facet/work:
     get:
       summary: Faceted Search by Work
+      tags: [sphinx]
       description: 根據典籍。
       parameters:
         - name: q
@@ -1063,6 +1102,7 @@ paths:
   /sphinx/facet:
     get:
       summary: Faceted Search
+      tags: [sphinx]
       description: 一次回傳五種 faceted search 結果： canon, category, dynasty, creator, work
       parameters:
         - name: q
@@ -1103,6 +1143,7 @@ paths:
   /sphinx/footnotes:
     get:
       summary: Search Footnotes
+      tags: [sphinx]
       description: 限制搜尋範圍的參數都可以使用，參考 `/sphinx`
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
@@ -1119,6 +1160,7 @@ paths:
   /sphinx/title:
     get:
       summary: Search Titles
+      tags: [sphinx]
       description: 搜尋典籍標題（經名）
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
@@ -1132,6 +1174,7 @@ paths:
   /sphinx/sc:
     get:
       summary: 簡體字轉繁體，並回傳筆數
+      tags: [sphinx]
       description: 限制搜尋範圍的參數也都可以使用，參考 /sphinx 參數說明。
       parameters:
         - name: q
@@ -1160,6 +1203,7 @@ paths:
   /sphinx/synonym:
     get:
       summary: 近義詞 (near synonym) 建議
+      tags: [sphinx]
       description: 限制搜尋範圍的參數也都可以使用，參考 /sphinx 參數說明。
       parameters:
         - name: q
@@ -1190,6 +1234,7 @@ paths:
   /sphinx/variants:
     get:
       summary: 異體字建議
+      tags: [sphinx]
       description: 限制搜尋範圍的參數也都可以使用，參考 /sphinx 參數說明。
       parameters:
         - name: q
@@ -1209,6 +1254,7 @@ paths:
   /toc:
     get:
       summary: 目次 (Table of content)
+      tags: [toc]
       description: >
         # 目次
         
@@ -1267,6 +1313,7 @@ paths:
   /word_seg:
     post:
       summary: DILA 佛典自動分詞 測試版
+      tags: [tool]
       description: |
         * 使用 CRF++ 自動分詞
         * 不支援咒語。
@@ -1295,6 +1342,7 @@ paths:
   /works:
     get:
       summary: 典籍相關資訊
+      tags: [work]
       description: >
         例：
           * 取得某部典籍的資訊, 取得 T0001 的資訊： /works?work=T0001
@@ -1323,3 +1371,20 @@ paths:
             application/json:
               schema: 
                 $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/works-response.yaml'
+tags:
+  - name: catalog
+  - name: work
+  - name: toc
+  - name: juan
+  - name: line
+  - name: sphinx
+    description: Full Text Search by Sphinx Search
+  - name: kwic
+  - name: download
+  - name: export
+  - name: tool
+  - name: rise_shine
+    description: RISE SHINE API
+    externalDocs:
+      description: SHINE API
+      url: https://rise.mpiwg-berlin.mpg.de/pages/doc_for_resource_providers
