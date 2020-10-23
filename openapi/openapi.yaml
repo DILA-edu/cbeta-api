@@ -795,6 +795,7 @@ paths:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/kwic_w_punc'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/kwic_wo_punc'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/mark'
+        - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/kwic3-parameters.yaml#/seg'
       responses:
         '200':
           description: search result.
