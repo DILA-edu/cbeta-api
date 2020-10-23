@@ -106,3 +106,16 @@ mark:
     type: integer
     enum: [0, 1]
     default: 0
+seg:
+  name: seg
+  in: query
+  required: false
+  description: |
+    是否對 kwic 欄位做自動分詞：
+  
+      * 0: 不要。 
+      * 1: 要。
+  schema:
+    type: integer
+    enum: [0, 1]
+    default: 0
