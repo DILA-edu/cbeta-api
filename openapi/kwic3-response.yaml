@@ -51,3 +51,7 @@ properties:
           type: number
           format: float
           example: 34.72401
+        seg:
+          description: kwic 欄位自動分詞結果
+          type: string
+          example: /佛/圓擊/梵輪/法鼓/。/△/三/不/次/
