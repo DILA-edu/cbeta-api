@@ -15,8 +15,17 @@ category:
   name: category
   in: query
   required: false
-  description: 限制搜尋範圍在某個部類之中
-  example: 阿含部類
+  description: |
+    限制搜尋範圍在某個部類之中
+
+    參數值如果為「a,b+c,d」格式，表示 (a OR b) AND (c OR d)。
+
+    URL 裡的半形加號要 escape 為 %2b
+  examples:
+    or:
+      value: 阿含部類,本緣部類
+    and:
+      value: 禪宗部類+史傳部類
   schema:
     type: string
     enum:
@@ -71,8 +80,17 @@ creator:
   name: creator
   in: query
   required: false
-  description: 作譯者ID列表，限制搜尋範圍在某些作譯者的典籍之中。
-  example: A000439,A000294
+  description: |
+    作譯者ID列表，限制搜尋範圍在某些作譯者的典籍之中。
+
+    參數值如果為「a,b+c,d」格式，表示 (a OR b) AND (c OR d)，例如「禪宗部類+史傳部類」。
+
+    URL 裡的半形加號要 escape 為 %2b
+  examples:
+    or: 
+      value: A000439,A000294
+    and:
+      value: A000439+A000435
   schema:
     type: string
 dynasty:
