@@ -6,7 +6,11 @@
 
 OpenAPI: https://app.swaggerhub.com/apis-docs/Ray.Chou/CBETA-API/1.2
 
-使用 CBETA API 開發的 App:
+## 參考規範
+* [OpenAPI](https://swagger.io/specification/)
+* [Google JSON Style Guide](https://google.github.io/styleguide/jsoncstyleguide.xml)
+
+## 使用 CBETA API 開發的 App
 * [CBETA Online](https://cbetaonline.dila.edu.tw)
 * [DeerPark 漢文大藏經](https://deerpark.app)
 * 非官方 2代 CBETA 電子佛典閱讀器
