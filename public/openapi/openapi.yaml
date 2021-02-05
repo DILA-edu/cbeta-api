@@ -1,0 +1,27 @@
+openapi: 3.0.0
+info:
+  title: CBETA API
+  description: API to access CBETA Chinese Buddhist Texts Resources.
+  version: 1.2.19
+
+servers:
+  - url: http://cbdata.dila.edu.tw/v1.2
+    description: Main server
+  - url: http://api.cbetaonline.cn/
+    description: Mirror server
+
+paths:
+  /catalog_entry:
+    get:
+      summary: Returns a catalog entry information, including its children.
+      parameters:
+        $ref: 'catalog-entry-parameters.yaml'
+      responses:
+        '200':
+          description: A Catalog Entry Object
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  $ref: 'catalog-entry-response.yaml'

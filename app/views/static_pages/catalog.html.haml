@@ -1,0 +1,88 @@
+%h1 部類目錄
+%h2 一、綜合目錄
+.chapter
+  %h4 1. CBETA 部類目錄
+  .section
+    %p
+      取得 CBETA 部類目錄:
+      =link_to_url '/catalog_entry?q=CBETA'
+
+    %p 回傳：
+    %pre
+      :preserve
+        {
+          "num_found": 21,
+          "results": [
+            {
+              "n": "CBETA.001",
+              "label": "01 阿含部類 T01-02,25,33 etc."
+            },
+            ...
+            {
+              "n": "CBETA.021",
+              "label": "21 新編部類 ZS01, ZW01-09, I01"
+            }
+          ]
+        }
+
+  %h4 2. 歷代藏經補輯
+  .section
+    %p=link_to_url '/catalog_entry?q=others'
+
+  %h4 3. 近代新編文獻
+  .section
+    %p=link_to_url '/catalog_entry?q=modern'
+
+%h2 二、各藏部別目錄
+.chapter
+  %p
+    大正藏：
+    =link_to_url '/catalog_entry?q=Cat-T'
+  %p
+    卍續藏：
+    =link_to_url '/catalog_entry?q=Cat-X'
+  %p
+    南傳大藏經：
+    =link_to_url '/catalog_entry?q=Cat-N'
+
+%h2 三、各藏冊別目錄
+- canons = { 'A' => "趙城金藏",
+  'B' => "大藏經補編",
+  'C' => '中華大藏經-中華書局版',
+  'D' => '國圖善本',
+  'F' => '房山石經',
+  'G' => '佛教大藏經',
+  'GA' => '中國佛寺史志彙刊',
+  'GB' => '中國佛寺志叢刊',
+  'I' => '北朝佛教石刻拓片百品',
+  'J' => '嘉興藏',
+  'K' => '高麗大藏經-新文豐版',
+  'L' => '乾隆大藏經-新文豐版',
+  'LC' => '呂澂佛學著作集',
+  'M' => '卍正藏經-新文豐版',
+  'N' => '南傳大藏經',
+  'P' => '永樂北藏',
+  'S' => '宋藏遺珍-新文豐版',
+  'T' => '大正藏',
+  'U' => '洪武南藏',
+  'X' => '卍續藏',
+  'ZS' => '正史佛教資料類編',
+  'ZW' => '藏外佛教文獻',
+  'Y' => '印順法師佛學著作集'}
+.chapter
+  %table.table
+    - canons.each_pair do |k,v|
+      %tr
+        %td=v
+        %td=link_to_url "/catalog_entry?q=Vol-#{k}"
+
+%h2 四、取得某一冊之下的典籍目錄
+.chapter
+  %p
+    例：
+    =link_to_url "/catalog_entry?vol=T01"
+
+
+%h2 五、回傳欄位
+.chapter
+  =render partial: 'catalog-return'

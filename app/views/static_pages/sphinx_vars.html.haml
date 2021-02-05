@@ -1,0 +1,37 @@
+%h1 Sphinx 異體字查詢
+%p
+  列出可能的異體字變化，例：#{link_to_url '/sphinx/variants?q=著衣持鉢'}
+%h2 參數
+%table.table
+  %tr
+    %td 參數名稱
+    %td 說明
+  %tr
+    %td q
+    %td 要搜尋的字詞。
+
+%p
+  限制搜尋範圍的參數也都可以使用，參考：
+  =link_to '限制搜尋範圍', controller: 'static_pages', action: 'sphinx_filter'
+
+%h2 回傳範例
+%pre
+  :preserve
+    {
+      "time": 0.085839963,
+      "num_found": 3,
+      "results": [
+        {
+          "q": "着衣持鉢",
+          "hits": 43
+        },
+        {
+          "q": "著衣持缽",
+          "hits": 101
+        },
+        {
+          "q": "著衣持盋",
+          "hits": 8
+        }
+      ]
+    }

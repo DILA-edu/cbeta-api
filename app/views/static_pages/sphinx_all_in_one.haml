@@ -1,0 +1,121 @@
+%h1 All in One
+
+%ul
+  %li 一併回傳 KWIC, 例：#{link_to_url '/sphinx/all_in_one?q=法鼓'}
+  %li 可選擇是否連同 facet 一起回傳。
+  %li 分頁以卷為單位。
+
+%h2 參數
+%table.table
+  %tr
+    %td 參數名稱
+    %td 說明
+  %tr
+    %td q
+    %td
+      %p
+        要搜尋的關鍵字，也可使用
+        =link_to 'Extended 語法', controller: 'static_pages', action: 'sphinx_extended'
+        。例如：
+      %ul
+        %li
+          AND:
+          =link_to_url '/sphinx/all_in_one?q="法鼓" "迦葉"'
+        %li
+          OR:
+          =link_to_url '/sphinx/all_in_one?q="法鼓" | "迦葉"'
+        %li
+          NOT:
+          =link_to_url '/sphinx/all_in_one?q="迦葉" -"迦葉佛"'
+        %li
+          NEAR:
+          =link_to_url '/sphinx/all_in_one?q="法鼓" NEAR/7 "迦葉"'
+          (NEAR/ 後面的數字 表示兩個關鍵詞中間的距離)
+  %tr
+    %td facet
+    %td 
+      %p 是否回傳 facet。
+      %p 預設為 0: 不回傳 facet。
+      %p 若設為 1 則會回傳四種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、典籍 (work)。
+  %tr
+    %td rows
+    %td 每頁回傳卷數，預設為 20。
+  %tr
+    %td start
+    %td 每頁起始位置，預設為 0。
+  %tr
+    %td around
+    %td kwic 前後字數，預設為 10。
+  %tr
+    %td order
+    %td
+      %p 排序，可用欄位：
+      %ul
+        %li canon (依藏經重要性排序: T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC)
+        %li work (依典籍編號排序)
+        %li time_from (依起始時間)
+        %li time_to (依結束時間)
+      %p 預設是依 canon 來排序。
+      %p 每一個排序欄位都可以指定使用升冪排序或降冪排序：
+      %ul
+        %li 指定升冪排序：order=time_from+
+        %li 指定降冪排序：order=time_from-
+
+%h2 不回傳 facet 範例：
+%pre
+  =render partial: 'sphinx-aio-return'
+
+%h2 回傳 facet 範例：
+%pre
+  :preserve
+    {
+      "query_string": "法鼓",
+      ...
+      "results": [...],
+      "facet": {
+        "category": [
+          {
+            "category_id": 17,
+            "juans": 283,
+            "category_name": "禪宗部類"
+          },
+          {
+            "category_id": 23,
+            "juans": 151,
+            "category_name": "新編部類"
+          }...
+        ],
+        "creator": [
+          {
+            "creator_id": "A001519",
+            "juans": 23
+          },
+          {
+            "creator_id": "A001755",
+            "juans": 21
+          }...
+        ],
+        "dynasty": [
+          {
+            "dynasty": "清",
+            "juans": 216
+          },
+          {
+            "dynasty": "唐",
+            "juans": 164
+          }...
+        ],
+        "work": [
+          {
+            "work": "B0088",
+            "title": "古今圖書集成選輯（上）",
+            "juans": 32
+          },
+          {
+            "work": "B0192",
+            "title": "釋文紀",
+            "juans": 17
+          },...
+        ]
+      }
+    }

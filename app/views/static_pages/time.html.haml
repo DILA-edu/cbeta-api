@@ -1,0 +1,10 @@
+%h1 以時間搜尋
+
+%h2 以朝代名稱搜尋
+%p 例如
+%ul
+  %li 搜尋唐朝成立的佛典：#{link_to_url '/works?dynasty=唐'}
+  %li 搜尋多個朝代：#{link_to_url '/works?dynasty=符秦,前秦'}
+
+%h2 以公元年範圍搜尋
+%p 例如，搜尋成立年代在公元 600年至700年之間的佛典：#{link_to_url '/works?time_start=600&time_end=700'}

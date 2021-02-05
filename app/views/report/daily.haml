@@ -1,0 +1,13 @@
+.row.justify-content-center
+  .col-auto
+    %h1 API 存取次數 日統計表
+.row.justify-content-center
+  .col-auto
+    %table.table-striped
+      %tr
+        %th Date
+        %th Count
+      - @visits.each_pair do |k, v|
+        %tr
+          %td{ style: 'padding-right: 2em' }= k
+          %td.text-right= number_with_delimiter(v)

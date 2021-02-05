@@ -1,0 +1,17 @@
+%li.nav-item.dropdown
+  %a#navbarDropdown.nav-link.dropdown-toggle{"aria-expanded" => "false", "aria-haspopup" => "true", "data-toggle" => "dropdown", :href => "#", :role => "button"}
+    Export 
+  .dropdown-menu{"aria-labelledby" => "navbarDropdown"}
+    =link_to '字數統計表', { controller: 'works', action: 'word_count'}, class: 'dropdown-item'
+    %a.dropdown-item{ href: url_for(controller: 'export', action: 'check_list', canon: 'J')}
+      嘉興藏檢查表
+    %a.dropdown-item{ href: url_for(controller: 'export', action: 'all_creators')}
+      全部作譯者列表
+    %a.dropdown-item{ href: url_for(controller: 'export', action: 'all_creators2')}
+      全部作譯者列表(含別名)
+    %a.dropdown-item{ href: url_for(controller: 'export', action: 'all_works')}
+      全部典籍卷列表
+    %a.dropdown-item{ href: url_for(controller: 'export', action: 'dynasty')}
+      全部朝代典籍數
+    %a.dropdown-item{ href: url_for(controller: 'static_pages', action: 'scope_selector')}
+      範圍選擇清單

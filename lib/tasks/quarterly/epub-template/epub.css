@@ -1,0 +1,142 @@
+body {
+  font-family: serif;
+}
+.kaiti {
+  font-family: DFKai-SB, BiauKai;
+}
+div.div-orig {
+  font-weight: bold;
+}
+div.div-w {
+  color: #0000A0;
+}
+div.lg {
+   /* display: table; */
+  color: #008040;
+  margin-bottom: 1.5em;
+}
+div.lg-row {
+  margin-left: 1em;
+}
+div.lg-cell {
+  display: table-cell;
+  padding-right: 1em;
+}
+div.orig {
+  font-weight: bold;
+}
+div.p {
+  margin-bottom: 20px;
+  line-height: 1.4;
+  text-indent: 2em;
+}
+p {
+  line-height: 160%;
+}
+p.bold {
+  font-weight: bold;
+}
+p.byline {
+  text-align: right;
+}
+p.h1 {
+  text-indent: 2em;
+  font-weight: bold;
+}
+p.h2 {
+  text-indent: 3em;
+  font-weight: bold;
+}
+p.h3 {
+  text-indent: 4em;
+  font-weight: bold;
+}
+p.h4 {
+  text-indent: 2em;
+  font-weight: bold;
+}
+p.h5 {
+  text-indent: 3em;
+  font-weight: bold;
+}
+p.h6 {
+  text-indent: 4em;
+  font-weight: bold;
+}
+p.h7 {
+  text-indent: 2em;
+  font-weight: bold;
+}
+p.h8 {
+  text-indent: 3em;
+  font-weight: bold;
+}
+p.h9 {
+  text-indent: 4em;
+  font-weight: bold;
+}
+p.h10 {
+  text-indent: 2em;
+  font-weight: bold;
+}
+p.h11 {
+  text-indent: 3em;
+  font-weight: bold;
+}
+p.h12 {
+  text-indent: 4em;
+  font-weight: bold;
+}
+p.head1	{
+  margin-left:2em;
+}
+p.head2	{
+  margin-left:3em;
+}
+p.head3	{
+  margin-left:4em;
+}
+p.head4	{
+  margin-left:2em;
+}
+p.head5	{
+  margin-left:3em;
+}
+p.head6	{
+  margin-left:4em;
+}
+span.bold {
+  font-weight: bold;
+}
+span.border {
+  border: 1px black solid
+}
+span.corr {
+  color: red;
+}
+span.note-inline {
+  color: #9F5000;
+  font-size: small;
+}
+table {
+  border-collapse: collapse;
+}
+th, td {
+  border: solid;
+  border-width: 1px;
+  padding: 5px;
+  word-wrap: break-word;
+  word-break: break-all;
+  text-indent: 0;
+}
+
+/* 因為有的 list 層次很深，例如 JB269，內縮太多會超出頁面範圍，所以把內縮調小。 */
+ul {
+  padding-left: 20px;
+}
+ul.no-marker {
+  list-style-type: none;
+}
+ul.simple {
+  list-style-type: none;
+}

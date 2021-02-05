@@ -1,0 +1,48 @@
+%h1 下載電子書
+- q = Rails.configuration.x.q
+%h2 EPUB
+%ul
+  %li 單部典籍下載例： #{ link_to_url '/download/epub/A/A1057.epub' }
+  %li 
+    全部下載：
+    =link_to_url "/download/cbeta-epub-#{q}.zip"
+
+%h2 MOBI
+%ul
+  %li 單部典籍下載例： #{ link_to_url '/download/mobi/A/A1057.mobi' }
+  %li 
+    全部下載： 
+    =link_to_url "/download/cbeta-mobi-#{q}.zip"
+
+%h2 PDF
+%p 
+  單部典籍下載例：
+  =link_to_url '/download/pdf/A/A1057.pdf'
+%p 全部下載：
+%ul
+  %li= link_to_url "/download/cbeta-pdf-#{q}-1.zip"
+  %li= link_to_url "/download/cbeta-pdf-#{q}-2.zip"
+
+%h4 Q: 下載的 PDF 裡有總目錄嗎？
+%p
+  如果您一次下載全部 pdf 的 zip 檔，解壓縮後裡面有個 
+  = "filelist_#{Rails.configuration.x.q}.txt"
+  這個檔案就是總目錄，內容如下：
+
+%pre
+  %preserve
+    經號 , 冊數 , 卷數 , 經名 , 作譯者
+    =======================================================
+    A1057 , 091 , 2 , 新譯大方廣佛華嚴經音義 , 唐 慧菀述
+    A1267 , 097-098 , 17 , 大唐開元釋教廣品歷章 , 唐 玄逸撰
+    A1490 , 110 , 2 , 天聖釋教總錄 , 宋 惟淨等編修
+
+%h4 Q: PDF 檔名為什麼不是經名，而是編號呢？
+
+%p A: 早期我們都是用英文+數字，後來才嘗試改成經名。
+
+%p 但經名是漢字，有些系統會處理時會變成亂碼，有些則是經名過長的問題，或是經名有組字、Unicode罕見字，有些系統無法正常讀取，
+
+%p 因此還是恢復編號，才能讓最大多數人可以順利使用。
+
+%p 我們也同時提供了對照表，讓有需要的人可以進一步利用。

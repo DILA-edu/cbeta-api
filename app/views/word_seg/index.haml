@@ -1,0 +1,9 @@
+%h1 DILA 佛典自動分詞 測試版
+= form_tag do
+  %p= label_tag(:t, "請貼上要分詞的文字：")
+  = text_area_tag :t, nil, rows: 20, cols: 100
+  %p= submit_tag("送出")
+%h3 說明
+%ul
+  %li 不支援咒語。
+  %li 使用半形斜線做為分詞區隔符號。

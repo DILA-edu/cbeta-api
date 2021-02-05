@@ -1,0 +1,34 @@
+%h1 單卷 KWIC3
+%p q 參數可以傳入多個關鍵字，例： #{ link_to_url '/kwic3/juan?work=X0600&juan=11&q=法鼓,聖嚴' }
+
+%p
+  NEAR:
+  =link_to_url '/kwic3/juan?work=T1736&juan=1&q="老子" NEAR/7 "道"'
+  (NEAR/ 後面的數字 表示兩個關鍵詞中間的距離)
+
+%h2 可使用參數
+%table.table
+  %tr
+    %th 參數名稱
+    %th 
+    %th 說明
+  %tr
+    %td work
+    %td 必要
+    %td 典籍編號
+  %tr
+    %td juan
+    %td 必要
+    %td 卷號
+  %tr
+    %td q
+    %td 必要
+    %td 要搜尋的關鍵字，多個關鍵字以半形逗點區隔。
+  %tr
+    %td sort
+    %td 選項
+    %td
+      'f': forward concordance, 以關鍵字後面的字排序。<br/>
+      'b': backword concordance, 以關鍵字前面的字排序。<br/>
+      'location': 搜尋範圍在單卷之中才能使用，依關鍵字出現的位置排序。<br/>
+      預設為 'f'。

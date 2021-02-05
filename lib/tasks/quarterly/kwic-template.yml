@@ -1,0 +1,7 @@
+canon: ''
+vol: ''
+xml: /home/ray/git-repos/cbeta-xml-p5a
+html: /var/www/cbdata%{v}/shared/data/kwic25/html
+work_base: out
+production: /var/www/cbdata%{v}/shared/data/kwic25
+gaiji_base: /home/ray/git-repos/cbeta_gaiji

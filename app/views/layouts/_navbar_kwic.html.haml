@@ -1,0 +1,9 @@
+%li.nav-item.dropdown
+  %a#navbarDropdown.nav-link.dropdown-toggle{"aria-expanded" => "false", "aria-haspopup" => "true", "data-toggle" => "dropdown", :href => "#", :role => "button"}
+    KWIC3
+  .dropdown-menu{"aria-labelledby" => "navbarDropdown"}
+    - if not Rails.env.cn?
+      %a.dropdown-item{ href: url_for(controller: 'static_pages', action: 'kwic3')}
+        KWIC3
+    %a.dropdown-item{ href: url_for(controller: 'static_pages', action: 'kwic3_juan')}
+      單卷 KWIC3

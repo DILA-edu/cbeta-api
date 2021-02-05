@@ -1,0 +1,36 @@
+%h1 Facet
+%h2 藏經編號
+%p
+  例：#{link_to_url '/sphinx/facet/canon?q=法鼓'}
+
+%h2 部類
+%p
+  例：#{link_to_url '/sphinx/facet/category?q=法鼓'}
+
+%p 回傳在各部類的符合卷數
+
+%h2 朝代
+%p
+  例：#{link_to_url '/sphinx/facet/dynasty?q=法鼓'}
+
+%h2 作譯者 ID
+%p
+  例：#{link_to_url '/sphinx/facet/creator?q=法鼓'}
+
+%h2 典籍編號
+%p
+  例：#{link_to_url '/sphinx/facet/work?q=法鼓'}
+
+%h2 一次回傳五種 facet
+%p
+  不指定參數 f，例：#{link_to_url '/sphinx/facet?q=法鼓'}
+%p 回傳資料是一個 hash:
+%pre
+  :preserve
+    {
+      "canon": [...],
+      "category": [...],
+      "creator": [...],
+      "dynasty": [...],
+      "work": [...]
+    }

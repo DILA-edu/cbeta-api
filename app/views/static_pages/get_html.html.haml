@@ -1,0 +1,46 @@
+%h1 取得某卷 HTML
+%p HTML 內有各種標記供前端 UI 使用。
+%p 例如：
+%ul
+  %li 取得 T0001 第1卷： #{link_to_url '/juans?work=T0001&juan=1'}
+
+%h2 參數
+%table.table
+  %tr
+    %td 參數名稱
+    %td 說明
+  %tr
+    %td work_info
+    %td
+      %p 是否一併回傳「典籍資訊」
+      %p 預設為 0: 不回傳
+      %p 若設為 1: 回傳
+      %p 例： #{link_to_url '/juans?work=T0001&juan=1&work_info=1'}
+  %tr
+    %td toc
+    %td
+      %p 是否一併回傳目次
+      %p 預設為 0: 不回傳目次
+      %p 若設為 1 則一併回傳目次
+      %p 例： #{link_to_url '/juans?work=T0001&juan=1&toc=1'}
+
+%h2 回傳典籍資訊
+%pre
+  :preserve
+    {
+      "num_found": 1,
+      "results": [...],
+      "work_info": {...}
+    }
+
+%h2 回傳目次
+%pre
+  :preserve
+    {
+      "num_found": 1,
+      "results": [...],
+      "toc": {
+        "mulu": [...],
+        "juan": [...]
+      }
+    }

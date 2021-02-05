@@ -1,0 +1,70 @@
+%h1 取得某部典籍的資訊
+%p
+  取得 T0001 的資訊：#{ link_to_url '/works?work=T0001' }
+
+%p 回傳欄位
+%table.table
+  %tr
+    %th 欄位名稱
+    %th 說明
+  %tr
+    %td work
+    %td 典籍編號（經號）
+  %tr
+    %td category
+    %td 所屬部類 (CBETA 分類)
+  %tr
+    %td orig_category
+    %td 底本分部，例如大正藏的阿含部、本緣部等。
+  %tr
+    %td title
+    %td 典籍題名（經名）
+  %tr
+    %td byline
+    %td 作譯者行
+  %tr
+    %td creators
+    %td 作者、譯者或其他貢獻者姓名列表
+  %tr
+    %td time_dynasty
+    %td 作品成立的朝代
+  %tr
+    %td time_from
+    %td 作品成立的起始公元年
+  %tr
+    %td time_to
+    %td 作品成立的結束公元年
+  %tr
+    %td cjk_chars
+    %td 中日韓文字數 (不含標點)
+  %tr
+    %td en_words
+    %td 英、半形數字、梵、巴 word 數
+  %tr
+    %td file
+    %td 實體檔案
+  %tr
+    %td juan_start
+    %td 於實體檔案中的起始卷數
+
+    
+%p 回傳範例：
+%pre
+  :preserve
+    {
+      "num_found": 1,
+      "results": [
+        {
+          "work": "T0001",
+          "category": "阿含部",
+          "title": "長阿含經",
+          "creators": "佛陀耶舍,竺佛念",
+          "file": "T01n0001",
+          "juan_start": 1,
+          "byline": "後秦 佛陀耶舍共竺佛念譯",
+          "time_dynasty": "後秦",
+          "time_from": 384,
+          "time_to": 417
+        }
+      ]
+    }

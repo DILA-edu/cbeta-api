@@ -1,0 +1,9 @@
+%li.nav-item.dropdown
+  %a#navbarDropdown.nav-link.dropdown-toggle{"aria-expanded" => "false", "aria-haspopup" => "true", "data-toggle" => "dropdown", :href => "#", :role => "button"}
+    Catalog
+  .dropdown-menu{"aria-labelledby" => "navbarDropdown"}
+    = link_to '部類目錄', { controller: 'static_pages', action: 'catalog'}, class: 'dropdown-item'
+    = link_to '經目搜尋', { controller: 'static_pages', action: 'toc_search'}, class: 'dropdown-item'
+    = link_to '典籍範圍搜尋', { controller: 'static_pages', action: 'works'}, class: 'dropdown-item'
+    = link_to '以作譯者搜尋', { controller: 'static_pages', action: 'creators'}, class: 'dropdown-item'
+    = link_to '以時間搜尋', { controller: 'static_pages', action: 'time'}, class: 'dropdown-item'

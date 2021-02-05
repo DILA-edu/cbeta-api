@@ -1,0 +1,15 @@
+%h1 以作譯者搜尋
+
+%h2 以作譯者 ID 搜尋
+%p
+	例：#{link_to_url '/works?creator_id=A000439'}
+
+%h2 以作譯者姓名搜尋
+%p 不論是否已確認 ID，全部搜尋
+%p
+	例：#{link_to_url '/works?creator=竺'}
+  
+%p 只搜尋尚未確認 ID 的資料
+%p
+	例：#{link_to_url '/works?creator_name=竺'}
+

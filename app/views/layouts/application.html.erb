@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CBETA API <%= Rails.configuration.x.ver %></title>
+  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+  <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+  <%= render "layouts/navbar" %>
+  <div class="container" style="margin-top: 20px">
+    <%= yield %>
+  </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+%h1 SHINE API
+
+%p
+  為了與
+  =link_to 'MARKUS 半自動標記平台', 'https://dh.chinese-empires.eu/markus/beta/'
+  進行資料交換，實作了符合
+  =link_to 'RISE and SHINE 框架', 'https://rise.mpiwg-berlin.mpg.de/'
+  內的 SHINE API。
+%p 如果有興趣以 RISE and SHINE 的規範與 CBData API 進行界接，可以使用這些 API。
+
+%h2 Collections
+.chapter
+  %h4 Get the list of all collections
+  %p= link_to_url '/api/collections'
+
+  %h4 Get the list of all resources for a collection
+  %p /api/collections/{uuid}/resources
+  %p
+    例：
+    - uuid = Canon.find_by(id2: 'T').uuid
+    = link_to_url "/api/collections/#{uuid}/resources"
+
+%h2 Resources
+.chapter
+  %h4 Get the list of all sections for a resource
+  %p /api/resources/{uuid}/sections
+  %p
+    例：
+    - uuid = Work.find_by(n: 'T0001').uuid
+    = link_to_url "/api/resources/#{uuid}/sections"
+
+%h2 Sections
+.chapter
+  %h4 Get one section's information
+  %p /api/sections/{uuid}
+  %p
+    例：
+    - uuid = JuanLine.find_by(work: 'T0001', juan: 1).uuid
+    = link_to_url "/api/sections/#{uuid}"
+
+  %h4 Get the list of all content units for a section
+  %p /api/sections/{uuid}/content_units
+  %p
+    例：
+    - uuid = JuanLine.find_by(work: 'T0001', juan: 1).uuid
+    = link_to_url "/api/sections/#{uuid}/content_units"
+
+%h2 Documentation
+.chapter
+  %p= link_to nil, 'https://rise.mpiwg-berlin.mpg.de/pages/doc_for_resource_providers'

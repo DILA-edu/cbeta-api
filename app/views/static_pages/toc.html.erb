@@ -1,0 +1,54 @@
+<h1>典籍內目次</h1>
+<p>
+  例如取得 T0001 的目次: <%= link_to_url '/toc?work=T0001' %>
+</p>
+
+<p>回傳：</p>
+<pre>
+
+{
+  "num_found": 1,
+  "time": 0.000405218,
+  "results": [
+    {
+      "mulu": [
+        {
+          "title": "序",
+          "file": "T01n0001",
+          "juan": 1,
+          "lb": "0001a02"
+        },
+        {
+          "title": "1 分",
+          "file": "T01n0001",
+          "juan": 1,
+          "lb": "0001b11",
+          "isFolder": true,
+          "children": [
+            {
+              "title": "1 大本經",
+              "file": "T01n0001",
+              "juan": 1,
+              "lb": "0001b11"
+            }...
+          ]
+        }...
+      ],
+      "juan": [
+        {
+          "file": "T01n0001",
+          "juan": 1,
+          "lb": "0001b08",
+          "title": "第一"
+        },
+        {
+          "file": "T01n0001",
+          "juan": 2,
+          "lb": "0011a04",
+          "title": "第二"
+        }...
+      ]
+    }
+  ]
+}
+</pre>

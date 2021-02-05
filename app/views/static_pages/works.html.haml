@@ -1,0 +1,40 @@
+%h1 典籍範圍搜尋
+%h2 指定冊數起迄
+%p
+  例如: 
+  =link_to_url '/works?canon=T&vol_start=1&vol_end=2'
+
+%p 參數：
+%table.table
+  %tr
+    %th 參數名稱
+    %th 說明
+  %tr
+    %td canon
+    %td 藏經 ID，例如 T 或 X。
+  %tr
+    %td vol_star
+    %td 開始冊數
+  %tr
+    %td vol_end
+    %td 結束冊數
+
+%h2 指定經號起迄
+%p
+  例如:
+  =link_to_url '/works?canon=T&work_start=1&work_end=2'
+
+%p 參數：
+%table.table
+  %tr
+    %th 參數名稱
+    %th 說明
+  %tr
+    %td canon
+    %td 藏經 ID，例如 T 或 X。
+  %tr
+    %td work_start
+    %td 開始經號
+  %tr
+    %td work_end
+    %td 結束經號

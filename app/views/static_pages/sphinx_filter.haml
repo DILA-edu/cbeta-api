@@ -1,0 +1,40 @@
+%h1 限制搜尋範圍
+%h2 部類
+%p 例：#{link_to_url '/sphinx?q=法鼓&category=阿含部類'}
+%p category 參數值如果為 a,b+c,d 格式，表示 (a OR b) AND (c OR d)。
+%p URL 裡的半形加號要 escape 為 %2b
+%p 例：#{link_to_url '/sphinx?q=大慧&category=禪宗部類%2b史傳部類'}
+
+%h2 某部藏經
+%p
+  例如只搜大正藏：#{link_to_url '/sphinx?q=法鼓&canon=T'}
+  
+%h2 某些典籍
+%p
+  例：#{link_to_url '/sphinx?q=法鼓&works=T0026,T0099'}
+
+%h2 某部典籍
+%p
+  例：#{link_to_url '/sphinx?q=法鼓&work=T0026'}
+
+%h2 作譯者 ID
+%p 例：#{link_to_url '/sphinx?q=金剛&creator=A000439'}
+%p 多個作譯者：#{link_to_url '/sphinx?q=金剛&creator=A000439,A000294'}
+%p creator 參數值如果為 a,b+c,d 格式，表示 (a OR b) AND (c OR d)。
+%p URL 裡的半形加號要 escape 為 %2b
+%p 例 A000435+A000439：#{link_to_url '/sphinx?q=阿含&creator=A000435%2bA000439'}
+
+%h2 朝代
+%p
+  例：#{link_to_url '/sphinx?q=金剛&dynasty=隋'}
+
+%p
+  多個朝代：#{link_to_url '/sphinx?q=金剛&dynasty=隋,唐'}
+
+%h2 西元年
+%p 指定某一年：#{link_to_url '/sphinx?q=金剛&time=800'}
+%p 指定範圍：#{link_to_url '/sphinx?q=金剛&time=800..900'}
+
+%h2 正文、非正文
+%p 指定只在「正文」中搜尋：#{link_to_url '/sphinx?q=金剛&work_type=textbody'}
+%p 指定只在「非正文」中搜尋：#{link_to_url '/sphinx?q=徵稿啓事&work_type=non-textbody'}

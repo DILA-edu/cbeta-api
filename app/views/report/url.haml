@@ -1,0 +1,28 @@
+.row.justify-content-center
+  .col-auto
+    %h1 API 存取 URL 統計表
+.row.justify-content-center
+  .col-auto
+    %p
+      = form_tag(url: report_url_path, method: :get) do
+        起始日期：
+        = select_date @d1, prefix: :d1
+        　結束日期：
+        = select_date @d2, prefix: :d2
+        = submit_tag("送出")
+.row.justify-content-center
+  .col-auto
+    -#%table.table.table-striped.fit
+    %table.table-striped
+      %tr
+        %th URL
+        %th Count
+      - total = 0
+      - @visits.each do |a|
+        - total += a[1]
+        %tr
+          %td.fit= a[0]
+          %td.text-right.fit= number_with_delimiter(a[1])
+      %tr
+        %td Total
+        %td.text-right= total

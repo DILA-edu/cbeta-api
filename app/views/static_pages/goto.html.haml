@@ -1,0 +1,64 @@
+%h1 Go to
+%ul
+  %li= link_to '經卷結構', '#chap1'
+  %li= link_to '書本結構', '#chap2'
+  %li= link_to '使用 linehead 參數', '#chap3'
+
+%h2#chap1 一、經卷結構
+.chapter
+  %p 參數：
+  %table.table{style: 'width: auto'}
+    %tr
+      %th 參數名稱
+      %th 說明
+    %tr
+      %td canon
+      %td 藏經
+    %tr
+      %td work
+      %td 經號
+    %tr
+      %td juan
+      %td 卷數
+    %tr
+      %td page
+      %td 頁數
+    %tr
+      %td col
+      %td 欄
+    %tr
+      %td line
+      %td 行數
+
+  %p 例如：
+  %ul
+    %li
+      跳到 大正藏 第一經：
+      =link_to_url '/juans/goto?canon=T&work=1'
+    %li
+      跳到 大正藏 第一經 第二卷：
+      =link_to_url '/juans/goto?canon=T&work=1&juan=2'
+    %li
+      跳到 大正藏 第一經 第12頁：
+      =link_to_url '/juans/goto?canon=T&work=1&page=12'
+    %li
+      跳到 大正藏 第一經 第11頁 中欄 第10行：
+      =link_to_url '/juans/goto?canon=T&work=1&page=11&col=b&line=10'
+
+%h2#chap2 二、書本結構
+.chapter
+  %p 例如：
+  %ul
+    %li
+      跳到 大正藏 第一冊：
+      =link_to_url '/juans/goto?canon=T&vol=1'
+    %li
+      跳到 大正藏 第一冊 第12頁：
+      =link_to_url '/juans/goto?canon=T&vol=1&page=12'
+    %li
+      跳到 大正藏 第一冊 第11頁 中欄 第10行：
+      =link_to_url '/juans/goto?canon=T&vol=1&page=11&col=b&line=10'
+
+%h2#chap3 三、使用 linehead 參數
+.chapter
+  =render partial: 'goto-linehead'

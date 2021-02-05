@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  vol: MyString
+  work: MyString
+  juan: 1
+  lb: MyString
+
+two:
+  vol: MyString
+  work: MyString2
+  juan: 1
+  lb: MyString2

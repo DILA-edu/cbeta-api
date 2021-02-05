@@ -1,0 +1,7 @@
+%ul.nav.navbar-nav.navbar-right
+  %li.nav-item.dropdown
+    %a#navbarDropdown.nav-link.dropdown-toggle{"aria-expanded" => "false", "aria-haspopup" => "true", "data-toggle" => "dropdown", :href => "#", :role => "button"}
+      更新記錄
+    .dropdown-menu{"aria-labelledby" => "navbarDropdown"}
+      %a.dropdown-item{ href: url_for(controller: 'static_pages', action: 'log')}
+        2017-2020
