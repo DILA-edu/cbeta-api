@@ -319,7 +319,6 @@ class P5aToTextForDownload
     when 'graphic'   then e_graphic(e)
     when 'item'      then e_item(e)
     when 'l'         then e_l(e)
-    when 'l'         then e_l(e)
     when 'lb'        then e_lb(e)
     when 'list'      then e_list(e)
     when 'note'      then e_note(e)

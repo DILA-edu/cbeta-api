@@ -122,16 +122,12 @@ class P5aToHTMLForDownload
   end
 
   def e_caesura(e, mode)
-    if @lg_type == 'regular'
-      return '<caesura>'
-    else
-      if e.key?('style')
-        e['style'].match(/text-indent:(\d+)em/) do
-          return '　' * ($1.to_i)
-        end
-      else
-        return '　　'
+    if e.key?('style')
+      e['style'].match(/text-indent:(\d+)em/) do
+        return '　' * ($1.to_i)
       end
+    else
+      return '　　'
     end
     ''
   end
