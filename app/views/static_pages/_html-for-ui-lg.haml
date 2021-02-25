@@ -1,0 +1,38 @@
+%h2#lg 偈頌
+%h3 規則偈頌
+%p 例 T01n0001_p0001c03：
+.code
+  %pre
+    :escaped
+      <div class="lg regular">
+        <div class="lg-row">
+          <div class='lg-cell'>「比丘集法堂，</div>
+          <div class='lg-cell'>講說賢聖論；</div>
+        </div>
+        ...
+        <div class="lg-row">
+          <div class='lg-cell'>無上天人尊，</div>
+          <div class='lg-cell'>記於過去佛。」</div>
+        </div>
+      </div>
+%ul
+  %li &lt;div class="lg"> 表示這是偈頌 (或詩詞)
+  %li &lt;div class="lg regular"> 表示這是規則偈頌，可使用表格對齊。
+  %li &lt;div class="lg-row"> 偈頌使用表格對齊時，相當於一個 tr (table row)。
+  %li &lt;div class="lg-cell"> 偈頌使用表格對齊時，相當於一個 td (table cell)。
+
+%h3 詞、賦
+%p 例 GA001n0002_p0240a11
+.code
+  %pre
+    :escaped
+      <div class="lg" style="margin-left:0em;">
+        <div class="lg-row" style="text-indent:1em">
+          <div class='lg-cell'>今偏重者愛昔先民之重由樸由純</div>
+        </div>
+        <div class="lg-row" style="text-indent:1em">
+          <div class='lg-cell'>白骨兮徒自朽　方寸心兮何所憶</div>
+        </div>
+      </div>
+
+%p &lt;div class="lg"> 沒有 regular，表示是一行一行的不規則詞、賦，不能用 table 對齊。

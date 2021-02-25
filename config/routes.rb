@@ -53,6 +53,7 @@ Rails.application.routes.draw do
   get 'static_pages/download_text'
   get 'static_pages/get_html'
   get 'static_pages/goto'
+  get 'static_pages/html_for_ui'
   get 'static_pages/kwic3_juan'
   get 'static_pages/kwic3'
   get 'static_pages/line'

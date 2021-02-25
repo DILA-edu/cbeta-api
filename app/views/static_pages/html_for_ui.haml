@@ -1,0 +1,39 @@
+%h1 HTML for UI 格式說明
+%h2 目次
+%table
+  %tr
+    %td
+      %ul
+        %li=link_to '行號', '#linehead'
+        %li=link_to '文字', '#text'
+        %li=link_to '缺字', '#gaiji'
+        %li=link_to '標點', '#punc'
+        %li=link_to '卷資訊', '#juan'
+    %td
+      %ul
+        %li=link_to '作譯者', '#byline'
+        %li=link_to '章節標題', '#head'
+        %li=link_to '段落', '#p'
+        %li=link_to '偈頌', '#lg'
+        %li=link_to '表格', '#table'
+    %td.align-top
+      %ul
+        %li=link_to '圖片', '#graphic'
+        %li=link_to '註解', '#note'
+        %li=link_to '版權資訊', '#copyright'
+        %li=link_to 'Classes', '#classes'
+
+=render partial: 'html-for-ui-linehead'
+=render partial: 'html-for-ui-text'
+=render partial: 'html-for-ui-gaiji'
+=render partial: 'html-for-ui-juan'
+=render partial: 'html-for-ui-byline'
+=render partial: 'html-for-ui-punc'
+=render partial: 'html-for-ui-head'
+=render partial: 'html-for-ui-p'
+=render partial: 'html-for-ui-lg'
+=render partial: 'html-for-ui-table'
+=render partial: 'html-for-ui-graphic'
+=render partial: 'html-for-ui-note'
+=render partial: 'html-for-ui-copyright'
+=render partial: 'html-for-ui-classes'

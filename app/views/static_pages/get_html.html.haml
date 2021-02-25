@@ -1,5 +1,10 @@
 %h1 取得某卷 HTML
-%p HTML 內有各種標記供前端 UI 使用。
+%p 
+  HTML 內有各種標記供前端 UI 使用，參考
+  = precede "〈" do
+    = succeed "〉。" do
+      =link_to('HTML for UI 格式說明', controller: "static_pages", action: "html_for_ui")
+
 %p 例如：
 %ul
   %li 取得 T0001 第1卷： #{link_to_url '/juans?work=T0001&juan=1'}

@@ -1,0 +1,39 @@
+%h2#note 註解
+
+%p 例 T01n0001_p0001a02
+.code
+  %pre
+    :escaped
+      <a class='noteAnchor' href='#n0001001'></a>長阿含經序
+
+%p class='noteAnchor' 表示這裡有一個註標。
+%p n0001001 前四碼是頁碼，後三碼是序號，表示這是第一頁的第一個註解。
+%p 註解內容在 HTML 最後：
+.code
+  %pre
+    :escaped
+      <div id='back'>
+        <span class='footnote' id='n0001001'>此序依宋元明三本ニ依テ載ス</span>
+          ...
+      </div>
+
+%h3 CBETA 加的註解
+%p 例 T01n0001_p0001b02
+.code
+  %pre
+    :escaped
+      涼州沙門佛<a class='noteAnchor add' href='#cb_note_1'></a><span class='cbeta'>念</span>為譯
+
+%p add 表示這是 CBETA 加的註解。
+
+%p cb_note_1 指向 HTML 後面的註解內容:
+.code
+  %pre
+    :escaped
+      <div id='back'>
+        ...
+        <span class='footnote add' id='cb_note_1'>念【CB】【磧-CB】，忘【大】(cf. Q17_p0302a30)</span>
+        ...
+      </div>
+
+%p &lt;span class='cbeta'> 表示這是 CBETA 修訂過的文字。
