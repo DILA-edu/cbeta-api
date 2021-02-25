@@ -2,7 +2,7 @@
 lock '3.15.0'
 
 set :application, 'cbdata14'
-set :repo_url, 'git@gitlab.com:cbdata/cbdata13'
+set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
 # Default deploy_to directory is /var/www/my_app_name
 # set :deploy_to, '/var/www/my_app_name'
