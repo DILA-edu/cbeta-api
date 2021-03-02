@@ -1,6 +1,6 @@
 module Config
   def get_config(env)
-    r = { v: 14 }
+    r = { v: 15 }
     r[:q1] = '2020Q4' # 製作 change log 時比對 q1, q2
     r[:q2] = '2021Q1'
     r[:quarter] = '2021.Q1'

@@ -1,19 +1,21 @@
 # 每季更新
 
-* 正式版上線
-  * fix bug 直接改正式版 (git branch: master)
-    * merge 到 dev branch
+## 正式版上線
+
+* fix bug 直接改正式版 (git branch: master)
+  * merge 到 dev branch
 
 ## 測試版 新建 測試環境 (git branch: dev)
 
-* 修改 config/deploy/staging.rb
-  * deploy_to
-* cap staging deploy
+參考 staging.md
 
 ## 測試版 建立下一季測試環境 (git branch: dev)
 
-* 參考 staging.md
 * CBETA XML 新一季定案
+* 編輯 config 參數
+  * config/application.rb
+  * config/deploy/staging.rb
+  * lib/tasks/quarterly/config.rb
 * 開發端
   * rake quarterly 執行最前面的 update from github
   * 參考 uuid.md 產生新的 UUID (如果有新的話)

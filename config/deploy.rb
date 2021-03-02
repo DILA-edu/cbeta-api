@@ -1,7 +1,7 @@
 # config valid only for current version of Capistrano
 lock '3.15.0'
 
-set :application, 'cbdata14'
+set :application, 'cbdata15'
 set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
 # Default deploy_to directory is /var/www/my_app_name
