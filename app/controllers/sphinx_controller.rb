@@ -468,7 +468,7 @@ class SphinxController < ApplicationController
       "FROM #{@index} "\
       "WHERE #{@where} "\
       "GROUP BY #{f2} "\
-      "ORDER BY docs DESC "\
+      "ORDER BY hits DESC "\
       "LIMIT 9999999 "\
       "OPTION ranker=wordcount;" # 這會影響 weight 的計算方式
     logger.debug cmd
