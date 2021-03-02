@@ -5,7 +5,7 @@ module PrepareCN
   def define_section_prepare(config)
     Runbook.section "前置作業 (runbook-prepare.rb)" do
       step 'update_from_github (update-github.rb)' do
-        command "ruby update-github.rb #{config[:git]}"
+        command "ruby update-github.rb #{config[:git]} #{config[:q2]}"
       end
 
       step '產生 Juanline 資料 (juanline.rb)' do

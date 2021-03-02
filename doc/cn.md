@@ -1,5 +1,13 @@
 # cbetaonline.cn
 
+## xml 更新特定 tag
+
+    cd /mnt/CBETAOnline/git-repos/cbeta-xml-p5a
+    git pull
+    git checkout tags/2021Q1
+
+## 半自動 runbook
+
   rake quarterly_cn
 
 ## 電子書
