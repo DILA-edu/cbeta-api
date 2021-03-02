@@ -1,2 +1,3 @@
 server 'cbetaonline.cn', user: 'ray', roles: %w{web}
-set :deploy_to, '/mnt/CBETAOnline/cbdata2'
+set :branch, 'main'
+set :deploy_to, '/mnt/CBETAOnline/cbdata'
