@@ -10,8 +10,7 @@ set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 # Default value for :log_level is :debug
 # set :log_level, :debug
 
-# Default value for :linked_files is []
-set :linked_files, fetch(:linked_files, []).push('config/secrets.yml', 'config/database.yml')
+append :linked_files, "config/master.key", "config/database.yml"
 
 # Default value for linked_dirs is []
 set :linked_dirs, fetch(:linked_dirs, []).push('data', 'public/download', 'public/help')
@@ -21,6 +20,18 @@ set :linked_dirs, fetch(:linked_dirs, []).push('data', 'public/download', 'publi
 
 # Default value for keep_releases is 5
 # set :keep_releases, 5
+
+namespace :deploy do
+  namespace :check do
+    before :linked_files, :set_master_key do
+      on roles(:app), in: :sequence, wait: 10 do
+        unless test("[ -f #{shared_path}/config/master.key ]")
+          upload! 'config/master.key', "#{shared_path}/config/master.key"
+        end
+      end
+    end
+  end
+end
 
 namespace :deploy do
   task :restart do

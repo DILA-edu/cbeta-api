@@ -2,7 +2,13 @@
 
 * 正式版上線
   * fix bug 直接改正式版 (git branch: master)
-  * merge 到 dev branch
+    * merge 到 dev branch
+
+## 測試版 新建 測試環境 (git branch: dev)
+
+* 修改 config/deploy/staging.rb
+  * deploy_to
+* cap staging deploy
 
 ## 測試版 建立下一季測試環境 (git branch: dev)
 
