@@ -77,7 +77,14 @@ module Prepare
         %w[download help].each do |fn|
           src = File.join(config[:old], "public", fn)
           dest = File.join(config[:public], fn)
-          Quarterly.copy_folder(src, dest)
+
+          if fn == 'download'
+            exclude = ['cbeta-text']
+          else
+            exclude = []
+          end
+          
+          Quarterly.copy_folder(src, dest, exclude)
         end
       end
     end

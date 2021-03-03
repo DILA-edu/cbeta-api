@@ -38,6 +38,9 @@ database.yml 裡先只放 primary, 先不放存取記錄 (analytics), 以免被�
 
 ## Runbook
 
-server 端
+server 端 編輯 ~/.bashrc
+    alias be='bundle exec'
+
+執行批次處理
     screen
-    rake quarterly:run[staging]
+    be rake quarterly:run[staging]
