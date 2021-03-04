@@ -285,7 +285,12 @@ class P5aToHTMLForUI
 
   def e_cell(e)
     cell = HtmlNode.new('div')
+
     cell['class'] = 'bip-table-cell'
+    if e.key?('rend')
+      cell['class'] += ' ' + e['rend']
+    end
+
     cell['rowspan'] = e['rows'] if e.key? 'rows'
     cell['colspan'] = e['cols'] if e.key? 'cols'
     cell['style']   = e['style'] if e.key? 'style'

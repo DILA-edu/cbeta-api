@@ -17,6 +17,7 @@
   * config/deploy/staging.rb
   * lib/tasks/quarterly/config.rb
 * 開發端
+  * 參考 variants.md 更新 cbeta-metadata 裡的異體字資料
   * rake quarterly 執行最前面的 update from github
   * 參考 uuid.md 產生新的 UUID (如果有新的話)
   * 由 authority.dila 取得 大正藏 作譯者
