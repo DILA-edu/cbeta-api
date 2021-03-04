@@ -11,9 +11,7 @@ set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 # set :log_level, :debug
 
 append :linked_files, "config/master.key", "config/database.yml"
-
-# Default value for linked_dirs is []
-set :linked_dirs, fetch(:linked_dirs, []).push('data', 'public/download', 'public/help')
+append :linked_dirs, 'data', 'public/download', 'public/help', 'config/credentials'
 
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }
