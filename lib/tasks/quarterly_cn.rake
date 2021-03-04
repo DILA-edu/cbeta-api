@@ -2,7 +2,7 @@ desc "每季執行"
 task :quarterly_cn, [:env] => :environment do |t, args|
   require_relative 'quarterly/config'
   include Config
-  config = get_config(args[:env])
+  config = get_config('cn')
 
   require_relative 'quarterly/runbook-prepare-cn'
   include PrepareCN
