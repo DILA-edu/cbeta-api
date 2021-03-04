@@ -27,8 +27,7 @@ Rails.application.configure do
   # Full error reports are disabled and caching is turned on.
   config.consider_all_requests_local       = false
 
-  # 正式版 與 開發版 如果指向同一個 rails project, kwic3 會有問題
-  # 不知是否是 cache 造成的，所以設為 false
+  # kwic3 有問題, 不知是否是 cache 造成的，所以設為 false
   config.action_controller.perform_caching = false
 
   # Ensures that a master key has been made available in either ENV["RAILS_MASTER_KEY"]
