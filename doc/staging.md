@@ -36,6 +36,14 @@ database.yml 裡先只放 primary, 先不放存取記錄 (analytics), 以免被�
 
 再把 analytics 加回 database.yml
 
+## 更新異體字資料
+
+1. Update CBETA 缺字資料庫 from GitHub
+2. 執行 <https://gitlab.com/dilada/variants> 裡的 /dila/bin/cbdata.rb
+   產生 vars-for-cbdata.json，
+   這會合併 Unicode、教育部異體字典、CText、CBETA 等資料。
+3. 將 vars-for-cbdata.json 公開至 <https://github.com/DILA-edu/cbeta-metadata> 裡的 variants
+
 ## Runbook
 
 server 端 編輯 ~/.bashrc

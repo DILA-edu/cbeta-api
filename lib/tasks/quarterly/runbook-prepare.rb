@@ -7,6 +7,7 @@ module Prepare
     step_copy_help   = define_step_copy_help(config)
     step_copy_public = define_step_copy_public(config)
     step_copy_layers = define_step_copy_layers(config)
+    step_import_juanline = define_step_import_juanline(config)
     
     Runbook.section "前置作業 (runbook-prepare.rb)" do
       if config[:env] == 'staging'
@@ -16,6 +17,7 @@ module Prepare
         #step 'Create symbolic link for figures to GitHub' do
         #  command "ln -sf #{config[:cbr_figures]} #{config[:figures]}"
         #end
+        add step_import_juanline
       else
         step 'update_from_github (update-github.rb)' do
           command "ruby update-github.rb #{config[:git]}"
@@ -33,9 +35,7 @@ module Prepare
         end
 
         # import:layers 要用到，所以提早做
-        step '匯入 各卷起始行 (rake import:juanline)' do
-          command 'bundle exec rake import:juanline'
-        end
+        add step_import_juanline
   
         add step_copy_help
         add step_copy_layers
@@ -87,6 +87,12 @@ module Prepare
           Quarterly.copy_folder(src, dest, exclude)
         end
       end
+    end
+  end
+
+  def define_step_import_juanline(config)
+    Runbook.step '匯入 各卷起始行 (rake import:juanline)' do
+      command 'bundle exec rake import:juanline'
     end
   end
 end
