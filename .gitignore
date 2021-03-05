@@ -11,7 +11,8 @@
 /.bundle
 
 /config/database.yml
-/config/secrets.yml
+/config/master.key
+/config/credentials/cn.key
 
 /data
 
