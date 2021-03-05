@@ -11,9 +11,8 @@
 /.bundle
 
 /config/database.yml
-
-# Ignore master key for decrypting credentials and more.
 /config/master.key
+/config/credentials/cn.key
 
 /data
 
@@ -28,4 +27,3 @@
 
 /public/download
 /public/help
-/config/credentials/cn.key

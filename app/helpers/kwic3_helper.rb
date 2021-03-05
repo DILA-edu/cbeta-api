@@ -75,6 +75,7 @@ module Kwic3Helper
       
       @total_found = 0
       sa_results = search_sa_according_to_option(q)
+      debug "sa_results:\n" + sa_results.inspect
       
       sa_results = exclude_filter(sa_results, q)
       
@@ -369,29 +370,10 @@ module Kwic3Helper
       File.binread(fn) 
     end
     
-    # def init_cache
-    #   @text_with_puncs = Rails.cache.fetch("kwic-text") do
-    #     r = {}
-    #     Dir.entries(@txt_folder).each do |vol|
-    #       next if vol.start_with? '.'
-    #       vol_path = File.join(@txt_folder, vol)
-    #       Dir.entries(vol_path).each do |work|
-    #         next if work.start_with? '.'
-    #         r[work] = {} unless r.key? work
-    #         work_path = File.join(vol_path, work)
-    #         Dir.entries(work_path).each do |juan|
-    #           next if juan.start_with? '.'
-    #           j = File.basename(juan, '.txt').to_i
-    #           juan_path = File.join(work_path, juan)
-    #           r[work][j] = '' unless r[work].key? j
-    #           r[work][j] += File.binread(juan_path) # L1557, 卷34 跨冊
-    #         end
-    #       end
-    #     end
-    #     r
-    #   end
-    # end
-
+    def debug(s)
+      Rails.logger.debug s
+    end
+  
     def negative_pattern(s)
       r = s
       if s.nil?
