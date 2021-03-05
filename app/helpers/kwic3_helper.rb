@@ -412,8 +412,10 @@ module Kwic3Helper
       else
         fn = abs_sa_path sa_path, 'sa.dat'
       end
+      debug "open suffix array file: #{fn}"
       raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
       @f_sa = File.open(fn, 'rb')
+      debug "file size: #{@f_sa.size}"
     end
   
     def open_text(sa_path)
