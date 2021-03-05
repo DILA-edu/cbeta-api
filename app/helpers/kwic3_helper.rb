@@ -552,7 +552,6 @@ module Kwic3Helper
     end
     
     def read_text_with_punc(data, q)
-      Rails.logger.debug "read_text_with_punc, offset: #{data['offset']}"
       key = "#{data['vol']}-#{data['work']}-#{data['juan']}"
       unless @text_with_puncs.key? key
         @text_with_puncs[key] = cache_fetch_juan_text(data['vol'], data['work'], data['juan'])
@@ -666,6 +665,7 @@ module Kwic3Helper
     end
 
     def sa_paths_by_option
+      debug "#{__LINE__} sa_paths_by_option: @option: " + @option.inspect
       if @option.key? :works
         works = @option[:works].split(',').uniq
         r = []
@@ -698,7 +698,7 @@ module Kwic3Helper
     end
     
     def search_sa(sa_path, q)
-      Rails.logger.debug "search_sa, q: #{q}"
+      debug "#{__LINE__} search_sa, sa_path: #{sa_path}, q: #{q}"
       return nil unless open_files(sa_path)
     
       i = bsearch(q, 0, @sa_last)
