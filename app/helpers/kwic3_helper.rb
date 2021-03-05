@@ -66,6 +66,7 @@ module Kwic3Helper
   
     def search(query, args={})
       @option = OPTION.merge args
+      debug "#{__LINE__} search: query: #{query}, args: " + args.inspect
       
       if @option[:sort] == 'b'
         q = query.reverse
@@ -390,6 +391,7 @@ module Kwic3Helper
     end
   
     def open_files(sa_path)
+      debug "#{__LINE__} open_files: #{sa_path}"
       open_text(sa_path)
       open_sa   sa_path
       open_info sa_path
@@ -407,6 +409,7 @@ module Kwic3Helper
     end
     
     def open_sa(sa_path)
+      debug "#{__LINE__} sa_path: #{sa_path}"
       if @option[:sort] == 'b'
         fn = abs_sa_path sa_path, 'sa-b.dat'
       else
