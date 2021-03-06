@@ -65,8 +65,11 @@ module Kwic3Helper
     end
   
     def search(query, args={})
-      @option = OPTION.merge args
-      debug "#{__LINE__} search: query: #{query}, args: " + args.inspect
+      warn "#{__LINE__} begin kwic3 search, query: #{query}, args: " + args.inspect
+      warn "#{__LINE__} OPTION: " + OPTION.inspect
+      # 如果使用 OPTION.merge args, 有時 OPTION 會被改變, 造成預設參數是上次 request 留下的參數
+      @option = OPTION.clone.merge args
+      warn "#{__LINE__} @option: " + @option.inspect
       
       if @option[:sort] == 'b'
         q = query.reverse
@@ -76,7 +79,7 @@ module Kwic3Helper
       
       @total_found = 0
       sa_results = search_sa_according_to_option(q)
-      debug "sa_results:\n" + sa_results.inspect
+      warn "sa_results:\n" + sa_results.inspect
       
       sa_results = exclude_filter(sa_results, q)
       
@@ -106,11 +109,12 @@ module Kwic3Helper
       end
       
       result[:results] = hits
+      warn "#{__LINE__} end kwic3 search, query: #{query}, args: " + args.inspect
       result
     end
   
     def search_juan(query, args={})
-      @option = OPTION.merge args
+      @option = OPTION.clone.merge args
       
       if @option[:sort] == 'b'
         keywords = query.reverse
@@ -138,7 +142,7 @@ module Kwic3Helper
     def search_near(q1, q2, near, args={})
       Rails.logger.debug "#{__LINE__} #{Time.now}"
       t1 = Time.now
-      @option = OPTION.merge! args
+      @option = OPTION.clone.merge args
       
       @total_found = 0
       hits = []
@@ -391,7 +395,7 @@ module Kwic3Helper
     end
   
     def open_files(sa_path)
-      debug "#{__LINE__} open_files: #{sa_path}"
+      warn "#{__LINE__} open_files: #{sa_path}"
       open_text(sa_path)
       open_sa   sa_path
       open_info sa_path
@@ -409,16 +413,15 @@ module Kwic3Helper
     end
     
     def open_sa(sa_path)
-      debug "#{__LINE__} sa_path: #{sa_path}"
+      warn "#{__LINE__} open_sa: sa_path: #{sa_path}"
       if @option[:sort] == 'b'
         fn = abs_sa_path sa_path, 'sa-b.dat'
       else
         fn = abs_sa_path sa_path, 'sa.dat'
       end
-      debug "open suffix array file: #{fn}"
+      warn "open suffix array file: #{fn}"
       raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
       @f_sa = File.open(fn, 'rb')
-      debug "file size: #{@f_sa.size}"
     end
   
     def open_text(sa_path)
@@ -552,7 +555,6 @@ module Kwic3Helper
     end
     
     def read_text_with_punc(data, q)
-      Rails.logger.debug "read_text_with_punc, offset: #{data['offset']}"
       key = "#{data['vol']}-#{data['work']}-#{data['juan']}"
       unless @text_with_puncs.key? key
         @text_with_puncs[key] = cache_fetch_juan_text(data['vol'], data['work'], data['juan'])
@@ -666,6 +668,7 @@ module Kwic3Helper
     end
 
     def sa_paths_by_option
+      debug "#{__LINE__} sa_paths_by_option: @option: " + @option.inspect
       if @option.key? :works
         works = @option[:works].split(',').uniq
         r = []
@@ -698,7 +701,7 @@ module Kwic3Helper
     end
     
     def search_sa(sa_path, q)
-      Rails.logger.debug "search_sa, q: #{q}"
+      debug "#{__LINE__} search_sa, sa_path: #{sa_path}, q: #{q}"
       return nil unless open_files(sa_path)
     
       i = bsearch(q, 0, @sa_last)
@@ -793,6 +796,10 @@ module Kwic3Helper
           end
         end
       end
+    end
+
+    def warn(s)
+      Rails.logger.warn s
     end
 
   end # end of class SearchEngine
