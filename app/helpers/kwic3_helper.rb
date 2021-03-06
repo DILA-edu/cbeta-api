@@ -65,8 +65,7 @@ module Kwic3Helper
     end
   
     def search(query, args={})
-      warn "#{__LINE__} kwic3 search"
-      warn "#{__LINE__} args: " + args.inspect
+      warn "#{__LINE__} begin kwic3 search, query: #{query}, args: " + args.inspect
       warn "#{__LINE__} OPTION: " + OPTION.inspect
       @option = OPTION.merge args
       warn "#{__LINE__} @option: " + @option.inspect
@@ -109,6 +108,7 @@ module Kwic3Helper
       end
       
       result[:results] = hits
+      warn "#{__LINE__} end kwic3 search, query: #{query}, args: " + args.inspect
       result
     end
   
