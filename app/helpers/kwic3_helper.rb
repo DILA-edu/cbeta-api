@@ -67,7 +67,8 @@ module Kwic3Helper
     def search(query, args={})
       warn "#{__LINE__} begin kwic3 search, query: #{query}, args: " + args.inspect
       warn "#{__LINE__} OPTION: " + OPTION.inspect
-      @option = OPTION.merge args
+      @option = OPTION.clone
+      @option.merge! args
       warn "#{__LINE__} @option: " + @option.inspect
       
       if @option[:sort] == 'b'
@@ -113,7 +114,8 @@ module Kwic3Helper
     end
   
     def search_juan(query, args={})
-      @option = OPTION.merge args
+      @option = OPTION.clone
+      @option.merge! args
       
       if @option[:sort] == 'b'
         keywords = query.reverse
