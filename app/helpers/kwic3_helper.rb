@@ -65,8 +65,11 @@ module Kwic3Helper
     end
   
     def search(query, args={})
+      warn "#{__LINE__} kwic3 search"
+      warn "#{__LINE__} args: " + args.inspect
+      warn "#{__LINE__} OPTION: " + OPTION.inspect
       @option = OPTION.merge args
-      debug "#{__LINE__} search: query: #{query}, args: " + args.inspect
+      warn "#{__LINE__} @option: " + @option.inspect
       
       if @option[:sort] == 'b'
         q = query.reverse
@@ -76,7 +79,7 @@ module Kwic3Helper
       
       @total_found = 0
       sa_results = search_sa_according_to_option(q)
-      debug "sa_results:\n" + sa_results.inspect
+      warn "sa_results:\n" + sa_results.inspect
       
       sa_results = exclude_filter(sa_results, q)
       
@@ -391,7 +394,7 @@ module Kwic3Helper
     end
   
     def open_files(sa_path)
-      debug "#{__LINE__} open_files: #{sa_path}"
+      warn "#{__LINE__} open_files: #{sa_path}"
       open_text(sa_path)
       open_sa   sa_path
       open_info sa_path
@@ -409,16 +412,15 @@ module Kwic3Helper
     end
     
     def open_sa(sa_path)
-      debug "#{__LINE__} sa_path: #{sa_path}"
+      warn "#{__LINE__} open_sa: sa_path: #{sa_path}"
       if @option[:sort] == 'b'
         fn = abs_sa_path sa_path, 'sa-b.dat'
       else
         fn = abs_sa_path sa_path, 'sa.dat'
       end
-      debug "open suffix array file: #{fn}"
+      warn "open suffix array file: #{fn}"
       raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
       @f_sa = File.open(fn, 'rb')
-      debug "file size: #{@f_sa.size}"
     end
   
     def open_text(sa_path)
@@ -793,6 +795,10 @@ module Kwic3Helper
           end
         end
       end
+    end
+
+    def warn(s)
+      Rails.logger.warn s
     end
 
   end # end of class SearchEngine
