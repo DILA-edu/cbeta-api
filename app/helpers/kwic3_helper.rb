@@ -67,6 +67,7 @@ module Kwic3Helper
     def search(query, args={})
       warn "#{__LINE__} begin kwic3 search, query: #{query}, args: " + args.inspect
       warn "#{__LINE__} OPTION: " + OPTION.inspect
+      # 如果使用 OPTION.merge args, 有時 OPTION 會被改變, 造成預設參數是上次 request 留下的參數
       @option = OPTION.clone.merge args
       warn "#{__LINE__} @option: " + @option.inspect
       
