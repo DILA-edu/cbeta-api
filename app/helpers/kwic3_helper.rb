@@ -67,8 +67,7 @@ module Kwic3Helper
     def search(query, args={})
       warn "#{__LINE__} begin kwic3 search, query: #{query}, args: " + args.inspect
       warn "#{__LINE__} OPTION: " + OPTION.inspect
-      # 如果使用 OPTION.merge args, 有時 OPTION 會被改變, 造成預設參數是上次 request 留下的參數
-      @option = OPTION.clone.merge args
+      @option = OPTION.merge args
       warn "#{__LINE__} @option: " + @option.inspect
       
       if @option[:sort] == 'b'
@@ -114,7 +113,7 @@ module Kwic3Helper
     end
   
     def search_juan(query, args={})
-      @option = OPTION.clone.merge args
+      @option = OPTION.merge args
       
       if @option[:sort] == 'b'
         keywords = query.reverse
@@ -142,7 +141,7 @@ module Kwic3Helper
     def search_near(q1, q2, near, args={})
       Rails.logger.debug "#{__LINE__} #{Time.now}"
       t1 = Time.now
-      @option = OPTION.clone.merge args
+      @option = OPTION.merge args
       
       @total_found = 0
       hits = []
