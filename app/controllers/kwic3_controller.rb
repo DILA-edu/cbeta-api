@@ -58,8 +58,8 @@ class Kwic3Controller < ApplicationController
   def juan
     return unless juan_check_params
 
-    if @q.match(/^"(\S+)" NEAR\/(\d+) "(\S+)"/)
-      h = @se.search_near($1, $3, $2.to_i, @opts)
+    if @q.match?(/ NEAR\/(\d+) /)
+      h = @se.search_near(@q, @opts)
     else
       h = @se.search_juan(@q, @opts)
     end
@@ -74,8 +74,6 @@ class Kwic3Controller < ApplicationController
     end
 
     r = { num_found: num_found, results: a}
-    pp r
-
     my_render r
   rescue Exception => e
     logger.debug $!
