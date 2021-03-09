@@ -4,7 +4,9 @@
     %p
       單日最高：
       =number_with_delimiter(@max)
-    %p= "單日平均：%.2f" % @avg
+      %br
+      單日平均：
+      =number_with_delimiter(@avg)
 .row.justify-content-center
   .col-auto
     %table.table-striped
