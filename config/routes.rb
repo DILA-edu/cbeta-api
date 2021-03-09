@@ -31,7 +31,7 @@ Rails.application.routes.draw do
   
   get 'report/access'
   get 'report/daily', to: 'report#daily'
-  get 'report/url',   to: 'report#url', as: :report_url
+  match 'report/url',   to: 'report#url', as: :report_url, via: [:get, :post]
 
   match 'sphinx/all_in_one', via: [:get, :post]
   match 'sphinx/facet/:facet_by', to: 'sphinx#facet', via: [:get, :post]
