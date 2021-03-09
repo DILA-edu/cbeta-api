@@ -12,7 +12,7 @@ Rails.application.configure do
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
 
   d = '/Volumes/Ray-3TB/cbeta-api/kwic25'
-  config.kwic_base = if Dir.exist?(d) ? d : Rails.root.join('data', 'kwic25')
+  config.kwic_base = Dir.exist?(d) ? d : Rails.root.join('data', 'kwic25')
   
   config.sphinx_index = "cbeta"
   config.x.sphinx_titles = "titles"
