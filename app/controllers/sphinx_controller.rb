@@ -673,8 +673,8 @@ class SphinxController < ApplicationController
   
   # boolean search 回傳 kwic
   def kwic_boolean(se, opts)
-    if @q.match(/^"(\S+)" NEAR\/(\d+) "(\S+)"/)
-      return se.search_near($1, $3, $2.to_i, opts)
+    if @q.match?(/ NEAR\/(\d+) /)
+      return se.search_near(@q, opts)
     end
 
     a = []

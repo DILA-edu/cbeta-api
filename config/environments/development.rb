@@ -10,7 +10,10 @@ Rails.application.configure do
   config.x.figures   = File.join(GIT, 'CBR2X-figures')
   config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
-  config.kwic_base   = Rails.root.join('data', 'kwic25')
+
+  d = '/Volumes/Ray-3TB/cbeta-api/kwic25'
+  config.kwic_base = if Dir.exist?(d) ? d : Rails.root.join('data', 'kwic25')
+  
   config.sphinx_index = "cbeta"
   config.x.sphinx_titles = "titles"
   config.x.sphinx_footnotes = 'footnotes'
