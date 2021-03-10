@@ -1,7 +1,7 @@
 # config valid only for current version of Capistrano
 lock '3.16.0'
 
-set :application, 'cbdata15'
+set :application, 'cbapi1'
 set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
 # Default deploy_to directory is /var/www/my_app_name
@@ -18,6 +18,8 @@ append :linked_dirs, 'data', 'public/download', 'public/help', 'config/credentia
 
 # Default value for keep_releases is 5
 # set :keep_releases, 5
+
+set :passenger_restart_with_touch, true
 
 namespace :deploy do
   namespace :check do
