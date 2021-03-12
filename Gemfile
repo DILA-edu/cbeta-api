@@ -78,7 +78,7 @@ gem 'mysql2'
 
 group :production do
   gem 'pg'
-  #gem "dalli" # for memcached
+  gem "dalli" # for memcached
 end
 
 group :development do
