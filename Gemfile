@@ -76,9 +76,9 @@ gem 'zhongwen_tools'
 gem 'chronic_duration'
 gem 'mysql2'
 
-group :production do
+group :production, :cn do
   gem 'pg'
-  #gem "dalli" # for memcached
+  gem "dalli" # for memcached
 end
 
 group :development do
