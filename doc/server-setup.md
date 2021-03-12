@@ -1,6 +1,6 @@
 # 新主機 初始設定
 
-## Ubuntu 20.04
+OS: Ubuntu 20.04 LTS
 
 ## Apache
 
@@ -10,13 +10,72 @@
 
 client browser 應該要可以看到 Apache2 Ubuntu Default Page
 
-## asdf + Ruby
+## asdf + Ruby + Rails
 
 [asdf](https://github.com/asdf-vm/asdf)
+
+安裝 asdf
+
+    git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.8.0
+
+Add the following to ~/.bashrc:
+    . $HOME/.asdf/asdf.sh
+    . $HOME/.asdf/completions/asdf.bash
+
+登出、再登入，查看 asdf 版本
+    asdf version
+
+install the asdf plugin for Ruby:
+    asdf plugin add ruby
+
+使用 asdf 安裝 ruby 3.0.0
+    asdf install ruby 3.0.0
+
+在 home ~/.tool-versions 檔案裡可以設定預設的 Ruby 版本，也可以使用以下命令：
+    asdf global ruby 3.0.0
+
+update
+    gem update --system
+    gem update
+
+install gems
+    gem install nokogiri
+    gem install rails -v 6.0.3
+
+## Install NodeJS
+
+參考 <https://github.com/asdf-vm/asdf-nodejs>
+
+install asdf-nodejs plugin:
+
+    asdf plugin-add nodejs https://github.com/asdf-vm/asdf-nodejs.git
+
+Import the Node.js release team's OpenPGP keys to main keyring:
+
+    bash -c '${ASDF_DATA_DIR:=$HOME/.asdf}/plugins/nodejs/bin/import-release-team-keyring'
+
+install nodejs
+    asdf install nodejs 14.16.0
+    asdf global nodejs 14.16.0
 
 ## Passenger
 
 [Passenger Tutorials: Deploy to Production](https://www.phusionpassenger.com/docs/tutorials/deploy_to_production/)
+
+## PostgreSQL
+
+參考 postgresql.md
+
+## Install Sphinx Search
+
+參考 sphinx.md
+
+## gem install mysql2
+
+Sphinx Search 要透過 mysql 介面呼叫
+
+    sudo apt-get install libmysqlclient-dev
+    gem install mysql2 -v '0.5.3' --source 'https://rubygems.org/'
 
 ## 從 Github 取得相關資料
 
@@ -43,74 +102,61 @@ Clone from GutHub, GitLab:
 程式碼 上傳 到 server:
     cap staging deploy
 
-## 檢查 CBETA XML P5a
+## Create Tables
 
-    rake check:p5a
+rails db:environment:set RAILS_ENV=production
+bundle exec rake db:schema:load DISABLE_DATABASE_ENVIRONMENT_CHECK=1
 
-## 缺字資料
+## Configuring Apache and Passenger
 
-檢查 xml p5a 的缺字是否都有對應的缺字資訊了：
+Determine the Ruby command that Passenger should use
 
-    rake check:gaiji
+    cd /var/www/cbapi1/current
+    passenger-config about ruby-command
 
-### 缺字資訊 匯入 RDB
+在結果之中找到這個：
 
-供搜尋組字式使用
+    To use in Apache: PassengerRuby /home/ray/.asdf/installs/ruby/2.7.2/bin/ruby
 
-    rake import:gaiji
+編輯 /etc/apache2/sites-available/cbeta-api.conf
 
-## 各卷內文 HTML 檔
+    Alias /dev /var/www/cbapi1/current/public
+    <Location /dev>
+        PassengerBaseURI /dev
+        PassengerAppRoot /var/www/cbapi1/current
+        PassengerRuby /home/ray/.asdf/installs/ruby/2.7.2/bin/ruby
+    </Location>
+    <Directory /var/www/cbapi1/current/public>
+        Allow from all
+        Options -MultiViews
+        Require all granted
+    </Directory>
 
-### x2h
+編輯 /etc/apache2/sites-available/000-default.conf
 
-讀取 CBETA XML P5a, 每個校勘版本、每一卷都產生一個 HTML 檔
-先暫存在 data/html-editions-tmp, 再移到 data/html-editions
+    <VirtualHost *:80>
+      ...
+      Include sites-available/cbeta-api.conf
+    </VirtualHost>
 
-執行全部大約 65 分鐘.
+restart apache2
 
-(假設發行日期為 2020-01)
+    sudo service apache2 restart
 
-    rake convert:x2h[2020-08]
+## HTTPS
 
-執行某部藏經（例如：大正藏，只做大正藏大約 30 分鐘）
+參考 [https.md](https.md)
 
-    rake 'convert:x2h[2020-08,T]'
+## 從舊主機複製資料
 
-### 給 heaven 比對
+$ screen
+$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbdata15/shared/data /var/www/cbapi1/shared/
+$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbdata15/shared/public/help /var/www/cbapi1/shared/public
+$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbdata15/shared/public/download /var/www/cbapi1/shared/public
+$ cd /var/www/cbapi1/shared/public/download
+$ rm cbeta-text
+$ ln -s text-for-asia-network cbeta-text
 
-打包給 heaven 比對 (做過 Projects/CBETAOnline/test 之後)
+## Quarterly
 
-    cd /var/www/cbdata10/shared/data
-    zip -r html.zip html
-
-因為 heaven 可能發現問題再修改 XML,  
-所以等 heaven 比對完再進行後面的步驟。
-
-## 作品內目次 轉為 一部作品一個 JSON 檔
-
-執行
-
-    rake convert:toc
-
-讀取 CBETA XML P5a, 產生作品內目次，一部作品一個 JSON 檔
-放在 data/toc 裡面
-
-執行某部藏經（例如：大正藏）
-
-    rake convert:toc[T]
-
-## 相關資料匯入 RDB
-
-參考 rdb.md
-
-## 產生供下載用的各種檔案
-
-參考 convert-for-download.md
-
-## Create Sphinx Index
-
-參考 sphinx.md
-
-## Create KWIC Index
-
-參考 kwic.md
+$ bundle exec rake quarterly:run[staging]

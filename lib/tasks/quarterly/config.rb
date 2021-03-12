@@ -1,6 +1,6 @@
 module Config
   def get_config(env=nil)
-    r = { v: 15 }
+    r = { v: 1 }
     r[:q1] = '2020Q4' # 製作 change log 時比對 q1, q2
     r[:q2] = '2021Q1'
     r[:quarter] = '2021.Q1'
@@ -11,16 +11,14 @@ module Config
     case Rails.env
     when 'production'
       r[:git]           = '/home/ray/git-repos'
-      r[:old]           = "/var/www/cbdata#{r[:v]-1}/shared"
+      r[:old]           = "/var/www/cbapi#{r[:v]-1}/shared"
       r[:old_data]      = File.join(r[:old],  'data')
-      r[:root]          = "/var/www/cbdata#{r[:v]}/shared"
+      r[:root]          = "/var/www/cbapi#{r[:v]}/shared"
       r[:change_log]    = '/home/ray/cbeta-change-log'
       r[:ebook_convert] = '/usr/bin/ebook-convert'
     when 'development'
       r[:git]           = '/Users/ray/git-repos'
-      r[:old]           = "/Users/ray/git-repos/cbdata12"
-      r[:old_data]      = File.join(r[:old],  'data')
-      r[:root]          = "/Users/ray/git-repos/cbdata13"
+      r[:root]          = "/Users/ray/git-repos/cbeta-api"
       r[:change_log]    = '/Users/ray/Documents/Projects/CBETA/ChangeLog'
       r[:ebook_convert] = '/Applications/calibre.app/Contents/MacOS/ebook-convert'
     when 'cn'

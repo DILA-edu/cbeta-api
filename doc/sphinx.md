@@ -1,8 +1,29 @@
-# sphinx configuration
+# Sphinx Search
 
-如果欄位有變更，要修改：
+環境: Ubuntu 20.04.1 LTS
 
-    /etc/sphinxsearch/sphinx.conf
+## Install
+
+$ sudo apt-get update
+$ sudo apt-get install sphinxsearch
+$ searchd
+
+可以看到版本是 Sphinx 2.2.11
+
+## sphinx configuration
+
+如果欄位有變更，要修改 /etc/sphinxsearc 裡的下列檔案：
+
+* sphinx.conf
+* cbdata1.conf
+* titles1.conf
+* footnotes1.conf
+
+建立 index 存放資料夾
+    cd /var/lib/sphinxsearch
+    mkdir data1
+    mkdir data1-titles
+    mkdir data1-footnotes
 
 ## Build Index
 

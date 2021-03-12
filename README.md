@@ -6,6 +6,10 @@
 
 參考 doc/dev-mac.md
 
+## 新主機 環境架設
+
+參考 doc/server-setup.md
+
 ## 資料準備
 
 參考 doc/setup.md
