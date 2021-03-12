@@ -33,3 +33,12 @@ curl Options
 
     sudo indexer --rotate cbeta7
 
+## secret_key_base
+
+    EDITOR="code --wait" bin/rails credentials:edit --environment cn
+
+上面命令會做以下動作：
+
+* 建立 config/credentials/cn.key 如果沒有的話。這個檔不要送上 Git.
+* 建立 config/credentials/cn.yml.enc 沒果沒有的話。這個檔要送上 Git.
+* 解碼並使用編輯器 code 開啟 cn credentials 檔案。

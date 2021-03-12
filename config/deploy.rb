@@ -4,6 +4,10 @@ lock '3.16.0'
 set :application, 'cbapi1'
 set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
+# deploy current branch
+# 參考: https://stackoverflow.com/questions/1524204/using-capistrano-to-deploy-from-different-git-branches
+set :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
+
 # Default deploy_to directory is /var/www/my_app_name
 # set :deploy_to, '/var/www/my_app_name'
 
