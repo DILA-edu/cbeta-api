@@ -8,6 +8,6 @@ class CanonsController < ApplicationController
         resourceCount: Work.where(canon: c.id2).where(alt: nil).size
       }
     end
-    render json: r
+    render json: r, status: :ok
   end    
 end
