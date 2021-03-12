@@ -14,11 +14,8 @@ set :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
 # Default value for :log_level is :debug
 # set :log_level, :debug
 
-# Default value for :linked_files is []
-set :linked_files, fetch(:linked_files, []).push('config/database.yml')
-
-# Default value for linked_dirs is []
-set :linked_dirs, fetch(:linked_dirs, []).push('data', 'public/download', 'public/help')
+append :linked_files, "config/master.key", "config/database.yml"
+append :linked_dirs, 'data', 'public/download', 'public/help', 'config/credentials'
 
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }
