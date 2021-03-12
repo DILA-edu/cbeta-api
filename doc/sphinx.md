@@ -25,6 +25,12 @@ $ searchd
     mkdir data1-titles
     mkdir data1-footnotes
 
+## 設定開機執行
+
+編輯 /etc/default/sphinxsearch
+
+    START=yes
+
 ## Build Index
 
 詳見: sphinx-build-index.md
