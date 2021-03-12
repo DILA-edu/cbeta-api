@@ -80,7 +80,7 @@ class JuansController < ApplicationController
         contentUnitCount: 1
       }
     end
-    render json: r, status: :ok
+    render json: r
   end
   
   def content_for_asia_network
@@ -101,16 +101,14 @@ class JuansController < ApplicationController
           contents: s
         }
       ]
-      status = :ok
     else
       r = { 
         error: 'file not found',
         file_path: fn
       }
-      status = :not_found
     end
     
-    render json: r, status: status
+    render json: r
   end
   
   def show_for_asia_network
@@ -127,7 +125,7 @@ class JuansController < ApplicationController
       uri: uri,
       contentUnitCount: 1
     }
-    render json: r, status: :ok
+    render json: r
   end
   
   private

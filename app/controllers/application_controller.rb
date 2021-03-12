@@ -136,19 +136,18 @@ class ApplicationController < ActionController::Base
     v.update(count: v.count + 1)
   end
   
-  def my_render(data, status: :ok)
+  def my_render(data)
     if data.nil?
       data = {
         num_found: 0,
         results: []
       }
-      status = :not_found
     end
     if params.key? 'callback'
-      render json: data, :callback => params['callback'], content_type: "application/javascript", status: status
+      render json: data, :callback => params['callback'], content_type: "application/javascript"
     else
       s = JSON.pretty_generate(data)
-      render plain: s, status: status
+      render plain: s
     end
   end
   
