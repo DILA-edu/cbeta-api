@@ -8,6 +8,7 @@ Rails.application.configure do
   config.cbeta_gaiji = File.join(GIT, 'cbeta_gaiji')
   config.x.authority = File.join(GIT, 'Authority-Databases')
   config.x.figures   = File.join(GIT, 'CBR2X-figures')
+  config.x.word_seg  = File.join(GIT, 'word-seg')
   config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
 
