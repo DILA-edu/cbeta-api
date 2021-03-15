@@ -160,3 +160,33 @@ $ ln -s text-for-asia-network cbeta-text
 ## Quarterly
 
 $ bundle exec rake quarterly:run[staging]
+
+## OpenCC
+
+簡體轉繁體的功能會用到 OpenCC:
+
+    sudo apt-get install opencc
+
+測試
+
+    echo '当观色无常' | opencc -c s2tw
+
+## CRF++ for 自動分詞
+
+install
+
+    cd ~/git-repos
+    git clone git@github.com:taku910/crfpp.git
+    cd crfpp
+    ./configure
+    sed -i '/#include "winmain.h"/d' crf_learn.cpp
+    sed -i '/#include "winmain.h"/d' crf_test.cpp
+    make
+    sudo make install
+    sudo cp ~/git-repos/crfpp/.lib/libcrfpp.so.0 /usr/lib
+
+測試
+
+    $ crf_test -h
+    CRF++: Yet Another CRF Tool Kit
+    Copyright (C) 2005-2013 Taku Kudo, All rights reserved.

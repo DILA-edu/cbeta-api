@@ -163,6 +163,7 @@ GEM
     nokogiri (1.11.1-x86_64-linux)
       racc (~> 1.4)
     numerizer (0.1.1)
+    open3 (0.1.1)
     pastel (0.8.0)
       tty-color (~> 0.5)
     pg (1.2.3)
@@ -318,6 +319,7 @@ DEPENDENCIES
   jquery-rails
   listen (~> 3.3)
   mysql2
+  open3
   pg
   puma (~> 3.11)
   rails (~> 6.0.3)
