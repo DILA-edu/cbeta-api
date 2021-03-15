@@ -2,7 +2,7 @@ require_relative 'crf'
 
 class WordSegService
   def run(text)
-    crf = CRF.new(Rails.configuration.x.word_seg)
+    crf = Crf.new(Rails.configuration.x.word_seg)
     s = text.gsub(/ /, '/')
     a = s.split(/([\n\/\.\(\)\[\]\-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—◎])/)
     s_after_tag = ''

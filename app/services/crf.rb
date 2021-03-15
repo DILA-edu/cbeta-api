@@ -2,7 +2,7 @@
 require 'cbeta'
 require 'json'
 
-class CRF
+class Crf
   PUNCS = ' .()[]-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—◎'
 
   def initialize(base)
@@ -282,7 +282,7 @@ class CRF
 end
 
 if __FILE__ == $0
-  crf = CRF.new
+  crf = Crf.new
   a = %w(鞭{CB02304} 一一 一一心中 亦不能自證得阿耨多羅三藐三菩提)
   a.each do |s|
     puts '-' * 10
