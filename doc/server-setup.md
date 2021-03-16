@@ -68,7 +68,7 @@ install nodejs
 
 ## Install Sphinx Search
 
-參考 sphinx.md
+參考 sphinx3-ubuntu20.md
 
 ## gem install mysql2
 
