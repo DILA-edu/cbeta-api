@@ -1,19 +1,26 @@
 module Config
   def get_config(env=nil)
-    r = { v: 1 }
-    r[:q1] = '2020Q4' # 製作 change log 時比對 q1, q2
-    r[:q2] = '2021Q1'
+    r = { v: 15 }
+    r[:q1] = '2021Q1' # 製作 change log 時比對 q1, q2
+    r[:q2] = '2021Q2'
     r[:quarter] = '2021.Q1'
-    r[:publish] = '2021-01'
+    r[:publish] = '2021-04'
     r[:env] = env || Rails.env
 
     puts "mode: #{Rails.env}"
     case Rails.env
-    when 'production'
+    when 'production-sakya'
       r[:git]           = '/home/ray/git-repos'
       r[:old]           = "/var/www/cbapi#{r[:v]-1}/shared"
       r[:old_data]      = File.join(r[:old],  'data')
       r[:root]          = "/var/www/cbapi#{r[:v]}/shared"
+      r[:change_log]    = '/home/ray/cbeta-change-log'
+      r[:ebook_convert] = '/usr/bin/ebook-convert'
+    when 'production'
+      r[:git]           = '/home/ray/git-repos'
+      r[:old]           = "/var/www/cbdata#{r[:v]-1}/shared"
+      r[:old_data]      = File.join(r[:old],  'data')
+      r[:root]          = "/var/www/cbdata#{r[:v]}/shared"
       r[:change_log]    = '/home/ray/cbeta-change-log'
       r[:ebook_convert] = '/usr/bin/ebook-convert'
     when 'development'
