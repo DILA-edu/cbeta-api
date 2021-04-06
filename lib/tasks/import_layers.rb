@@ -11,6 +11,7 @@ class ImportLayers
   #  '女蝸' => '女媧',
   #  '滄洲' => '滄州'
   }
+
   def initialize
     @layers = Rails.root.join('data', 'layers')
     @html_base = Rails.root.join('data', 'html')
@@ -374,6 +375,18 @@ class ImportLayers
   def read_vars
     fn = File.join(Rails.configuration.cbeta_data, 'variants', 'vars-for-cbdata.json')
     @vars = JSON.parse(File.read(fn))
+
+    fn = Rails.root.join('lib/tasks/layers-ignore.txt')
+    File.foreach(fn) do |line|
+      line.chomp!
+      line.split(",").each do |t|
+        if @vars.key?(t)
+          @vars[t] += ",#{line}"
+        else
+          @vars[t] = line
+        end
+      end
+    end
   end
 
   def save_html
