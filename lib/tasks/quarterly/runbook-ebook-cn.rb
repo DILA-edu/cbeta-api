@@ -5,7 +5,7 @@ module RunbookSectionEbookCN
     Runbook.section "從台灣下載電子書" do
       step '下載 EPUB' do
         ruby_command do |rb_cmd, metadata, run|
-          q = config[:quarter].sub('.', '').downcase
+          q = config[:q2].downcase
           dest = "cbeta-epub-#{q}.zip"
           a = ["epub-#{q}", "mobi-#{q}", "pdf-#{q}-1", "pdf-#{q}-2"]
           Dir.chdir(config[:download]) do

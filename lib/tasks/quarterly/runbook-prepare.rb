@@ -6,7 +6,6 @@ module Prepare
     step_copy_data_folder = define_step_copy_data_folder(config)
     step_copy_help   = define_step_copy_help(config)
     step_copy_public = define_step_copy_public(config)
-    step_copy_layers = define_step_copy_layers(config)
     step_import_juanline = define_step_import_juanline(config)
     
     Runbook.section "前置作業 (runbook-prepare.rb)" do
@@ -38,7 +37,6 @@ module Prepare
         add step_import_juanline
   
         add step_copy_help
-        add step_copy_layers
       end
     end
   end
@@ -56,16 +54,6 @@ module Prepare
       ruby_command do |rb_cmd, metadata, run|
         src = File.join(config[:old], "public/help")
         dest = File.join(config[:public], 'help')
-        Quarterly.copy_folder(src, dest)
-      end
-    end
-  end
-
-  def define_step_copy_layers(config)
-    Runbook.step '從上一季複製 Layers' do
-      ruby_command do |rb_cmd, metadata, run|
-        src = File.join(config[:old_data], "layers")
-        dest = File.join(config[:data], 'layers')
         Quarterly.copy_folder(src, dest)
       end
     end

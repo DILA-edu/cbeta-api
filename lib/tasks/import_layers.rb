@@ -13,7 +13,7 @@ class ImportLayers
   }
 
   def initialize
-    @layers = Rails.root.join('data', 'layers')
+    @layers = Rails.root.join('data-static', 'layers')
     @html_base = Rails.root.join('data', 'html')
     @out_base = Rails.root.join('data', 'html-with-layers')
     @xml_base = Rails.application.config.cbeta_xml
@@ -154,7 +154,7 @@ class ImportLayers
 
     case row['type']
     when 'start'
-      check_start(line_text, i, row)
+      check_start(line_text, i-1, row)
     when 'end'
       check_end(line_text, i, row)
     else
@@ -172,24 +172,6 @@ class ImportLayers
       CBETA.pua($&)
     end
     vars.include?(c2)
-  end
-
-  def e_app(e)
-    case @canon
-    when 'GA'
-      w = '【志彙】'
-    when 'GB'
-      w = '【志叢】'
-    else
-      return traverse(e)
-    end
-
-    rdg = e.at_xpath("rdg[@wit='#{w}']")
-    if rdg.nil?
-      traverse(e)
-    else
-      traverse(rdg)
-    end
   end
 
   def e_g(e)
@@ -224,7 +206,6 @@ class ImportLayers
     return handle_text(e) if e.text?
     case e.name
     when 'mulu', 'rdg'
-    when 'app'  then e_app(e)
     when 'g'    then e_g(e)
     when 'lb'   then e_lb(e)
     when 'note' then e_note(e)
@@ -257,6 +238,7 @@ class ImportLayers
 
   def import_file(fn)
     @basename = File.basename(fn, '.csv')
+    puts @basename
     read_cbeta_lines
     @current_juan = nil
     @html_doc = nil
@@ -304,49 +286,60 @@ class ImportLayers
   end
 
   def import_row(row)
+    @row = row
     lb = row['lb']
-    anchor = %(<span class="#{row['tag']}_#{row['type']}" data-key="#{row['key']}"/>)
-    layer_pos = row['position'].to_i + 1
-    line_text = ''
+    @anchor = %(<span class="#{row['tag']}_#{row['type']}" data-key="#{row['key']}"/>)
+    @layer_pos = row['position'].to_i
+    @line_text = ''
     @html_doc.xpath("//span[@class='t' and @l='#{lb}']").each do |node|
-      html_pos = node['w'].to_i
-      node.children.each do |c| 
-        next '' if c.comment?
-        if html_pos >= layer_pos
-          check_text(line_text, row)
-          c.add_previous_sibling(anchor)
-          return
-        end
+      @html_pos = node['w'].to_i
+      import_row_traverse(node)
+    end
+  end
 
-        if c.name == 'span' and c['class'] == 'pc'
-          next
-        end
+  def import_row_traverse(node)
+    node.children.each do |c| 
+      next '' if c.comment?
 
-        if c.text?
-          i = html_pos + c.text.size
-          if row['type'] == 'start' and i <= layer_pos
-            html_pos = i
-            line_text += c.text
-            next
-          end
+      if @html_pos >= @layer_pos
+        check_text(@line_text, @row)
+        c.add_previous_sibling(@anchor)
+        return
+      end
 
-          if row['type'] == 'end' and i < layer_pos
-            html_pos = i
-            line_text += c.text
-            next
-          end
+      next if c.name == 'span' and c['class'] == 'pc'
 
-          i = layer_pos - html_pos
-          s = c.text[0, i]
-          line_text += s
-          check_text(line_text, row)
-          s += anchor + c.text[i..-1]
-          c.add_previous_sibling(s)
-          c.remove
-          return
-        end
+      if c.text?
+        import_row_text(c)
+      else
+        import_row_traverse(c)
       end
     end
+  end
+
+  def import_row_text(e)
+    text = e.text
+    i = @html_pos + text.size
+
+    if @row['type'] == 'start' and i <= @layer_pos
+      @html_pos = i
+      @line_text += text
+      return
+    end
+
+    if @row['type'] == 'end' and i < @layer_pos
+      @html_pos = i
+      @line_text += text
+      return
+    end
+
+    i = @layer_pos - @html_pos
+    s = text[0, i]
+    @line_text += s
+    check_text(@line_text, @row)
+    s += @anchor + text[i..-1]
+    e.add_previous_sibling(s)
+    e.remove
   end
 
   def import_vol(folder)

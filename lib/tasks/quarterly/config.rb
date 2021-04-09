@@ -1,10 +1,11 @@
 module Config
   def get_config(env=nil)
     r = { v: 15 }
-    r[:q1] = '2021Q1' # 製作 change log 時比對 q1, q2
-    r[:q2] = '2021Q2'
-    r[:quarter] = '2021.Q1'
-    r[:publish] = '2021-04'
+    r[:q1]      = '2021Q1' # 製作 change log 時比對 q1, q2
+    r[:q2]      = '2021Q2'
+    r[:publish] = '2021-04' # 版權資訊 => 版本記錄 => 發行日期
+
+    r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
     r[:env] = env || Rails.env
 
     puts "mode: #{Rails.env}"
