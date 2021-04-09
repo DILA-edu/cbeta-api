@@ -42,7 +42,7 @@ namespace :convert do
     gaiji = Rails.configuration.cbeta_gaiji
     dest = File.join("/home/ray/cbeta-change-log", "cbeta-normal-#{v}")
     require_relative 'quarterly/p5a_to_text'
-    c = P5aToText.new(src, dest, gaiji)
+    c = P5aToText.new(src, dest, gaiji_base: gaiji)
     c.convert
   end
 
