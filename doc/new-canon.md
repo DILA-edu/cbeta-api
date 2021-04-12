@@ -11,6 +11,7 @@
 ### catalog
 
 * 參考 CBReader 使用的部類目錄: <https://github.com/heavenchou/cbwork-bin/tree/master/cbreader2X>
+  * bulei_nav.xhtml
 * 更新部類目錄：手動編輯 catalog/cbeta.xml
 * 更新冊別目錄：例如呂澂著作，編輯 catalog/vol-lc.xml
 

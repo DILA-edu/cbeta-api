@@ -18,11 +18,13 @@
   * lib/tasks/quarterly/config.rb
 * 開發端
   * 參考 variants.md 更新 cbeta-metadata 裡的異體字資料
-  * `bundle exec rake quarterly:run` 執行最前面的 update from github
+  * update from github
+    * 執行 `bundle exec rake quarterly:run` 最前面的 update from github
   * 參考 uuid.md 產生新的 UUID (如果有新的話)
   * 由 authority.dila 取得 大正藏 作譯者
     * cd /Users/ray/git-repos/cbeta-metadata/creators/bin
     * ruby get-creators-from-authority.rb
+  * 參考 new-canon.md 檢查是否有 新增「藏經 ID」或 新加入的典籍
 * server 端
   * bundle exec rake quarterly:view # 查看 steps
   * bundle exec rake quarterly:run
