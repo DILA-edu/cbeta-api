@@ -339,6 +339,7 @@ module Kwic3Helper
       #   File.binread(fn) 
       # end
       fn = "%03d.txt" % juan
+      puts "342: #{@txt_folder}, #{vol}, #{work}, #{fn})"
       fn = File.join(@txt_folder, vol, work, fn)
       # 待確認：L1557, 卷34 跨冊 有沒有問題
       File.binread(fn) 
@@ -458,7 +459,7 @@ module Kwic3Helper
         j = i * SuffixInfo::SIZE
         b = block[j, SuffixInfo::SIZE]
         h = SuffixInfo::unpack(b)
-        h['lb'] = "%04d%s%02d" % [h['page'], h['col'], h['line']]
+        h['lb'] = "%s%s%02d" % [h['page'], h['col'], h['line']]
         h.delete 'page'
         h.delete 'col'
         h.delete 'line'

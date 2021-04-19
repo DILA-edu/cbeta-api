@@ -1,14 +1,14 @@
 class SuffixInfo
-  SIZE = 22
+  SIZE = 24
 
   # vol,      a5, 5 bytes
   # work,     a7, 7 bytes
   # juan,     n,  2 bytes
   # offset,   N,  4 bytes, 32-bit unsigned, network (big-endian) byte order
-  # page,     n,  2 bytes
+  # page,     a4, 4 bytes, 可能不是數字, 例: a001
   # col,      a,  1 byte
   # line,     C,  1 byte
-  PATTERN = "a5a7nNnaC"
+  PATTERN = "a5a7nNa4aC"
 
   def self.unpack(data)
     a = data.unpack PATTERN
@@ -25,8 +25,8 @@ class SuffixInfo
 
   def initialize(opts={})
     @data = opts
-    if @data[:lb].match(/^lb(\d+)([a-z])(\d+)$/)
-      @data[:page] = $1.to_i
+    if @data[:lb].match(/^lb([a-z\d]\d{3})([a-z])(\d+)$/)
+      @data[:page] = $1
       @data[:col] = $2
       @data[:line] = $3.to_i
     else
