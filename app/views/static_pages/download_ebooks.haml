@@ -20,8 +20,10 @@
   =link_to_url '/download/pdf/A/A1057.pdf'
 %p 全部下載：
 %ul
-  %li= link_to_url "/download/cbeta-pdf-#{q}-1.zip"
-  %li= link_to_url "/download/cbeta-pdf-#{q}-2.zip"
+  - folder = Rails.root.join('public/download')
+  - Dir["#{folder}/cbeta-pdf-*.zip"].each do |f|
+    - b = File.basename(f)
+    %li= link_to_url "/download/#{b}"
 
 %h4 Q: 下載的 PDF 裡有總目錄嗎？
 %p
