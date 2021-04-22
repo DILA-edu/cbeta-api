@@ -57,12 +57,11 @@ class ImportVars
     puts "read #{fn}"
     variants = JSON.parse(File.read(fn))
 
-    # 去掉 CBETA 沒用到的字
     variants.each_pair do |k, v|
       k1 = cbeta_pua(k)
-      next unless exist_in_cbeta(k1)
-
       vars = v.split(',')
+
+      # 去掉 CBETA 沒用到的字
       vars.delete_if { |c| not exist_in_cbeta(c) }
       next if vars.empty?
 
