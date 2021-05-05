@@ -241,6 +241,7 @@ module Kwic3Helper
       rows = []
       i1 = 0
       i2 = 0
+      t1 = Time.now
       while (i1 < pos1.size) and (i2 < pos2.size)
         p1, sa1 = pos1[i1].last
         p2, sa2 = pos2[i2]
