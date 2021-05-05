@@ -241,7 +241,6 @@ module Kwic3Helper
       rows = []
       i1 = 0
       i2 = 0
-      t1 = Time.now
       while (i1 < pos1.size) and (i2 < pos2.size)
         p1, sa1 = pos1[i1].last
         p2, sa2 = pos2[i2]
@@ -266,19 +265,6 @@ module Kwic3Helper
           i1 += 1
         end
       end
-      Rails.logger.debug "#{__LINE__} 兩兩比對距離 花費時間：#{Time.now - t1}"
-
-      t1 = Time.now
-      hits = []
-      rows.each do |p3, p4, q3, q4, info|
-        # 如果範圍重疊，例如 意樂 NEAR 增上意樂
-        next if (p4 + q4.size) <= (p3 + q3.size)
-        
-        info['kwic'] = read_text_near(p3, p4, q3, q4)
-        hits << info
-      end
-
-      Rails.logger.debug "#{__LINE__} 讀取文字 花費時間：#{Time.now - t1}"
 
       rows.sort_by! { |x| x.last }
       eligibles[:terms] << q2
