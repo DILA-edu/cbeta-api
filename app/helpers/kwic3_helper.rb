@@ -778,7 +778,7 @@ module Kwic3Helper
       @f_info.seek (i * SuffixInfo::SIZE)
       b = @f_info.read(SuffixInfo::SIZE)
       r = SuffixInfo::unpack(b)
-      r['lb'] = "%04d%s%02d" % [r['page'], r['col'], r['line']]
+      r['lb'] = "%s%s%02d" % [r['page'], r['col'], r['line']]
       r.delete 'page'
       r.delete 'col'
       r.delete 'line'
