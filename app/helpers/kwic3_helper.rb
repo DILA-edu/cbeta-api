@@ -513,13 +513,19 @@ module Kwic3Helper
       r += "<mark>#{q1}</mark>"
       i1 = p1 + q1.size
 
+      found = false
       matches[1..-1].each do |m|
         q2 = m[:term]
         p2 = m[:pos_sa][0]
+        next if (p2+q2.size) <= i1 # 與上一個詞完全重疊
+        
         r += read_str(i1, p2-i1)
         r += "<mark>#{q2}</mark>"
         i1 = p2 + q2.size
+        found = true
       end
+
+      return nil unless found
 
       r + read_str(i1, @option[:around])
     end
@@ -704,8 +710,11 @@ module Kwic3Helper
         a.sort_by! { |x| x[:pos_sa].first }
         sa_start = a[0][:pos_sa][1]
         info = suffix_info(sa_start)
-        info['kwic'] = read_text_near(a)
-        hits << info
+        kwic = read_text_near(a)
+        unless kwic.nil?
+          info['kwic'] = kwic
+          hits << info
+        end
       end
       hits
     end
