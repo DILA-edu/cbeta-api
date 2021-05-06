@@ -41,7 +41,7 @@ class SphinxController < ApplicationController
     # 例如 意樂 NEAR/7 增上意樂
     if @q.include?('NEAR')
       r[:num_found] = r[:results].size
-      r[:total_term_hits] = r[:result].inject(0) { |memo, x| memo + x[:term_hits] }
+      r[:total_term_hits] = r[:results].inject(0) { |memo, x| memo + x[:term_hits] }
     end
 
     # 2019-11-01 決定不以經做 group
