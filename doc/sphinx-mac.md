@@ -34,7 +34,7 @@
 
 ## MySQL Command Line
 
-    mysql -u root -P9306
+    mysql -h0 -P9306
 
 如果出現 `command not found: mysql`
 那要編輯 ~/.zshrc
