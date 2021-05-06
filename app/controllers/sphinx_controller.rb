@@ -37,6 +37,13 @@ class SphinxController < ApplicationController
 
     kwic_by_juan(r) # 取得所有出處、行號
 
+    # NEAR 如果詞有重疊，符合筆數會與 Sphinx 給的數據不同
+    # 例如 意樂 NEAR/7 增上意樂
+    if @q.include?('NEAR')
+      r[:num_found] = r[:results].size
+      r[:total_term_hits] = r[:result].inject(0) { |memo, x| memo + x[:term_hits] }
+    end
+
     # 2019-11-01 決定不以經做 group
     # 因為不能以經的 term_hits 做排序
     # all_in_one_group_by_work(r)
@@ -669,6 +676,7 @@ class SphinxController < ApplicationController
       raise CbetaError.new(500), "kwic_boolean 回傳 nil" if juan[:kwics].nil?
       juan[:kwics][:results].sort_by! { |x| x['lb'] }
     end
+    r[:results].delete_if { |x| x[:kwics][:results].empty? }
   end
   
   # boolean search 回傳 kwic
