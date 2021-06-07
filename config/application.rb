@@ -8,7 +8,7 @@ Bundler.require(*Rails.groups)
 
 module Cbdata13
   class Application < Rails::Application
-    config.x.v = '15'
+    config.x.v = '1'
     config.x.ver = '1.2.24'
     config.x.q = '2021q2' # 季號
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
