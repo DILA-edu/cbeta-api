@@ -21,6 +21,14 @@ class SphinxController < ApplicationController
       @order = 'ORDER BY canon_order ASC'
     end
 
+    # Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到
+    # 但這不是我們要的結果
+    # 所以 sphinx 先傳回全部，再由 KWIC 過濾
+    if @q.include?('NEAR')
+      @start = 0
+      @rows = 99_999
+    end
+    
     r = sphinx_search(@fields, @where, @start, @rows, order: @order)
 
     if params[:facet] == '1'
@@ -41,7 +49,11 @@ class SphinxController < ApplicationController
     # 例如 意樂 NEAR/7 增上意樂
     if @q.include?('NEAR')
       r[:num_found] = r[:results].size
-      r[:total_term_hits] = r[:results].inject(0) { |memo, x| memo + x[:term_hits] }
+      r[:total_term_hits] = r[:results].inject(0) { |i, x| i + x[:term_hits] }
+
+      @start  = params.key?(:start)  ? params[:start].to_i  : 0
+      @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
+      r[:results] = r[:results][@start, @rows]
     end
 
     # 2019-11-01 決定不以經做 group

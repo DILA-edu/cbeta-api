@@ -683,6 +683,8 @@ module Kwic3Helper
         q1 = $1
         nears = $2
         start1, found1 = search_sa_after_open_files(q1)
+        return [] if start1.nil?
+
         pos1 = sort_by_pos(start1, found1)
         eligibles = {
           terms: [q1],
@@ -749,6 +751,7 @@ module Kwic3Helper
     end
 
     def sort_by_pos(start, size)
+      abort "#{__LINE__} start is nil" if start.nil?
       # 創建 820722 個元素，花費 1.7 秒
       a = Array.new(size) { |i| [sa(start + i), start + i] }
       a.sort
