@@ -687,6 +687,7 @@ class SphinxController < ApplicationController
       juan[:kwics] = kwic_boolean(se, opts)
       raise CbetaError.new(500), "kwic_boolean 回傳 nil" if juan[:kwics].nil?
       juan[:kwics][:results].sort_by! { |x| x['lb'] }
+      juan[:term_hits] = juan[:kwics][:num_found]
     end
     r[:results].delete_if { |x| x[:kwics][:results].empty? }
   end
