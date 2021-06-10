@@ -31,7 +31,10 @@ class SphinxController < ApplicationController
     
     r = sphinx_search(@fields, @where, @start, @rows, order: @order)
 
-    if params[:facet] == '1'
+    # NEAR 如果詞有重疊，符合筆數會與 Sphinx 給的數據不同
+    # 例如 意樂 NEAR/7 增上意樂
+    # NEAR 的 Facet 不用 Sphinx 的
+    if params[:facet] == '1' and not @q.include?('NEAR')
       r['facet'] = {}
       h = r['facet']
       h['category'] = facet_by('category')
@@ -45,11 +48,11 @@ class SphinxController < ApplicationController
 
     kwic_by_juan(r) # 取得所有出處、行號
 
-    # NEAR 如果詞有重疊，符合筆數會與 Sphinx 給的數據不同
-    # 例如 意樂 NEAR/7 增上意樂
+    # 如果是 NEAR, 要重新計算筆數
     if @q.include?('NEAR')
       r[:num_found] = r[:results].size
       r[:total_term_hits] = r[:results].inject(0) { |i, x| i + x[:term_hits] }
+      r[:facet] = near_facet(r[:results])
 
       @start  = params.key?(:start)  ? params[:start].to_i  : 0
       @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
@@ -671,6 +674,81 @@ class SphinxController < ApplicationController
       orders << order
     end
     @order = "ORDER BY " + orders.join(',')
+  end
+
+  def near_facet(juans)
+    canon = {}
+    category = {}
+    creator = {}
+    dynasty = {}
+    work = {}
+
+    juans.each do |j|
+      near_facet_catetory(j, category)
+      near_facet_creator(j, creator)
+      near_facet_dynasty(j, dynasty)
+      near_facet_work(j, work)
+      near_facet_canon(j, canon)
+    end
+
+    { 
+      category: category.values,
+      creator: creator.values,
+      dynasty: dynasty.values,
+      work: work.values,
+      canon: canon.values
+    }
+  end
+
+  def near_facet_canon(juan, dest)
+    k = juan[:canon]
+    name = Canon.find_by(id2: k).name
+    unless dest.key?(k)
+      dest[k] = { canon: k, canon_name: name, hits: 0, docs: 0 }
+    end
+    dest[k][:hits] += juan[:term_hits]
+    dest[k][:docs] += 1
+  end
+
+  # 部類可能有多值, 例如 T0310 的部類: "寶積部類,淨土宗部類"
+  def near_facet_catetory(juan, dest)
+    juan[:category].split(',').each do |c|
+      unless dest.key?(c)
+        dest[c] = { category_name: c, hits: 0, docs: 0 }
+      end
+      dest[c][:hits] += juan[:term_hits]
+      dest[c][:docs] += 1
+    end
+  end
+
+  def near_facet_creator(juan, dest)
+    # ex: "龍樹(A001482);鳩摩羅什(A001583)"
+    juan[:creators_with_id].split(';').each do |c|
+      name, id = c.scan(/^(.*)\((.*)\)$/).first
+      unless dest.key?(id)
+        dest[id] = { creator_id: id, creator_name: name, hits: 0, docs: 0 }
+      end
+      dest[id][:hits] += juan[:term_hits]
+      dest[id][:docs] += 1
+    end
+  end
+
+  def near_facet_dynasty(juan, dest)
+    d = juan[:time_dynasty]
+    unless dest.key?(d)
+      dest[d] = { dynasty: d, hits: 0, docs: 0 }
+    end
+    dest[d][:hits] += juan[:term_hits]
+    dest[d][:docs] += 1
+  end
+
+  def near_facet_work(juan, dest)
+    k = juan[:work]
+    unless dest.key?(k)
+      dest[k] = { work: k, title: juan[:title], hits: 0, docs: 0 }
+    end
+    dest[k][:hits] += juan[:term_hits]
+    dest[k][:docs] += 1
   end
 
   def kwic_by_juan(r)
