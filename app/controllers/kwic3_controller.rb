@@ -42,7 +42,7 @@ class Kwic3Controller < ApplicationController
   
   def index
     if @q.match(/^"(\S+)" NEAR\/(\d+) "(\S+)"/)
-      result = @se.search_near($1, $3, $2.to_i, @opts)
+      result = @se.search_near(@q, @opts)
     else
       result = @se.search(@q, @opts)
     end

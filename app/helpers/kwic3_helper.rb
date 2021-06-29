@@ -138,9 +138,11 @@ module Kwic3Helper
       
       @total_found = 0
 
-      if @option.key? :juan
-        hits = search_near_juan(query, args)
+      unless @option.key? :juan
+        raise CbetaError.new(400), "KWIC near 必須指定 juan 參數"
       end
+
+      hits = search_near_juan(query, args)
 
       { 
         num_found: hits.size,
@@ -690,11 +692,14 @@ module Kwic3Helper
           terms: [q1],
           pos_group: pos1.map { |x| [x] }
         }
+        debug "#{__LINE__} %s" % eligibles.to_s
 
         nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, q|
           start2, found2 = search_sa_after_open_files(q)
           pos2 = sort_by_pos(start2, found2)
+          debug "#{__LINE__} pos2: #{pos2}"
           check_near(eligibles, near.to_i, q, pos2)
+          debug "#{__LINE__} %s" % eligibles.to_s
         end
       else
         raise CbetaError.new(400), "NEAR 語法錯誤 query: #{query}"
