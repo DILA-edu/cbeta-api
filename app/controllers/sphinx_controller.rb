@@ -615,22 +615,14 @@ class SphinxController < ApplicationController
   def init_footnotes
     @index = Rails.configuration.x.sphinx_footnotes
     q = @q.sub(/~\d+$/, '') # 拿掉 near ~ 後面的數字
-    q.gsub!(/\-".*?"/, '')
+    q.gsub!(/[\-!]".*?"/, '')
     keys = q.split(/["\-\| ]/)
     keys.delete('')
-    #keys.map! { |x| %("#{x}") }
     s = keys.join(' ')
 
     # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
-    # query_mode
-    #   Whether to handle $words as a query in extended syntax, 
-    #   or as a bag of words (default behavior). 
-    # exact_phrase
-    #   Whether to highlight exact query phrase matches only instead of individual keywords.
-    #   Boolean, default is false.
-    #   如果 query_mode=true, 那麼 exact_phrase=true 會沒作用
     @fields = "id, canon, category, vol, file, work, title, juan, lb, n, content, "\
-      "SNIPPET(content, '#{@q}', 'exact_phrase=1', 'limit=0', 'query_mode=1', "\
+      "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
   end
   
@@ -638,7 +630,7 @@ class SphinxController < ApplicationController
     @index = Rails.application.config.sphinx_index
 
     @fields = "id, canon, category, vol, file, work, title, juan, lb, n, content, "\
-      "SNIPPET(content, '#{@q}', 'exact_phrase=1', 'limit=0', 'query_mode=1', "\
+      "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
   end
 
@@ -779,8 +771,10 @@ class SphinxController < ApplicationController
     a = []
     num_found = 0
 
-    q = @q.gsub(/\-"[^"]+"/, '') # 去除 not 之後的關鍵字
+    puts "#{__LINE__} #{@q}"
+    q = @q.gsub(/[!\-]"[^"]+"/, '') # 去除 not 之後的關鍵字
     q.gsub!(/"/, '')
+    puts "#{__LINE__} #{q}"
     keys = q.split
 
     keys.each do |k|

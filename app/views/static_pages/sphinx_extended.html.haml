@@ -18,18 +18,20 @@
 
 %p 例：#{link_to_url '/sphinx/extended?q="法鼓" "聖嚴"'}
 
-%h1 OR 運算元
+%h1 OR
 
 %pre "波羅蜜" | "波羅密"
 
 %p 例：#{link_to_url '/sphinx/extended?q="波羅蜜" | "波羅密"'}
 
-%h1 NOT 運算元
+%h1 NOT
 
-%p 例：#{link_to_url '/sphinx/extended?q="迦葉" -"迦葉佛"'}
+%p 例：#{link_to_url '/sphinx/extended?q="迦葉" !"迦葉佛"'}
 
-%h1 鄰近搜尋運算元
+%h1 NEAR 搜尋
 
-%p 例：#{link_to_url '/sphinx/extended?q="弟子 第一"~5'}
+%p 
+  例：
+  =link_to_url '/sphinx/all_in_one?q="法鼓" NEAR/7 "迦葉"'
 
-%p 上例表示「弟子」跟「第一」之間距離不超過5個字。
+%p NEAR/ 後面的數字 表示兩個關鍵詞中間的距離
