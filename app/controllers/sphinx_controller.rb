@@ -53,19 +53,19 @@ class SphinxController < ApplicationController
 
     @mysql_client.close
 
-    kwic_by_juan(r) # 取得所有出處、行號
+    # 呼叫 KWIC 過濾 NEAR 與 Exclude, 並取得所有出處、行號
+    kwic_by_juan(r)
 
-    # 如果是 NEAR, 要重新計算筆數
-    if @q.include?('NEAR')
+    # 如果是 NEAR 或 Exclude, 要重新計算筆數
+    if @q.include?('NEAR') or not @exclude.nil?
       r[:num_found] = r[:results].size
       r[:total_term_hits] = r[:results].inject(0) { |i, x| i + x[:term_hits] }
-      r[:facet] = near_facet(r[:results])
+      r[:facet] = my_facet(r[:results])
 
       @start  = params.key?(:start)  ? params[:start].to_i  : 0
       @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
       r[:results] = r[:results][@start, @rows]
     end
-
 
     r[:time] = Time.now - t1
     my_render r
@@ -612,7 +612,7 @@ class SphinxController < ApplicationController
     @order = "ORDER BY " + orders.join(',')
   end
 
-  def near_facet(juans)
+  def my_facet(juans)
     canon = {}
     category = {}
     creator = {}
@@ -620,11 +620,11 @@ class SphinxController < ApplicationController
     work = {}
 
     juans.each do |j|
-      near_facet_catetory(j, category)
-      near_facet_creator(j, creator)
-      near_facet_dynasty(j, dynasty)
-      near_facet_work(j, work)
-      near_facet_canon(j, canon)
+      my_facet_catetory(j, category)
+      my_facet_creator(j, creator)
+      my_facet_dynasty(j, dynasty)
+      my_facet_work(j, work)
+      my_facet_canon(j, canon)
     end
 
     { 
@@ -636,7 +636,7 @@ class SphinxController < ApplicationController
     }
   end
 
-  def near_facet_canon(juan, dest)
+  def my_facet_canon(juan, dest)
     k = juan[:canon]
     name = Canon.find_by(id2: k).name
     unless dest.key?(k)
@@ -647,7 +647,7 @@ class SphinxController < ApplicationController
   end
 
   # 部類可能有多值, 例如 T0310 的部類: "寶積部類,淨土宗部類"
-  def near_facet_catetory(juan, dest)
+  def my_facet_catetory(juan, dest)
     juan[:category].split(',').each do |c|
       unless dest.key?(c)
         dest[c] = { category_name: c, hits: 0, docs: 0 }
@@ -657,7 +657,7 @@ class SphinxController < ApplicationController
     end
   end
 
-  def near_facet_creator(juan, dest)
+  def my_facet_creator(juan, dest)
     # ex: "龍樹(A001482);鳩摩羅什(A001583)"
     juan[:creators_with_id].split(';').each do |c|
       name, id = c.scan(/^(.*)\((.*)\)$/).first
@@ -669,7 +669,7 @@ class SphinxController < ApplicationController
     end
   end
 
-  def near_facet_dynasty(juan, dest)
+  def my_facet_dynasty(juan, dest)
     d = juan[:time_dynasty]
     unless dest.key?(d)
       dest[d] = { dynasty: d, hits: 0, docs: 0 }
@@ -678,7 +678,7 @@ class SphinxController < ApplicationController
     dest[d][:docs] += 1
   end
 
-  def near_facet_work(juan, dest)
+  def my_facet_work(juan, dest)
     k = juan[:work]
     unless dest.key?(k)
       dest[k] = { work: k, title: juan[:title], hits: 0, docs: 0 }
@@ -741,7 +741,8 @@ class SphinxController < ApplicationController
   end
 
   def kwic_boolean_exclude(se, opts)
-    q = @q.sub(/"(.*)"/, '\1')
+    q = @q.sub(/^"(.*)"$/, '\1')
+    logger.debug "search_exclude, q: #{q}, exclude: #{@exclude}"
     @exclude.match(/^#{q}(.*)$/) do
       opts[:negative_lookahead] = $1
       return se.search(q, opts)

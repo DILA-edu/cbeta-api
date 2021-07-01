@@ -60,8 +60,9 @@ module Kwic3Helper
     end
   
     def search(query, args={})
+      t1 = Time.now
       @option = OPTION.merge args
-      
+
       if @option[:sort] == 'b'
         q = query.reverse
       else
@@ -97,6 +98,7 @@ module Kwic3Helper
         end
       end
       
+      result[:time] = Time.now - t1
       result[:results] = hits
       result
     end
@@ -116,8 +118,14 @@ module Kwic3Helper
       hits = []
       keywords.split(',').each do |q| # 可能有多個關鍵字
         start, found = search_sa(sa_path, q)
-        hits += result_hash(q, start, found)
+        next if start.nil?
+        sa_results = [[sa_path, start, found]]
+        sa_results = exclude_filter(sa_results, q)
+        sa_results.each do |_, start, found|
+          hits += result_hash(q, start, found)
+        end
       end
+      debug hits
       hits.sort_by! { |x| x['offset'] }
     
       { 
@@ -270,6 +278,7 @@ module Kwic3Helper
     def exclude_filter(sa_results, q)
       s1 = @option[:negative_lookbehind] # 前面不要出現的字
       s2 = @option[:negative_lookahead]  # 後面不要出現的字
+      debug "exclude_filter, 前綴: #{s1}, 後綴: #{s2}"
       
       return sa_results if s1.nil? and s2.nil?
       
@@ -369,8 +378,12 @@ module Kwic3Helper
       else
         fn = abs_sa_path sa_path, 'info.dat'
       end
-      raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
-      @f_info = File.open(fn, 'rb')
+      
+      begin
+        @f_info = File.open(fn, 'rb')
+      rescue
+        raise CbetaError.new(500), "開檔失敗: #{fn}"
+      end
     end
     
     def open_sa(sa_path)
@@ -379,8 +392,12 @@ module Kwic3Helper
       else
         fn = abs_sa_path sa_path, 'sa.dat'
       end
-      raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
-      @f_sa = File.open(fn, 'rb')
+      
+      begin
+        @f_sa = File.open(fn, 'rb')
+      rescue
+        raise CbetaError.new(500), "開檔失敗: #{fn}"
+      end
     end
   
     def open_text(sa_path)
@@ -389,11 +406,15 @@ module Kwic3Helper
       else
         fn = abs_sa_path sa_path, 'all.txt'
       end
-      raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist? fn
       
-      @f_txt = File.open(fn, 'rb')
-      @size = @f_txt.size / 4
-      @sa_last = @size - 1 # sa 最後一筆的 offset
+      begin
+        @f_txt = File.open(fn, 'rb')
+        @size = @f_txt.size / 4
+        @sa_last = @size - 1 # sa 最後一筆的 offset
+      rescue
+        raise CbetaError.new(500), "開檔失敗: #{fn}"
+      end
+
       true
     end
     
@@ -617,7 +638,9 @@ module Kwic3Helper
         
     def result_hash(q, start, rows)
       return [] if rows == 0
-      
+      return [] if start.nil?
+
+      debug "result_hash, start: #{start}"
       sa_array = sa_block(start, rows)
       info_array = read_info_block(sa_array, start, rows)
       read_text_for_info_array(info_array, q)
@@ -720,6 +743,7 @@ module Kwic3Helper
     end
 
     def search_sa_after_open_files(q)
+      debug "search_sa_after_open_files, q: #{q}"
       i = bsearch(q, 0, @sa_last)
       return nil if i.nil?
     

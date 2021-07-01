@@ -58,9 +58,12 @@ class Kwic3Controller < ApplicationController
   def juan
     return unless juan_check_params
 
+    logger.debug "q: #{@q}"
     if @q.match?(/ NEAR\/(\d+) /)
+      logger.debug "search near"
       h = @se.search_near(@q, @opts)
     else
+      logger.debug "search juan"
       h = @se.search_juan(@q, @opts)
     end
 

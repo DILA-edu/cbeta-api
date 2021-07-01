@@ -27,11 +27,12 @@ Rails.application.routes.draw do
 
   match 'juans/goto', via: [:get, :post]
 
-  match 'kwic3/juan', via: [:get, :post]
+  match 'kwic3/juan', to: 'kwic3#juan', via: [:get, :post]
+  match 'kwic3',      to: 'kwic3#index', via: [:get, :post]
   
   get 'report/access'
   get 'report/daily', to: 'report#daily'
-  match 'report/url',   to: 'report#url', as: :report_url, via: [:get, :post]
+  match 'report/url', to: 'report#url', as: :report_url, via: [:get, :post]
 
   match 'sphinx/all_in_one', via: [:get, :post]
   match 'sphinx/facet/:facet_by', to: 'sphinx#facet', via: [:get, :post]
@@ -78,8 +79,12 @@ Rails.application.routes.draw do
   get 'static_pages/work'
 
   match 'toc', to: 'toc_node#index', via: [:get, :post]
+
+  match 'word_seg', to: 'word_seg#index', via: [:get, :post]
+
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works/word_count', via: [:get, :post]
 
-  match ':controller', action: 'index', via: [:get, :post]
+
+  #match ':controller', action: 'index', via: [:get, :post]
 end
