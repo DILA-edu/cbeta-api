@@ -60,10 +60,7 @@ module Kwic3Helper
     end
   
     def search(query, args={})
-      warn "#{__LINE__} begin kwic3 search, query: #{query}, args: " + args.inspect
-      warn "#{__LINE__} OPTION: " + OPTION.inspect
       @option = OPTION.merge args
-      warn "#{__LINE__} @option: " + @option.inspect
       
       if @option[:sort] == 'b'
         q = query.reverse
@@ -73,8 +70,6 @@ module Kwic3Helper
       
       @total_found = 0
       sa_results = search_sa_according_to_option(q)
-      warn "sa_results:\n" + sa_results.inspect
-      
       sa_results = exclude_filter(sa_results, q)
       
       sort_word_count(q, sa_results) if @option[:word_count]
@@ -103,7 +98,6 @@ module Kwic3Helper
       end
       
       result[:results] = hits
-      warn "#{__LINE__} end kwic3 search, query: #{query}, args: " + args.inspect
       result
     end
   
@@ -363,7 +357,6 @@ module Kwic3Helper
     end
   
     def open_files(sa_path)
-      warn "#{__LINE__} open_files: #{sa_path}"
       open_text(sa_path)
       open_sa   sa_path
       open_info sa_path
@@ -381,13 +374,11 @@ module Kwic3Helper
     end
     
     def open_sa(sa_path)
-      warn "#{__LINE__} open_sa: sa_path: #{sa_path}"
       if @option[:sort] == 'b'
         fn = abs_sa_path sa_path, 'sa-b.dat'
       else
         fn = abs_sa_path sa_path, 'sa.dat'
       end
-      warn "open suffix array file: #{fn}"
       raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
       @f_sa = File.open(fn, 'rb')
     end
@@ -692,14 +683,11 @@ module Kwic3Helper
           terms: [q1],
           pos_group: pos1.map { |x| [x] }
         }
-        debug "#{__LINE__} %s" % eligibles.to_s
 
         nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, q|
           start2, found2 = search_sa_after_open_files(q)
           pos2 = sort_by_pos(start2, found2)
-          debug "#{__LINE__} pos2: #{pos2}"
           check_near(eligibles, near.to_i, q, pos2)
-          debug "#{__LINE__} %s" % eligibles.to_s
         end
       else
         raise CbetaError.new(400), "NEAR 語法錯誤 query: #{query}"

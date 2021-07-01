@@ -5,6 +5,7 @@ class SphinxController < ApplicationController
   OPTION = 'ranker=wordcount,max_matches=9999999'
   before_action :init
   
+  # 2019-11-01 決定不以經做 group, 因為不能以經的 term_hits 做排序
   def all_in_one
     @mode = 'extend' # 允許 boolean search
     remove_puncs_from_query
@@ -12,6 +13,27 @@ class SphinxController < ApplicationController
 
     t1 = Time.now
     @mysql_client = sphinx_mysql_connection
+
+    # 1. Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到,
+    #    例如: 意樂 NEAR/7 增上意樂
+    #    但這不是我們要的結果, 所以 sphinx 先傳回全部，再由 KWIC 過濾
+    if @q.include?('NEAR')
+      @start = 0
+      @rows = 99_999
+    end
+
+    # Sphinx 沒有 Exclude 功能，所以同 NEAR.
+    @exclude = nil
+    if @q.match(/^"(.*?)" \-"(.*)"$/)
+      @q = $1
+      @exclude = $2
+      @start = 0
+      @rows = 99_999
+      unless @exclude.include?(@q)
+        raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{@q}，原查詢字串：#{params[:q]}"
+      end
+    end
+
     unless @q.include? '"'
       @q = %("#{@q}")
     end
@@ -21,27 +43,12 @@ class SphinxController < ApplicationController
       @order = 'ORDER BY canon_order ASC'
     end
 
-    # Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到
-    # 但這不是我們要的結果
-    # 所以 sphinx 先傳回全部，再由 KWIC 過濾
-    if @q.include?('NEAR')
-      @start = 0
-      @rows = 99_999
-    end
-    
     r = sphinx_search(@fields, @where, @start, @rows, order: @order)
 
-    # NEAR 如果詞有重疊，符合筆數會與 Sphinx 給的數據不同
-    # 例如 意樂 NEAR/7 增上意樂
-    # NEAR 的 Facet 不用 Sphinx 的
-    if params[:facet] == '1' and not @q.include?('NEAR')
+    # NEAR 跟 Exclude 的 Facet 不用 Sphinx 的
+    if params[:facet] == '1' and not @q.include?('NEAR') and @exclude.nil?
       r['facet'] = {}
-      h = r['facet']
-      h['category'] = facet_by('category')
-      h['creator']  = facet_by('creator')
-      h['dynasty']  = facet_by('dynasty')
-      h['work']     = facet_by('work')
-      h['canon']    = facet_by('canon')
+      facet_by_sphinx_all(r['facet'])
     end
 
     @mysql_client.close
@@ -59,9 +66,6 @@ class SphinxController < ApplicationController
       r[:results] = r[:results][@start, @rows]
     end
 
-    # 2019-11-01 決定不以經做 group
-    # 因為不能以經的 term_hits 做排序
-    # all_in_one_group_by_work(r)
 
     r[:time] = Time.now - t1
     my_render r
@@ -73,72 +77,6 @@ class SphinxController < ApplicationController
       params: params,
       error: e.message + "\n" + e.backtrace.join("\n")
     }
-    my_render r
-  end
-
-  # 2019 不用
-  # 原因：速度太慢，每次 search 要 10~20秒 以上
-  # 做法：
-  #   1. select group by work 並做分頁
-  #   2. 符合的經典，找出各經符合的卷
-  #   3. 填入 kwic 資訊
-  def all_in_one2
-    remove_puncs_from_query
-    return empty_result if @q.empty?
-
-    t1 = Time.now
-    @mysql_client = sphinx_mysql_connection
-    @where = %{MATCH('"#{@q}"')} + @filter
-    r = sphinx_search_group_by_work
-
-    if params[:facet] == '1'
-      r['facet'] = {}
-      h = r['facet']
-      h['category'] = facet_by('category')
-      h['creator']  = facet_by('creator')
-      h['dynasty']  = facet_by('dynasty')
-    end
-
-    kwic_by_juan2(r) # 取得所有出處、行號
-    @mysql_client.close
-    r[:time] = Time.now - t1
-    my_render r
-  rescue Exception => e
-    #r = { num_found: 0, error: $! }
-    r = { num_found: 0, error: $!, backtrace: e.backtrace }
-    my_render r
-  end
-
-  # 2019: 不用
-  # 原因：速度太慢，每次 search 都要2秒以上
-  # 做法：
-  #   1. select group by work limit 999999 (排序可以根據次數, 或是部類、年代、作譯者)
-  #   2. 以卷做分頁 (一部經可能被切成多頁)
-  #   3. 填入 kwic 資訊
-  def all_in_one3
-    remove_puncs_from_query
-    return empty_result if @q.empty?
-
-    t1 = Time.now
-    @mysql_client = sphinx_mysql_connection
-    @where = %{MATCH('"#{@q}"')} + @filter
-    r = sphinx_search_group_by_work3
-
-    if params[:facet] == '1'
-      r['facet'] = {}
-      h = r['facet']
-      h['category'] = facet_by('category')
-      h['creator']  = facet_by('creator')
-      h['dynasty']  = facet_by('dynasty')
-    end
-
-    @mysql_client.close
-    kwic_by_juan3(r) # 取得所有出處、行號
-    r[:time] = Time.now - t1
-    my_render r
-  rescue Exception => e
-    #r = { num_found: 0, error: $! }
-    r = { num_found: 0, error: $!, backtrace: e.backtrace }
     my_render r
   end
 
@@ -198,11 +136,11 @@ class SphinxController < ApplicationController
     if params[:facet] == '1'
       r['facet'] = {}
       h = r['facet']
-      h['category'] = facet_by('category')
-      h['creator']  = facet_by('creator')
-      h['dynasty']  = facet_by('dynasty')
-      h['work']     = facet_by('work')
-      h['canon']    = facet_by('canon')
+      h['category'] = facet_by_sphinx('category')
+      h['creator']  = facet_by_sphinx('creator')
+      h['dynasty']  = facet_by_sphinx('dynasty')
+      h['work']     = facet_by_sphinx('work')
+      h['canon']    = facet_by_sphinx('canon')
     end
 
     @mysql_client.close
@@ -219,14 +157,14 @@ class SphinxController < ApplicationController
     @where = %{MATCH('"#{@q}"')} + @filter
     
     if params.key? :facet_by
-      r = facet_by(params[:facet_by])
+      r = facet_by_sphinx(params[:facet_by])
     else
       r = {}
-      r['canon']    = facet_by('canon')
-      r['category'] = facet_by('category')
-      r['creator']  = facet_by('creator')
-      r['dynasty']  = facet_by('dynasty')
-      r['work']     = facet_by('work')
+      r['canon']    = facet_by_sphinx('canon')
+      r['category'] = facet_by_sphinx('category')
+      r['creator']  = facet_by_sphinx('creator')
+      r['dynasty']  = facet_by_sphinx('dynasty')
+      r['work']     = facet_by_sphinx('work')
     end
         
     @mysql_client.close
@@ -471,7 +409,7 @@ class SphinxController < ApplicationController
   end
   
   # 參考 http://sphinxsearch.com/blog/2013/06/21/faceted-search-with-sphinx/
-  def facet_by(facet)
+  def facet_by_sphinx(facet)
     read_dynasty_order if facet == 'dynasty'
 
     case facet
@@ -540,6 +478,12 @@ class SphinxController < ApplicationController
       end
     end
     r
+  end
+
+  def facet_by_sphinx_all(dest)
+    %w[category creator dynasty work canon].each do |f|
+      dest[f] = facet_by_sphinx(f)
+    end
   end
   
   def get_query_variants(q)
@@ -768,6 +712,10 @@ class SphinxController < ApplicationController
       return se.search_near(@q, opts)
     end
 
+    if @exclude
+      return kwic_boolean_exclude(se, opts)
+    end
+
     a = []
     num_found = 0
 
@@ -792,83 +740,19 @@ class SphinxController < ApplicationController
     { num_found: num_found, results: a}
   end
 
-  def kwic_by_juan2(r)
-    base = Rails.application.config.kwic_base
-    se = Kwic3Helper::SearchEngine.new(base)
-    r[:results].each do |work_result|
-      work_id = work_result[:work]
-      where = @where + " AND work='#{work_id}'"
-      hits = sphinx_select('juan', where: where)
-      work_result[:num_found] = hits.size
-      work_result[:juans] = hits
-      hits.each do |j|
-        opts = {
-          work: work_id,
-          juan: j[:juan].to_i,
-          around: @around,
-          mark: true,
-          rows: 99999
-        }
-        j[:kwics] = se.search(@q, opts)
-        j[:kwics][:results].each do |h|
-          h.delete('vol')
-          h.delete('work')
-          h.delete('juan')
-        end
-      end
+  def kwic_boolean_exclude(se, opts)
+    q = @q.sub(/"(.*)"/, '\1')
+    @exclude.match(/^#{q}(.*)$/) do
+      opts[:negative_lookahead] = $1
+      return se.search(q, opts)
     end
-  end
 
-  def kwic_by_juan3(r)
-    base = Rails.application.config.kwic_base
-    se = Kwic3Helper::SearchEngine.new(base)
-    r[:results].each do |work_result|
-      work_id = work_result[:work]
-      work_result[:juans].each do |j|
-        opts = {
-          work: work_id,
-          juan: j[:juan].to_i,
-          around: @around,
-          mark: true,
-          rows: 99999
-        }
-        j[:kwics] = se.search(@q, opts)
-        j[:kwics][:results].each do |h|
-          h.delete('vol')
-          h.delete('work')
-          h.delete('juan')
-        end
-      end
+    @exclude.match(/^(.*?)#{q}$/) do
+      opts[:negative_lookbehind] = $1
+      return se.search(q, opts)
     end
-  end
 
-  def page3(works)
-    juan_start = 0
-    juan_rows = 0
-    r = []
-    works.each do |w|
-      offset = 0
-      if @start > juan_start
-        if w[:found] <= (@start - juan_start)
-          juan_start += w[:found]
-          next
-        else
-          offset = @start - juan_start
-        end
-      end
-      args = {
-        where: @where + " AND work='#{w[:work]}'",
-        order: 'juan ASC',
-        start: offset, 
-        rows: @rows - juan_rows
-      }
-      hits = sphinx_select('juan', args)
-      w[:juans] = hits
-      r << w
-      juan_rows += hits.size
-      break if juan_rows >= @rows
-    end
-    r
+    raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{q}，原查詢字串：#{params[:q]}"
   end
 
   def read_dynasty_order
@@ -1024,47 +908,6 @@ class SphinxController < ApplicationController
       total_term_hits: total_term_hits,
     }
     r[:facet] = facet_result unless facet.nil?
-    r[:results] = hits
-    r
-  end
-    
-  def sphinx_search_group_by_work
-    fields = 'work, count(*) as found, sum(weight()) as term_hits'
-    hits = sphinx_select(fields, group: 'work', order: 'term_hits DESC')
-    add_work_info(hits)
-    
-    total_found, total_term_hits = sphinx_total_found
-    
-    r = {
-      query_string: @q,
-      time: 0,
-      num_found: total_found,
-      total_term_hits: total_term_hits,
-    }
-    r[:results] = hits
-    r
-  end
-
-  def sphinx_search_group_by_work3
-    fields = 'work, count(*) as found, sum(weight()) as term_hits'
-    args = {
-      group: 'work', 
-      order: 'term_hits DESC',
-      start: 0,
-      rows: 999_999
-    }
-    hits = sphinx_select(fields, args)
-    total_found, total_term_hits = sphinx_total_found
-
-    hits = page3(hits)
-    add_work_info(hits)
-    
-    r = {
-      query_string: @q,
-      time: 0,
-      num_found: total_found,
-      total_term_hits: total_term_hits,
-    }
     r[:results] = hits
     r
   end

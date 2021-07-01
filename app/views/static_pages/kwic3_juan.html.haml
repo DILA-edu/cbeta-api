@@ -1,13 +1,22 @@
 %h1 單卷 KWIC3
 %p q 參數可以傳入多個關鍵字，例： #{ link_to_url '/kwic3/juan?work=X0600&juan=11&q=法鼓,聖嚴' }
 
+%hr
 %h2 NEAR
 %p=link_to_url '/kwic3/juan?work=T1736&juan=1&q="老子" NEAR/7 "道"'
 %p NEAR/ 後面的數字 表示兩個關鍵詞中間的距離.
 
-%h2 多個詞的 NEAR:
+%h3 多個詞的 NEAR:
 %p=link_to_url '/kwic3/juan?work=T2036&juan=21&q="老子" NEAR/7 "道" NEAR/3 "經"'
 
+%hr
+%h2 Exclude
+%h3 排除前綴
+%p=link_to_url '/kwic3/juan?work=T0099&juan=1&q="直心" -"正直心"'
+%h3 排除後綴
+%p=link_to_url '/kwic3/juan?work=T0001&juan=17&q="舍利" -"舍利弗"'
+
+%hr
 %h2 可使用參數
 %table.table
   %tr

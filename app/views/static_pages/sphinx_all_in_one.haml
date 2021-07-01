@@ -29,11 +29,23 @@
           =link_to_url '/sphinx/all_in_one?q="迦葉" !"迦葉佛"'
         %li
           NEAR:
-          =link_to_url '/sphinx/all_in_one?q="法鼓" NEAR/7 "迦葉"'
-          (NEAR/ 後面的數字 表示兩個關鍵詞中間的距離)
+          %ul
+            %li
+              =link_to_url '/sphinx/all_in_one?q="法鼓" NEAR/7 "迦葉"'
+              (NEAR/ 後面的數字 表示兩個關鍵詞中間的距離)
+            %li
+              NEAR 多個詞:
+              =link_to_url '/sphinx/all_in_one?q="老子" NEAR/7 "道" NEAR/3 "經"'
         %li
-          NEAR 多個詞:
-          =link_to_url '/sphinx/all_in_one?q="老子" NEAR/7 "道" NEAR/3 "經"'
+          Exclude
+          %ul
+            %li
+              排除前綴
+              =link_to_url '/kwic3/juan?work=T0099&juan=1&q="直心" -"正直心"'
+            %li
+              排除後綴
+              =link_to_url '/kwic3/juan?work=T0001&juan=17&q="舍利" -"舍利弗"'
+
   %tr
     %td facet
     %td 
