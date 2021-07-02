@@ -1,3 +1,11 @@
+# all_in_one
+#   Exclude X -Y
+#     1. 先呼叫 Sphinx 取得全部符合 X 的卷數
+#     2. 每一卷呼叫 KWIC 過濾 -Y
+#        2.1 取得本卷符合 X 的位置
+#        2.2 讀取前後文，過濾 -Y
+#     3. 計算總筆數、Facet
+
 require 'csv'
 require 'open3'
 
