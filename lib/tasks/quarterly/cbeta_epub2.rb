@@ -564,12 +564,14 @@ eos
       return '' if e['resp'].start_with? 'CBETA'
     end
 
-    if e.has_attribute?('place') && e['place']=='inline'
-      r = traverse(e)
-      return "<span class='note-inline'>(#{r})</span>"
-    else
-      return traverse(e)
+    if e.has_attribute?('place')
+      if %w[inline inline2 interlinear].include?(e['place'])
+        r = traverse(e)
+        return "<span class='note-inline'>(#{r})</span>"
+      end
     end
+    
+    traverse(e)
   end
 
   def e_p(e)

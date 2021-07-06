@@ -15,11 +15,13 @@ class SphinxController < ApplicationController
   
   # 2019-11-01 決定不以經做 group, 因為不能以經的 term_hits 做排序
   def all_in_one
+    logger.debug Time.now
     @mode = 'extend' # 允許 boolean search
     remove_puncs_from_query
     return empty_result if @q.empty?
 
     t1 = Time.now
+    @canon_name = {}
     @mysql_client = sphinx_mysql_connection
 
     # 1. Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到,
@@ -60,9 +62,11 @@ class SphinxController < ApplicationController
     end
 
     @mysql_client.close
+    logger.debug "#{Time.now} sphinx search 完成"
 
     # 呼叫 KWIC 過濾 NEAR 與 Exclude, 並取得所有出處、行號
     kwic_by_juan(r)
+    logger.debug "#{Time.now} kwic_by_juan 完成"
 
     # 如果是 NEAR 或 Exclude, 要重新計算筆數
     if @q.include?('NEAR') or not @exclude.nil?
@@ -73,12 +77,12 @@ class SphinxController < ApplicationController
       @start  = params.key?(:start)  ? params[:start].to_i  : 0
       @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
       r[:results] = r[:results][@start, @rows]
+      logger.debug "#{Time.now} Near 或 Exclude Facet 完成"
     end
 
     r[:time] = Time.now - t1
     my_render r
   rescue Exception => e
-    logger.debug $!
     e.backtrace.each { |s| logger.debug s }
     r = { 
       num_found: 0,
@@ -291,7 +295,6 @@ class SphinxController < ApplicationController
     select = "SELECT work, title FROM #{@index}"\
       " WHERE #{@where} ORDER BY canon_order ASC"\
       " LIMIT #{@start}, #{@rows} OPTION #{OPTION}"
-    logger.debug select
     @mysql_client = sphinx_mysql_connection
     results = @mysql_client.query(select, symbolize_keys: true)    
     @mysql_client.close
@@ -439,7 +442,6 @@ class SphinxController < ApplicationController
       "ORDER BY hits DESC "\
       "LIMIT 9999999 "\
       "OPTION ranker=wordcount;" # 這會影響 weight 的計算方式
-    logger.debug cmd
 
     result = @mysql_client.query(cmd, symbolize_keys: true)
     r = result.to_a
@@ -646,7 +648,13 @@ class SphinxController < ApplicationController
 
   def my_facet_canon(juan, dest)
     k = juan[:canon]
-    name = Canon.find_by(id2: k).name
+
+    name = @canon_name[k]
+    if name.nil?
+      name = Canon.find_by(id2: k).name
+      @canon_name[k] = name
+    end
+
     unless dest.key?(k)
       dest[k] = { canon: k, canon_name: name, hits: 0, docs: 0 }
     end
@@ -696,9 +704,11 @@ class SphinxController < ApplicationController
   end
 
   def kwic_by_juan(r)
+    t1 = Time.now
     base = Rails.application.config.kwic_base
     se = Kwic3Helper::SearchEngine.new(base)
     r[:results].each do |juan|
+      logger.debug "=== work: #{juan[:work]}, juan: #{juan[:juan]} ==="
       opts = {
         work: juan[:work],
         juan: juan[:juan].to_i,
@@ -707,11 +717,13 @@ class SphinxController < ApplicationController
         rows: 99999
       }
       juan[:kwics] = kwic_boolean(se, opts)
+      logger.debug "#{Time.now} kwic_boolean 完成"
       raise CbetaError.new(500), "kwic_boolean 回傳 nil" if juan[:kwics].nil?
       juan[:kwics][:results].sort_by! { |x| x['lb'] }
       juan[:term_hits] = juan[:kwics][:num_found]
     end
     r[:results].delete_if { |x| x[:kwics][:results].empty? }
+    logger.debug "kwic_by_juan 花費時間： #{Time.now - t1}"
   end
   
   # boolean search 回傳 kwic
@@ -727,14 +739,14 @@ class SphinxController < ApplicationController
     a = []
     num_found = 0
 
-    puts "#{__LINE__} #{@q}"
     q = @q.gsub(/[!\-]"[^"]+"/, '') # 去除 not 之後的關鍵字
     q.gsub!(/"/, '')
-    puts "#{__LINE__} #{q}"
     keys = q.split
 
     keys.each do |k|
+      t1 = Time.now
       h = se.search(k, opts)
+      logger.debug "kwic search 花費時間: #{Time.now - t1}, work: #{opts[:work]}, juan: #{opts[:juan]}"
       num_found += h[:num_found]
       a += h[:results]
     end
@@ -750,15 +762,17 @@ class SphinxController < ApplicationController
 
   def kwic_boolean_exclude(se, opts)
     q = @q.sub(/^"(.*)"$/, '\1')
-    logger.debug "search_exclude, q: #{q}, exclude: #{@exclude}"
     @exclude.match(/^#{q}(.*)$/) do
       opts[:negative_lookahead] = $1
-      return se.search(q, opts)
+      return se.search_juan(q, opts)
     end
 
     @exclude.match(/^(.*?)#{q}$/) do
       opts[:negative_lookbehind] = $1
-      return se.search(q, opts)
+      t1 = Time.now
+      r = se.search_juan(q, opts)
+      logger.debug "search_juan 花費時間: #{Time.now - t1}"
+      return r
     end
 
     raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{q}，原查詢字串：#{params[:q]}"
@@ -881,7 +895,6 @@ class SphinxController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{facet}" unless facet.nil?
-    logger.debug @select
     results = @mysql_client.query(@select, symbolize_keys: true)
     hits = results.to_a
     return hits if @mode == 'group'
@@ -936,7 +949,6 @@ class SphinxController < ApplicationController
     select += " GROUP BY " + @opts[:group] if @opts.key?(:group)
     select += " ORDER BY " + @opts[:order] if @opts.key?(:order)
     select += " LIMIT #{@opts[:start]}, #{@opts[:rows]} OPTION #{OPTION}"
-    logger.debug select
     results = @mysql_client.query(select, symbolize_keys: true)    
     results.to_a
   end

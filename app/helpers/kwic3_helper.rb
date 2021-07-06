@@ -7,7 +7,7 @@ require 'pp'
 #   search_sa_according_to_option
 #     sa_rel_path
 #     search_sa
-#   exclude_filter
+#   #exclude_filter
 #   sort_word_count
 #   paginate
 #     result_hash
@@ -49,6 +49,7 @@ module Kwic3Helper
       @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
       #init_cache
       @text_with_puncs = {}
+      @current_sa_path = nil
     end
     
     def abs_sa_path(sa_path, name)
@@ -71,7 +72,7 @@ module Kwic3Helper
       
       @total_found = 0
       sa_results = search_sa_according_to_option(q)
-      sa_results = exclude_filter(sa_results, q)
+      #sa_results = exclude_filter2(sa_results, q)
       
       sort_word_count(q, sa_results) if @option[:word_count]
 
@@ -117,15 +118,14 @@ module Kwic3Helper
       sa_path = sa_rel_path('juan')
       hits = []
       keywords.split(',').each do |q| # 可能有多個關鍵字
+        t1 = Time.now
         start, found = search_sa(sa_path, q)
+        t2 = Time.now
+        debug "search_sa 花費時間: #{t2 - t1}"
         next if start.nil?
-        sa_results = [[sa_path, start, found]]
-        sa_results = exclude_filter(sa_results, q)
-        sa_results.each do |_, start, found|
-          hits += result_hash(q, start, found)
-        end
+        hits += result_hash(q, start, found)
+        debug "result_hash 花費時間: #{Time.now - t2}"
       end
-      debug hits
       hits.sort_by! { |x| x['offset'] }
     
       { 
@@ -276,9 +276,8 @@ module Kwic3Helper
     end
 
     def exclude_filter(sa_results, q)
-      s1 = @option[:negative_lookbehind] # 前面不要出現的字
-      s2 = @option[:negative_lookahead]  # 後面不要出現的字
-      debug "exclude_filter, 前綴: #{s1}, 後綴: #{s2}"
+      s1 = @option[:negative_lookbehind] 
+      s2 = @option[:negative_lookahead]  
       
       return sa_results if s1.nil? and s2.nil?
       
@@ -333,6 +332,41 @@ module Kwic3Helper
       r
     end
 
+    def exclude_filter2(info_array, q)
+      # 前面不要出現的字
+      if @option.key?(:negative_lookbehind)
+        exclude_prefix(info_array, q, @option[:negative_lookbehind])
+      end
+
+      # 後面不要出現的字
+      if @option.key?(:negative_lookahead)
+        exclude_suffix(info_array, q, @option[:negative_lookahead])
+      end
+    end
+
+    def exclude_prefix(info_array, q, prefix)
+      q2 = prefix + q
+      start, found = search_sa_after_open_files(q2)
+      return if start.nil?
+
+      sa_array = sa_block(start, found)
+
+      len = prefix.size
+      a = sa_array.map { |x| x + len }
+
+      info_array.delete_if { |x| a.include?(x[:sa_offset]) }
+    end
+
+    def exclude_suffix(info_array, q, suffix)
+      q2 = q + suffix
+      start, found = search_sa_after_open_files(q2)
+      return if start.nil?
+
+      sa_array = sa_block(start, found)
+
+      info_array.delete_if { |x| sa_array.include?(x[:sa_offset]) }
+    end
+
     def cache_fetch_juan_text(vol, work, juan)
       # 不使用 cache
       # # 換季要使用不同的 key
@@ -344,7 +378,6 @@ module Kwic3Helper
       #   File.binread(fn) 
       # end
       fn = "%03d.txt" % juan
-      puts "342: #{@txt_folder}, #{vol}, #{work}, #{fn})"
       fn = File.join(@txt_folder, vol, work, fn)
       # 待確認：L1557, 卷34 跨冊 有沒有問題
       File.binread(fn) 
@@ -366,6 +399,8 @@ module Kwic3Helper
     end
   
     def open_files(sa_path)
+      return true if @current_sa_path == sa_path
+      @current_sa_path = sa_path
       open_text(sa_path)
       open_sa   sa_path
       open_info sa_path
@@ -639,10 +674,17 @@ module Kwic3Helper
     def result_hash(q, start, rows)
       return [] if rows == 0
       return [] if start.nil?
-
-      debug "result_hash, start: #{start}"
       sa_array = sa_block(start, rows)
       info_array = read_info_block(sa_array, start, rows)
+      
+      if @option.key?(:juan)
+        if @option.key?(:negative_lookbehind) or @option.key?(:negative_lookahead)
+          t1 = Time.now
+          exclude_filter2(info_array, q)
+          debug "exclude_filter2 花費時間： #{Time.now - t1}"
+        end
+      end
+
       read_text_for_info_array(info_array, q)
       add_place_info(info_array) if @option[:place] # 附上 地理資訊
       info_array
@@ -743,7 +785,6 @@ module Kwic3Helper
     end
 
     def search_sa_after_open_files(q)
-      debug "search_sa_after_open_files, q: #{q}"
       i = bsearch(q, 0, @sa_last)
       return nil if i.nil?
     

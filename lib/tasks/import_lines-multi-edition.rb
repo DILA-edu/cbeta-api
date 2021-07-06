@@ -139,12 +139,14 @@ class ImportLinesMultiEdition
       return '' if e['resp'].start_with? 'CBETA'
     end
 
-    if e.has_attribute?('place') && e['place']=='inline'
-      r = traverse(e)
-      return "<span class='doube-line-note'>#{r}</span>"
-    else
-      return traverse(e)
+    if e.has_attribute?('place') 
+      if 'inline inline2 interlinear'.include?(e['place'])
+        r = traverse(e)
+        return "<span class='doube-line-note'>#{r}</span>"
+      end
     end
+    
+    traverse(e)
   end
 
   def e_note_orig(e, anchor_type=nil)

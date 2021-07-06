@@ -180,7 +180,7 @@ class P5aToText
     return '' if e['type']=='add'
     
     if e.has_attribute?('place') 
-      if %w(inline interlinear).include? e['place']
+      if %w(inline inline2 interlinear).include? e['place']
         r = traverse(e)
         return "（#{r}）"
       end

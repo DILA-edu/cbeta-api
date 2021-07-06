@@ -822,7 +822,7 @@ class P5aToHTMLForUI
   
   def e_note_foot(e)
     return '' unless e.key?('place')
-    if %w(interlinear inline).include? e['place']
+    if %w(interlinear inline inline2).include? e['place']
       return '(%s)' % traverse(e, 'footnote')
     else
       return ''
