@@ -65,6 +65,7 @@
 
 如果建索引後要更新：
 
+    cd /etc/sphinx
     sudo indexer --rotate cbeta13
     sudo indexer --rotate footnotes12
     sudo indexer --rotate titles12

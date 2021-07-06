@@ -209,7 +209,7 @@ class P5aToText
 
   def e_note(e)
     if e.has_attribute?('place')
-      if e['place'].start_with? 'inline'
+      if "inline inline2 interlinear".include?(e['place'])
         r = traverse(e)
         return "（#{r}）"
       end

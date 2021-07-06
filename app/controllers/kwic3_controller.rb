@@ -4,7 +4,7 @@ class Kwic3Controller < ApplicationController
   def init
     return unless params.key?(:q)
 
-    base = Rails.root.join('data', 'kwic25')
+    base = Rails.application.config.kwic_base
     @se = Kwic3Helper::SearchEngine.new(base)
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
@@ -42,7 +42,7 @@ class Kwic3Controller < ApplicationController
   
   def index
     if @q.match(/^"(\S+)" NEAR\/(\d+) "(\S+)"/)
-      result = @se.search_near($1, $3, $2.to_i, @opts)
+      result = @se.search_near(@q, @opts)
     else
       result = @se.search(@q, @opts)
     end
@@ -58,9 +58,12 @@ class Kwic3Controller < ApplicationController
   def juan
     return unless juan_check_params
 
-    if @q.match(/^"(\S+)" NEAR\/(\d+) "(\S+)"/)
-      h = @se.search_near($1, $3, $2.to_i, @opts)
+    logger.debug "q: #{@q}"
+    if @q.match?(/ NEAR\/(\d+) /)
+      logger.debug "search near"
+      h = @se.search_near(@q, @opts)
     else
+      logger.debug "search juan"
       h = @se.search_juan(@q, @opts)
     end
 
@@ -74,8 +77,6 @@ class Kwic3Controller < ApplicationController
     end
 
     r = { num_found: num_found, results: a}
-    pp r
-
     my_render r
   rescue Exception => e
     logger.debug $!

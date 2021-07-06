@@ -146,8 +146,7 @@ class ApplicationController < ActionController::Base
     if params.key? 'callback'
       render json: data, :callback => params['callback'], content_type: "application/javascript"
     else
-      s = JSON.pretty_generate(data)
-      render plain: s
+      render json: data
     end
   end
   

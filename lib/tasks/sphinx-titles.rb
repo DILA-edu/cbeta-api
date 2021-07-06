@@ -17,7 +17,14 @@ class SphinxTitles
     @fo = open_xml(fn)
     
     Work.find_each do |w|
-      next unless w.alt.blank?
+      # 如果有 替代典籍
+      unless w.alt.blank?
+        # 如果這部典籍在 CBETA 裡沒有全文，就不將 title 列入搜尋
+        # 例如 JA088 不加入，而 JB277 要加入
+        f = XmlFile.find_by work: w.n
+        next if f.nil?
+      end
+
       @id += 1
       data = {
         work: w.n,

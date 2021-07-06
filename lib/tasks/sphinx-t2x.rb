@@ -7,7 +7,7 @@ require 'set'
 require 'cbeta'
 
 class SphinxT2X
-  PUNCS = /[\n\.\(\)\[\]\-\d　．。，、？！：；「」〃『』《》＜＞〈〉〔〕［］【】〖〗（）…—]/
+  PUNCS = /[\n\.\(\)\[\]\-\d　．。，、？！：；／「」〃『』《》＜＞〈〉〔〕［］【】〖〗（）…—]/
   def initialize
     @cbeta = CBETA.new
     @dynasty_labels = read_dynasty_labels

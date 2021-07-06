@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   root 'static_pages#home'
+  match 'catalog_entry', to: 'catalog_entry#index', via: [:get, :post]
 
   match 'api/collections', to: 'canons#index', via: [:get, :post]
   match '/api/collections/:uuid/resources', to: 'works#index', via: [:get, :post]
@@ -26,12 +27,16 @@ Rails.application.routes.draw do
   match 'export/scope_selector_by_vol', via: [:get, :post]
 
   match 'juans/goto', via: [:get, :post]
+  match 'juans', to: 'juans#index', via: [:get, :post]
 
-  match 'kwic3/juan', via: [:get, :post]
+  match 'kwic3/juan', to: 'kwic3#juan', via: [:get, :post]
+  match 'kwic3',      to: 'kwic3#index', via: [:get, :post]
+  
+  match 'lines', to: 'lines#index', via: [:get, :post]
   
   get 'report/access'
   get 'report/daily', to: 'report#daily'
-  get 'report/url',   to: 'report#url', as: :report_url
+  match 'report/url', to: 'report#url', as: :report_url, via: [:get, :post]
 
   match 'sphinx/all_in_one', via: [:get, :post]
   match 'sphinx/facet/:facet_by', to: 'sphinx#facet', via: [:get, :post]
@@ -41,6 +46,7 @@ Rails.application.routes.draw do
   match 'sphinx/synonym',   via: [:get, :post]
   match 'sphinx/title',     via: [:get, :post]
   match 'sphinx/variants',  via: [:get, :post]
+  match 'sphinx', to: 'sphinx#index', via: [:get, :post]
 
   get 'static_pages/catalog'
   get 'static_pages/callback'
@@ -78,8 +84,12 @@ Rails.application.routes.draw do
   get 'static_pages/work'
 
   match 'toc', to: 'toc_node#index', via: [:get, :post]
+
+  match 'word_seg', to: 'word_seg#index', via: [:get, :post]
+
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works/word_count', via: [:get, :post]
+  match 'works', to: 'works#index', via: [:get, :post]
 
-  match ':controller', action: 'index', via: [:get, :post]
+  #match ':controller', action: 'index', via: [:get, :post]
 end

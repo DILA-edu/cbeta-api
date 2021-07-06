@@ -12,7 +12,7 @@ module RunbookSectionEbook
 
       step '壓縮全部 EPUB' do
         ruby_command do |rb_cmd, metadata, run|
-          q = config[:quarter].sub('.', '').downcase
+          q = config[:q2].downcase
           dest = "cbeta-epub-#{q}.zip"
           
           # 變更目前目錄再做壓縮，否則壓縮檔內會含路徑

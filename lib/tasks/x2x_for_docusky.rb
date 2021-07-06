@@ -261,7 +261,7 @@ class P5aToDocusky
 
     r = traverse(e)
     if e.has_attribute?('place')
-      if e['place'].start_with? 'inline'
+      if %w[inline inline2].include?(e['place'])
         r = %(<Udef_Class Type="doube-line-note">#{r}</Udef_Class>)
       elsif e['place']=='interlinear'
         r = %(<Udef_Class Type="interlinear-note">#{r}</Udef_Class>)

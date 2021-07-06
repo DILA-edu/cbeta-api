@@ -541,7 +541,7 @@ class P5aToHTMLForEveryEdition
       
       c = case e['place']
       when 'interlinear' then 'interlinear-note'
-      when 'inline' then 'doube-line-note'
+      when 'inline', 'inline2' then 'doube-line-note'
       end
       
       return "<span class='#{c}'>#{r}</span>"

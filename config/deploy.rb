@@ -1,7 +1,7 @@
 # config valid only for current version of Capistrano
 lock '3.16.0'
 
-set :application, 'cbdata14'
+set :application, 'cbapi1'
 set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
 # deploy current branch
@@ -22,6 +22,20 @@ append :linked_dirs, 'data', 'public/download', 'public/help', 'config/credentia
 
 # Default value for keep_releases is 5
 # set :keep_releases, 5
+
+set :passenger_restart_with_touch, true
+
+namespace :deploy do
+  namespace :check do
+    before :linked_files, :set_master_key do
+      on roles(:app), in: :sequence, wait: 10 do
+        unless test("[ -f #{shared_path}/config/master.key ]")
+          upload! 'config/master.key', "#{shared_path}/config/master.key"
+        end
+      end
+    end
+  end
+end
 
 namespace :deploy do
   task :restart do

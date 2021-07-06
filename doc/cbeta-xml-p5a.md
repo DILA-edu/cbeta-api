@@ -5,9 +5,9 @@
     cd ~/git-repos
     git clone git@github.com:cbeta-git/xml-p5a.git cbeta-xml-p5a
 
-切換到某個版本，例如 2017 Q4:
+切換到某個版本，例如 2021 Q1:
 
-    git checkout tags/CBETA2017Q4
+    git checkout tags/2021Q1
 
 如果要切換到某個 commit:
 

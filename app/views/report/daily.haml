@@ -1,6 +1,12 @@
 .row.justify-content-center
   .col-auto
     %h1 API 存取次數 日統計表
+    %p
+      單日最高：
+      =number_with_delimiter(@max)
+      %br
+      單日平均：
+      =number_with_delimiter(@avg)
 .row.justify-content-center
   .col-auto
     %table.table-striped

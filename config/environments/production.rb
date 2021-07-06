@@ -8,6 +8,7 @@ Rails.application.configure do
   config.cbeta_gaiji = File.join(GIT, 'cbeta_gaiji')
   config.x.authority = File.join(GIT, 'Authority-Databases')
   config.x.figures   = File.join(GIT, 'CBR2X-figures')
+  config.x.word_seg  = File.join(GIT, 'word-seg')
   config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
   config.kwic_base   = Rails.root.join('data', 'kwic25')
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
@@ -26,6 +27,8 @@ Rails.application.configure do
 
   # Full error reports are disabled and caching is turned on.
   config.consider_all_requests_local       = false
+
+  # kwic3 有問題, 不知是否是 cache 造成的，所以設為 false
   config.action_controller.perform_caching = false
 
   # Ensures that a master key has been made available in either ENV["RAILS_MASTER_KEY"]

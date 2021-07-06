@@ -35,6 +35,17 @@ namespace :convert do
     c.convert(args[:publish], args[:canon])
   end
 
+  desc "XML 轉 Change Log 比對用 Text Normal 版"
+  task :x2t, [:q] => :environment do |t, args|
+    v = args[:q] # 例: 2021Q1
+    src = Rails.configuration.cbeta_xml
+    gaiji = Rails.configuration.cbeta_gaiji
+    dest = File.join("/home/ray/cbeta-change-log", "cbeta-normal-#{v}")
+    require_relative 'quarterly/p5a_to_text'
+    c = P5aToText.new(src, dest, gaiji_base: gaiji)
+    c.convert
+  end
+
   desc "XML 轉 下載用 Text"
   task :x2t4d, [:publish, :canon] => :environment do |t, args|
     require 'tasks/convert_x2t_for_download'

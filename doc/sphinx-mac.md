@@ -1,8 +1,12 @@
 # Install Sphinx for Mac
 
-以下命令會自動安裝 mysql
+查看 sphinx 版本
+    brew info sphinx
 
+安裝 sphinx
     brew install sphinx
+
+上面命令會連同 mysql 一起安裝.
 
 ## sphinx configuration for Mac
 

@@ -3,9 +3,9 @@ require 'runbook'
 module RunbookSectionChangeLog
   def define_section_change_log(config)
     Runbook.section "製作 Change Log (runbook-change-log.rb)" do
-      step 'XML P5a 轉 normal 版 for Change Log' do
+      step "XML P5a 轉 normal 版 #{config[:q2]} for Change Log" do
         ruby_command do |rb_cmd, metadata, run|
-          v = config[:quarter].sub('.', '')
+          v = config[:q2]
           dest = File.join(config[:change_log], "cbeta-normal-#{v}")
           require_relative 'p5a_to_text'
           c = P5aToText.new(config[:xml], dest, gaiji_base: config[:gaiji])

@@ -7,7 +7,7 @@ require 'pp'
 #   search_sa_according_to_option
 #     sa_rel_path
 #     search_sa
-#   exclude_filter
+#   #exclude_filter
 #   sort_word_count
 #   paginate
 #     result_hash
@@ -22,11 +22,6 @@ require 'pp'
 #       read_str
 
 module Kwic3Helper
-
-  # 將數字轉為加上千位號的字串
-  def n2c(n)
-    ActionView::Base.new.number_to_currency(n, unit: '', precision: 0)
-  end
 
   class SearchEngine
     attr_reader :config, :size, :text
@@ -54,6 +49,7 @@ module Kwic3Helper
       @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
       #init_cache
       @text_with_puncs = {}
+      @current_sa_path = nil
     end
     
     def abs_sa_path(sa_path, name)
@@ -65,11 +61,9 @@ module Kwic3Helper
     end
   
     def search(query, args={})
-      warn "#{__LINE__} begin kwic3 search, query: #{query}, args: " + args.inspect
-      warn "#{__LINE__} OPTION: " + OPTION.inspect
+      t1 = Time.now
       @option = OPTION.merge args
-      warn "#{__LINE__} @option: " + @option.inspect
-      
+
       if @option[:sort] == 'b'
         q = query.reverse
       else
@@ -78,9 +72,7 @@ module Kwic3Helper
       
       @total_found = 0
       sa_results = search_sa_according_to_option(q)
-      warn "sa_results:\n" + sa_results.inspect
-      
-      sa_results = exclude_filter(sa_results, q)
+      #sa_results = exclude_filter2(sa_results, q)
       
       sort_word_count(q, sa_results) if @option[:word_count]
 
@@ -107,8 +99,8 @@ module Kwic3Helper
         end
       end
       
+      result[:time] = Time.now - t1
       result[:results] = hits
-      warn "#{__LINE__} end kwic3 search, query: #{query}, args: " + args.inspect
       result
     end
   
@@ -126,10 +118,14 @@ module Kwic3Helper
       sa_path = sa_rel_path('juan')
       hits = []
       keywords.split(',').each do |q| # 可能有多個關鍵字
-        sa_path, start, found = search_sa(sa_path, q)
+        t1 = Time.now
+        start, found = search_sa(sa_path, q)
+        t2 = Time.now
+        debug "search_sa 花費時間: #{t2 - t1}"
+        next if start.nil?
         hits += result_hash(q, start, found)
+        debug "result_hash 花費時間: #{Time.now - t2}"
       end
-      pp hits
       hits.sort_by! { |x| x['offset'] }
     
       { 
@@ -138,22 +134,17 @@ module Kwic3Helper
       }
     end
 
-    def search_near(q1, q2, near, args={})
-      Rails.logger.debug "#{__LINE__} #{Time.now}"
+    def search_near(query, args={})
       t1 = Time.now
       @option = OPTION.merge args
       
       @total_found = 0
-      hits = []
 
-      sa_paths_by_option.each do |sa_path|
-        Rails.logger.debug "#{__LINE__} sa_path: #{sa_path}"
-        a1 = search_sa(sa_path, q1)
-        next if a1.nil?
-        a2 = search_sa(sa_path, q2)
-        next if a2.nil?
-        hits += check_near(near, q1, a1, q2, a2)
+      unless @option.key? :juan
+        raise CbetaError.new(400), "KWIC near 必須指定 juan 參數"
       end
+
+      hits = search_near_juan(query, args)
 
       { 
         num_found: hits.size,
@@ -161,7 +152,7 @@ module Kwic3Helper
         results: hits
       }
     end
-
+    
     private
     
     def add_place_info(info_array)
@@ -248,29 +239,21 @@ module Kwic3Helper
       end
     end
 
-    def check_near(near, q1, a1, q2, a2)
-      Rails.logger.debug "#{__LINE__} #{Time.now} 開始 check_near"
-      sa_path1, start1, found1 = a1
-      sa_path2, start2, found2 = a2
-
-      open_files(sa_path1)
-
-      Rails.logger.debug "#{__LINE__} #{Time.now} 依位置排序"
-      pos1 = sort_by_pos(start1, found1)
-      pos2 = sort_by_pos(start2, found2)
-
+    def check_near(eligibles, near, q2, pos2)
+      q1 = eligibles[:terms].last
+      pos1 = eligibles[:pos_group]
       rows = []
       i1 = 0
       i2 = 0
-      t1 = Time.now
       while (i1 < pos1.size) and (i2 < pos2.size)
-        p1, sa1 = pos1[i1]
+        p1, sa1 = pos1[i1].last
         p2, sa2 = pos2[i2]
 
         if p1 > p2
           j = i1
-          while (pos1[j][0] - p2 - q2.size) <= near
-            rows << [p2, pos1[j][0], q2, q1, suffix_info(sa2)]
+          while (pos1[j][-1][0] - p2 - q2.size) <= near
+            a = pos1[j].dup
+            rows << (a << pos2[i2])
             j += 1
             break if j >= pos1.size
           end
@@ -278,32 +261,23 @@ module Kwic3Helper
         else
           j = i2
           while (pos2[j][0] - p1 - q1.size) <= near
-            rows << [p1, pos2[j][0], q1, q2, suffix_info(sa1)]
+            a = pos1[i1].dup
+            rows << (a << pos2[j])
             j += 1
             break if j >= pos2.size
           end
           i1 += 1
         end
       end
-      Rails.logger.debug "#{__LINE__} 兩兩比對距離 花費時間：#{Time.now - t1}"
 
-      t1 = Time.now
-      hits = []
-      rows.each do |p3, p4, q3, q4, info|
-        info['kwic'] = read_text_near(p3, p4, q3, q4)
-        hits << info
-      end
-      Rails.logger.debug "#{__LINE__} 讀取文字 花費時間：#{Time.now - t1}"
-
-      t1 = Time.now
-      hits.sort_by! { |h| h['vol'] + h['lb'] }
-      Rails.logger.debug "#{__LINE__} 依 vol+lb 排序  花費時間：#{Time.now - t1}"
-      hits
+      rows.sort_by! { |x| x.last }
+      eligibles[:terms] << q2
+      eligibles[:pos_group] = rows
     end
 
     def exclude_filter(sa_results, q)
-      s1 = @option[:negative_lookbehind] # 前面不要出現的字
-      s2 = @option[:negative_lookahead]  # 後面不要出現的字
+      s1 = @option[:negative_lookbehind] 
+      s2 = @option[:negative_lookahead]  
       
       return sa_results if s1.nil? and s2.nil?
       
@@ -358,6 +332,41 @@ module Kwic3Helper
       r
     end
 
+    def exclude_filter2(info_array, q)
+      # 前面不要出現的字
+      if @option.key?(:negative_lookbehind)
+        exclude_prefix(info_array, q, @option[:negative_lookbehind])
+      end
+
+      # 後面不要出現的字
+      if @option.key?(:negative_lookahead)
+        exclude_suffix(info_array, q, @option[:negative_lookahead])
+      end
+    end
+
+    def exclude_prefix(info_array, q, prefix)
+      q2 = prefix + q
+      start, found = search_sa_after_open_files(q2)
+      return if start.nil?
+
+      sa_array = sa_block(start, found)
+
+      len = prefix.size
+      a = sa_array.map { |x| x + len }
+
+      info_array.delete_if { |x| a.include?(x[:sa_offset]) }
+    end
+
+    def exclude_suffix(info_array, q, suffix)
+      q2 = q + suffix
+      start, found = search_sa_after_open_files(q2)
+      return if start.nil?
+
+      sa_array = sa_block(start, found)
+
+      info_array.delete_if { |x| sa_array.include?(x[:sa_offset]) }
+    end
+
     def cache_fetch_juan_text(vol, work, juan)
       # 不使用 cache
       # # 換季要使用不同的 key
@@ -374,10 +383,6 @@ module Kwic3Helper
       File.binread(fn) 
     end
     
-    def debug(s)
-      Rails.logger.debug s
-    end
-  
     def negative_pattern(s)
       r = s
       if s.nil?
@@ -394,7 +399,8 @@ module Kwic3Helper
     end
   
     def open_files(sa_path)
-      warn "#{__LINE__} open_files: #{sa_path}"
+      return true if @current_sa_path == sa_path
+      @current_sa_path = sa_path
       open_text(sa_path)
       open_sa   sa_path
       open_info sa_path
@@ -407,20 +413,26 @@ module Kwic3Helper
       else
         fn = abs_sa_path sa_path, 'info.dat'
       end
-      raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
-      @f_info = File.open(fn, 'rb')
+      
+      begin
+        @f_info = File.open(fn, 'rb')
+      rescue
+        raise CbetaError.new(500), "開檔失敗: #{fn}"
+      end
     end
     
     def open_sa(sa_path)
-      warn "#{__LINE__} open_sa: sa_path: #{sa_path}"
       if @option[:sort] == 'b'
         fn = abs_sa_path sa_path, 'sa-b.dat'
       else
         fn = abs_sa_path sa_path, 'sa.dat'
       end
-      warn "open suffix array file: #{fn}"
-      raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
-      @f_sa = File.open(fn, 'rb')
+      
+      begin
+        @f_sa = File.open(fn, 'rb')
+      rescue
+        raise CbetaError.new(500), "開檔失敗: #{fn}"
+      end
     end
   
     def open_text(sa_path)
@@ -429,11 +441,15 @@ module Kwic3Helper
       else
         fn = abs_sa_path sa_path, 'all.txt'
       end
-      raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist? fn
       
-      @f_txt = File.open(fn, 'rb')
-      @size = @f_txt.size / 4
-      @sa_last = @size - 1 # sa 最後一筆的 offset
+      begin
+        @f_txt = File.open(fn, 'rb')
+        @size = @f_txt.size / 4
+        @sa_last = @size - 1 # sa 最後一筆的 offset
+      rescue
+        raise CbetaError.new(500), "開檔失敗: #{fn}"
+      end
+
       true
     end
     
@@ -470,7 +486,6 @@ module Kwic3Helper
     end
 
     def paginate_by_location(q, sa_results)
-      Rails.logger.debug "paginate_by_location"
       hits = []
       sa_results.each do |sa_path, start, found|
         hits += result_hash(q, start, found)
@@ -486,7 +501,6 @@ module Kwic3Helper
     end
 
     def read_info_block(sa_array, offset, size)
-      Rails.logger.debug "read_info_block, offset: #{offset}"
       @f_info.seek (offset * SuffixInfo::SIZE)
       block = @f_info.read(SuffixInfo::SIZE * size)
       r = []
@@ -494,7 +508,7 @@ module Kwic3Helper
         j = i * SuffixInfo::SIZE
         b = block[j, SuffixInfo::SIZE]
         h = SuffixInfo::unpack(b)
-        h['lb'] = "%04d%s%02d" % [h['page'], h['col'], h['line']]
+        h['lb'] = "%s%s%02d" % [h['page'], h['col'], h['line']]
         h.delete 'page'
         h.delete 'col'
         h.delete 'line'
@@ -512,7 +526,6 @@ module Kwic3Helper
     end
     
     def read_text_for_info_array(info_array, q)
-      Rails.logger.debug "read_text_for_info_array, q: #{q}"
       t1 = Time.now
       if @option[:kwic_w_punc] or @option[:kwic_wo_punc]
         if @option[:kwic_w_punc]
@@ -533,7 +546,11 @@ module Kwic3Helper
       end
     end
 
-    def read_text_near(p1, p2, q1, q2)
+    def read_text_near(matches)
+      m1 = matches.first
+      p1 = m1[:pos_sa][0]
+      q1 = m1[:term]
+
       if p1 < @option[:around]
         i1 = 0
         r = read_str(0, p1)
@@ -545,10 +562,19 @@ module Kwic3Helper
       r += "<mark>#{q1}</mark>"
       i1 = p1 + q1.size
 
-      r += read_str(i1, p2-i1)
+      found = false
+      matches[1..-1].each do |m|
+        q2 = m[:term]
+        p2 = m[:pos_sa][0]
+        next if (p2+q2.size) <= i1 # 與上一個詞完全重疊
+        
+        r += read_str(i1, p2-i1)
+        r += "<mark>#{q2}</mark>"
+        i1 = p2 + q2.size
+        found = true
+      end
 
-      r += "<mark>#{q2}</mark>"
-      i1 = p2 + q2.size
+      return nil unless found
 
       r + read_str(i1, @option[:around])
     end
@@ -646,11 +672,19 @@ module Kwic3Helper
     end
         
     def result_hash(q, start, rows)
-      Rails.logger.debug "result_hash, q: #{q}, start: #{start}"
       return [] if rows == 0
-      
+      return [] if start.nil?
       sa_array = sa_block(start, rows)
       info_array = read_info_block(sa_array, start, rows)
+      
+      if @option.key?(:juan)
+        if @option.key?(:negative_lookbehind) or @option.key?(:negative_lookahead)
+          t1 = Time.now
+          exclude_filter2(info_array, q)
+          debug "exclude_filter2 花費時間： #{Time.now - t1}"
+        end
+      end
+
       read_text_for_info_array(info_array, q)
       add_place_info(info_array) if @option[:place] # 附上 地理資訊
       info_array
@@ -667,7 +701,6 @@ module Kwic3Helper
     end
 
     def sa_paths_by_option
-      debug "#{__LINE__} sa_paths_by_option: @option: " + @option.inspect
       if @option.key? :works
         works = @option[:works].split(',').uniq
         r = []
@@ -698,11 +731,60 @@ module Kwic3Helper
       end
       File.join(sa_unit, relative_path)
     end
+
+    # 單卷範圍內 做 NEAR 搜尋
+    def search_near_juan(query, args={})
+      sa_path = sa_rel_path('juan')
+      return nil unless open_files(sa_path)
+
+      if query.match(/^"(\S+)" (NEAR\/(\d+) .*)$/)
+        q1 = $1
+        nears = $2
+        start1, found1 = search_sa_after_open_files(q1)
+        return [] if start1.nil?
+
+        pos1 = sort_by_pos(start1, found1)
+        eligibles = {
+          terms: [q1],
+          pos_group: pos1.map { |x| [x] }
+        }
+
+        nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, q|
+          start2, found2 = search_sa_after_open_files(q)
+          pos2 = sort_by_pos(start2, found2)
+          check_near(eligibles, near.to_i, q, pos2)
+        end
+      else
+        raise CbetaError.new(400), "NEAR 語法錯誤 query: #{query}"
+      end
+
+      hits = []
+      eligibles[:pos_group].each do |pos_group|
+        a = []
+        pos_group.each_with_index do |v, i|
+          a << { 
+            pos_sa: v,
+            term: eligibles[:terms][i]
+          }
+        end
+        a.sort_by! { |x| x[:pos_sa].first }
+        sa_start = a[0][:pos_sa][1]
+        info = suffix_info(sa_start)
+        kwic = read_text_near(a)
+        unless kwic.nil?
+          info['kwic'] = kwic
+          hits << info
+        end
+      end
+      hits
+    end
     
     def search_sa(sa_path, q)
-      debug "#{__LINE__} search_sa, sa_path: #{sa_path}, q: #{q}"
       return nil unless open_files(sa_path)
-    
+      search_sa_after_open_files(q)
+    end
+
+    def search_sa_after_open_files(q)
       i = bsearch(q, 0, @sa_last)
       return nil if i.nil?
     
@@ -714,28 +796,23 @@ module Kwic3Helper
     
       found = stop - start + 1
       @total_found += found
-      #@hits += result_hash(q, start, found)
-      return sa_path, start, found
+      return start, found
     end
     
     def search_sa_according_to_option(q)
       sa_results = []
       sa_paths_by_option.each do |sa_path|
-        r = search_sa(sa_path, q)
-        sa_results << r unless r.nil?
+        start, found = search_sa(sa_path, q)
+        sa_results << [sa_path, start, found] unless start.nil?
       end
       sa_results
     end
 
     def sort_by_pos(start, size)
-      t1 = Time.now
-      a = Array.new(size) { |i| [sa(start + i), start + i] }
+      abort "#{__LINE__} start is nil" if start.nil?
       # 創建 820722 個元素，花費 1.7 秒
-      Rails.logger.debug "#{__LINE__} sort_by_pos 創建矩陣 花費時間： #{Time.now - t1}, size: #{a.size}"
-      t1 = Time.now
-      a.sort!
-      Rails.logger.debug "#{__LINE__} sort_by_pos sort 花費時間： #{Time.now - t1}"
-      a
+      a = Array.new(size) { |i| [sa(start + i), start + i] }
+      a.sort
     end
 
     def sort_word_count(q, sa_results)
@@ -771,7 +848,7 @@ module Kwic3Helper
       @f_info.seek (i * SuffixInfo::SIZE)
       b = @f_info.read(SuffixInfo::SIZE)
       r = SuffixInfo::unpack(b)
-      r['lb'] = "%04d%s%02d" % [r['page'], r['col'], r['line']]
+      r['lb'] = "%s%s%02d" % [r['page'], r['col'], r['line']]
       r.delete 'page'
       r.delete 'col'
       r.delete 'line'
@@ -797,9 +874,7 @@ module Kwic3Helper
       end
     end
 
-    def warn(s)
-      Rails.logger.warn s
-    end
+    include ApplicationHelper
 
   end # end of class SearchEngine
 end # end of module
