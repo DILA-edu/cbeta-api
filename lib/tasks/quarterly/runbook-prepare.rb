@@ -10,8 +10,8 @@ module Prepare
     
     Runbook.section "前置作業 (runbook-prepare.rb)" do
       if config[:env] == 'staging'
-        add step_copy_data_folder
-        add step_copy_public
+        add step_copy_data_folder unless step_copy_data_folder.nil?
+        add step_copy_public      unless step_copy_public.nil?
 
         #step 'Create symbolic link for figures to GitHub' do
         #  command "ln -sf #{config[:cbr_figures]} #{config[:figures]}"
@@ -36,12 +36,14 @@ module Prepare
         # import:layers 要用到，所以提早做
         add step_import_juanline
   
-        add step_copy_help
+        add step_copy_help unless step_copy_help.nil?
       end
     end
   end
 
   def define_step_copy_data_folder(config)
+    return nil unless Dir.exist?(config[:old_data])
+
     Runbook.step '從上一季複製 data 資料夾' do
       ruby_command do |rb_cmd, metadata, run|
         Quarterly.copy_folder(config[:old_data], config[:data], ['figures'])
@@ -50,6 +52,7 @@ module Prepare
   end
 
   def define_step_copy_help(config)
+    return nil unless Dir.exist?(config[:old])
     Runbook.step '從上一季複製檔案 Help HTML' do
       ruby_command do |rb_cmd, metadata, run|
         src = File.join(config[:old], "public/help")
@@ -60,6 +63,7 @@ module Prepare
   end
 
   def define_step_copy_public(config)
+    return nil unless Dir.exist?(config[:old])
     Runbook.step '從上一季複製 public 資料夾' do
       ruby_command do |rb_cmd, metadata, run|
         %w[download help].each do |fn|
