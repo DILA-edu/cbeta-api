@@ -1313,8 +1313,8 @@ lb,position,tag,type,key,name
 0093a06,3,place,end,PL17310,熨斗園
 0093a07,5,place,start,PL17430,報恩塔
 0093a07,7,place,end,PL17430,報恩塔
-0093a09,4,place,start,PL17312,鐵爐墩園
-0093a09,7,place,end,PL17312,鐵爐墩園
+0093a10,1,place,start,PL17312,鐵爐墩園
+0093a10,4,place,end,PL17312,鐵爐墩園
 0095a02,3,person,start,A001873,隆琦隱元祖師
 0095a02,8,person,end,A001873,隆琦隱元祖師
 0095a02,14,person,start,A003591,性幽獨往
@@ -2129,8 +2129,8 @@ lb,position,tag,type,key,name
 0125a03,6,place,end,PL48260,毘耶
 0125a03,19,place,start,PL48403,鹿野苑
 0125a03,21,place,end,PL48403,鹿野苑
-0125a04,1,place,start,PL48390,跋提河
-0125a04,3,place,end,PL48390,跋提河
+0125a07,1,place,start,PL48390,跋提河
+0125a07,3,place,end,PL48390,跋提河
 0126a02,1,person,start,A000490,斷際運禪師
 0126a02,5,person,end,A000490,斷際運禪師
 0126a08,1,place,start,PL83,大唐

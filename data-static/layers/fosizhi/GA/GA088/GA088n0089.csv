@@ -283,8 +283,8 @@ lb,position,tag,type,key,name
 0033a04,1,person,end,A001301,智者大師
 0033a04,17,person,start,A000756,四明尊者
 0033a05,2,person,end,A000756,四明尊者
-0033a05,11,place,start,PL14697,雲居
-0033a05,12,place,end,PL14697,雲居
+0033a05,11,place,start,PL14697,雪居
+0033a05,12,place,end,PL14697,雪居
 0033a05,13,person,start,A008355,韶國師
 0033a05,15,person,end,A008355,韶國師
 0033a06,4,person,start,A000282,永明壽禪師
@@ -2593,8 +2593,8 @@ lb,position,tag,type,key,name
 0141a04,11,person,end,A000748,竺法蘭
 0141a05,2,place,start,PL23663,鴻臚寺
 0141a05,4,place,end,PL23663,鴻臚寺
-0141a05,8,place,start,PL23521,雒陽
-0141a05,9,place,end,PL23521,雒陽
+0141a05,8,place,start,PL23521,𨿅陽
+0141a05,9,place,end,PL23521,𨿅陽
 0141a05,12,place,start,PL23533,雍門
 0141a05,13,place,end,PL23533,雍門
 0141a05,16,place,start,PL23663,白馬寺
@@ -3201,8 +3201,8 @@ lb,position,tag,type,key,name
 0170a02,18,person,end,A006946,大智
 0170a02,21,person,start,A006946,智
 0170a02,21,person,end,A006946,智
-0170a02,27,place,start,PL14411,天台
-0170a02,28,place,end,PL14411,天台
+0170a02,27,place,start,PL14411,天名
+0170a02,28,place,end,PL14411,天名
 0170a02,32,place,start,PL14088,海潮
 0170a02,33,place,end,PL14088,海潮
 0170a03,1,person,start,A007443,珂
