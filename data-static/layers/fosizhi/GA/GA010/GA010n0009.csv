@@ -381,7 +381,7 @@ lb,position,tag,type,key,name
 0023a03,20,person,end,A006997,侯繼高
 0023a03,27,person,start,A006952,周應賓
 0023a03,29,person,end,A006952,周應賓
-0023a03,32,person,start,A009327,裘璉
+0023a03,31,person,start,A009327,裘璉
 0023a04,1,person,end,A009327,裘璉
 0023a04,2,person,start,A010932,朱謹
 0023a04,3,person,end,A010932,朱謹
@@ -14997,7 +14997,7 @@ lb,position,tag,type,key,name
 0401a02,23,place,end,PL13298,顯聖
 0401a02,25,person,start,A014632,丹巖和尚
 0401a02,28,person,end,A014632,丹巖和尚
-0401a02,32,person,start,A014633,但憨
+0401a03,1,person,start,A014633,但憨
 0401a03,2,person,end,A014633,但憨
 0401a03,11,person,start,A014635,雙鑑
 0401a03,12,person,end,A014635,雙鑑
@@ -15295,7 +15295,7 @@ lb,position,tag,type,key,name
 0407a04,19,place,end,PL14088,法雨寺
 0407a04,22,person,start,A012267,化聞悟
 0407a04,24,person,end,A012267,化聞悟
-0407a04,32,place,start,PL14164,伴山庵
+0407a05,1,place,start,PL14164,伴山庵
 0407a05,3,place,end,PL14164,伴山庵
 0407a05,7,person,start,A014592,源輝
 0407a05,8,person,end,A014592,源輝
