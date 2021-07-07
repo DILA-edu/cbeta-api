@@ -143,7 +143,7 @@ class ImportLayers
       @log.puts <<~MSG
         ----------
         位置超出文字範圍
-        Layer: #{@layer}
+        lb: #{lb2linehead(row['lb'])}
         位置: #{i}
         CBETA 文字: #{line_text}, 長度: #{line_text.size}
         #{row.to_s}
@@ -198,6 +198,7 @@ class ImportLayers
   def e_note(e)
     return if e['type'] == 'add'
     return if e['type'] == 'orig'
+    return if e.key?('type') and e['type'].match(/^cf\d+$/)
     traverse(e)
   end
 

@@ -57,6 +57,18 @@ class CheckP5a
     end
   end
   
+  def e_lem(e)
+    unless e.key?('wit')
+      error "lem 缺少 wit 屬性"
+    end
+  end
+
+  def e_rdg(e)
+    unless e.key?('wit')
+      error "rdg 缺少 wit 屬性"
+    end
+  end
+
   def error(msg)
     s = "#{@basename} #{msg}"
     puts s
@@ -97,6 +109,8 @@ class CheckP5a
     when 'g'       then e_g(e)
     when 'graphic' then e_graphic(e)
     when 'lb'      then e_lb(e)
+    when 'lem'     then e_lem(e)
+    when 'rdg'     then e_rdg(e)
     else traverse(e)
     end
   end
