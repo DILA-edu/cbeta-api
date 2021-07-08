@@ -98,12 +98,18 @@ module RunbookSectionSphinx
       end
     else
       Runbook.step 'sphin index' do
-        command "sudo indexer #{option} cbeta#{config[:v]}"
-        command "sudo indexer #{option} footnotes#{config[:v]}"
-        command "sudo indexer #{option} titles#{config[:v]}"
-        command 'sudo service sphinxsearch restart'
-        note '可手動清除舊版 Index: /var/lib/sphinxsearch'
-        note '注意 /var/lib/sphinxsearch/data 不能刪。'
+        ruby_command do |rb_cmd, metadata, run|
+          %w[cbeta footnotes titles].each do |s|
+            system "sudo indexer --config /etc/sphinx/sphinx.conf #{s}#{config[:v]}"
+          end
+
+          # 不改權限會有問題 (不知道如何設定 indexer 新建檔案的預設 owner)
+          system "sudo chown -R sphinx:sphinx /var/lib/sphinx"
+          system 'sudo service sphinx restart'
+        end
+
+        note '可手動清除舊版 Index: /var/lib/sphinx'
+        note '注意 /var/lib/sphinx/data 不能刪。'
       end
     end
   end
