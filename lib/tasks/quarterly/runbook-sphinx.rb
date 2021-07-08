@@ -100,7 +100,7 @@ module RunbookSectionSphinx
       Runbook.step 'sphin index' do
         ruby_command do |rb_cmd, metadata, run|
           %w[cbeta footnotes titles].each do |s|
-            system "sudo indexer --config /etc/sphinx/sphinx.conf #{s}#{config[:v]}"
+            system "sudo indexer --config /etc/sphinx/sphinx.conf --rotate #{s}#{config[:v]}"
           end
 
           # 不改權限會有問題 (不知道如何設定 indexer 新建檔案的預設 owner)
