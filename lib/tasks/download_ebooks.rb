@@ -5,7 +5,7 @@ class DownloadEbooks
   end
 
   def run
-    dest_folder = Rails.join('public', 'download')
+    dest_folder = Rails.root.join('public', 'download')
     Dir.chdir(dest_folder) do
       (1..3).each do |i|
         download("#{BASE}/pdf_a4/cbeta_pdf_#{i}_#{@q}.zip")
@@ -30,15 +30,12 @@ class DownloadEbooks
   private
 
   def download(url)
-    dest_folder = Rails.join('public', 'download')
-    Dir.chdir(dest_folder) do
-      cmd = "curl -C - -O #{url}"
-      i = 1
-      loop do
-        puts "#{i} ----------"
-        puts(cmd)
-        break if system(cmd)
-      end
+    cmd = "curl -C - -O #{url}"
+    i = 1
+    loop do
+      puts "#{i} ----------"
+      puts(cmd)
+      break if system(cmd)
     end
   end
 end
