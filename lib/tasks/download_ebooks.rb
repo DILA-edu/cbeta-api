@@ -23,6 +23,7 @@ class DownloadEbooks
       download("#{BASE}/mobi/cbeta_mobi_#{@q}.zip")
       File.rename("cbeta_mobi_#{@q}.zip", "cbeta-mobi-#{@q}.zip")
       system "unzip cbeta-mobi-#{@q}.zip"
+      system "rm -rf mobi"
       system "mv cbeta_mobi_#{@q} mobi"
     end
   end
