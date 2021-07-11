@@ -5,3 +5,4 @@ namespace :download do
     require "tasks/download_ebooks"
     c = DownloadEbooks.new.run
   end
+end
