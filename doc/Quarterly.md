@@ -55,11 +55,13 @@ CBETA XML 新一季定案後執行。
 
 ## change log
 
+## EPUB 給 heaven 轉 PDF, MOBI
+
 ## 電子書
 
-參考 ebook.md
+rake download:ebooks
 
-### 檢測
+## 檢測
 
 /Users/ray/Documents/Projects/CBETAOnline/test
 
