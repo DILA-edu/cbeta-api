@@ -48,7 +48,6 @@ CBETA XML 新一季定案後執行。
 * 更新、取得 Github Repositories, 參考 update-github.md
 * Prepare Data Files, 參考 prepare-files.md
 * 資料初始化, 根據 doc/setup.md 做設定
-* Change Log, 參考 /Users/ray/Documents/Projects/CBETA/ChangeLog/README.md
 * kwic 25
 
 ## heaven 比對 HTML
