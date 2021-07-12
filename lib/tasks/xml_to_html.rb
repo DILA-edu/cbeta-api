@@ -370,7 +370,9 @@ class XMLToHTML
       @notes_orig[@juan] = {}
       
       # 如果是 卷 跨 冊，下半部編號繼續編
-      @notes_add[@juan] = [] unless juan_cross_vol(@juan)==2
+      unless juan_cross_vol(@vol, @work_id, @juan)==2
+        @notes_add[@juan] = []
+      end
 
       r += "<juan #{@juan}>"
       @open_divs.each { |d|
@@ -485,16 +487,15 @@ class XMLToHTML
     node['href'] = "#n#{n}"
 
     i = n.last(2)
-    label = case subtype
-    when 'biao' then node["data-label"] = "標#{i}"
-    when 'jie'  then node["data-label"] = "解#{i}"
-    when 'ke'   then node["data-label"] = "科#{i}"
-    else ''
+    node.content = case subtype
+    when 'biao' then "[標#{i}]"
+    when 'jie'  then "[解#{i}]"
+    when 'ke'   then "[科#{i}]"
+    else
+      i = i.delete_prefix('0')
+      "[#{i}]"
     end
 
-    i = i.delete_prefix('0')
-    node.content = "[#{i}]"
-    
     return node.to_s
   end
   
@@ -621,10 +622,10 @@ class XMLToHTML
   end
 
   # 卷跨冊
-  def juan_cross_vol(juan=nil)
-    case @work_id
+  def juan_cross_vol(vol, work, juan=nil)
+    case work
     when 'L1557'
-      case @vol
+      case vol
       when 'L130'
         return 1 if juan == 17 # 上半卷
       when 'L131'
@@ -637,7 +638,7 @@ class XMLToHTML
         return 2 if juan.nil? or juan == 51
       end
     when 'X0714'
-      case @vol
+      case vol
       when 'X39'
         return 1 if juan == 3
       when 'X40'
@@ -717,12 +718,12 @@ class XMLToHTML
     @lg_row_open = false
     @mod_notes = Set.new
     @next_line_buf = ''
-    @notes_add = {} unless juan_cross_vol == 2
     @notes_mod = {}
     @notes_orig = {}
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
+    @notes_add = {} unless juan_cross_vol(@vol, @work_id) == 2
     @updated_at = MyCbetaShare.get_update_date(xml_fn)
     
     if @sutra_no.match(/^(T05|T06|T07)n0220/)
@@ -771,7 +772,7 @@ class XMLToHTML
     @series = CBETA.get_canon_from_vol(vol)
     
     source = File.join(@xml_root, @series, vol)
-    Dir[source+"/*"].each { |f|
+    Dir[source+"/*"].sort.each { |f|
       handle_sutra(f)
     }
   end
@@ -792,7 +793,7 @@ class XMLToHTML
     @notes_mod[juan_no].each_pair do |k,v|
       r += "<span class='footnote' id='n#{k}'><a href=''>[#{k}]</a> #{v}</span>\n"
     end
-    unless juan_cross_vol(juan_no) == 1
+    unless juan_cross_vol(@vol, @work_id, juan_no) == 1
       r += @notes_add[juan_no].join("\n") 
     end
     r
@@ -947,7 +948,7 @@ class XMLToHTML
     back = html_back(juan_no)
 
     # 如果是卷跨冊的上半部
-    if juan_cross_vol(juan_no) == 1
+    if juan_cross_vol(@vol, @work_id, juan_no) == 1
       @html_buf = body
       @back_buf = back
       return
