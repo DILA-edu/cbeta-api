@@ -791,7 +791,7 @@ class XMLToHTML
   def html_back(juan_no)
     r = @back[juan_no]
     @notes_mod[juan_no].each_pair do |k,v|
-      r += "<span class='footnote' id='n#{k}'><a href=''>[#{k}]</a> #{v}</span>\n"
+      r += "<span class='footnote' id='n#{k}'><a href='#note_anchor_#{k}'>[#{k}]</a> #{v}</span>\n"
     end
     unless juan_cross_vol(@vol, @work_id, juan_no) == 1
       r += @notes_add[juan_no].join("\n") 
