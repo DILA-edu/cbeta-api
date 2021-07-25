@@ -1,5 +1,9 @@
 # CBETA API 工作流程
 
+## 換新 Server
+
+參考 apache2.md
+
 ## 測試版 新建 測試環境 (git branch: dev)
 
 參考 staging.md
