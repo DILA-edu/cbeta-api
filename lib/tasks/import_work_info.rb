@@ -209,6 +209,15 @@ class ImportWorkInfo
         update_xml_files(xml_path, data[:juan], data[:juan_start])
       else
         data[:juan] += info[:juan]
+
+        # 如果是 卷跨冊
+        unless data[:juan_list_array].empty? and info[:juan_list_array].empty?
+          if data[:juan_list_array].last == info[:juan_list_array].first
+            info[:juan_list_array].shift
+            data[:juan] -= 1
+          end
+        end
+        
         data[:juan_list_array] += info[:juan_list_array]
       end
       @cjk_chars += info[:cjk_chars]
