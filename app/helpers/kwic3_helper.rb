@@ -121,7 +121,7 @@ module Kwic3Helper
         t1 = Time.now
         start, found = search_sa(sa_path, q)
         t2 = Time.now
-        debug "search_sa 花費時間: #{t2 - t1}"
+        debug "search_sa, q: #{q}, 花費時間: #{t2 - t1}"
         next if start.nil?
         hits += result_hash(q, start, found)
         debug "result_hash 花費時間: #{Time.now - t2}"
@@ -785,6 +785,7 @@ module Kwic3Helper
     end
 
     def search_sa_after_open_files(q)
+      t1 = Time.now
       i = bsearch(q, 0, @sa_last)
       return nil if i.nil?
     
@@ -796,6 +797,7 @@ module Kwic3Helper
     
       found = stop - start + 1
       @total_found += found
+      debug "search_sa_after_open_files, q: #{q}, 花費時間: #{Time.now - t1}"
       return start, found
     end
     

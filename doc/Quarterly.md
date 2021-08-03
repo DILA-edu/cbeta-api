@@ -14,18 +14,20 @@ CBETA XML 新一季定案後執行。
 
 在開發端執行 `bundle exec rake quarterly:run` 最前面的 update from github
 
-## 異體字
+## Update cbeta-metadata on GitHub
+
+### 異體字
 
 參考 variants.md 更新 cbeta-metadata 裡的異體字資料
 
-## 新增典籍
+### 新增典籍
 
 執行以下命令檢查：
     rake check:metadata
 
 如果有新增的典籍，參考 new-canon.md
 
-### UUID
+## UUID
 
 視需要產生 UUID, 參考 uuid.md
 
