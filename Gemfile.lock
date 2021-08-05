@@ -322,7 +322,7 @@ DEPENDENCIES
   open3
   pg
   puma (~> 3.11)
-  rails (~> 6.0.3)
+  rails (~> 6.0.4)
   rubyzip
   runbook
   sass-rails (~> 5.0)
