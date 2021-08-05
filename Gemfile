@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '2.7.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.0.4'
+gem 'rails', '~> 6.0.3'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3'
 # Use Puma as the app server
@@ -70,7 +70,7 @@ end
 # bundle --full-index
 gem 'cbeta', '>= 2.7.11'
 
-gem "haml-rails", "~> 2.0"
+gem "haml-rails"
 gem 'time_diff'
 gem 'zhongwen_tools'
 gem 'chronic_duration'
