@@ -68,3 +68,7 @@ rake download:ebooks
 
     ruby test.rb dev
     ruby test-by-change-log.rb 2019Q4
+
+## 建立下一季開發環境
+
+建 database, 參考 postgresql.md
