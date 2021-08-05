@@ -5,7 +5,8 @@ class Kwic3Controller < ApplicationController
     return unless params.key?(:q)
 
     base = Rails.application.config.kwic_base
-    @se = Kwic3Helper::SearchEngine.new(base)
+    #@se = Kwic3Helper::SearchEngine.new(base)
+    @se = KwicService.new(base)
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
     @q = handle_zzs(params[:q])
@@ -58,6 +59,7 @@ class Kwic3Controller < ApplicationController
   def juan
     return unless juan_check_params
 
+    t1 = Time.now
     logger.debug "q: #{@q}"
     if @q.match?(/ NEAR\/(\d+) /)
       logger.debug "search near"
@@ -76,7 +78,7 @@ class Kwic3Controller < ApplicationController
       h.delete('juan')
     end
 
-    r = { num_found: num_found, results: a}
+    r = { num_found: num_found, time: Time.now-t1, results: a}
     my_render r
   rescue Exception => e
     logger.debug $!

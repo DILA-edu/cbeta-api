@@ -1,9 +1,9 @@
 module Config
   def get_config(env=nil)
-    r = { v: 1 } # 影響 /var/www 下資料夾名稱
-    r[:q1]      = '2021Q2' # 製作 change log 時比對 q1, q2
-    r[:q2]      = '2021Q3'
-    r[:publish] = '2021-07' # 版權資訊 => 版本記錄 => 發行日期
+    r = { v: 2 } # 影響 /var/www 下資料夾名稱
+    r[:q1]      = '2021Q3' # 製作 change log 時比對 q1, q2
+    r[:q2]      = '2021Q4'
+    r[:publish] = '2021-10' # 版權資訊 => 版本記錄 => 發行日期
 
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
     r[:env] = env || Rails.env
