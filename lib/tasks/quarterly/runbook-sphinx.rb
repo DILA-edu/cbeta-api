@@ -41,7 +41,7 @@ module RunbookSectionSphinx
           `ruby merge.rb`
         end
       end
-      note "可以手動清除 #{base} 資料夾下的舊資料"
+      note "可以手動清除 #{Rails.configuration.x.sphinx_base} 資料夾下的舊資料"
     end
   end
 
