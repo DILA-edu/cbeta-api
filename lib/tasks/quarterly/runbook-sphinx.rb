@@ -10,14 +10,10 @@ module RunbookSectionSphinx
     step_sphinx_vars = define_step_sphinx_vars(config)
 
     Runbook.section "Sphinx" do
-      if config[:env] == 'staging'
-        add step_sphinx_create_folder
-        add step_sphinx_config
-      else
-        add step_sphinx_x2t
-        add step_sphinx_t2x
-      end
-
+      add step_sphinx_create_folder
+      add step_sphinx_config
+      add step_sphinx_x2t
+      add step_sphinx_t2x
       add step_sphinx_index
       add step_sphinx_vars
     end # Runbook.section
@@ -34,6 +30,7 @@ module RunbookSectionSphinx
           template = File.read(fn)
           s = template % { v: v }
           dest = File.join(base, "#{v}-#{index}.conf")
+          puts "write #{dest}"
           File.write(dest, s)
         end
 
@@ -49,10 +46,10 @@ module RunbookSectionSphinx
     Runbook.step 'sphin 建資料夾' do
       ruby_command do |rb_cmd, metadata, run|
         v = config[:v]
-        Dir.chdir('/var/lib/sphinxsearch') do
-          ["", "-puncs", "-footnotes", "-titles"].each do |s|
+        Dir.chdir('/var/lib/sphinx') do
+          ["", "-footnotes", "-titles"].each do |s|
             system "sudo mkdir data#{v}#{s}"
-            system "sudo chown -R sphinxsearch:root data#{v}#{s}"
+            system "sudo chown -R sphinx:sphinx data#{v}#{s}"
           end
         end
       end
@@ -60,12 +57,6 @@ module RunbookSectionSphinx
   end
 
   def define_step_sphinx_index(config)
-    if config[:env] == 'staging'
-      option = ''
-    else
-      option = ' --rotate'
-    end
-
     if Rails.env.development?
       Runbook.step 'sphinx index' do
         ruby_command do |rb_cmd, metadata, run|
@@ -80,12 +71,12 @@ module RunbookSectionSphinx
       Runbook.step 'sphin index' do
         ruby_command do |rb_cmd, metadata, run|
           %w[cbeta footnotes titles].each do |s|
-            system "sudo indexer --config /etc/sphinx/sphinx.conf --rotate #{s}#{config[:v]}"
+            exec("sudo indexer --config /etc/sphinx/sphinx.conf --rotate #{s}#{config[:v]}")
           end
 
           # 不改權限會有問題 (不知道如何設定 indexer 新建檔案的預設 owner)
-          system "sudo chown -R sphinx:sphinx /var/lib/sphinx"
-          system 'sudo service sphinx restart'
+          exec("sudo chown -R sphinx:sphinx /var/lib/sphinx")
+          exec('sudo service sphinx restart')
         end
 
         note '可手動清除舊版 Index: /var/lib/sphinx'
@@ -120,5 +111,10 @@ module RunbookSectionSphinx
       confirm '如果欄位有變更，要修改： /etc/sphinxsearch/sphinx.conf'
       command 'rake sphinx:x2t'
     end
+  end
+
+  def exec(cmd)
+    puts cmd
+    system cmd
   end
 end # end of module
