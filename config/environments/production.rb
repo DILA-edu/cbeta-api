@@ -12,6 +12,7 @@ Rails.application.configure do
   config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
   config.kwic_base   = Rails.root.join('data', 'kwic25')
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
+  config.x.sphinx_conf = '/etc/sphinx'
   config.sphinx_index = "cbeta#{config.x.v}"
   config.x.sphinx_footnotes = "footnotes#{config.x.v}"
   config.x.sphinx_titles = "titles#{config.x.v}"

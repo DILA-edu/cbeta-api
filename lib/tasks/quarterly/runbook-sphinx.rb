@@ -27,41 +27,21 @@ module RunbookSectionSphinx
     Runbook.step 'sphinx configuration' do
       ruby_command do |rb_cmd, metadata, run|
         v = config[:v]
+        base = Rails.configuration.x.sphinx_base
 
-        fn = Rails.root.join('lib/tasks/quarterly/sphinx-template.conf')
-        template = File.read(fn)
-        s = template % { v: v }
-        dest = "/etc/sphinxsearch/cbdata#{v}.conf"
-        File.write(dest, s)
-        new_confs = [dest]
-
-        fn = Rails.root.join('lib/tasks/quarterly/sphinx-template-footnotes.conf')
-        template = File.read(fn)
-        s = template % { v: v }
-        dest = "/etc/sphinxsearch/footnotes#{v}.conf"
-        File.write(dest, s)
-        new_confs << dest
-
-        fn = Rails.root.join('lib/tasks/quarterly/sphinx-template-titles.conf')
-        template = File.read(fn)
-        s = template % { v: v }
-        dest = "/etc/sphinxsearch/titles#{v}.conf"
-        File.write(dest, s)
-        new_confs << dest
-
-        new_conf = ''
-        new_confs.each do |s|
-          new_conf += "cat #{s}\n"
+        %w[cbdata footnotes titles].each do |index|
+          fn = Rails.root.join("lib/tasks/quarterly/sphinx-template-#{index}.conf")
+          template = File.read(fn)
+          s = template % { v: v }
+          dest = File.join(base, "#{v}-#{index}.conf")
+          File.write(dest, s)
         end
 
-        fn = '/etc/sphinxsearch/sphinx.conf'
-        s = File.read(fn)
-        s.sub!(%r{cat /etc/sphinxsearch/base.conf}) do
-          new_conf + $&
+        Dir.chdir(base) do
+          `ruby merge.rb`
         end
-        File.write(fn, s)
       end
-      note '可以手動清除 /etc/sphinxsearch/sphinx.conf 的舊資料'
+      note "可以手動清除 #{base} 資料夾下的舊資料"
     end
   end
 
