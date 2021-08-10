@@ -706,9 +706,10 @@ class SphinxController < ApplicationController
   def kwic_by_juan(r)
     t1 = Time.now
     base = Rails.application.config.kwic_base
-    se = Kwic3Helper::SearchEngine.new(base)
+    #se = Kwic3Helper::SearchEngine.new(base)
+    se = KwicService.new(base)
     r[:results].each do |juan|
-      logger.debug "=== work: #{juan[:work]}, juan: #{juan[:juan]} ==="
+      #logger.debug "=== work: #{juan[:work]}, juan: #{juan[:juan]} ==="
       opts = {
         work: juan[:work],
         juan: juan[:juan].to_i,
@@ -717,7 +718,7 @@ class SphinxController < ApplicationController
         rows: 99999
       }
       juan[:kwics] = kwic_boolean(se, opts)
-      logger.debug "#{Time.now} kwic_boolean 完成"
+      #logger.debug "#{Time.now} kwic_boolean 完成"
       raise CbetaError.new(500), "kwic_boolean 回傳 nil" if juan[:kwics].nil?
       juan[:kwics][:results].sort_by! { |x| x['lb'] }
       juan[:term_hits] = juan[:kwics][:num_found]
@@ -771,7 +772,7 @@ class SphinxController < ApplicationController
       opts[:negative_lookbehind] = $1
       t1 = Time.now
       r = se.search_juan(q, opts)
-      logger.debug "search_juan 花費時間: #{Time.now - t1}"
+      #logger.debug "search_juan 花費時間: #{Time.now - t1}"
       return r
     end
 

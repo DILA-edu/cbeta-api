@@ -120,10 +120,10 @@ class KwicService
       t1 = Time.now
       start, found = search_sa(sa_path, q)
       t2 = Time.now
-      debug "search_sa, q: #{q}, 花費時間: #{t2 - t1}"
+      #debug "search_sa, q: #{q}, 花費時間: #{t2 - t1}"
       next if start.nil?
       hits += result_hash(q, start, found)
-      debug "result_hash 花費時間: #{Time.now - t2}"
+      #debug "result_hash 花費時間: #{Time.now - t2}"
     end
     hits.sort_by! { |x| x['offset'] }
   
@@ -424,10 +424,12 @@ class KwicService
   end
   
   def open_sa(sa_path)
-    if @option.key(:juan)
-      return $global.dig(:sa, @option[:work], @option[:juan], @option[:sort])
+    if @option.key?(:juan)
+      @f_sa = $global.dig(:sa, @option[:work], @option[:juan], @option[:sort])
+      return unless @f_sa.nil?
     end
 
+    puts "open sa from file"
     if @option[:sort] == 'b'
       fn = abs_sa_path sa_path, 'sa-b.dat'
     else
@@ -442,6 +444,16 @@ class KwicService
   end
 
   def open_text(sa_path)
+    if @option.key?(:juan)
+      @f_txt = $global.dig(:text, @option[:work], @option[:juan], @option[:sort])
+      unless @f_txt.nil?
+        @sa_last = @f_txt.size - 1 # sa 最後一筆的 offset
+        return
+      end
+    end
+
+    puts "open_text from file"
+
     if @option[:sort] =='b'
       fn = abs_sa_path sa_path, 'all-b.txt'
     else
@@ -452,7 +464,6 @@ class KwicService
       @f_txt = File.open(fn, 'rb')
       @size = @f_txt.size / 4
       @sa_last = @size - 1 # sa 最後一筆的 offset
-      puts "size: #{@size}"
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
     end
@@ -503,8 +514,10 @@ class KwicService
 
   def read_i32(fi, offset)
     if @f_sa.kind_of?(Array)
+      #Rails.logger.warn "read sa from ram"
       @f_sa[offset]
     else
+      Rails.logger.warn "read sa from file"
       fi.seek (offset * 4)
       b = fi.read(4)
       b.unpack('V')[0]
@@ -532,10 +545,15 @@ class KwicService
   end
 
   def read_str(offset, length)
-    @f_txt.seek (offset * 4)
-    b = @f_txt.read(length * 4)
-    raise "讀取 text 檔錯誤, file size: #{@size}, offset: #{offset}" if b.nil?
-    @encoding_converter.convert(b)
+    if @f_txt.kind_of?(String)
+      @f_txt[offset, length]
+    else
+      Rails.logger.warn "read_str from file"
+      @f_txt.seek (offset * 4)
+      b = @f_txt.read(length * 4)
+      raise "讀取 text 檔錯誤, file size: #{@size}, offset: #{offset}" if b.nil?
+      @encoding_converter.convert(b)
+    end
   end
   
   def read_text_for_info_array(info_array, q)
@@ -695,7 +713,7 @@ class KwicService
       if @option.key?(:negative_lookbehind) or @option.key?(:negative_lookahead)
         t1 = Time.now
         exclude_filter2(info_array, q)
-        debug "exclude_filter2 花費時間： #{Time.now - t1}"
+        #debug "exclude_filter2 花費時間： #{Time.now - t1}"
       end
     end
 
@@ -815,7 +833,7 @@ class KwicService
   
     found = stop - start + 1
     @total_found += found
-    debug "search_sa_after_open_files, q: #{q}, 花費時間: #{Time.now - t1}"
+    #debug "search_sa_after_open_files, q: #{q}, 花費時間: #{Time.now - t1}"
     return start, found
   end
   

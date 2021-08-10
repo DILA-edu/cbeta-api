@@ -21,5 +21,11 @@ module Cbdata13
     # Application configuration can go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded after loading
     # the framework and any gems in your application.
+
+    if defined?(Rails::Server)
+      config.after_initialize do
+        SuffixArrayLoader.new.run # 將單卷 suffix array 讀入記憶體, 包括全部文字
+      end
+    end
   end
 end
