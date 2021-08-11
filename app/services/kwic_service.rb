@@ -118,12 +118,12 @@ class KwicService
     hits = []
     keywords.split(',').each do |q| # 可能有多個關鍵字
       t1 = Time.now
-      start, found = search_sa(sa_path, q)
+      start, found = search_sa_juan(sa_path, q)
       t2 = Time.now
-      #debug "search_sa, q: #{q}, 花費時間: #{t2 - t1}"
+      #warn "search_sa, q: #{q}, 花費時間: #{t2 - t1}"
       next if start.nil?
       hits += result_hash(q, start, found)
-      #debug "result_hash 花費時間: #{Time.now - t2}"
+      #warn "result_hash 花費時間: #{Time.now - t2}"
     end
     hits.sort_by! { |x| x['offset'] }
   
@@ -185,6 +185,25 @@ class KwicService
     end
   end
 
+  def bsearch_juan(q, left, right)
+    return nil if left > right
+    middle = (right - left) / 2 + left
+    i = @f_sa[middle] # suffix offset
+    s = @f_txt[i, q.size]
+    if s == q
+      return middle
+    elsif middle == left
+      return nil if s > q
+      return bsearch_juan(q, middle+1, right)
+    else
+      if s > q
+        return bsearch_juan(q, left, middle)
+      else
+        return bsearch_juan(q, middle, right)
+      end
+    end
+  end
+
   # 在 sa 中搜尋符合 q 的第一筆
   def bsearch_start(q, left, right)
     return right if left >= right
@@ -211,6 +230,32 @@ class KwicService
     end
   end
   
+  # 在 sa 中搜尋符合 q 的第一筆
+  def bsearch_start_juan(q, left, right)
+    return right if left >= right
+    middle = (right - left) / 2 + left
+    i = @f_sa[middle] # suffix offset
+    s = @f_txt[i, q.size]
+    if s == q
+      return 0 if middle == 0
+      i = @f_sa[middle-1] # suffix offset
+      s = @f_txt[i, q.size]
+      if s == q
+        return bsearch_start_juan(q, left, middle-1)
+      else
+        return middle
+      end
+    else
+      i = @f_sa[middle+1] # suffix offset
+      s = @f_txt[i, q.size]
+      if s == q
+        return middle+1
+      else
+        return bsearch_start_juan(q, middle+1, right)
+      end
+    end
+  end
+
   # 在 sa 中搜尋符合 q 的最後一筆
   def bsearch_stop(q, left, right)
     return left if left >= right
@@ -234,6 +279,33 @@ class KwicService
         return middle-1
       else
         return bsearch_stop(q, left, middle-1)
+      end
+    end
+  end
+
+  # 在 sa 中搜尋符合 q 的最後一筆
+  def bsearch_stop_juan(q, left, right)
+    return left if left >= right
+    middle = (right - left) / 2 + left
+    i = @f_sa[middle] # suffix offset
+    s = @f_txt[i, q.size]
+    if s == q
+      return middle if middle == @sa_last
+      i = @f_sa[middle+1] # suffix offset
+      s = @f_txt[i, q.size]
+      if s == q
+        return bsearch_stop_juan(q, middle+1, right)
+      else
+        return middle
+      end
+    else
+      return left if middle == 0
+      i = @f_sa[middle-1] # suffix offset
+      s = @f_txt[i, q.size]
+      if s == q
+        return middle-1
+      else
+        return bsearch_stop_juan(q, left, middle-1)
       end
     end
   end
@@ -827,6 +899,11 @@ class KwicService
     search_sa_after_open_files(q)
   end
 
+  def search_sa_juan(sa_path, q)
+    return nil unless open_files(sa_path)
+    search_sa_after_open_files_juan(q)
+  end
+
   def search_sa_after_open_files(q)
     t1 = Time.now
     i = bsearch(q, 0, @sa_last)
@@ -844,6 +921,23 @@ class KwicService
     return start, found
   end
   
+  def search_sa_after_open_files_juan(q)
+    t1 = Time.now
+    i = bsearch_juan(q, 0, @sa_last)
+    return nil if i.nil?
+  
+    # 往前找符合的第一筆
+    start = bsearch_start_juan(q, 0, i)
+  
+    # 往後找符合的最後一筆
+    stop = bsearch_stop_juan(q, i, @sa_last)
+  
+    found = stop - start + 1
+    @total_found += found
+    #debug "search_sa_after_open_files, q: #{q}, 花費時間: #{Time.now - t1}"
+    return start, found
+  end
+
   def search_sa_according_to_option(q)
     sa_results = []
     sa_paths_by_option.each do |sa_path|

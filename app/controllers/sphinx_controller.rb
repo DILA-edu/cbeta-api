@@ -21,66 +21,13 @@ class SphinxController < ApplicationController
     return empty_result if @q.empty?
 
     t1 = Time.now
-    @canon_name = {}
-    @mysql_client = sphinx_mysql_connection
-
-    # 1. Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到,
-    #    例如: 意樂 NEAR/7 增上意樂
-    #    但這不是我們要的結果, 所以 sphinx 先傳回全部，再由 KWIC 過濾
-    if @q.include?('NEAR')
-      @start = 0
-      @rows = 99_999
+    key = "#{Rails.configuration.x.q}/%s" % params.to_s
+    r = Rails.cache.fetch(key) do
+      all_in_one_sub
     end
-
-    # Sphinx 沒有 Exclude 功能，所以同 NEAR.
-    @exclude = nil
-    if @q.match(/^"(.*?)" \-"(.*)"$/)
-      @q = $1
-      @exclude = $2
-      @start = 0
-      @rows = 99_999
-      unless @exclude.include?(@q)
-        raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{@q}，原查詢字串：#{params[:q]}"
-      end
-    end
-
-    unless @q.include? '"'
-      @q = %("#{@q}")
-    end
-    @where = %{MATCH('#{@q}')} + @filter
-
-    if @order.empty?
-      @order = 'ORDER BY canon_order ASC'
-    end
-
-    r = sphinx_search(@fields, @where, @start, @rows, order: @order)
-
-    # NEAR 跟 Exclude 的 Facet 不用 Sphinx 的
-    if params[:facet] == '1' and not @q.include?('NEAR') and @exclude.nil?
-      r['facet'] = {}
-      facet_by_sphinx_all(r['facet'])
-    end
-
-    @mysql_client.close
-    logger.debug "#{Time.now} sphinx search 完成"
-
-    # 呼叫 KWIC 過濾 NEAR 與 Exclude, 並取得所有出處、行號
-    kwic_by_juan(r)
-    logger.debug "#{Time.now} kwic_by_juan 完成"
-
-    # 如果是 NEAR 或 Exclude, 要重新計算筆數
-    if @q.include?('NEAR') or not @exclude.nil?
-      r[:num_found] = r[:results].size
-      r[:total_term_hits] = r[:results].inject(0) { |i, x| i + x[:term_hits] }
-      r[:facet] = my_facet(r[:results])
-
-      @start  = params.key?(:start)  ? params[:start].to_i  : 0
-      @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
-      r[:results] = r[:results][@start, @rows]
-      logger.debug "#{Time.now} Near 或 Exclude Facet 完成"
-    end
-
+    r[:cache_key] = key
     r[:time] = Time.now - t1
+    
     my_render r
   rescue Exception => e
     e.backtrace.each { |s| logger.debug s }
@@ -363,6 +310,69 @@ class SphinxController < ApplicationController
       }
     end
     r[:results] = works.values
+  end
+
+  def all_in_one_sub
+    @canon_name = {}
+    @mysql_client = sphinx_mysql_connection
+
+    # 1. Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到,
+    #    例如: 意樂 NEAR/7 增上意樂
+    #    但這不是我們要的結果, 所以 sphinx 先傳回全部，再由 KWIC 過濾
+    if @q.include?('NEAR')
+      @start = 0
+      @rows = 99_999
+    end
+
+    # Sphinx 沒有 Exclude 功能，所以同 NEAR.
+    @exclude = nil
+    if @q.match(/^"(.*?)" \-"(.*)"$/)
+      @q = $1
+      @exclude = $2
+      @start = 0
+      @rows = 99_999
+      unless @exclude.include?(@q)
+        raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{@q}，原查詢字串：#{params[:q]}"
+      end
+    end
+
+    unless @q.include? '"'
+      @q = %("#{@q}")
+    end
+    @where = %{MATCH('#{@q}')} + @filter
+
+    if @order.empty?
+      @order = 'ORDER BY canon_order ASC'
+    end
+
+    r = sphinx_search(@fields, @where, @start, @rows, order: @order)
+
+    # NEAR 跟 Exclude 的 Facet 不用 Sphinx 的
+    if params[:facet] == '1' and not @q.include?('NEAR') and @exclude.nil?
+      r['facet'] = {}
+      facet_by_sphinx_all(r['facet'])
+    end
+
+    @mysql_client.close
+    logger.debug "#{Time.now} sphinx search 完成"
+
+    # 呼叫 KWIC 過濾 NEAR 與 Exclude, 並取得所有出處、行號
+    kwic_by_juan(r)
+    logger.debug "#{Time.now} kwic_by_juan 完成"
+
+    # 如果是 NEAR 或 Exclude, 要重新計算筆數
+    if @q.include?('NEAR') or not @exclude.nil?
+      r[:num_found] = r[:results].size
+      r[:total_term_hits] = r[:results].inject(0) { |i, x| i + x[:term_hits] }
+      r[:facet] = my_facet(r[:results])
+
+      @start  = params.key?(:start)  ? params[:start].to_i  : 0
+      @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
+      r[:results] = r[:results][@start, @rows]
+      logger.debug "#{Time.now} Near 或 Exclude Facet 完成"
+    end
+
+    r
   end
 
   def downsize_vars_array(vars)
@@ -929,6 +939,7 @@ class SphinxController < ApplicationController
       time: Time.now - t1,
       num_found: total_found,
       total_term_hits: total_term_hits,
+      cache_key: nil
     }
     r[:facet] = facet_result unless facet.nil?
     r[:results] = hits
