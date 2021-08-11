@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 module Cbdata13
   class Application < Rails::Application
     config.x.v = '2'
-    config.x.ver = '1.2.26'
+    config.x.ver = '1.2.26.13'
     config.x.q = '2021q3' # 季號
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
     config.time_zone = 'Taipei'
@@ -21,11 +21,5 @@ module Cbdata13
     # Application configuration can go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded after loading
     # the framework and any gems in your application.
-
-    if defined?(Rails::Server)
-      config.after_initialize do
-        SuffixArrayLoader.new.run # 將單卷 suffix array 讀入記憶體, 包括全部文字
-      end
-    end
   end
 end

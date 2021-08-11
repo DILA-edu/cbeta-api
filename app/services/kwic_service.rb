@@ -46,9 +46,9 @@ class KwicService
     @sa_base    = File.join(base, 'sa')   # suffix array folder
     @txt_folder = File.join(base, 'text') # 含有標點的純文字檔
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
-    #init_cache
     @text_with_puncs = {}
     @current_sa_path = nil
+    @cache = Rails.configuration.x.q
   end
   
   def abs_sa_path(sa_path, name)
@@ -424,17 +424,21 @@ class KwicService
   end
   
   def open_sa(sa_path)
-    if @option.key?(:juan)
-      @f_sa = $global.dig(:sa, @option[:work], @option[:juan], @option[:sort])
-      return unless @f_sa.nil?
-    end
-
-    puts "open sa from file"
     if @option[:sort] == 'b'
       fn = abs_sa_path sa_path, 'sa-b.dat'
     else
       fn = abs_sa_path sa_path, 'sa.dat'
     end
+
+    if @option.key?(:juan)
+      k = "#{@cache}/sa/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
+      @f_sa = Rails.cache.fetch(k) do
+        File.read(fn, mode: "rb").unpack("V*")
+      end
+      return unless @f_sa.nil?
+    end
+
+    Rails.logger.warn "open sa from file"
     
     begin
       @f_sa = File.open(fn, 'rb')
@@ -444,22 +448,25 @@ class KwicService
   end
 
   def open_text(sa_path)
+    if @option[:sort] =='b'
+      fn = abs_sa_path sa_path, 'all-b.txt'
+    else
+      fn = abs_sa_path sa_path, 'all.txt'
+    end
+
     if @option.key?(:juan)
-      @f_txt = $global.dig(:text, @option[:work], @option[:juan], @option[:sort])
+      k = "#{@cache}/text/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
+      @f_txt = Rails.cache.fetch(k) do
+        File.read(fn, encoding: "UTF-32LE")
+      end
       unless @f_txt.nil?
         @sa_last = @f_txt.size - 1 # sa 最後一筆的 offset
         return
       end
     end
 
-    puts "open_text from file"
+    Rails.logger.warn "open_text from file"
 
-    if @option[:sort] =='b'
-      fn = abs_sa_path sa_path, 'all-b.txt'
-    else
-      fn = abs_sa_path sa_path, 'all.txt'
-    end
-    
     begin
       @f_txt = File.open(fn, 'rb')
       @size = @f_txt.size / 4
@@ -517,7 +524,7 @@ class KwicService
       #Rails.logger.warn "read sa from ram"
       @f_sa[offset]
     else
-      Rails.logger.warn "read sa from file"
+      #Rails.logger.warn "read sa from file"
       fi.seek (offset * 4)
       b = fi.read(4)
       b.unpack('V')[0]
@@ -548,7 +555,7 @@ class KwicService
     if @f_txt.kind_of?(String)
       @f_txt[offset, length]
     else
-      Rails.logger.warn "read_str from file"
+      #Rails.logger.warn "read_str from file"
       @f_txt.seek (offset * 4)
       b = @f_txt.read(length * 4)
       raise "讀取 text 檔錯誤, file size: #{@size}, offset: #{offset}" if b.nil?
