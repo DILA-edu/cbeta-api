@@ -10,6 +10,7 @@ require 'csv'
 require 'open3'
 
 class SphinxController < ApplicationController
+  MAX_JUAN = 999_999
   OPTION = 'ranker=wordcount,max_matches=9999999'
   before_action :init
   
@@ -312,6 +313,14 @@ class SphinxController < ApplicationController
     r[:results] = works.values
   end
 
+  # function calls:
+  #   sphinx_search
+  #   facet_by_sphinx_all
+  #   kwic_by_juan
+  #     kwic_boolean
+  #       KwicService::search_near
+  #       kwic_boolean_exclude
+  #         KwicSearvice::search_juan
   def all_in_one_sub
     @canon_name = {}
     @mysql_client = sphinx_mysql_connection
@@ -353,23 +362,30 @@ class SphinxController < ApplicationController
       facet_by_sphinx_all(r['facet'])
     end
 
+    if @exclude
+      exclude_by_sphinx(r)
+    end
+
     @mysql_client.close
     logger.debug "#{Time.now} sphinx search 完成"
 
-    # 呼叫 KWIC 過濾 NEAR 與 Exclude, 並取得所有出處、行號
-    kwic_by_juan(r)
-    logger.debug "#{Time.now} kwic_by_juan 完成"
-
-    # 如果是 NEAR 或 Exclude, 要重新計算筆數
-    if @q.include?('NEAR') or not @exclude.nil?
+    if @q.include?('NEAR')
+      # 呼叫 KWIC 過濾 NEAR, 並取得所有出處、行號
+      kwic_by_juan(r)
       r[:num_found] = r[:results].size
       r[:total_term_hits] = r[:results].inject(0) { |i, x| i + x[:term_hits] }
-      r[:facet] = my_facet(r[:results])
+    end
+
+    if @q.include?('NEAR') or not @exclude.nil?
+      r[:facet] = my_facet(r[:results]) if @facet==1
 
       @start  = params.key?(:start)  ? params[:start].to_i  : 0
       @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
       r[:results] = r[:results][@start, @rows]
-      logger.debug "#{Time.now} Near 或 Exclude Facet 完成"
+    end
+
+    unless @q.include?('NEAR')
+      kwic_by_juan(r)
     end
 
     r
@@ -402,6 +418,34 @@ class SphinxController < ApplicationController
       total_term_hits: 0,
       results: []
     }
+  end
+
+  def exclude_by_sphinx(r1)
+    r2 = sphinx_search_simple(@exclude)
+    h = {}
+    r2.each do |juan|
+      k = "#{juan[:work]}_#{juan[:juan]}"
+      h[k] = juan[:term_hits]
+    end
+
+    r1[:total_term_hits] = 0
+    i = 0
+    while i < r1[:results].size
+      juan = r1[:results][i]
+      k = "#{juan[:work]}_#{juan[:juan]}"
+      if h.key?(k)
+        juan[:term_hits] -= h[k]
+      end
+      
+      if juan[:term_hits] <= 0
+        r1[:num_found] -= 1
+        r1[:results].delete_at(i)
+        next
+      end
+
+      r1[:total_term_hits] += juan[:term_hits]
+      i += 1
+    end
   end
   
   def exist_in_cbeta(q)
@@ -549,6 +593,7 @@ class SphinxController < ApplicationController
     @start  = params.key?(:start)  ? params[:start].to_i  : 0
     @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
     @around = params.key?(:around) ? params[:around].to_i : 10
+    @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
 
     case action_name
     when 'footnotes'
@@ -944,6 +989,21 @@ class SphinxController < ApplicationController
     r[:facet] = facet_result unless facet.nil?
     r[:results] = hits
     r
+  end
+
+  def sphinx_search_simple(q)
+    where = %{MATCH('"#{q}"')} + @filter
+    fields = 'weight() as term_hits, work, juan'
+    select = %(
+      SELECT #{fields}
+      FROM #{@index}
+      WHERE #{where}
+      LIMIT 0, #{MAX_JUAN}
+      OPTION #{OPTION}
+    ).gsub(/\s+/, " ").strip
+    
+    results = @mysql_client.query(select, symbolize_keys: true)
+    results.to_a
   end
 
   def sphinx_mysql_connection
