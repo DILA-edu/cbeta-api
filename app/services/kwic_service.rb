@@ -46,7 +46,6 @@ class KwicService
     @sa_base    = File.join(base, 'sa')   # suffix array folder
     @txt_folder = File.join(base, 'text') # 含有標點的純文字檔
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
-    @text_with_puncs = {}
     @current_sa_path = nil
     @cache = Rails.configuration.x.q
   end
@@ -442,19 +441,15 @@ class KwicService
   end
 
   def cache_fetch_juan_text(vol, work, juan)
-    # 不使用 cache
-    # # 換季要使用不同的 key
-    # key = Rails.application.config.sphinx_index + "kwic-text-#{vol}-#{work}-#{juan}"
-    # Rails.cache.fetch(key) do
-    #   fn = "%03d.txt" % juan
-    #   fn = File.join(@txt_folder, vol, work, fn)
-    #   # 待確認：L1557, 卷34 跨冊 有沒有問題
-    #   File.binread(fn) 
-    # end
-    fn = "%03d.txt" % juan
-    fn = File.join(@txt_folder, vol, work, fn)
-    # 待確認：L1557, 卷34 跨冊 有沒有問題
-    File.binread(fn) 
+    canon = CBETA.get_canon_from_vol(vol)
+    # 換季要使用不同的 key
+    key = "#{Rails.configuration.x.q}/text-with-punc/#{canon}/#{work}/#{juan}"
+    Rails.cache.fetch(key) do
+      fn = "%03d.txt" % juan
+      fn = File.join(@txt_folder, canon, work, fn)
+      # 待確認：L1557, 卷34 跨冊 有沒有問題
+      File.binread(fn) 
+    end
   end
   
   def negative_pattern(s)
@@ -690,11 +685,7 @@ class KwicService
   end
   
   def read_text_with_punc(data, q)
-    key = "#{data['vol']}-#{data['work']}-#{data['juan']}"
-    unless @text_with_puncs.key? key
-      @text_with_puncs[key] = cache_fetch_juan_text(data['vol'], data['work'], data['juan'])
-    end
-    text = @text_with_puncs[key]
+    text = cache_fetch_juan_text(data['vol'], data['work'], data['juan'])
     
     r = ''
     position = nil
