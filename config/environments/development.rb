@@ -1,6 +1,10 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
-    
+
+  config.x.v = '2'
+  config.x.ver = '1.2.26.13'
+  config.x.q = '2021q3' # 季號
+
   GIT = '/Users/ray/git-repos'
   config.x.git       = GIT
   config.cbeta_xml   = File.join(GIT, 'cbeta-xml-p5a')

@@ -1,6 +1,6 @@
 class SuffixArrayLoader
   def initialize
-    @prefix = Rails.configuration.x.q
+    @prefix = Rails.configuration.x.v
   end
   def run
     puts "將全部單卷 suffix array (含文字) 讀入記憶體..."

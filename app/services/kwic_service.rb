@@ -47,7 +47,7 @@ class KwicService
     @txt_folder = File.join(base, 'text') # 含有標點的純文字檔
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
     @current_sa_path = nil
-    @cache = Rails.configuration.x.q
+    @cache = Rails.configuration.x.v
   end
   
   def abs_sa_path(sa_path, name)
@@ -443,7 +443,7 @@ class KwicService
   def cache_fetch_juan_text(vol, work, juan)
     canon = CBETA.get_canon_from_vol(vol)
     # 換季要使用不同的 key
-    key = "#{Rails.configuration.x.q}/text-with-punc/#{canon}/#{work}/#{juan}"
+    key = "#{@cache}/text-with-punc/#{canon}/#{work}/#{juan}"
     Rails.cache.fetch(key) do
       fn = "%03d.txt" % juan
       fn = File.join(@txt_folder, canon, work, fn)
