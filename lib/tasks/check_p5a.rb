@@ -55,6 +55,7 @@ class CheckP5a
     unless e['n'].match(/^[a-z\d]\d{3}[a-z]\d+$/)
       error "lb format error: #{e['n']}"
     end
+    @lb = e['n']
   end
   
   def e_lem(e)
@@ -65,7 +66,7 @@ class CheckP5a
 
   def e_rdg(e)
     unless e.key?('wit')
-      error "rdg 缺少 wit 屬性"
+      error "rdg 缺少 wit 屬性, lb: #{@lb}"
     end
   end
 

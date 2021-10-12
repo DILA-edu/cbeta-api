@@ -130,7 +130,6 @@ class P5aToHTMLForUI
     @mod_notes = Set.new
     @next_line_buf = ''
     @notes_mod = {}
-    @notes_orig = {}
     @notes_add = {}
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
@@ -738,7 +737,6 @@ class P5aToHTMLForUI
       @back_orig[@juan] = @back_orig[0]
       @first_lb_in_juan = true
       @notes_mod[@juan] = {}
-      @notes_orig[@juan] = {}
       @notes_add[@juan] = []
       r += "<juan #{@juan}>"
       @open_divs.each { |d|
@@ -832,9 +830,10 @@ class P5aToHTMLForUI
 
   def e_note_orig(e)
     n = e['n']
+    return '' if @mod_notes.include?(n+'a')
+
     subtype = e['subtype']
     s = traverse(e, 'footnote')
-    @notes_orig[@juan][n] = s
     @notes_mod[@juan][n] = s
     
     #c = @canon
@@ -1031,6 +1030,13 @@ class P5aToHTMLForUI
   def get_editions(doc)
     r = Set.new [@orig, "【CBETA】"] # 至少有底本及 CBETA 兩個版本
     doc.xpath('//lem|//rdg').each do |e|
+      if not e.key?('wit')
+        if e.content.empty?
+          next
+        else
+          abort "\n#{e.name} 元素沒有 wit 屬性" 
+        end
+      end
       w = e['wit'].scan(/【.*?】/)
       r.merge w
     end
