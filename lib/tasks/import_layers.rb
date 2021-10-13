@@ -28,7 +28,7 @@ class ImportLayers
     @count = { 'place' => 0, 'person' => 0 }
     @mismatch = 0
     
-    fn = Rails.root.join('log', 'import_layers.log')
+    fn = Rails.root.join('log', 'import-layers-log.htm')
     @log = File.open(fn, 'w')
 
     Dir.entries(@layers).each do |f|
@@ -137,6 +137,7 @@ class ImportLayers
   end
 
   def check_text(line_text, row)
+    @log.puts "check_text<br>"
     line_text = @cbeta_lines[row['lb']]
     i = row['position'].to_i
     if i > line_text.size
@@ -291,56 +292,86 @@ class ImportLayers
     lb = row['lb']
     @anchor = %(<span class="#{row['tag']}_#{row['type']}" data-key="#{row['key']}"/>)
     @layer_pos = row['position'].to_i
+    @log.puts "import_row, lb: #{lb}, position: #{@layer_pos}, tag: #{row['tag']}, type: #{row['type']}, key: #{row['key']}"
+    @log.puts "<blockquote>"
     @line_text = ''
     @html_doc.xpath("//span[@class='t' and @l='#{lb}']").each do |node|
       @html_pos = node['w'].to_i
-      import_row_traverse(node)
+      break if import_row_traverse(node)
     end
+    @log.puts "</blockquote>\n"
   end
 
   def import_row_traverse(node)
+    @log.puts "<p>import_row_traverse, #{node.content}</p>"
+    @log.puts "<blockquote>"
+    r = false
     node.children.each do |c| 
       next '' if c.comment?
+      @log.print "#{__LINE__} html position: #{@html_pos}"
+      if c.text?
+        @log.puts ", text node: #{c.text}<br>"
+      else
+        @log.puts ", tag: #{c.name}, class: #{c['class']}<br>"
+      end
 
-      if @html_pos >= @layer_pos
+      if @row['type'] == 'start' and @html_pos > @layer_pos
         check_text(@line_text, @row)
         c.add_previous_sibling(@anchor)
-        return
+        r = true
+        break
       end
 
-      next if c.name == 'span' and c['class'] == 'pc'
+      if c.name == 'span'
+        next if %w[pc person_start person_end place_start place_end].include?(c['class'])
+      end
 
       if c.text?
-        import_row_text(c)
+        if import_row_text(c)
+          r = true
+          break
+        end
       else
-        import_row_traverse(c)
+        if import_row_traverse(c)
+          r = true
+          break
+        end
       end
     end
+    @log.puts "</blockquote>"
+    r
   end
 
   def import_row_text(e)
     text = e.text
+    @log.puts "import_row_text, text: #{text}<br>"
     i = @html_pos + text.size
+    @log.puts "i: #{i}<br>"
 
     if @row['type'] == 'start' and i <= @layer_pos
       @html_pos = i
       @line_text += text
-      return
+      return false
     end
 
     if @row['type'] == 'end' and i < @layer_pos
       @html_pos = i
       @line_text += text
-      return
+      return false
     end
 
     i = @layer_pos - @html_pos
+    i += 1 if @row['type'] == 'end'
     s = text[0, i]
+    @log.puts "#{__LINE__} #{s}<br>"
     @line_text += s
     check_text(@line_text, @row)
-    s += @anchor + text[i..-1]
+    @log.puts "#{__LINE__} #{text[i..-1]}<br>"
+    s += @anchor
+    s += text[i..-1] if text.size > i
     e.add_previous_sibling(s)
     e.remove
+    true
   end
 
   def import_vol(folder)

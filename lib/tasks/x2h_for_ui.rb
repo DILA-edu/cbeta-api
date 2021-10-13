@@ -516,9 +516,8 @@ class P5aToHTMLForUI
     if @lg_type == 'regular'
       row.content = e_l_regular_cells(content, e)
     else
-      row.content = "<div class='lg-cell'>#{content}</div>\n"
+      row.content = e_l_not_regular(content, e)
     end
-    #row.add_child(html)
 
     spaces = ''
     if e.key?('style')
@@ -542,6 +541,17 @@ class P5aToHTMLForUI
 
     #row.to_xml(encoding: 'UTF-8') + "\n"
     spaces + row.to_s
+  end
+
+  def e_l_not_regular(content, e)
+    s = content
+    if e.key?('style')
+      e['style'].match(/text-indent: ?(-?\d+)em/) do |m|
+        s = line_space($1) + s
+      end
+    end
+
+    "<div class='lg-cell'>#{s}</div>\n"
   end
 
   def e_l_regular_cells(s, e)
