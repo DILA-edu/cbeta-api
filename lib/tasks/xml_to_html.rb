@@ -418,9 +418,9 @@ class XMLToHTML
     r = traverse(e)
     if e.has_attribute?('place')
       if e['place'].start_with? 'inline'
-        r = "<span class='doube-line-note'>#{r}</span>"
+        r = "<span class='doube-line-note'>(#{r})</span>"
       elsif e['place']=='interlinear'
-        r = "<span class='interlinear-note'>#{r}</span>"
+        r = "<span class='interlinear-note'>(#{r})</span>"
       end
     end
     r
