@@ -817,9 +817,18 @@ class KwicService
       return r
     end
 
+    if @option.key? :canon
+      canons = @option[:canon].split(',').uniq
+      r = []
+      canons.each do |c|
+        @option[:canon] = c
+        r << sa_rel_path('canon')
+      end
+      return r
+    end
+
     return [sa_rel_path('juan')] if @option.key? :juan # 如果有指定卷號
     return [sa_rel_path('work')] if @option.key? :work
-    return [sa_rel_path('canon')] if @option.key? :canon
     return [sa_rel_path('category')] if @option.key? :category
 
     [sa_rel_path('all')]

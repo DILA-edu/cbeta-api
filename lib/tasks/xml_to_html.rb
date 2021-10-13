@@ -79,10 +79,9 @@ class XMLToHTML
   private
   
   def convert_all
-    Dir.entries(@xml_root).sort.each { |c|
-      next unless c.match(/^[A-Z]{1,2}$/)
+    each_canon(@xml_root) do |c|
       handle_collection(c)
-    }
+    end
   end
 
   def e_anchor(e)

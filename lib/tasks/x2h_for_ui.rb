@@ -139,8 +139,7 @@ class P5aToHTMLForUI
   end
 
   def convert_all
-    Dir.entries(@xml_root).sort.each do |c|
-      next unless c.match(/^#{CBETA::CANON}$/)
+    each_canon(@xml_root) do |c|
       convert_canon(c)
     end
   end
@@ -166,7 +165,7 @@ class P5aToHTMLForUI
     @back_buf = {}
 
     @orig = @cbeta.get_canon_symbol(c)
-    abort "未處理底本" if @orig.nil?
+    abort "取得藏經略符發生錯誤，藏經 ID: #{c}" if @orig.nil?
 
     @canon_name = @canon_names[c]
     @orig_short = @orig.sub(/^【(.*)】$/, '\1')

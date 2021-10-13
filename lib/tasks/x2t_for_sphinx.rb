@@ -118,8 +118,7 @@ class P5aToText
   end
 
   def convert_all
-    Dir.entries(@xml_root).sort.each do |c|
-      next unless c.match(/^#{CBETA::CANON}$/)
+    each_canon(@xml_root) do |c|
       handle_canon(c)
     end
   end
