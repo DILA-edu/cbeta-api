@@ -87,7 +87,7 @@ reboot 之後檢查
 
 $ cd /etc/sphinx
 
-準備好 base.conf, 1-cbdata.conf, 1-titles.conf, 1-footnotes.conf
+準備好 base.conf, 1-cbdata.conf, 1-titles.conf, 1-notes.conf
 
 準備 /etc/sphinx/merge.rb 將多個 conf 檔合併為一個 sphinx.conf
 
@@ -117,7 +117,7 @@ mysql 測試
     | Index      | Type  |
     +------------+-------+
     | cbeta1     | local |
-    | footnotes1 | local |
+    | notes1     | local |
     | news       | rt    |
     | titles1    | local |
     +------------+-------+

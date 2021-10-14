@@ -83,7 +83,7 @@ class SphinxController < ApplicationController
     my_render r
   end
 
-  def footnotes
+  def notes
     @mode = 'extend'
     #remove_puncs_from_query
     
@@ -596,8 +596,8 @@ class SphinxController < ApplicationController
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
 
     case action_name
-    when 'footnotes'
-      init_footnotes
+    when 'notes'
+      init_notes
     when 'title'
       init_title
     else
@@ -621,8 +621,8 @@ class SphinxController < ApplicationController
     set_filter
   end
 
-  def init_footnotes
-    @index = Rails.configuration.x.sphinx_footnotes
+  def init_notes
+    @index = Rails.configuration.x.sphinx_notes
     q = @q.sub(/~\d+$/, '') # 拿掉 near ~ 後面的數字
     q.gsub!(/[\-!]".*?"/, '')
     keys = q.split(/["\-\| ]/)
@@ -630,7 +630,7 @@ class SphinxController < ApplicationController
     s = keys.join(' ')
 
     # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
-    @fields = "id, canon, category, vol, file, work, title, juan, lb, n, content, "\
+    @fields = "id, canon, category, vol, file, work, title, juan, lb, note_place, n, content, "\
       "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
   end
@@ -648,7 +648,13 @@ class SphinxController < ApplicationController
   def init_order
     @order = ''
     count = 0
-    return unless params.key? :order
+
+    unless params.key? :order
+      if action_name == 'notes'
+        @order = "ORDER BY canon_order ASC, vol ASC, lb ASC"
+      end
+      return
+    end
 
     tokens = params[:order].split(',')
     orders = []
@@ -858,8 +864,7 @@ class SphinxController < ApplicationController
   def set_filter
     @filter = ''
     set_filter_category
-    set_filter_creator
-    
+    set_filter_creator  
     
     if params.key? :canon
       @filter += " AND canon='%s'" % params[:canon]
@@ -900,6 +905,13 @@ class SphinxController < ApplicationController
       t = params[:work_type]
       @filter += " AND work_type='#{t}'"
     end
+
+    if params.key? :note_place
+      t = params[:note_place]
+      @filter += " AND note_place='#{t}'"
+      puts "filter: #{@filter}"
+    end
+
   end
 
   # a,b+c,d 表示 (a OR b) AND (c OR d)
@@ -951,7 +963,13 @@ class SphinxController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{facet}" unless facet.nil?
-    results = @mysql_client.query(@select, symbolize_keys: true)
+    begin
+      results = @mysql_client.query(@select, symbolize_keys: true)
+    rescue
+      puts "select: #{@select}"
+      raise
+    end
+
     hits = results.to_a
     return hits if @mode == 'group'
     

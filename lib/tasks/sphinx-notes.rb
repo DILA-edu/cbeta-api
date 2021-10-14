@@ -6,10 +6,11 @@ require 'json'
 require 'nokogiri'
 require 'set'
 require 'cbeta'
+require_relative 'cbeta_p5a_share'
 require_relative 'html-node'
 require_relative 'share'
 
-class SphinxFootnotes
+class SphinxNotes
   # 內容不輸出的元素
   PASS=['anchor', 'back', 'figDesc', 'pb', 'rdg', 'sic', 'teiHeader']
   
@@ -28,10 +29,10 @@ class SphinxFootnotes
   def convert(target=nil)
     t1 = Time.now
     @sphinx_doc_id = 0
-    fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'footnotes.xml')
-    @footnotes = File.open(fn, 'w')
-    @footnotes.puts %(<?xml version="1.0" encoding="utf-8"?>)
-    @footnotes.puts "<sphinx:docset>"
+    fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'notes.xml')
+    @fo = File.open(fn, 'w')
+    @fo.puts %(<?xml version="1.0" encoding="utf-8"?>)
+    @fo.puts "<sphinx:docset>"
     
     if target.nil?
       convert_all
@@ -44,8 +45,8 @@ class SphinxFootnotes
       end
     end
 
-    @footnotes.write '</sphinx:docset>'
-    @footnotes.close
+    @fo.write '</sphinx:docset>'
+    @fo.close
     puts "花費時間：" + ChronicDuration.output(Time.now - t1)
   end
 
@@ -85,15 +86,15 @@ class SphinxFootnotes
     @notes_mod = {}
     @notes_orig = {}
     @notes_add = {}
+    @notes_inline = {}
     @sutra_no = File.basename(xml_fn, ".xml")
-    $stderr.print "\nsphinx-footnotes #{@sutra_no}"
+    $stderr.print "\nsphinx-notes #{@sutra_no}"
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @work_info = get_info_from_work(@work_id)
   end
 
   def convert_all
-    Dir.entries(@xml_root).sort.each do |c|
-      next unless c.match(/^#{CBETA::CANON}$/)
+    each_canon(@xml_root) do |c|
       convert_canon(c)
     end
   end
@@ -101,8 +102,9 @@ class SphinxFootnotes
   def convert_canon(c)
     @canon = c
     $stderr.puts 'convert canon: ' + c
+    @canon_order = CBETA.get_sort_order_from_canon_id(c)
+
     folder = File.join(@xml_root, @canon)
-    
     Dir.entries(folder).sort.each do |vol|
       next if vol.start_with? '.'
       convert_vol(vol)
@@ -113,7 +115,7 @@ class SphinxFootnotes
     before_parse_xml(xml_fn)
 
     text = parse_xml(xml_fn)
-    write_footnotes_for_sphinx
+    write_notes_for_sphinx
   end  
   
   def convert_vol(vol)
@@ -133,7 +135,7 @@ class SphinxFootnotes
   end
   
   def e_app(e, mode)
-    if mode=='footnote'
+    if mode=='note'
       lem = e.at('lem')
       return traverse(lem, mode)
     end
@@ -219,7 +221,7 @@ class SphinxFootnotes
     e.xpath('note').each do |c|
       next unless c.key?('type')
       next unless c['type'].match(/^cf\d+$/)
-      cfs << traverse(c, 'footnote')
+      cfs << traverse(c, 'note')
     end
 
     return '' if cfs.empty?
@@ -237,13 +239,14 @@ class SphinxFootnotes
       @notes_mod[@juan] = {}
       @notes_orig[@juan] = {}
       @notes_add[@juan] = []
+      @notes_inline[@juan] = []
       print " #{@juan}"
     end
     ''
   end
 
   def e_note(e, mode)
-    return '' if mode == 'footnote'
+    return '' if mode == 'note'
       
     n = e['n']
     if e.has_attribute?('type')
@@ -252,7 +255,7 @@ class SphinxFootnotes
       when 'add'
         n = @notes_add[@juan].size + 1
         n = "cb_note_#{n}"
-        s = traverse(e, 'footnote')
+        s = traverse(e, 'note')
         s += e_note_add_cf(e)
         @notes_add[@juan] << { lb: @lb, text: s }
       when 'equivalent', 'rest' then return ''
@@ -260,7 +263,7 @@ class SphinxFootnotes
       when 'mod'
         @notes_mod[@juan][n] = { 
           lb: @lb, 
-          text: traverse(e, 'footnote') 
+          text: traverse(e, 'note')
         }
         return ""
       when 'star'
@@ -272,6 +275,15 @@ class SphinxFootnotes
 
     if e.has_attribute?('resp')
       return '' if e['resp'].start_with? 'CBETA'
+    end
+
+    if e.has_attribute?('place')
+      if %w[inline inline2 interlinear].include?(e['place'])
+        @notes_inline[@juan] << {
+          lb: @lb, 
+          text: traverse(e, 'note')
+        }
+      end
     end
 
     return traverse(e)
@@ -294,7 +306,7 @@ class SphinxFootnotes
   def e_note_orig(e)
     n = e['n']
     subtype = e['subtype']
-    s = traverse(e, 'footnote')
+    s = traverse(e, 'note')
     @notes_orig[@juan][n] = s
     @notes_mod[@juan][n] = { lb: @lb, text: s }
     
@@ -345,7 +357,7 @@ class SphinxFootnotes
     return '' if e.comment?
     
     if e.text?
-      if mode == 'footnote'
+      if mode == 'note'
         return handle_text(e, mode)
       else
         return ''
@@ -425,7 +437,7 @@ class SphinxFootnotes
   
   def traverse(e, mode='html')
     pass = @pass.last
-    pass = false if mode == 'footnote'
+    pass = false if mode == 'note'
     @pass << pass
     
     r = ''
@@ -437,12 +449,12 @@ class SphinxFootnotes
     r
   end
 
-  def write_footnotes_for_sphinx
+  def write_notes_for_sphinx
     all_notes = {}
     @notes_mod.each_pair do |juan, notes|
       all_notes[juan] = []
       notes.each_pair do |n, note|
-        write_sphinx_doc(juan, "n#{n}", note)
+        write_sphinx_doc(juan, note, n: "n#{n}")
         note[:n] = n
         all_notes[juan] << note
       end
@@ -451,11 +463,18 @@ class SphinxFootnotes
     @notes_add.each_pair do |juan, notes|
       all_notes[juan] = [] unless all_notes.key?(juan)
       notes.each_with_index do |note, i|
-        write_sphinx_doc(juan, "cb_note_#{i+1}", note)
+        write_sphinx_doc(juan, note, n: "cb_note_#{i+1}")
         note[:n] = "A#{i+1}"
         all_notes[juan] << note
       end
     end
+
+    @notes_inline.each_pair do |juan, notes|
+      notes.each do |note|
+        write_sphinx_doc(juan, note, place: 'inline')
+      end
+    end
+
     write_footes_for_download(all_notes)
   end
 
@@ -474,27 +493,31 @@ class SphinxFootnotes
     end
   end
 
-  def write_sphinx_doc(juan, n, note)
+  def write_sphinx_doc(juan, note, n: nil, place: 'foot')
     @sphinx_doc_id += 1
     s1 = note[:text].encode(xml: :text)
     xml = <<~XML
       <sphinx:document id="#{@sphinx_doc_id}">
         <canon>#{@canon}</canon>
+        <canon_order>#{@canon_order}</canon_order>
         <vol>#{@vol}</vol>
         <file>#{@sutra_no}</file>
         <work>#{@work_id}</work>
         <juan>#{juan}</juan>
         <lb>#{note[:lb]}</lb>
-        <n>#{n}</n>
-        <content>#{s1}</content>
+        <note_place>#{place}</note_place>
     XML
 
+    xml += "  <n>#{n}</n>\n" unless n.nil?
+    xml += "  <content>#{s1}</content>\n"
+
     @work_info.each_pair do |k,v|
-      xml += "<#{k}>#{v}</#{k}>\n"
+      xml += "  <#{k}>#{v}</#{k}>\n"
     end
 
     xml += "</sphinx:document>\n"
-    @footnotes.puts xml
+    @fo.puts xml
   end
 
+  include CbetaP5aShare
 end

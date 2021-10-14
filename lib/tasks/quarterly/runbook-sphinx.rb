@@ -25,7 +25,7 @@ module RunbookSectionSphinx
         v = config[:v]
         base = Rails.configuration.x.sphinx_base
 
-        %w[cbdata footnotes titles].each do |index|
+        %w[cbdata notes titles].each do |index|
           fn = Rails.root.join("lib/tasks/quarterly/sphinx-template-#{index}.conf")
           template = File.read(fn)
           s = template % { v: v }
@@ -47,8 +47,10 @@ module RunbookSectionSphinx
       ruby_command do |rb_cmd, metadata, run|
         v = config[:v]
         Dir.chdir('/var/lib/sphinx') do
-          ["", "-footnotes", "-titles"].each do |s|
-            system "sudo mkdir data#{v}#{s}"
+          ["", "-notes", "-titles"].each do |s|
+            cmd = "sudo mkdir data#{v}#{s}"
+            puts cmd
+            system cmd
             system "sudo chown -R sphinx:sphinx data#{v}#{s}"
           end
         end
@@ -62,7 +64,7 @@ module RunbookSectionSphinx
         ruby_command do |rb_cmd, metadata, run|
           Dir.chdir('/Users/ray/Documents/Projects/CBETAOnline/sphinx') do
             system "indexer --rotate cbeta"
-            system "indexer --rotate footnotes"
+            system "indexer --rotate notes"
             system "indexer --rotate titles"
           end
         end
@@ -70,7 +72,7 @@ module RunbookSectionSphinx
     else
       Runbook.step 'sphin index' do
         ruby_command do |rb_cmd, metadata, run|
-          %w[cbeta footnotes titles].each do |s|
+          %w[cbeta notes titles].each do |s|
             cmd = "sudo indexer --config /etc/sphinx/sphinx.conf --rotate #{s}#{config[:v]}"
             puts cmd
             system cmd
@@ -100,7 +102,7 @@ module RunbookSectionSphinx
         rake import:time
       MSG
       command 'rake sphinx:t2x'
-      command 'rake sphinx:footnotes'
+      command 'rake sphinx:notes'
       command 'rake sphinx:titles'
     end
   end

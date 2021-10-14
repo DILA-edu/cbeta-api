@@ -1,4 +1,4 @@
-%h1 使用 Sphinx 搜尋：校勘條目、註解
+%h1 使用 Sphinx 搜尋：校勘條目、註解、夾註
 
 %h2 1 參數
 %table.table
@@ -24,37 +24,44 @@
 %h2 2 q 參數
 .ml-4
   %p
-    例：#{link_to_url '/sphinx/footnotes?q="法鼓"'}
+    例：#{link_to_url '/sphinx/notes?q="法鼓"'}
 
   %p 請注意上面的雙引號不可省略。
 
   %p 以下範例均要做 URL encode, 例如：
-
   %pre "波羅蜜" | "波羅密"
 
   %p 要編碼為
-
   %pre %22波羅蜜%22%20%7C%20%22波羅密%22
 
   %h3 2.1 AND
-
   %p 多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
-
-  %p 例：#{link_to_url '/sphinx/footnotes?q="法鼓" "印順"'}
+  %p 例：#{link_to_url '/sphinx/notes?q="法鼓" "印順"'}
 
   %h3 2.2 OR
-
-  %p 例：#{link_to_url '/sphinx/footnotes?q="波羅蜜"|"波羅密"'}
+  %p 例：#{link_to_url '/sphinx/notes?q="波羅蜜"|"波羅密"'}
 
   %h3 2.3 NOT
-
-  %p 例：#{link_to_url '/sphinx/footnotes?q="迦葉" !"迦葉佛"'}
+  %p 例：#{link_to_url '/sphinx/notes?q="迦葉" !"迦葉佛"'}
 
   %h3 2.4 NEAR
-
-  %p 例：#{link_to_url '/sphinx/footnotes?q="阿含" NEAR/5 "迦葉"'}
-
+  %p 例：#{link_to_url '/sphinx/notes?q="阿含" NEAR/5 "迦葉"'}
   %p 上例表示「阿含」跟「迦葉」之間距離不超過5個字。
 
-%h2 3 限制搜尋範圍
+%h2 3 note_place 參數
+%ul
+  %li foot: 校勘
+  %li inline: 內文中夾註  
+
+%h2 4 限制搜尋範圍
 %p 參考 #{link_to_url '/static_pages/sphinx_filter'}
+
+%h2 5 回傳資料
+.ml-4
+  %h3 4.1 排序
+  %p 預設依冊號、行號排序。
+  %h3 4.2 回傳欄位
+  %p note_place 
+  %ul
+    %li foot: 校勘，例：#{link_to_url '/sphinx/notes?q="法鼓"&amp;note_place=foot'}
+    %li inline: 內文中夾註

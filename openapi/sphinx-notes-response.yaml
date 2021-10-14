@@ -2,7 +2,7 @@ type: object
 properties:
   num_found:
     type: integer
-    description: number of found footnotes (符合的校註筆數)
+    description: number of found notes (符合的校註筆數)
     example: 38
   total_term_hits:
     type: integer
@@ -10,7 +10,7 @@ properties:
     example: 46
   results:
     type: array
-    description: list of footnotes
+    description: list of notes
     items:
       type: object
       properties:

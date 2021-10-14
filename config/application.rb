@@ -9,7 +9,6 @@ Bundler.require(*Rails.groups)
 module Cbdata13
   class Application < Rails::Application
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
-    config.x.skip_canon = %w[TX]
     config.time_zone = 'Taipei'
 
     # Initialize configuration defaults for originally generated Rails version.

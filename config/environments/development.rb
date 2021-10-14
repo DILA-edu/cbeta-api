@@ -21,7 +21,7 @@ Rails.application.configure do
   
   config.sphinx_index = "cbeta"
   config.x.sphinx_titles = "titles"
-  config.x.sphinx_footnotes = 'footnotes'
+  config.x.sphinx_notes = 'notes'
   
   config.log_level = :debug
 

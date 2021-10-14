@@ -8,7 +8,7 @@ Rails.application.configure do
   config.x.figures   = File.join(GIT, 'CBR2X-figures')
   config.kwic_base = Rails.root.join('data', 'kwic25')
   config.sphinx_index = 'cbeta7'
-  config.x.sphinx_footnotes = "footnotes"
+  config.x.sphinx_notes = "notes"
   config.x.sphinx_titles = "titles"
 
   # item max size: 128 MB
