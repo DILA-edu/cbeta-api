@@ -1,6 +1,6 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
-  config.x.v = '4'
+  config.x.v = '2'
   config.x.ver = '1.2.26'
   config.x.q = '2021q4' # 季號
 
