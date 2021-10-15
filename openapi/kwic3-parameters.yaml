@@ -59,7 +59,7 @@ word_count:
   in: query
   required: false
   description: |
-    是否回傳前綴、後綴字數統計：
+    是否回傳前搭配、後搭配字數統計：
   
       * 0: 不回傳。
       * 1: 要回傳。
