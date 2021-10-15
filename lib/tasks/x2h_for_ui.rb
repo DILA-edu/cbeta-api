@@ -633,32 +633,8 @@ class P5aToHTMLForUI
     node['id'] = line_head
     node['data-lr'] = @lb_r unless @lb_r.nil?
     node.content = line_head
-    r += node.to_s
-
-    case e['ed']
-    when 'GA', 'GB'
-      v = @vol[2..-1]
-      if @lb.end_with? 'a01'
-        n = @lb[0, 4]
-        r += %(<a class="facsimile" data-ref="#{e['ed']}v#{v}p#{n}"></a>)
-      end
-    when 'J'
-      h = @jm_facsimile[@sutra_no]
-      unless h.nil?
-        if h.key? @lb
-          r += %(<a class="facsimile" data-ref="#{h[@lb]}"></a>)
-          @j_facs_juans << "#{@work_id}_#{@juan}"
-        end
-      end
-    when 'T'
-      v = @vol[1..-1]
-      if @first_lb_in_juan or @lb.end_with?('a01')
-        n = @lb[0, 4]
-        r += %(<a class="facsimile" data-ref="Tv#{v}p#{n}"></a>)
-        @first_lb_in_juan = false
-      end
-    end
-    
+    r += node.to_s    
+    r += facsimile_anchor(e)
     r += e_lb_p(e)
 
     unless @next_line_buf.empty?
@@ -1022,6 +998,42 @@ class P5aToHTMLForUI
     ele_unclear(e) do |s|
       %(<span class="unclear" data-cert="#{e['cert']}">#{s}</span>)
     end
+  end
+
+  def facsimile_anchor(e)
+    r = ''
+    ed = e['ed']
+    case ed
+    when 'D'
+      v = @vol[1..-1]
+      if @first_lb_in_juan or @lb.end_with?('a01')
+        n = @lb[0, 4]
+        r = %(<a class="facsimile" data-ref="Dv#{v}p#{n}"></a>)
+        @first_lb_in_juan = false
+      end
+    when 'GA', 'GB'
+      v = @vol[2..-1]
+      if @lb.end_with? 'a01'
+        n = @lb[0, 4]
+        r = %(<a class="facsimile" data-ref="#{e['ed']}v#{v}p#{n}"></a>)
+      end
+    when 'J'
+      h = @jm_facsimile[@sutra_no]
+      unless h.nil?
+        if h.key? @lb
+          @j_facs_juans << "#{@work_id}_#{@juan}"
+          r = %(<a class="facsimile" data-ref="#{h[@lb]}"></a>)
+        end
+      end
+    when 'D', 'T'
+      v = @vol[1..-1]
+      if @first_lb_in_juan or @lb.end_with?('a01')
+        n = @lb[0, 4]
+        r = %(<a class="facsimile" data-ref="#{ed}v#{v}p#{n}"></a>)
+        @first_lb_in_juan = false
+      end
+    end
+    r
   end
   
   def filter_html(html, ed)
