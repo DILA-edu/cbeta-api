@@ -1,5 +1,8 @@
 require 'csv'
 require 'set'
+require_relative '../cbeta_p5a_share'
+
+include CbetaP5aShare
 
 puts '--'
 print "check new canon..."
@@ -13,9 +16,7 @@ end
 
 path = File.join($base, 'cbeta-xml-p5a')
 new_canon = []
-Dir.entries(path).each do |f|
-  next if f.start_with? '.'
-  next if f.size > 2
+each_canon(path) do |c|
   next if canons.include?(f)
   new_canon << f
 end
