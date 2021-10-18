@@ -17,8 +17,8 @@ end
 path = File.join($base, 'cbeta-xml-p5a')
 new_canon = []
 each_canon(path) do |c|
-  next if canons.include?(f)
-  new_canon << f
+  next if canons.include?(c)
+  new_canon << c
 end
 
 if new_canon.empty?
