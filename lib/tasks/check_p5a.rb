@@ -1,3 +1,5 @@
+require_relative 'cbeta_p5a_share'
+
 class CheckP5a
 
   def initialize
@@ -10,10 +12,8 @@ class CheckP5a
     @g_errors = {}
     
     src = Rails.application.config.cbeta_xml
-    Dir.entries(src).sort.each do |f|
-      next if f.start_with? '.'
-      next if f.size > 2
-      @canon = f
+    each_canon(src) do |c|
+      @canon = c
       path = File.join(src, @canon)
       handle_canon(path)
     end
@@ -140,4 +140,5 @@ class CheckP5a
     }
   end
   
+  include CbetaP5aShare
 end
