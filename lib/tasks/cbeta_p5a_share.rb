@@ -1,3 +1,5 @@
+require 'cbeta'
+
 module CbetaP5aShare
   def each_canon(xml_root)
     Dir.entries(xml_root).sort.each do |c|
