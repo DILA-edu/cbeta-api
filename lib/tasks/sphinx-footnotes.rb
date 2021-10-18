@@ -10,7 +10,7 @@ require_relative 'cbeta_p5a_share'
 require_relative 'html-node'
 require_relative 'share'
 
-class SphinxNotes
+class SphinxFootnotes
   # 內容不輸出的元素
   PASS=['anchor', 'back', 'figDesc', 'pb', 'rdg', 'sic', 'teiHeader']
   
@@ -29,7 +29,7 @@ class SphinxNotes
   def convert(target=nil)
     t1 = Time.now
     @sphinx_doc_id = 0
-    fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'notes.xml')
+    fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'footnotes.xml')
     @fo = File.open(fn, 'w')
     @fo.puts %(<?xml version="1.0" encoding="utf-8"?>)
     @fo.puts "<sphinx:docset>"
@@ -277,14 +277,14 @@ class SphinxNotes
       return '' if e['resp'].start_with? 'CBETA'
     end
 
-    if e.has_attribute?('place')
-      if %w[inline inline2 interlinear].include?(e['place'])
-        @notes_inline[@juan] << {
-          lb: @lb, 
-          text: traverse(e, 'note')
-        }
-      end
-    end
+    # if e.has_attribute?('place')
+    #   if %w[inline inline2 interlinear].include?(e['place'])
+    #     @notes_inline[@juan] << {
+    #       lb: @lb, 
+    #       text: traverse(e, 'note')
+    #     }
+    #   end
+    # end
 
     return traverse(e)
   end
@@ -499,13 +499,11 @@ class SphinxNotes
     xml = <<~XML
       <sphinx:document id="#{@sphinx_doc_id}">
         <canon>#{@canon}</canon>
-        <canon_order>#{@canon_order}</canon_order>
         <vol>#{@vol}</vol>
         <file>#{@sutra_no}</file>
         <work>#{@work_id}</work>
         <juan>#{juan}</juan>
         <lb>#{note[:lb]}</lb>
-        <note_place>#{place}</note_place>
     XML
 
     xml += "  <n>#{n}</n>\n" unless n.nil?

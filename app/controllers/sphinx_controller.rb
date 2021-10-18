@@ -83,7 +83,7 @@ class SphinxController < ApplicationController
     my_render r
   end
 
-  def notes
+  def footnotes
     @mode = 'extend'
     #remove_puncs_from_query
     
@@ -596,8 +596,8 @@ class SphinxController < ApplicationController
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
 
     case action_name
-    when 'notes'
-      init_notes
+    when 'footnotes'
+      init_footnotes
     when 'title'
       init_title
     else
@@ -621,8 +621,8 @@ class SphinxController < ApplicationController
     set_filter
   end
 
-  def init_notes
-    @index = Rails.configuration.x.sphinx_notes
+  def init_footnotes
+    @index = Rails.configuration.x.sphinx_footnotes
     q = @q.sub(/~\d+$/, '') # 拿掉 near ~ 後面的數字
     q.gsub!(/[\-!]".*?"/, '')
     keys = q.split(/["\-\| ]/)
@@ -630,7 +630,7 @@ class SphinxController < ApplicationController
     s = keys.join(' ')
 
     # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
-    @fields = "id, canon, category, vol, file, work, title, juan, lb, note_place, n, content, "\
+    @fields = "id, canon, category, vol, file, work, title, juan, lb, n, content, "\
       "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
   end
@@ -649,12 +649,12 @@ class SphinxController < ApplicationController
     @order = ''
     count = 0
 
-    unless params.key? :order
-      if action_name == 'notes'
-        @order = "ORDER BY canon_order ASC, vol ASC, lb ASC"
-      end
-      return
-    end
+    # unless params.key? :order
+    #   if action_name == 'notes'
+    #     @order = "ORDER BY canon_order ASC, vol ASC, lb ASC"
+    #   end
+    #   return
+    # end
 
     tokens = params[:order].split(',')
     orders = []
@@ -906,11 +906,11 @@ class SphinxController < ApplicationController
       @filter += " AND work_type='#{t}'"
     end
 
-    if params.key? :note_place
-      t = params[:note_place]
-      @filter += " AND note_place='#{t}'"
-      puts "filter: #{@filter}"
-    end
+    # if params.key? :note_place
+    #   t = params[:note_place]
+    #   @filter += " AND note_place='#{t}'"
+    #   puts "filter: #{@filter}"
+    # end
 
   end
 

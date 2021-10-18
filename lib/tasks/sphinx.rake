@@ -1,9 +1,9 @@
 namespace :sphinx do
   
   desc "convert cbeta to xml for sphinx"
-  task :notes, [:arg1] => :environment do |t, args|
-    require_relative 'sphinx-notes'
-    SphinxNotes.new.convert
+  task :footnotes, [:arg1] => :environment do |t, args|
+    require_relative 'sphinx-footnotes'
+    SphinxFootnotes.new.convert
   end
 
   desc "XML 轉 txt"

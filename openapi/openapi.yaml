@@ -1141,9 +1141,9 @@ paths:
                     type: array
                     items:
                       type: object
-  /sphinx/notes:
+  /sphinx/footnotes:
     get:
-      summary: Search Notes
+      summary: Search Footnotes
       tags: [sphinx]
       description: 限制搜尋範圍的參數都可以使用，參考 `/sphinx`
       parameters:
@@ -1157,7 +1157,7 @@ paths:
           content:
             application/json:
               schema: 
-                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-notes-response.yaml'
+                $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-footnotes-response.yaml'
   /sphinx/title:
     get:
       summary: Search Titles

@@ -23,7 +23,7 @@
 
 ## 將 cbeta xml p5a 校注、夾注 轉為 xml for sphinx
 
-    rake sphinx:notes
+    rake sphinx:footnotes
 
 目前校註筆數： 1,056,107
 
@@ -40,7 +40,7 @@
 視需要修改 sphinx.conf
 
     indexer --rotate cbeta
-    indexer --rotate notes
+    indexer --rotate footnotes
     indexer --rotate titles
 
 ### production
@@ -54,20 +54,20 @@
 
     /etc/sphinxsearch/sphinx.conf
     /etc/sphinxsearch/cbdata4.conf
-    /etc/sphinxsearch/notes4.conf
+    /etc/sphinxsearch/footnotes4.conf
     /etc/sphinxsearch/titles4.conf
 
 建索引
 
     sudo indexer cbeta4
-    sudo indexer notes4
+    sudo indexer footnotes4
     sudo indexer titles4
 
 如果建索引後要更新：
 
     cd /etc/sphinx
     sudo indexer --rotate cbeta4
-    sudo indexer --rotate notes4
+    sudo indexer --rotate footnotes4
     sudo indexer --rotate titles4
 
 重新啟動 service

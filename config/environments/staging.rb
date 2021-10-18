@@ -15,7 +15,7 @@ Rails.application.configure do
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
   config.x.sphinx_base = '/etc/sphinx'
   config.sphinx_index = "cbeta#{config.x.v}"
-  config.x.sphinx_notes = "notes#{config.x.v}"
+  config.x.sphinx_footnotes = "footnotes#{config.x.v}"
   config.x.sphinx_titles = "titles#{config.x.v}"
 
   # Code is not reloaded between requests.
