@@ -1,15 +1,15 @@
 # 根據 CBETA XML P5a 取得每卷的起始行號、結束行號
 
 require 'cbeta'
+require_relative '../cbeta_p5a_share'
+
 class Juanline
   def produce
     @in = Rails.application.config.cbeta_xml
     @out = Rails.root.join('data', 'juan-line')
     FileUtils.rm_rf(@out)
     FileUtils.makedirs(@out)
-    Dir.entries(@in).sort.each do |canon|
-      next if canon.start_with? '.'
-      next if canon.size > 2
+    each_canon(@in) do |canon|
       handle_canon(canon)
     end
   end
@@ -86,4 +86,5 @@ class Juanline
     end
   end
 
+  include CbetaP5aShare
 end

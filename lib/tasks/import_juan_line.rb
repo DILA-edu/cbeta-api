@@ -82,5 +82,5 @@ class ImportJuanLine
     s = File.read(fn)
     JSON.parse(s)
   end
-  
+
 end
