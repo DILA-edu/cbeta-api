@@ -117,7 +117,9 @@ module P5aToHtmlShare
     end
     
     node.content = s
-    r + "\n" + node.to_s
+
+    # 注意 lg 前不能換行，否則 UI 會多空半格
+    r + node.to_s
   end
 
   def html_copyright(work, juan)
