@@ -5,6 +5,7 @@ require 'fileutils'
 require 'json'
 require 'nokogiri'
 require 'set'
+require_relative '../cbeta_p5a_share'
 
 # Convert CBETA XML P5a to Text
 #
@@ -88,8 +89,7 @@ class P5aToText
   private
 
   def convert_all
-    Dir.entries(@xml_root).sort.each do |c|
-      next unless c.match(/^#{CBETA::CANON}$/)
+    each_canon(@xml_root) do |c|
       handle_canon(c)
     end
     puts "完成".green
@@ -403,4 +403,6 @@ class P5aToText
     fo.write(txt.lstrip)
     fo.close
   end
+
+  include CbetaP5aShare
 end
