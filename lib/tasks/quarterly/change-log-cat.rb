@@ -93,6 +93,9 @@ class ChangeLogCategory
   def handle_line_punc(line)
     return if line.match(/^<(del|ins)>[^<]+║<\/\1>(<br>)?$/) # 只有行號，沒有文字
     
+    # 整行新增或刪除
+    return if line.match(/^<(del|ins)>[^<]+║.*<\/\1><br>$/)
+
     s = line.gsub(/<del>(.*?)<\/del>/) do
       remove_texts($1, 'del')
     end
