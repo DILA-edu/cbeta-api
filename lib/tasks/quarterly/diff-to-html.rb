@@ -187,11 +187,11 @@ class DiffToHTML
     .hmc {
       font-family: "Hanazono Mincho C Regular";
     }
-    .del { 
+    del { 
       color: red;
       text-decoration: line-through;
     }
-    .ins { 
+    ins { 
       color: blue;
       font-weight: bold;
       text-decoration: none;
