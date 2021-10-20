@@ -174,8 +174,11 @@ class DiffToHTML
     r
   end
 
+  # 指定字型，5碼 Unicode 才能正確顯示
+  # diff-to-html.rb 使用 <del>, <ins> 元素方便處理
+  # change-log-font.rb 改為 <span class="del">, <span class="ins">
+  # 如果使用 ins, del 標記，在 ms word 開啟會出現「追蹤修訂」左邊線
   def html_header
-    # 指定字型，5碼 Unicode 才能正確顯示
     %(<!DOCTYPE html>
   <html lang="zh-TW">
   <head>
@@ -191,7 +194,17 @@ class DiffToHTML
       color: red;
       text-decoration: line-through;
     }
+    .del { 
+      color: red;
+      text-decoration: line-through;
+    }
     ins { 
+      color: blue;
+      font-weight: bold;
+      text-decoration: none;
+      background-color: yellow;
+    }
+    .ins { 
       color: blue;
       font-weight: bold;
       text-decoration: none;
