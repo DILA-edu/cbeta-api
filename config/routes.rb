@@ -86,8 +86,8 @@ Rails.application.routes.draw do
 
   match 'toc', to: 'toc_node#index', via: [:get, :post]
 
+  match 'word_seg2', to: 'word_seg#run', via: [:get, :post]
   match 'word_seg', to: 'word_seg#index', via: [:get, :post]
-  post  'word_seg2', to: 'word_seg#run'
 
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works/word_count', via: [:get, :post]
