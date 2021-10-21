@@ -80,12 +80,14 @@ Rails.application.routes.draw do
   get 'static_pages/time'
   get 'static_pages/toc_search'
   get 'static_pages/toc'
+  get 'static_pages/word_seg'
   get 'static_pages/works'
   get 'static_pages/work'
 
   match 'toc', to: 'toc_node#index', via: [:get, :post]
 
   match 'word_seg', to: 'word_seg#index', via: [:get, :post]
+  post  'word_seg2', to: 'word_seg#run'
 
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works/word_count', via: [:get, :post]

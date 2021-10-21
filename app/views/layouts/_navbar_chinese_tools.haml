@@ -2,5 +2,6 @@
   %a#navbarDropdown.nav-link.dropdown-toggle{"aria-expanded" => "false", "aria-haspopup" => "true", "data-toggle" => "dropdown", :href => "#", :role => "button"}
     中文工具
   .dropdown-menu{"aria-labelledby" => "navbarDropdown"}
-    =link_to '分詞', { controller: 'word_seg', action: 'index'}, class: 'dropdown-item'
+    =link_to '分詞簡易界面', { controller: 'word_seg', action: 'index'}, class: 'dropdown-item'
+    =link_to '分詞 API', { controller: 'static_pages', action: 'word_seg'}, class: 'dropdown-item'
     =link_to '簡體轉繁體', { controller: 'static_pages', action: 'sc2tc'}, class: 'dropdown-item'

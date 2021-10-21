@@ -1,0 +1,15 @@
+%h1 自動分詞
+%p HTTP 方法： POST
+%p 請求 URL： #{ link_to_url '/word_seg2' }
+
+%p 回傳欄位
+%table.table
+  %tr
+    %th 欄位名稱
+    %th 說明
+  %tr
+    %td result
+    %td 分詞後結果
+  %tr
+    %td error
+    %td 錯誤

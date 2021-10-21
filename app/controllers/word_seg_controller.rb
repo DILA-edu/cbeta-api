@@ -11,4 +11,16 @@ class WordSegController < ApplicationController
     end
   end
 
+  def run
+    return unless params.key? :t
+    r = WordSegService.new.run(params[:t])
+    if r.success?
+      render json: { result: r.result }
+    else
+      render json: { 
+        error: { message: r.errors }
+      }
+    end
+  end
+
 end
