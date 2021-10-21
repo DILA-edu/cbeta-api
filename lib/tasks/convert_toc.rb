@@ -2,6 +2,7 @@ require 'json'
 require 'nokogiri'
 require 'zhongwen_tools'
 require 'zhongwen_tools/core_ext/integer'
+require_relative 'cbeta_p5a_share'
 
 class ConvertToc
   
@@ -21,10 +22,8 @@ class ConvertToc
   
   def convert_all
     @previous_work = nil
-    Dir.entries(@xml_root).sort.each do |f|
-      next if f.start_with? '.'
-      next if f.size > 2
-      convert_canon(f)
+    each_canon(@xml_root) do |c|
+      convert_canon(c)
     end
   end
   
@@ -162,5 +161,6 @@ class ConvertToc
     parent = @work + '.' + suffix.join('.')
     return parent, n
   end
-  
+
+  include CbetaP5aShare
 end

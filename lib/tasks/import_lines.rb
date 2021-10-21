@@ -11,6 +11,7 @@ require 'json'
 require 'pp'
 require 'time_diff'
 require_relative 'html-node'
+require_relative 'cbeta_p5a_share'
 
 class ImportLines
   BLOCK_ELEMENTS = %w(byline cell head iterm juan lg p)
@@ -287,9 +288,7 @@ class ImportLines
   end
   
   def import_all()
-    Dir.entries(@xml_base).sort.each do |canon|
-      next if canon.start_with? '.'
-      next if canon.size > 2
+    each_canon(@xml_base) do |canon|
       import_canon(canon)
     end
   end
@@ -395,5 +394,6 @@ class ImportLines
       }
     end
   end
-  
+
+  include CbetaP5aShare
 end

@@ -1,4 +1,5 @@
 require 'json'
+require_relative 'cbeta_p5a_share'
 
 class ImportWorkInfo
   def initialize
@@ -135,11 +136,9 @@ class ImportWorkInfo
   
   def import_from_xml
     @done = Set.new
-    Dir.entries(@xml_root).sort.each do |f|
-      next if f.start_with? '.'
-      next if f.size > 2
-      @canon = f
-      p = File.join(@xml_root, f)
+    each_canon(@xml_root) do |c|
+      @canon = c
+      p = File.join(@xml_root, c)
       import_canon(p)
     end
   end
@@ -277,4 +276,6 @@ class ImportWorkInfo
       w.juan_start = juan_start
     end
   end
+  
+  include CbetaP5aShare
 end

@@ -1,4 +1,5 @@
 require 'json'
+require_relative 'cbeta_p5a_share'
 
 class ImportToc
   def initialize
@@ -66,10 +67,8 @@ class ImportToc
   end
   
   def import_all
-    Dir.entries(@xml_root).sort.each do |f|
-      next if f.start_with? '.'
-      next if f.size > 2
-      import_canon f
+    each_canon(@xml_root) do |c|
+      import_canon c
     end
   end
   
@@ -117,5 +116,6 @@ class ImportToc
     parent = @work + '.' + suffix.join('.')
     return parent, n
   end
-  
+
+  include CbetaP5aShare
 end
