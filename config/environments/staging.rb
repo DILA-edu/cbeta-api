@@ -17,6 +17,7 @@ Rails.application.configure do
   config.sphinx_index = "cbeta#{config.x.v}"
   config.x.sphinx_footnotes = "footnotes#{config.x.v}"
   config.x.sphinx_titles = "titles#{config.x.v}"
+  config.x.word_seg  = File.join(GIT, 'word-seg')
 
   # Code is not reloaded between requests.
   config.cache_classes = true
