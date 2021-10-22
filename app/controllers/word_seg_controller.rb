@@ -12,10 +12,21 @@ class WordSegController < ApplicationController
   end
 
   def run
-    return unless params.key? :t
-    r = WordSegService.new.run(params[:t])
+    if params[:payload].nil?
+      render json: { 
+        error: { 
+          code: 400,
+          message: "缺少 payload 參數"
+        }
+      }
+      return
+    end
+
+    r = WordSegService.new.run(params[:payload])
     if r.success?
-      render json: { result: r.result }
+      puts r.result
+      r.result.sub!(/^\//, '')
+      render json: { segmented: r.result.split('/') }
     else
       render json: { 
         error: { message: r.errors }

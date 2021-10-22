@@ -1,6 +1,7 @@
 require 'chronic_duration'
 require 'cbeta'
 require_relative 'cbeta_epub2'
+require_relative '../cbeta_p5a_share'
 
 class CbetaEbook
   def initialize(config)
@@ -32,7 +33,9 @@ class CbetaEbook
       puts "清除舊資料"
       FileUtils.rm_rf(@out_base)
       FileUtils.makedirs(@out_base)
-      @converter.convert_folder(@xml_base, @out_base)
+      each_canon(@xml_base) do |c|
+        convert_canon(c)
+      end
     elsif arg.include?('..')
       c1, c2 = arg.split('..')
       Dir.entries(@xml_base).sort.each do |f|
@@ -55,4 +58,6 @@ class CbetaEbook
     dest = File.join(@out_base, canon)
     @converter.convert_folder(src, dest)
   end
+
+  include CbetaP5aShare
 end
