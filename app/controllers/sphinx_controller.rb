@@ -649,12 +649,12 @@ class SphinxController < ApplicationController
     @order = ''
     count = 0
 
-    # unless params.key? :order
-    #   if action_name == 'notes'
-    #     @order = "ORDER BY canon_order ASC, vol ASC, lb ASC"
-    #   end
-    #   return
-    # end
+    unless params.key? :order
+      if action_name == 'notes'
+        @order = "ORDER BY canon_order ASC, vol ASC, lb ASC"
+      end
+      return
+    end
 
     tokens = params[:order].split(',')
     orders = []
