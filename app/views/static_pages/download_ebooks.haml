@@ -21,7 +21,7 @@
 %p 全部下載：
 %ul
   - folder = Rails.root.join('public/download')
-  - Dir["#{folder}/cbeta-pdf-*.zip"].each do |f|
+  - Dir["#{folder}/cbeta-pdf-*.zip"].sort.each do |f|
     - b = File.basename(f)
     %li= link_to_url "/download/#{b}"
 
