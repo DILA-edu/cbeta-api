@@ -235,6 +235,7 @@ class ImportLayers
       @vol = f
       path = File.join(folder, f)
       import_vol(path)
+      break
     end
   end
 
@@ -258,6 +259,8 @@ class ImportLayers
         abort "error #{__LINE__} 檔案不存在: #{@html_fn}" unless File.exist?(@html_fn)
         puts "read html file: #{@html_fn}"
         @html_doc = File.open(@html_fn) { |f| Nokogiri::HTML(f) }
+        lb = @html_doc.at_xpath("//span[@class='lb']")
+        @work = lb['id'].split('_').first
         @current_juan = juan
       end
       unless row['lb'] == old_lb
@@ -265,14 +268,6 @@ class ImportLayers
       end
 
       import_row(row)
-      if row['type'] == 'start'
-        t = row['tag']
-        @count[t] += 1
-        i = @count[t]
-        if (i % 100) == 0
-          puts "#{t}: #{i}"
-        end
-      end
     end
     save_html
   end
@@ -289,15 +284,35 @@ class ImportLayers
 
   def import_row(row)
     @row = row
-    lb = row['lb']
-    @anchor = %(<span class="#{row['tag']}_#{row['type']}" data-key="#{row['key']}"/>)
+
+    lb   = row['lb']
+    type = row['type']
+    tag  = row['tag']
+
+    if type == 'start'
+      @count[tag] += 1
+      i = @count[tag]
+      if (i % 100) == 0
+        puts "#{tag}: #{i}"
+      end
+    end
+
+    @anchor = %(<span id="#{tag}_#{type}_#{@count[tag]}" class="#{tag}_#{type}" data-key="#{row['key']}"/>)
     @layer_pos = row['position'].to_i
-    @log.puts "import_row, lb: #{lb}, position: #{@layer_pos}, tag: #{row['tag']}, type: #{row['type']}, key: #{row['key']}"
+    @log.puts "import_row, lb: #{lb}, position: #{@layer_pos}, tag: #{tag}, type: #{type}, key: #{row['key']}, name: #{row['name']}"
     @log.puts "<blockquote>"
     @line_text = ''
-    @html_doc.xpath("//span[@class='t' and @l='#{lb}']").each do |node|
-      @html_pos = node['w'].to_i
-      break if import_row_traverse(node)
+    id = "#{@work}_p#{lb}"
+    start_lb = @html_doc.at_xpath("//span[@class='lb' and @id='#{id}']")
+    abort "錯誤行號: #{__LINE__}" if start_lb.nil?
+    start_lb.xpath("./following::*[self::span[@class='t'] or self::a[@class='gaijiAnchor']]").each do |node|
+      if node.name == 'span' and node['class'] == 't'
+        abort "發生錯誤, id: #{id}, 程式行號: #{__LINE__}" if node['l'] > lb
+        @html_pos = node['w'].to_i - 1
+        break if import_row_traverse(node)
+      elsif node.name == 'a' and node['class'] == 'gaijiAnchor'
+        break if import_row_gaiji(node)
+      end
     end
     @log.puts "</blockquote>\n"
   end
@@ -342,31 +357,51 @@ class ImportLayers
     r
   end
 
+  def import_row_gaiji(e)
+    text = e.text
+    @log.puts "import_row_gaiji, text: #{text}<br>"
+    i = @html_pos + text.size
+    @log.puts "gaiji node 結束於本行第 #{i} 個字, 程式行號: #{__LINE__}<br>"
+
+    if i < @layer_pos
+      @html_pos = i
+      @line_text += text
+      return false
+    end
+
+    @html_pos += 1
+    @log.puts "gaiji node 開始於本行第 #{@html_pos} 個字, 程式行號: #{__LINE__}<br>"
+    check_text(@line_text, @row)
+    if @row['type'] == 'start'
+      e.add_previous_sibling(@anchor)
+    else
+      e.add_next_sibling(@anchor)
+    end
+    true
+  end
+
   def import_row_text(e)
     text = e.text
     @log.puts "import_row_text, text: #{text}<br>"
     i = @html_pos + text.size
-    @log.puts "i: #{i}<br>"
+    @log.puts "text node 結束於本行第 #{i} 個字, 程式行號: #{__LINE__}<br>"
 
-    if @row['type'] == 'start' and i <= @layer_pos
+    if i < @layer_pos
       @html_pos = i
       @line_text += text
       return false
     end
 
-    if @row['type'] == 'end' and i < @layer_pos
-      @html_pos = i
-      @line_text += text
-      return false
-    end
-
+    @html_pos += 1
+    @log.puts "text node 開始於本行第 #{@html_pos} 個字, 程式行號: #{__LINE__}<br>"
     i = @layer_pos - @html_pos
-    i += 1 if @row['type'] == 'end'
+    i += 1 if @row['type'] == 'end' # 如果是結束標記，要放在文字後面
+    @log.puts "標記前的文字字數: #{i}, 程式行號: #{__LINE__}<br>"
     s = text[0, i]
-    @log.puts "#{__LINE__} #{s}<br>"
+    @log.puts "標記前文字: #{s}, 程式行號: #{__LINE__}<br>"
     @line_text += s
     check_text(@line_text, @row)
-    @log.puts "#{__LINE__} #{text[i..-1]}<br>"
+    @log.puts "標記後文字: #{text[i..-1]}, 程式行號: #{__LINE__}<br>"
     s += @anchor
     s += text[i..-1] if text.size > i
     e.add_previous_sibling(s)
@@ -380,6 +415,7 @@ class ImportLayers
       next if f.start_with? '.'
       fn = File.join(folder, f)
       import_file(fn)
+      break
     end
   end
 
