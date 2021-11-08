@@ -1020,9 +1020,8 @@ class P5aToHTMLForUI
         @first_lb_in_juan = false
       end
     when 'GA', 'GB'
-      return '' if @lb.start_with('b')
       v = @vol[2..-1]
-      if v != '000' and not @lb.start_with('b') and @lb.end_with?('a01')
+      if v != '000' and @lb.end_with?('a01')
         n = @lb[0, 4]
         r = %(<a class="facsimile" data-ref="#{e['ed']}v#{v}p#{n}"></a>)
       end
