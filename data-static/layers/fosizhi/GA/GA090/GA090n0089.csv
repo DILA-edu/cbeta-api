@@ -7057,8 +7057,8 @@ lb,position,tag,type,key,name
 0940a07,21,person,end,A019263,仲光
 0940a07,22,place,start,PL14571,曇花亭
 0940a07,24,place,end,PL14571,曇花亭
-0940a07,26,place,start,PL14426,""
-0940a08,0,place,end,PL14426,""
+0940a07,26,place,start,PL14426,石橋
+0940a08,1,place,end,PL14426,石橋
 0940a09,29,place,start,PL14426,石梁
 0941a01,1,place,end,PL14426,石梁
 0941a01,22,place,start,PL14717,方廣寺

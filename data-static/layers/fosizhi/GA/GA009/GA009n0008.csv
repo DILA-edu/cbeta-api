@@ -260,7 +260,7 @@ lb,position,tag,type,key,name
 0105a08,16,place,start,PL13979,觀音峯
 0105a08,18,place,end,PL13979,觀音峯
 0105a08,20,place,start,PL14035,虎巖
-0106a01,0,place,end,PL14035,虎巖
+0105a08,21,place,end,PL14035,虎巖
 0106a01,2,place,start,PL13882,東天門
 0106a01,4,place,end,PL13882,東天門
 0106a01,6,place,start,PL13925,圓通巖
@@ -3376,7 +3376,7 @@ lb,position,tag,type,key,name
 0381a08,3,place,start,PL14059,東海普陀寺
 0381a08,7,place,end,PL14059,東海普陀寺
 0381a08,14,place,start,PL83,震旦
-0382a01,0,place,end,PL83,震旦
+0381a08,15,place,end,PL83,震旦
 0382a01,7,person,start,A002144,文殊
 0382a01,8,person,end,A002144,文殊
 0382a01,10,place,start,PL5250,五臺

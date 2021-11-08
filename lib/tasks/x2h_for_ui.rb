@@ -361,7 +361,7 @@ class P5aToHTMLForUI
 
   def e_g(e, mode)
     gid = e['ref'][1..-1]
-    
+
     if gid.start_with? 'CB'
       g = @gaijis[gid]
     else
@@ -380,8 +380,15 @@ class P5aToHTMLForUI
       end
     end
 
-    @char_count += 1
+    content = e_g_content(gid, g, mode)
+    return content if mode.include? 'footnote'
 
+    r = span_t(content)
+    @char_count += 1
+    r
+  end
+
+  def e_g_content(gid, g, mode)
     if gid.start_with?('SD')
       return g['symbol'] if g.key? 'symbol'
       return "<span class='siddam' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
@@ -421,6 +428,7 @@ class P5aToHTMLForUI
       end
     end
 
+    zzs = g['composition']
     if default.empty?
       abort "缺組字式：#{gid}" if zzs.blank?
       default = zzs
@@ -1012,8 +1020,9 @@ class P5aToHTMLForUI
         @first_lb_in_juan = false
       end
     when 'GA', 'GB'
+      return '' if @lb.start_with('b')
       v = @vol[2..-1]
-      if v != '000' and @lb.end_with?('a01')
+      if v != '000' and not @lb.start_with('b') and @lb.end_with?('a01')
         n = @lb[0, 4]
         r = %(<a class="facsimile" data-ref="#{e['ed']}v#{v}p#{n}"></a>)
       end
@@ -1136,12 +1145,7 @@ class P5aToHTMLForUI
 
     # 正文區的文字外面要包 span
     if @pass.last and mode=='html'
-      node = HtmlNode.new('span')
-      node['class'] = 't'
-      node['l'] = @lb
-      node['w'] = @char_count
-      node.content = r
-      r = node.to_s
+      r = span_t(r)
       @char_count += text_size
     end
     r
@@ -1299,6 +1303,15 @@ class P5aToHTMLForUI
   def progress(msg)
     $stderr.puts Time.now.strftime("%Y-%m-%d %H:%M:%S")
     $stderr.puts msg
+  end
+
+  def span_t(content)
+    node = HtmlNode.new('span')
+    node['class'] = 't'
+    node['l'] = @lb
+    node['w'] = @char_count
+    node.content = content
+    node.to_s
   end
 
   def stat_jm_facs

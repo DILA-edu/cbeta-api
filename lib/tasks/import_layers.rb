@@ -11,12 +11,15 @@ class ImportLayers
   #  '女蝸' => '女媧',
   #  '滄洲' => '滄州'
   }
+  LOG = Rails.root.join('log', 'import-layers-log.htm')
 
   def initialize
     @layers = Rails.root.join('data-static', 'layers')
     @html_base = Rails.root.join('data', 'html')
     @out_base = Rails.root.join('data', 'html-with-layers')
     @xml_base = Rails.application.config.cbeta_xml
+
+    FileUtils.rm_rf(@out_base)
     FileUtils.makedirs(@out_base)
 
     read_vars
@@ -27,9 +30,7 @@ class ImportLayers
     t1 = Time.now
     @count = { 'place' => 0, 'person' => 0 }
     @mismatch = 0
-    
-    fn = Rails.root.join('log', 'import-layers-log.htm')
-    @log = File.open(fn, 'w')
+    @log = File.open(LOG, 'w')
 
     Dir.entries(@layers).each do |f|
       next if f.start_with? '.'
@@ -44,7 +45,7 @@ class ImportLayers
     else
       s = "文字不符筆數：#{@mismatch}\n"
       puts s.red
-      puts "請查看 log/import_layers.log"
+      puts "請查看 #{LOG}"
       @log.puts '-' * 10
       @log.puts s
     end
@@ -79,14 +80,15 @@ class ImportLayers
     end
 
     unless flag
+      @mismatch += 1
       @log.puts '-' * 10
+      @log.puts "mismatch: #{@mismatch}"
       @log.puts "名稱結束處文字不符"
       @log.puts "lb: #{lb2linehead(row['lb'])}"
       @log.puts "CBETA 整行: #{line_text}"
       @log.puts "佛寺志位置: #{pos}"
       @log.puts "CBETA 文字: #{text}"
       @log.puts "佛寺志 文字: #{name}"
-      @mismatch += 1
     end
   end
 
@@ -112,8 +114,10 @@ class ImportLayers
       flag = check_start_str(text, name)
     end
     unless flag
+      @mismatch += 1
       msg = <<~MSG
         ----------
+        mismatch: #{@mismatch}
         名稱起始處文字不符
         lb: #{lb2linehead(row['lb'])}
         CBETA 整行: #{line_text}
@@ -123,7 +127,6 @@ class ImportLayers
       MSG
       @log.puts msg
       puts msg
-      @mismatch += 1
     end
   end
 
@@ -159,10 +162,11 @@ class ImportLayers
     when 'end'
       check_end(line_text, i, row)
     else
+      @mismatch += 1
       @log.puts '-' * 10
+      @log.puts "mismatch: #{@mismatch}"
       @log.puts "未知的 type: #{row['type']}"
       @log.puts "key: #{row['key']}"
-      @mismatch += 1
     end
   end
 
@@ -235,7 +239,6 @@ class ImportLayers
       @vol = f
       path = File.join(folder, f)
       import_vol(path)
-      break
     end
   end
 
@@ -293,26 +296,36 @@ class ImportLayers
       @count[tag] += 1
       i = @count[tag]
       if (i % 100) == 0
-        puts "#{tag}: #{i}"
+        puts "#{tag}: #{i}, mismatch: #{@mismatch}"
       end
     end
 
-    @anchor = %(<span id="#{tag}_#{type}_#{@count[tag]}" class="#{tag}_#{type}" data-key="#{row['key']}"/>)
+    @anchor = %(<a id="#{tag}_#{type}_#{@count[tag]}" class="#{tag}_#{type}" data-key="#{row['key']}"/>)
     @layer_pos = row['position'].to_i
     @log.puts "import_row, lb: #{lb}, position: #{@layer_pos}, tag: #{tag}, type: #{type}, key: #{row['key']}, name: #{row['name']}"
     @log.puts "<blockquote>"
     @line_text = ''
     id = "#{@work}_p#{lb}"
+
     start_lb = @html_doc.at_xpath("//span[@class='lb' and @id='#{id}']")
-    abort "錯誤行號: #{__LINE__}" if start_lb.nil?
-    start_lb.xpath("./following::*[self::span[@class='t'] or self::a[@class='gaijiAnchor']]").each do |node|
-      if node.name == 'span' and node['class'] == 't'
-        abort "發生錯誤, id: #{id}, 程式行號: #{__LINE__}" if node['l'] > lb
-        @html_pos = node['w'].to_i - 1
-        break if import_row_traverse(node)
-      elsif node.name == 'a' and node['class'] == 'gaijiAnchor'
-        break if import_row_gaiji(node)
+    if start_lb.nil?
+      @mismatch += 1
+      @log.puts "mismatch: #{@mismatch}"
+      @log.puts "[Line: #{__LINE__}] HTML 檔裡找不到 #{id}"
+      return
+    end
+
+    #start_lb.xpath("./following::*[self::span[@class='t'] or self::a[@class='gaijiAnchor']]").each do |node|
+    #start_lb.xpath("./following::node()").each do |node|
+    start_lb.xpath("./following::span[@class='t']").each do |node|
+      if node['l'] > lb
+        @log.puts "發生錯誤, id: #{id}, 程式行號: #{__LINE__}" 
+        @log.puts %(lb: #{lb}, <span class="t" l="#{node['l']}">)
+        @log.puts row.to_s
+        abort
       end
+      @html_pos = node['w'].to_i - 1
+      break if import_row_traverse(node)
     end
     @log.puts "</blockquote>\n"
   end
@@ -323,12 +336,6 @@ class ImportLayers
     r = false
     node.children.each do |c| 
       next '' if c.comment?
-      @log.print "#{__LINE__} html position: #{@html_pos}"
-      if c.text?
-        @log.puts ", text node: #{c.text}<br>"
-      else
-        @log.puts ", tag: #{c.name}, class: #{c['class']}<br>"
-      end
 
       if @row['type'] == 'start' and @html_pos > @layer_pos
         check_text(@line_text, @row)
@@ -337,9 +344,23 @@ class ImportLayers
         break
       end
 
+      if c.name == 'a'
+        next if %w[person_start person_end place_start place_end].include?(c['class'])
+      end
+
       if c.name == 'span'
         next if %w[pc person_start person_end place_start place_end].include?(c['class'])
       end
+
+      if c.name == 'a' and c['class'] == 'gaijiAnchor'
+        if import_row_gaiji(c)
+          r = true
+          break
+        else
+          next
+        end
+      end
+
 
       if c.text?
         if import_row_text(c)
@@ -373,8 +394,10 @@ class ImportLayers
     @log.puts "gaiji node 開始於本行第 #{@html_pos} 個字, 程式行號: #{__LINE__}<br>"
     check_text(@line_text, @row)
     if @row['type'] == 'start'
+      @log.puts "[Line: #{__LINE__}] %s" % CGI::escapeHTML(@anchor)
       e.add_previous_sibling(@anchor)
     else
+      @log.puts "[Line: #{__LINE__}] %s" % CGI::escapeHTML(@anchor)
       e.add_next_sibling(@anchor)
     end
     true
@@ -384,7 +407,6 @@ class ImportLayers
     text = e.text
     @log.puts "import_row_text, text: #{text}<br>"
     i = @html_pos + text.size
-    @log.puts "text node 結束於本行第 #{i} 個字, 程式行號: #{__LINE__}<br>"
 
     if i < @layer_pos
       @html_pos = i
@@ -393,15 +415,22 @@ class ImportLayers
     end
 
     @html_pos += 1
-    @log.puts "text node 開始於本行第 #{@html_pos} 個字, 程式行號: #{__LINE__}<br>"
+    if @layer_pos < @html_pos
+      puts "[#{__LINE__}] html_pos 已超過 layer_pos"
+      puts @basename
+      puts @row.to_s
+      abort 
+    end
     i = @layer_pos - @html_pos
     i += 1 if @row['type'] == 'end' # 如果是結束標記，要放在文字後面
-    @log.puts "標記前的文字字數: #{i}, 程式行號: #{__LINE__}<br>"
     s = text[0, i]
-    @log.puts "標記前文字: #{s}, 程式行號: #{__LINE__}<br>"
+    if s.nil?
+      puts "[Line: #{__LINE__}]"
+      puts @row.to_s
+      abort
+    end
     @line_text += s
     check_text(@line_text, @row)
-    @log.puts "標記後文字: #{text[i..-1]}, 程式行號: #{__LINE__}<br>"
     s += @anchor
     s += text[i..-1] if text.size > i
     e.add_previous_sibling(s)
@@ -415,7 +444,6 @@ class ImportLayers
       next if f.start_with? '.'
       fn = File.join(folder, f)
       import_file(fn)
-      break
     end
   end
 

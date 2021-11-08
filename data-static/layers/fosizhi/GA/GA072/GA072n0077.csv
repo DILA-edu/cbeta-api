@@ -1161,8 +1161,8 @@ lb,position,tag,type,key,name
 0039a02,3,place,end,PL16784,大嶺頭
 0039a02,18,place,start,PL16586,平田岡
 0039a02,20,place,end,PL16586,平田岡
-0039a02,21,place,start,PL16880,回香閣
-0039a02,23,place,end,PL16880,回香閣
+0039a02,21,place,start,PL16880,囘香閣
+0039a02,23,place,end,PL16880,囘香閣
 0039a02,28,place,start,PL16817,龍池
 0039a02,29,place,end,PL16817,龍池
 0039a02,30,place,start,PL16858,東巖
@@ -8989,8 +8989,8 @@ lb,position,tag,type,key,name
 0266a07,28,person,end,A008568,劉漢章
 0266a07,29,person,start,A008564,陳月軒
 0266a07,31,person,end,A008564,陳月軒
-0266a07,32,person,start,A008565,""
-0266a08,0,person,end,A008565,""
+0266a07,32,person,start,A008565,袁訓之
+0266a08,2,person,end,A008565,袁訓之
 0266a09,5,place,start,PL16811,曹溪
 0266a09,6,place,end,PL16811,曹溪
 0266a09,11,person,start,A007165,劉薌林
