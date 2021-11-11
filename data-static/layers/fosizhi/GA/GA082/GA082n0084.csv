@@ -1447,7 +1447,7 @@ lb,position,tag,type,key,name
 0537a06,11,place,end,PL40524,四觀峰
 0537a06,14,place,start,PL41005,羅城
 0537a06,15,place,end,PL41005,羅城
-0537a06,20,place,start,PL40883,金殿
+0537a07,1,place,start,PL40883,金殿
 0537a07,2,place,end,PL40883,金殿
 0537a08,3,place,start,PL55710,土主廟
 0537a08,5,place,end,PL55710,土主廟
@@ -3247,8 +3247,8 @@ lb,position,tag,type,key,name
 0670a04,10,person,end,A014013,劉登雲
 0670a05,10,place,start,PL40522,雞山
 0670a05,11,place,end,PL40522,雞山
-0670a08,25,place,start,PL41407,羅川羊塘里
-0670a08,29,place,end,PL41407,羅川羊塘里
+0670a09,6,place,start,PL41407,羅川羊塘里
+0670a09,10,place,end,PL41407,羅川羊塘里
 0671a03,16,place,start,PL40522,雞足山
 0671a03,18,place,end,PL40522,雞足山
 0671a04,3,person,start,A013989,吉祥
@@ -5303,8 +5303,8 @@ lb,position,tag,type,key,name
 0834a03,2,person,end,A012324,普荷
 0834a03,3,person,start,A010644,學蘊
 0834a03,4,person,end,A010644,學蘊
-0834a00,1,person,start,A010672,玄珠
-0834a00,2,person,end,A010672,玄珠
+0834a03,5,person,start,A010672,玄珠
+0834a03,6,person,end,A010672,玄珠
 0834a04,1,person,start,A010647,廣稱
 0834a04,2,person,end,A010647,廣稱
 0834a04,3,person,start,A013824,古道

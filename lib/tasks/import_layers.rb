@@ -13,6 +13,14 @@ class ImportLayers
   }
   LOG = Rails.root.join('log', 'import-layers-log.htm')
 
+  PUNCS = /
+  [
+    \n\r
+    ,\.\(\)\[\]\x20
+    。．，、；？！：（）「」『』《》＜＞〈〉〔〕［］【】〖〗…—　▆■□○―→←
+  ]
+  /x
+
   def initialize
     @layers = Rails.root.join('data-static', 'layers')
     @html_base = Rails.root.join('data', 'html')
@@ -26,8 +34,9 @@ class ImportLayers
     @gaijis = MyCbetaShare.get_cbeta_gaiji
   end
 
-  def import()
+  def import(start)
     t1 = Time.now
+    @start = start || ''
     @count = { 'place' => 0, 'person' => 0 }
     @mismatch = 0
     @log = File.open(LOG, 'w')
@@ -46,7 +55,7 @@ class ImportLayers
       s = "文字不符筆數：#{@mismatch}\n"
       puts s.red
       puts "請查看 #{LOG}"
-      @log.puts '-' * 10
+      @log.puts "<hr>\n"
       @log.puts s
     end
     @log.close
@@ -81,14 +90,11 @@ class ImportLayers
 
     unless flag
       @mismatch += 1
-      @log.puts '-' * 10
-      @log.puts "mismatch: #{@mismatch}"
-      @log.puts "名稱結束處文字不符"
-      @log.puts "lb: #{lb2linehead(row['lb'])}"
-      @log.puts "CBETA 整行: #{line_text}"
-      @log.puts "佛寺志位置: #{pos}"
-      @log.puts "CBETA 文字: #{text}"
-      @log.puts "佛寺志 文字: #{name}"
+      @log.puts "<hr>\n"
+      @log.puts "mismatch: #{@mismatch}<br>\n"
+      @log.puts "名稱結束處文字不符<br>"
+      @log.puts "#{@work}<br>\n"
+      @log.puts row.to_s + "<br>\n"
     end
   end
 
@@ -115,18 +121,11 @@ class ImportLayers
     end
     unless flag
       @mismatch += 1
-      msg = <<~MSG
-        ----------
-        mismatch: #{@mismatch}
-        名稱起始處文字不符
-        lb: #{lb2linehead(row['lb'])}
-        CBETA 整行: #{line_text}
-        佛寺志位置: #{pos}
-        CBETA 文字: #{text}
-        佛寺志 文字: #{name}
-      MSG
-      @log.puts msg
-      puts msg
+      @log.puts "<hr>\n"
+      @log.puts "mismatch: #{@mismatch}<br>\n"
+      @log.puts "名稱起始處文字不符\n"
+      @log.puts "#{@work}<br>\n"
+      @log.puts row.to_s + "<br>\n"
     end
   end
 
@@ -140,19 +139,15 @@ class ImportLayers
   end
 
   def check_text(line_text, row)
-    @log.puts "check_text<br>"
     line_text = @cbeta_lines[row['lb']]
     i = row['position'].to_i
     if i > line_text.size
-      @log.puts <<~MSG
-        ----------
-        位置超出文字範圍
-        lb: #{lb2linehead(row['lb'])}
-        位置: #{i}
-        CBETA 文字: #{line_text}, 長度: #{line_text.size}
+      @mismatch += 1
+      @log.write <<~MSG
+        <hr>
+        位置超出文字範圍<br>
         #{row.to_s}
       MSG
-      @mismatch += 1
       return
     end
 
@@ -225,9 +220,7 @@ class ImportLayers
     return '' if s.empty?
     return '' if e.parent.name == 'app'
 
-    # cbeta xml 文字之間會有多餘的換行
-    s.gsub!(/[\n\r]/, '')
-    s.gsub!(/[,\.\(\)\[\] 。．，、；？！：（）「」『』《》＜＞〈〉〔〕［］【】〖〗…—　▆■□○―]/, '')
+    s.gsub!(PUNCS, '')
     @cbeta_lines[@lb] += s
   end
 
@@ -244,6 +237,8 @@ class ImportLayers
 
   def import_file(fn)
     @basename = File.basename(fn, '.csv')
+    return if @basename < @start
+    
     puts @basename
     read_cbeta_lines
     @current_juan = nil
@@ -253,7 +248,16 @@ class ImportLayers
     puts "import file: #{fn}"
     CSV.foreach(fn, headers: true) do |row|
       next if row['lb'].start_with? 'f'
-      work, juan = JuanLine.find_by_vol_lb(@vol, row['lb'])
+
+      begin
+        work, juan = JuanLine.find_by_vol_lb(@vol, row['lb'])
+      rescue => e
+        puts '-' * 10
+        puts e.message
+        puts @basename
+        abort row.to_s
+      end
+
       unless juan == @current_juan
         save_html unless @current_juan.nil?
         fn = "%03d.html" % juan
@@ -302,37 +306,33 @@ class ImportLayers
 
     @anchor = %(<a id="#{tag}_#{type}_#{@count[tag]}" class="#{tag}_#{type}" data-key="#{row['key']}"/>)
     @layer_pos = row['position'].to_i
-    @log.puts "import_row, lb: #{lb}, position: #{@layer_pos}, tag: #{tag}, type: #{type}, key: #{row['key']}, name: #{row['name']}"
-    @log.puts "<blockquote>"
     @line_text = ''
     id = "#{@work}_p#{lb}"
 
     start_lb = @html_doc.at_xpath("//span[@class='lb' and @id='#{id}']")
     if start_lb.nil?
       @mismatch += 1
-      @log.puts "mismatch: #{@mismatch}"
-      @log.puts "[Line: #{__LINE__}] HTML 檔裡找不到 #{id}"
+      @log.puts "<hr>\n"
+      @log.puts "mismatch: #{@mismatch}<br>\n"
+      @log.puts "#{@work}<br>\n"
+      @log.puts "[Line: #{__LINE__}] HTML 檔裡找不到 #{id}<br>"
       return
     end
 
-    #start_lb.xpath("./following::*[self::span[@class='t'] or self::a[@class='gaijiAnchor']]").each do |node|
-    #start_lb.xpath("./following::node()").each do |node|
     start_lb.xpath("./following::span[@class='t']").each do |node|
       if node['l'] > lb
-        @log.puts "發生錯誤, id: #{id}, 程式行號: #{__LINE__}" 
-        @log.puts %(lb: #{lb}, <span class="t" l="#{node['l']}">)
-        @log.puts row.to_s
+        puts '-' * 20
+        puts "發生錯誤, id: #{id}, 程式行號: #{__LINE__}" 
+        puts %(lb: #{lb}, <span class="t" l="#{node['l']}">)
+        puts row.to_s
         abort
       end
       @html_pos = node['w'].to_i - 1
       break if import_row_traverse(node)
     end
-    @log.puts "</blockquote>\n"
   end
 
   def import_row_traverse(node)
-    @log.puts "<p>import_row_traverse, #{node.content}</p>"
-    @log.puts "<blockquote>"
     r = false
     node.children.each do |c| 
       next '' if c.comment?
@@ -374,15 +374,12 @@ class ImportLayers
         end
       end
     end
-    @log.puts "</blockquote>"
     r
   end
 
   def import_row_gaiji(e)
     text = e.text
-    @log.puts "import_row_gaiji, text: #{text}<br>"
     i = @html_pos + text.size
-    @log.puts "gaiji node 結束於本行第 #{i} 個字, 程式行號: #{__LINE__}<br>"
 
     if i < @layer_pos
       @html_pos = i
@@ -391,13 +388,10 @@ class ImportLayers
     end
 
     @html_pos += 1
-    @log.puts "gaiji node 開始於本行第 #{@html_pos} 個字, 程式行號: #{__LINE__}<br>"
     check_text(@line_text, @row)
     if @row['type'] == 'start'
-      @log.puts "[Line: #{__LINE__}] %s" % CGI::escapeHTML(@anchor)
       e.add_previous_sibling(@anchor)
     else
-      @log.puts "[Line: #{__LINE__}] %s" % CGI::escapeHTML(@anchor)
       e.add_next_sibling(@anchor)
     end
     true
@@ -405,7 +399,6 @@ class ImportLayers
 
   def import_row_text(e)
     text = e.text
-    @log.puts "import_row_text, text: #{text}<br>"
     i = @html_pos + text.size
 
     if i < @layer_pos

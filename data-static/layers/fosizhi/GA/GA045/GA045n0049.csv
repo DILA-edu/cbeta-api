@@ -5353,12 +5353,12 @@ lb,position,tag,type,key,name
 0141a08,28,place,end,PL36376,羅目
 0141a08,32,place,start,PL35990,龍游
 0141a09,1,place,end,PL35990,龍游
-0141a08,42,place,start,PL36376,羅目
-0141a08,43,place,end,PL36376,羅目
-0141a08,49,place,start,PL36342,彝惜水
-0141a08,51,place,end,PL36342,彝惜水
-0141a08,54,place,start,PL37713,嶲州
-0141a08,55,place,end,PL37713,嶲州
+0141a09,10,place,start,PL36376,羅目
+0141a09,11,place,end,PL36376,羅目
+0141a09,17,place,start,PL36342,彝惜水
+0141a09,19,place,end,PL36342,彝惜水
+0141a09,22,place,start,PL37713,嶲州
+0141a09,23,place,end,PL37713,嶲州
 0141a10,15,place,start,PL36345,天津水
 0141a10,17,place,end,PL36345,天津水
 0141a10,27,place,start,PL34665,沫水
@@ -5771,7 +5771,7 @@ lb,position,tag,type,key,name
 0151a07,9,person,end,A009295,瞿君武
 0151a07,12,person,start,A008896,皇人
 0151a07,13,person,end,A008896,皇人
-0151a07,34,place,start,PL36629,彭山
+0151a07,32,place,start,PL36629,彭山
 0151a08,1,place,end,PL36629,彭山
 0151a08,2,place,start,PL36030,犍為
 0151a08,3,place,end,PL36030,犍為

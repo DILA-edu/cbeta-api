@@ -191,8 +191,8 @@ lb,position,tag,type,key,name
 0009a12,2,place,end,PL5340,獅子窟
 0009a12,4,place,start,PL5340,師子窩
 0009a12,6,place,end,PL5340,師子窩
-0010a02,57,place,start,PL5250,五峯
-0010a02,58,place,end,PL5250,五峯
+0010a05,8,place,start,PL5250,五峯
+0010a05,9,place,end,PL5250,五峯
 0012a02,6,person,start,A002144,龍種上
 0012a02,8,person,end,A002144,龍種上
 0012a08,5,person,start,A004777,釋印光

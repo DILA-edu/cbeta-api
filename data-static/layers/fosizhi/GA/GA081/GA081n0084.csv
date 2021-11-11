@@ -6859,8 +6859,8 @@ lb,position,tag,type,key,name
 0364a07,4,place,end,PL41393,大石洞
 0364a07,11,person,start,A001861,釋禪
 0364a07,12,person,end,A001861,釋禪
-0364a08,2,place,start,PL41258,景星亭
-0364a08,4,place,end,PL41258,景星亭
+0364a09,1,place,start,PL41258,景星亭
+0364a09,3,place,end,PL41258,景星亭
 0365a01,2,place,start,PL40524,四觀峯
 0365a01,4,place,end,PL40524,四觀峯
 0365a01,6,place,start,PL41259,善雨亭

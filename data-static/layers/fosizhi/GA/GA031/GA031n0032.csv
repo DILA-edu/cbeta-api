@@ -967,10 +967,10 @@ lb,position,tag,type,key,name
 0097a09,7,person,end,A000475,徑山老人
 0098a01,18,person,start,A007553,九成
 0098a01,19,person,end,A007553,九成
-0098a01,27,person,start,A000475,徑山
-0098a01,28,person,end,A000475,徑山
-0098a01,40,person,start,A007553,張公
-0098a01,41,person,end,A007553,張公
+0098a02,6,person,start,A000475,徑山
+0098a02,7,person,end,A000475,徑山
+0098a02,19,person,start,A007553,張公
+0098a02,20,person,end,A007553,張公
 0098a03,13,person,start,A001411,圓悟
 0098a03,14,person,end,A001411,圓悟
 0098a03,16,person,start,A021120,張昭遠
@@ -1049,8 +1049,8 @@ lb,position,tag,type,key,name
 0111a03,4,person,end,A003703,雲門
 0111a08,13,person,start,A002144,文殊
 0111a08,14,person,end,A002144,文殊
-0111a08,23,place,start,PL55473,鐵圍山
-0111a08,25,place,end,PL55473,鐵圍山
+0111a09,2,place,start,PL55473,鐵圍山
+0111a09,4,place,end,PL55473,鐵圍山
 0112a05,7,person,start,A004984,汾陽和尚
 0112a05,10,person,end,A004984,汾陽和尚
 0113a02,20,person,start,A004984,汾陽老人
@@ -1359,8 +1359,8 @@ lb,position,tag,type,key,name
 0143a07,4,person,end,A009583,偃溪廣聞
 0143a08,1,person,start,A021176,荊叟如珏
 0143a08,4,person,end,A021176,荊叟如珏
-0143a10,1,person,start,A009002,淮海原肇
-0143a10,4,person,end,A009002,淮海原肇
+0143a09,1,person,start,A009002,淮海原肇
+0143a09,4,person,end,A009002,淮海原肇
 0144a01,1,person,start,A009654,虛堂智愚
 0144a01,4,person,end,A009654,虛堂智愚
 0145a02,1,place,start,PL21445,汶上
@@ -6524,7 +6524,7 @@ lb,position,tag,type,key,name
 0489a07,1,person,start,A003672,高皇帝
 0489a07,3,person,end,A003672,高皇帝
 0489a08,21,person,start,A007271,宋文憲公
-0489a08,24,person,end,A007271,宋文憲公
+0489a09,3,person,end,A007271,宋文憲公
 0490a01,1,person,start,A003672,聖祖
 0490a01,2,person,end,A003672,聖祖
 0490a01,5,person,start,A007271,文憲

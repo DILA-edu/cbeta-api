@@ -63,10 +63,12 @@ namespace :import do
     importer.import
   end
   
-  task :layers => :environment do
-    require "tasks/import_layers"
+  # 可以指定起始檔名
+  # 例如： bundle exec rake import:layers[GA032n0032]
+  task :layers, [:arg1] => :environment do |t, args|
+      require "tasks/import_layers"
     importer = ImportLayers.new
-    importer.import
+    importer.import args[:arg1]
   end
 
   task :lb_maps => :environment do
