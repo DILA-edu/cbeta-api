@@ -1,6 +1,6 @@
 class ReportController < ApplicationController
   def daily
-    @visits = Visit.group(:accessed_at).order(:accessed_at).sum(:count)
+    @visits = Visit.group(:accessed_at).order(accessed_at: :desc).sum(:count)
     a = @visits.values
     @max = a.max
     @avg = a.sum(0) / a.size
@@ -12,6 +12,7 @@ class ReportController < ApplicationController
     @visits = Visit.where(:accessed_at => @d1..@d2).group(:url)
     h = @visits.sum(:count)
     @visits = h.sort_by { |k,v| -v }
+    @total = @visits.sum(0) { |x| x[1] }
   end
 
   private

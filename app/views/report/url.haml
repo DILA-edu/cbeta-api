@@ -11,7 +11,11 @@
         = select_date @d2, prefix: :d2
         = submit_tag("送出")
 .row.justify-content-center
+
   .col-auto
+    %p
+      Total: 
+      = number_with_delimiter(@total)
     -#%table.table.table-striped.fit
     %table.table-striped
       %tr
@@ -23,6 +27,3 @@
         %tr
           %td.fit= a[0]
           %td.text-right.fit= number_with_delimiter(a[1])
-      %tr
-        %td Total
-        %td.text-right= total
