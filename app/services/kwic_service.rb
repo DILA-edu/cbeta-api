@@ -21,7 +21,6 @@ require 'pp'
 #     read_text_near
 #       read_str
 
-
 class KwicService
   attr_reader :config, :size, :text
 
@@ -48,6 +47,8 @@ class KwicService
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
     @current_sa_path = nil
     @cache = Rails.configuration.x.v
+    @sa_files = {}
+    @text_files = {}
   end
   
   def abs_sa_path(sa_path, name)
@@ -350,7 +351,8 @@ class KwicService
     s2 = @option[:negative_lookahead]  
     
     return sa_results if s1.nil? and s2.nil?
-    
+
+    Rails.logger.warn "exclude_filter, q: #{q}"
     @total_found = 0
 
     if @option[:sort] == 'b'
@@ -505,10 +507,15 @@ class KwicService
       return unless @f_sa.nil?
     end
 
-    Rails.logger.warn "open sa from file"
+    if @sa_files.key?(fn)
+      @f_sa = @sa_files[fn]
+      return
+    end
     
     begin
+      Rails.logger.warn "open sa from file: #{fn}"
       @f_sa = File.open(fn, 'rb')
+      @sa_files[fn] = @f_sa
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
     end
@@ -532,12 +539,24 @@ class KwicService
       end
     end
 
-    Rails.logger.warn "open_text from file"
+    if @text_files.key?(fn)
+      h = @text_files[fn]
+      @f_txt   = h[:file_handle]
+      @size    = h[:size]
+      @sa_last = h[:sa_last]
+      return
+    end
 
     begin
+      Rails.logger.warn "open text from file: #{fn}"
       @f_txt = File.open(fn, 'rb')
       @size = @f_txt.size / 4
       @sa_last = @size - 1 # sa 最後一筆的 offset
+      @text_files[fn] = {
+        file_handle: @f_txt,
+        size: @size,
+        sa_last: @sa_last
+      }
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
     end
@@ -546,6 +565,7 @@ class KwicService
   end
   
   def paginate(q, sa_results)
+    Rails.logger.warn "paginate, q: #{q}"
     if @option.key?(:juan) and @option[:sort]=='location'
       return paginate_by_location(q, sa_results)
     end
@@ -849,6 +869,7 @@ class KwicService
 
   # 單卷範圍內 做 NEAR 搜尋
   def search_near_juan(query, args={})
+    Rails.logger.warn "search_near_juan, query: #{query}"
     sa_path = sa_rel_path('juan')
     return nil unless open_files(sa_path)
 
@@ -895,11 +916,13 @@ class KwicService
   end
   
   def search_sa(sa_path, q)
+    Rails.logger.warn "search_sa, q: #{q}"
     return nil unless open_files(sa_path)
     search_sa_after_open_files(q)
   end
 
   def search_sa_juan(sa_path, q)
+    Rails.logger.warn "search_sa_juan, q: #{q}"
     return nil unless open_files(sa_path)
     search_sa_after_open_files_juan(q)
   end
@@ -955,6 +978,7 @@ class KwicService
   end
 
   def sort_word_count(q, sa_results)
+    Rails.logger.warn "sort_word_count: #{q}"
     @next_word_count = {}
     @prev_word_count = {}
     
