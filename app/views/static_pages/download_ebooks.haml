@@ -1,5 +1,20 @@
 %h1 下載電子書
 - q = Rails.configuration.x.q
+
+%h2 URL 說明
+.ml-5
+  %p URL: download/{電子書格式}/{藏經代碼}/{典籍編號}.{副檔名}
+  %h3 電子書格式
+  %p 可能值： epub, mobi, pdf
+  %h3 藏經代碼
+  %p 
+    請參考： 
+    =link_to nil, "https://www.cbeta.org/format/id.php"
+  %h3 典籍編號
+  %p
+    請參考：
+    =link_to nil, "https://github.com/DILA-edu/cbeta-documentation/blob/master/xml/file-structure.md"
+
 %h2 EPUB
 %ul
   %li 單部典籍下載例： #{ link_to_url '/download/epub/A/A1057.epub' }

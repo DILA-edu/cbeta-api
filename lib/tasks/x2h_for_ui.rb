@@ -1021,9 +1021,12 @@ class P5aToHTMLForUI
       end
     when 'GA', 'GB'
       v = @vol[2..-1]
-      if v != '000' and @lb.end_with?('a01')
-        n = @lb[0, 4]
-        r = %(<a class="facsimile" data-ref="#{e['ed']}v#{v}p#{n}"></a>)
+      if v != '000'
+        if @first_lb_in_juan or @lb.end_with?('a01')
+          n = @lb[0, 4]
+          r = %(<a class="facsimile" data-ref="#{e['ed']}v#{v}p#{n}"></a>)
+          @first_lb_in_juan = false
+        end
       end
     when 'J'
       h = @jm_facsimile[@sutra_no]
