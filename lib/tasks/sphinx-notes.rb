@@ -10,7 +10,8 @@ require_relative 'cbeta_p5a_share'
 require_relative 'html-node'
 require_relative 'share'
 
-class SphinxFootnotes
+# 產生 sphinx 所需的 xml 檔案
+class SphinxNotes
   # 內容不輸出的元素
   PASS=['anchor', 'back', 'figDesc', 'pb', 'rdg', 'sic', 'teiHeader']
   
@@ -28,6 +29,7 @@ class SphinxFootnotes
 
   def convert(target=nil)
     t1 = Time.now
+    @stat = Hash.new(0)
     @sphinx_doc_id = 0
     fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'footnotes.xml')
     @fo = File.open(fn, 'w')
@@ -47,6 +49,13 @@ class SphinxFootnotes
 
     @fo.write '</sphinx:docset>'
     @fo.close
+    puts <<~MSG
+      \n--------------------
+      原書校注數量：#{@stat[:foot]}
+      CBETA校注數量：#{@stat[:add]}
+      夾注數量：#{@stat[:inline]}
+      註解總數：#{@stat.values.sum}
+    MSG
     puts "花費時間：" + ChronicDuration.output(Time.now - t1)
   end
 
@@ -76,7 +85,6 @@ class SphinxFootnotes
     @back = { 0 => '' }
     @back_orig = { 0 => '' }
     @dila_note = 0
-    @div_count = 0
     @gaiji_norm = [true]
     @in_l = false
     @juan = 0
@@ -277,14 +285,14 @@ class SphinxFootnotes
       return '' if e['resp'].start_with? 'CBETA'
     end
 
-    # if e.has_attribute?('place')
-    #   if %w[inline inline2 interlinear].include?(e['place'])
-    #     @notes_inline[@juan] << {
-    #       lb: @lb, 
-    #       text: traverse(e, 'note')
-    #     }
-    #   end
-    # end
+    if e.has_attribute?('place')
+      if %w[inline inline2 interlinear].include?(e['place'])
+        @notes_inline[@juan] << {
+          lb: @lb, 
+          text: traverse(e, 'note')
+        }
+      end
+    end
 
     return traverse(e)
   end
@@ -452,6 +460,7 @@ class SphinxFootnotes
   def write_notes_for_sphinx
     all_notes = {}
     @notes_mod.each_pair do |juan, notes|
+      @stat[:foot] += notes.size
       all_notes[juan] = []
       notes.each_pair do |n, note|
         write_sphinx_doc(juan, note, n: "n#{n}")
@@ -461,6 +470,7 @@ class SphinxFootnotes
     end
 
     @notes_add.each_pair do |juan, notes|
+      @stat[:add] += notes.size
       all_notes[juan] = [] unless all_notes.key?(juan)
       notes.each_with_index do |note, i|
         write_sphinx_doc(juan, note, n: "cb_note_#{i+1}")
@@ -470,15 +480,16 @@ class SphinxFootnotes
     end
 
     @notes_inline.each_pair do |juan, notes|
+      @stat[:inline] += notes.size
       notes.each do |note|
         write_sphinx_doc(juan, note, place: 'inline')
       end
     end
 
-    write_footes_for_download(all_notes)
+    write_footnotes_for_download(all_notes)
   end
 
-  def write_footes_for_download(all_notes)
+  def write_footnotes_for_download(all_notes)
     folder = Rails.root.join('public', 'download', 'footnotes', @canon, @work_id)
     FileUtils.makedirs(folder)
     all_notes.each_pair do |juan, notes|
@@ -498,6 +509,7 @@ class SphinxFootnotes
     s1 = note[:text].encode(xml: :text)
     xml = <<~XML
       <sphinx:document id="#{@sphinx_doc_id}">
+        <note_place>#{place}</note_place>
         <canon>#{@canon}</canon>
         <vol>#{@vol}</vol>
         <file>#{@sutra_no}</file>

@@ -83,10 +83,8 @@ class SphinxController < ApplicationController
     my_render r
   end
 
-  def footnotes
-    @mode = 'extend'
-    #remove_puncs_from_query
-    
+  def notes
+    @mode = 'extend'    
     return empty_result if @q.empty?
     
     @mysql_client = sphinx_mysql_connection
@@ -105,6 +103,11 @@ class SphinxController < ApplicationController
 
     @mysql_client.close
     my_render r
+  end
+
+  def footnotes
+    @filter += " AND note_place='foot'"    
+    notes
   end
 
   def facet
@@ -596,8 +599,8 @@ class SphinxController < ApplicationController
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
 
     case action_name
-    when 'footnotes'
-      init_footnotes
+    when 'footnotes', 'notes'
+      init_notes
     when 'title'
       init_title
     else
@@ -621,8 +624,8 @@ class SphinxController < ApplicationController
     set_filter
   end
 
-  def init_footnotes
-    @index = Rails.configuration.x.sphinx_footnotes
+  def init_notes
+    @index = Rails.configuration.x.sphinx_notes
     q = @q.sub(/~\d+$/, '') # 拿掉 near ~ 後面的數字
     q.gsub!(/[\-!]".*?"/, '')
     keys = q.split(/["\-\| ]/)
@@ -630,7 +633,8 @@ class SphinxController < ApplicationController
     s = keys.join(' ')
 
     # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
-    @fields = "id, canon, category, vol, file, work, title, juan, lb, n, content, "\
+    @fields = "id, note_place, canon, category, vol, file, "\
+      "work, title, juan, lb, n, content, "\
       "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
   end

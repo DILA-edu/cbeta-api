@@ -23,7 +23,7 @@
 
 ## 將 cbeta xml p5a 校注、夾注 轉為 xml for sphinx
 
-    rake sphinx:footnotes
+    rake sphinx:notes
 
 目前校註筆數： 1,056,107
 
@@ -40,7 +40,7 @@
 視需要修改 sphinx.conf
 
     indexer --rotate cbeta
-    indexer --rotate footnotes
+    indexer --rotate notes
     indexer --rotate titles
 
 ### production

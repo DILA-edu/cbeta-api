@@ -1,8 +1,8 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
-  config.x.v = '2'
-  config.x.ver = '1.2.26'
-  config.x.q = '2021q4' # 季號
+  config.x.v = '1'
+  config.x.ver = '1.2.27'
+  config.x.q = '2022q1' # 季號
 
   GIT = '/home/ray/git-repos'
   config.x.authority = File.join(GIT, 'Authority-Databases')
@@ -15,7 +15,7 @@ Rails.application.configure do
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
   config.x.sphinx_base = '/etc/sphinx'
   config.sphinx_index = "cbeta#{config.x.v}"
-  config.x.sphinx_footnotes = "footnotes#{config.x.v}"
+  config.x.sphinx_notes = "notes#{config.x.v}"
   config.x.sphinx_titles = "titles#{config.x.v}"
   config.x.word_seg  = File.join(GIT, 'word-seg')
 

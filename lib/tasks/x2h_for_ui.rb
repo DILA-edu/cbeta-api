@@ -787,11 +787,13 @@ class P5aToHTMLForUI
       r = traverse(e)
       
       c = case e['place']
-      when 'interlinear' then 'interlinear-note'
-      when 'inline', 'inline2' then 'doube-line-note'
+      when 'interlinear'       then 'inline-note interlinear-note'
+      when 'inline', 'inline2' then 'inline-note doube-line-note'
+      else
+        abort "未知的 note place 屬性：" + e['place']
       end
       
-      return "<span class='#{c}'>#{r}</span>"
+      return "<section class='#{c}'>#{r}</section>"
     else
       return traverse(e)
     end

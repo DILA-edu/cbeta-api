@@ -207,12 +207,12 @@ class P5aToText
   end
 
   def e_note(e)
-    if e.has_attribute?('place')
-      if "inline inline2 interlinear".include?(e['place'])
-        r = traverse(e)
-        return "(#{r})"
-      end
-    end
+    # if e.has_attribute?('place')
+    #   if "inline inline2 interlinear".include?(e['place'])
+    #     r = traverse(e)
+    #     return "(#{r})"
+    #   end
+    # end
     ''
   end
 

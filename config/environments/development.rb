@@ -1,9 +1,9 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  config.x.v = '2'
-  config.x.ver = '1.2.26.13'
-  config.x.q = '2021q3' # 季號
+  config.x.v = '1'
+  config.x.ver = '1.2.27'
+  config.x.q = '2022q1' # 季號
 
   GIT = '/Users/ray/git-repos'
   config.x.git       = GIT
@@ -21,7 +21,7 @@ Rails.application.configure do
   
   config.sphinx_index = "cbeta"
   config.x.sphinx_titles = "titles"
-  config.x.sphinx_notes = 'footnotes'
+  config.x.sphinx_notes = 'notes'
   
   config.log_level = :debug
 
