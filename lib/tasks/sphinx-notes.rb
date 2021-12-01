@@ -31,7 +31,7 @@ class SphinxNotes
     t1 = Time.now
     @stat = Hash.new(0)
     @sphinx_doc_id = 0
-    fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'footnotes.xml')
+    fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'notes.xml')
     @fo = File.open(fn, 'w')
     @fo.puts %(<?xml version="1.0" encoding="utf-8"?>)
     @fo.puts "<sphinx:docset>"
@@ -511,6 +511,7 @@ class SphinxNotes
       <sphinx:document id="#{@sphinx_doc_id}">
         <note_place>#{place}</note_place>
         <canon>#{@canon}</canon>
+        <canon_order>#{@canon_order}</canon_order>"
         <vol>#{@vol}</vol>
         <file>#{@sutra_no}</file>
         <work>#{@work_id}</work>

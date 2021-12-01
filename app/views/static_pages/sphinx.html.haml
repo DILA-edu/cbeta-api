@@ -14,6 +14,11 @@
       %p
         查詢 URL: #{link_to_url '/sphinx?q=[幻-ㄠ%2B糸]'}
   %tr
+    %td fields
+    %td 
+      指定要回傳哪些欄位，例：
+      =link_to_url '/sphinx?q=法鼓&fields=work,juan,term_hits'
+  %tr
     %td start
     %td 分頁回傳的起始 offset，預設為 0.
   %tr
