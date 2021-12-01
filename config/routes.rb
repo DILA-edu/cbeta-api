@@ -40,7 +40,7 @@ Rails.application.routes.draw do
 
   match 'sphinx/all_in_one', via: [:get, :post]
   match 'sphinx/facet/:facet_by', to: 'sphinx#facet', via: [:get, :post]
-  match 'sphinx/footnotes', via: [:get, :post]
+  match 'sphinx/footnotes', to: 'sphinx#notes', defaults: { note_place: 'foot' }, via: [:get, :post]
   match 'sphinx/extended',  via: [:get, :post]
   match 'sphinx/notes',     via: [:get, :post]
   match 'sphinx/sc',        via: [:get, :post]

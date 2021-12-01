@@ -45,7 +45,11 @@
             %li
               排除後搭配
               =link_to_url '/sphinx/all_in_one?q="舍利" -"舍利弗"'
-
+  %tr
+    %td fields
+    %td 
+      指定要回傳哪些欄位，例：
+      =link_to_url '/sphinx/all_in_one?q=法鼓&fields=work,juan,term_hits'
   %tr
     %td facet
     %td 

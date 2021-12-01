@@ -105,11 +105,6 @@ class SphinxController < ApplicationController
     my_render r
   end
 
-  def footnotes
-    @filter += " AND note_place='foot'"    
-    notes
-  end
-
   def facet
     @mode = 'extend'
     remove_puncs_from_query
@@ -387,8 +382,10 @@ class SphinxController < ApplicationController
       r[:results] = r[:results][@start, @rows]
     end
 
-    unless @q.include?('NEAR')
-      kwic_by_juan(r)
+    if params[:fields].nil? or params[:fields].include?('kwic')
+      unless @q.include?('NEAR')
+        kwic_by_juan(r)
+      end
     end
 
     r
@@ -599,29 +596,54 @@ class SphinxController < ApplicationController
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
 
     case action_name
-    when 'footnotes', 'notes'
+    when 'notes'
       init_notes
     when 'title'
       init_title
     else
-      @fields = 'id'\
-        ', weight() as term_hits'\
-        ', canon'\
-        ', category'\
-        ', xml_file as file'\
-        ', work'\
-        ', juan'\
-        ', title'\
-        ', byline'\
-        ', creators, creators_with_id'\
-        ', dynasty as time_dynasty, time_from, time_to'\
-        ', juan_list'
+      init_fields
   
       @index = Rails.application.config.sphinx_index
     end
     
-    init_order    
+    init_order
     set_filter
+  end
+
+  def init_fields
+    all = {
+      'id' => 'id',
+      'term_hits' => 'weight()',
+      'canon' => 'canon',
+      'category' => 'category', 
+      'file' => 'xml_file',
+      'work' => 'work',
+      'juan' => 'juan',
+      'title' => 'title',
+      'byline' => 'byline',
+      'creators' => 'creators',
+      'creators_with_id' => 'creators_with_id',
+      'time_dynasty' => 'dynasty',
+      'time_from' => 'time_from',
+      'time_to' => 'time_to',
+      'juan_list' => 'juan_list'
+    }
+
+    if params.key? :fields
+      a = params[:fields].split(',')
+      all.delete_if { |k, v| !a.include?(k) }
+    end
+
+    a = []
+    all.each do |k, v|
+      if k == v
+        a << k
+      else
+        a << "#{v} as #{k}"
+      end
+    end
+
+    @fields = a.join(', ')
   end
 
   def init_notes
@@ -783,12 +805,21 @@ class SphinxController < ApplicationController
         rows: 99999
       }
       juan[:kwics] = kwic_boolean(se, opts)
-      #logger.debug "#{Time.now} kwic_boolean 完成"
-      raise CbetaError.new(500), "kwic_boolean 回傳 nil" if juan[:kwics].nil?
+      
+      if juan[:kwics].nil?
+        raise CbetaError.new(500), "kwic_boolean 回傳 nil" 
+      end
+
       juan[:kwics][:results].sort_by! { |x| x['lb'] }
       juan[:term_hits] = juan[:kwics][:num_found]
     end
     r[:results].delete_if { |x| x[:kwics][:results].empty? }
+
+    # 如果有指定不要 kwics 欄位
+    if params.key?(:fields) and !params[:fields].include?('kwics')
+      r[:results].each { |x| x.delete(:kwics) }
+    end
+
     logger.debug "kwic_by_juan 花費時間： #{Time.now - t1}"
   end
   
@@ -910,12 +941,9 @@ class SphinxController < ApplicationController
       @filter += " AND work_type='#{t}'"
     end
 
-    # if params.key? :note_place
-    #   t = params[:note_place]
-    #   @filter += " AND note_place='#{t}'"
-    #   puts "filter: #{@filter}"
-    # end
-
+    if params.key? :note_place
+      @filter += " AND note_place='%s'" % params[:note_place]
+    end
   end
 
   # a,b+c,d 表示 (a OR b) AND (c OR d)
