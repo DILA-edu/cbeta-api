@@ -511,7 +511,7 @@ class SphinxNotes
       <sphinx:document id="#{@sphinx_doc_id}">
         <note_place>#{place}</note_place>
         <canon>#{@canon}</canon>
-        <canon_order>#{@canon_order}</canon_order>"
+        <canon_order>#{@canon_order}</canon_order>
         <vol>#{@vol}</vol>
         <file>#{@sutra_no}</file>
         <work>#{@work_id}</work>
