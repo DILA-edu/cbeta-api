@@ -622,7 +622,7 @@ class SphinxController < ApplicationController
   end
 
   def init_footnotes
-    @index = Rails.configuration.x.sphinx_footnotes
+    @index = Rails.configuration.x.sphinx_notes
     q = @q.sub(/~\d+$/, '') # 拿掉 near ~ 後面的數字
     q.gsub!(/[\-!]".*?"/, '')
     keys = q.split(/["\-\| ]/)
@@ -966,7 +966,8 @@ class SphinxController < ApplicationController
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     rescue
-      puts "select: #{@select}"
+      logger.fatal "environment: #{Rails.env}"
+      logger.fatal "select: #{@select}"
       raise
     end
 
