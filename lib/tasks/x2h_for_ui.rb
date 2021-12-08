@@ -793,7 +793,7 @@ class P5aToHTMLForUI
         abort "未知的 note place 屬性：" + e['place']
       end
       
-      return "<section class='#{c}'>#{r}</section>"
+      return "<small class='#{c}'>#{r}</small>"
     else
       return traverse(e)
     end
