@@ -4,7 +4,8 @@ class JuanLine < ActiveRecord::Base
     if jl.nil?
       raise CbetaError.new(404), "無此冊號: #{vol}"
     end
-    return jl.work, jl.juan, jl.lb
+    lb = jl.lb.sub(/^0000/, '')
+    return jl.work, jl.juan, lb
   end
   
   def self.find_by_vol_lb(vol, lb)
