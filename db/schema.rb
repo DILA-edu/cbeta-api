@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_23_034341) do
+ActiveRecord::Schema.define(version: 2021_12_15_083341) do
 
   create_table "canons", force: :cascade do |t|
     t.string "id2"
@@ -61,6 +61,7 @@ ActiveRecord::Schema.define(version: 2020_12_23_034341) do
     t.string "lb"
     t.string "uuid"
     t.string "content_uuid"
+    t.string "lb_end"
     t.index ["uuid"], name: "index_juan_lines_on_uuid", unique: true
     t.index ["vol", "lb"], name: "index_juan_lines_on_vol_and_lb", unique: true
     t.index ["work", "juan"], name: "index_juan_lines_on_work_and_juan"

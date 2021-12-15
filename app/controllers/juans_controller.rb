@@ -189,7 +189,6 @@ class JuansController < ApplicationController
     logger.debug 'lb_from_params'
     logger.debug "page: #{params[:page]}"
 
-
     page = params[:page]
     if page.match(/^([a-z])(\d+)$/)
       page = $1 + $2.rjust(3, '0')
