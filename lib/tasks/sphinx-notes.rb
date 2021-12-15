@@ -255,6 +255,7 @@ class SphinxNotes
 
   def e_note(e, mode)
     return '' if mode == 'note'
+    return '' if e['rend'] == 'hide'
       
     n = e['n']
     if e.has_attribute?('type')
