@@ -1016,22 +1016,6 @@ class P5aToHTMLForUI
     frag.to_html
   end
   
-  def get_editions(doc)
-    r = Set.new [@orig, "【CBETA】"] # 至少有底本及 CBETA 兩個版本
-    doc.xpath('//lem|//rdg').each do |e|
-      if not e.key?('wit')
-        if e.content.empty?
-          next
-        else
-          abort "\n#{e.name} 元素沒有 wit 屬性" 
-        end
-      end
-      w = e['wit'].scan(/【.*?】/)
-      r.merge w
-    end
-    r
-  end
-
   def handle_node(e, mode='html')
     return '' if e.comment?
     return handle_text(e, mode) if e.text?
@@ -1253,8 +1237,6 @@ class P5aToHTMLForUI
     text_node = root.at_xpath("text")
     @pass = [true]
     
-    @editions = get_editions(doc)
-
     text = handle_node(text_node)
     text
   end
