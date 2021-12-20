@@ -17,11 +17,10 @@ class Kwic3Controller < ApplicationController
     a = %w(category canon sort works negative_lookahead negative_lookbehind)
     a.each {|s| @opts[s.to_sym] = params[s] if params.key? s }
     
-    a = %w(around juan rows start)
+    a = %w(around juan rows start word_count)
     a.each {|s| @opts[s.to_sym] = params[s].to_i if params.key? s }
     
     @opts[:place]        = true  if params['place']         == '1'
-    @opts[:word_count]   = true  if params['word_count']    == '1'
     @opts[:kwic_w_punc]  = false if params['kwic_w_punc']   == '0'
     @opts[:kwic_wo_punc] = true  if params['kwic_wo_punc']  == '1'
     @opts[:mark]         = true  if params['mark']          == '1'

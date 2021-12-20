@@ -33,7 +33,7 @@ class KwicService
     start: 0,
     around: 5, # 預設顯示關鍵字的前後五個字
     place: false,
-    word_count: false,
+    word_count: 0,
     mark: false,
     kwic_w_punc: true, # 是否回傳含標點的文字
     kwic_wo_punc: false, # 是否回傳不含標點的文字
@@ -70,10 +70,8 @@ class KwicService
     end
     
     @total_found = 0
-    sa_results = search_sa_according_to_option(q)
-    #sa_results = exclude_filter2(sa_results, q)
-    
-    sort_word_count(q, sa_results) if @option[:word_count]
+    sa_results = search_sa_according_to_option(q)    
+    sort_word_count(q, sa_results) if @option[:word_count] > 0
 
     # 根據每頁筆數，只回傳一頁資料
     hits = paginate(q, sa_results)
@@ -82,7 +80,7 @@ class KwicService
       num_found: @total_found
     }
 
-    if @option[:word_count]
+    if @option[:word_count] > 0
       result[:prev_word_count] = @prev_word_count
       result[:next_word_count] = @next_word_count
     end
@@ -979,9 +977,10 @@ class KwicService
 
   def sort_word_count(q, sa_results)
     Rails.logger.warn "sort_word_count: #{q}"
-    @next_word_count = {}
-    @prev_word_count = {}
+    @next_word_count = Hash.new(0)
+    @prev_word_count = Hash.new(0)
     
+    wc = @option[:word_count].to_i
     sa_results.each do |sa_path, start, rows|
       next unless open_files(sa_path)
       (0...rows).each do |i|
@@ -990,7 +989,10 @@ class KwicService
         s = read_str(k, 10+q.size) # 前後各取5個字
         s.gsub!("\n", '　')
       
-        update_word_count(q, s)
+        s.match /(.{#{wc}})?#{q}(.{#{wc}})?/ do
+          @prev_word_count[$1] += 1 unless $1.nil?
+          @next_word_count[$2] += 1 unless $2.nil?
+        end    
       end
     end
     
@@ -1018,25 +1020,6 @@ class KwicService
     r
   end
   
-  def update_word_count(q, s)
-    s.match /(.)?#{q}(.)?/ do
-      unless $1.nil?
-        if @prev_word_count.key? $1
-          @prev_word_count[$1] += 1
-        else
-          @prev_word_count[$1] = 1
-        end
-      end
-      unless $2.nil?
-        if @next_word_count.key? $2
-          @next_word_count[$2] += 1
-        else
-          @next_word_count[$2] = 1
-        end
-      end
-    end
-  end
-
   include ApplicationHelper
 
 end # end of class SearchEngine
