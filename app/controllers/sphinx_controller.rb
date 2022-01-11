@@ -888,12 +888,17 @@ class SphinxController < ApplicationController
 
   # 去除標點
   def remove_puncs_from_query
+    # 2022-01-10 Joey: 去半形小括號
+    puncs = '\n\.\[\]\(\)\*　。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）—'
+
     if @mode == 'normal'
-      @q.gsub!(/[\n\.\[\]\-\*　。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）—]/, '')
+      regexp = /[#{puncs}\-]/
     else
       # 允許半形 '-'
-      @q.gsub!(/[\n\.\[\]\*　。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）—]/, '')
+      regexp = /[#{puncs}]/
     end
+
+    @q.gsub!(regexp, '')
   end
 
   def set_filter
