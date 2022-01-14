@@ -7,7 +7,7 @@ class SuffixArrayLoader
     puts "Version: #{@prefix}"
     t1 = Time.now
     
-    sa = File.join(Rails.configuration.kwic_base, 'sa', 'juan')
+    sa = File.join(Rails.configuration.x.kwic.base, 'sa', 'juan')
     Dir.entries(sa).sort.each do |work|
       next if work.start_with?('.')
       print " #{work}"

@@ -35,7 +35,6 @@ pull('Authority-Databases')
 pull('cbeta_gaiji')
 pull('cbeta-metadata')
 pull('CBR2X-figures') # https://github.com/cbeta-git/CBR2X-figures
-pull('kwic25')
 
 if ENV['RAILS_ENV'] == 'cn'
   pull('cbeta-xml-p5a', tag)

@@ -4,8 +4,7 @@ class Kwic3Controller < ApplicationController
   def init
     return unless params.key?(:q)
 
-    base = Rails.application.config.kwic_base
-    #@se = Kwic3Helper::SearchEngine.new(base)
+    base = Rails.configuration.x.kwic.base
     @se = KwicService.new(base)
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?

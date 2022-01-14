@@ -6,7 +6,7 @@ Rails.application.configure do
   config.cbeta_data  = File.join(GIT, 'cbeta-metadata')
   config.cbeta_gaiji = File.join(GIT, 'cbeta_gaiji')
   config.x.figures   = File.join(GIT, 'CBR2X-figures')
-  config.kwic_base = Rails.root.join('data', 'kwic25')
+  config.x.kwic.base = Rails.root.join('data', 'kwic')
   config.sphinx_index = 'cbeta7'
   config.x.sphinx_notes = "footnotes"
   config.x.sphinx_titles = "titles"

@@ -792,8 +792,7 @@ class SphinxController < ApplicationController
 
   def kwic_by_juan(r)
     t1 = Time.now
-    base = Rails.application.config.kwic_base
-    #se = Kwic3Helper::SearchEngine.new(base)
+    base = Rails.configuration.x.kwic.base
     se = KwicService.new(base)
     r[:results].each do |juan|
       #logger.debug "=== work: #{juan[:work]}, juan: #{juan[:juan]} ==="

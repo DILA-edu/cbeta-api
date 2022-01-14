@@ -11,7 +11,11 @@ Rails.application.configure do
   config.cbeta_gaiji = File.join(GIT, 'cbeta_gaiji')
   config.x.figures   = File.join(GIT, 'CBR2X-figures')
   config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
-  config.kwic_base   = Rails.root.join('data', 'kwic25')
+
+  config.x.kwic.base = Rails.root.join('data', 'kwic')
+  config.x.kwic.html = File.join(config.x.kwic.base, 'html')
+  config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
+
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
   config.x.sphinx_base = '/etc/sphinx'
   config.sphinx_index = "cbeta#{config.x.v}"

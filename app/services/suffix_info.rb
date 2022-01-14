@@ -16,7 +16,7 @@ class SuffixInfo
       'vol'    => a[0].strip,
       'work'   => a[1].strip,
       'juan'   => a[2],
-      'offset' => a[3],
+      'offset_in_text_with_punc' => a[3],
       'page'   => a[4],
       'col'    => a[5],
       'line'   => a[6]
@@ -39,7 +39,7 @@ class SuffixInfo
       @data[:vol],
       @data[:work],
       @data[:juan],
-      @data[:offset],
+      @data[:offset_in_text_with_punc],
       @data[:page],
       @data[:col],
       @data[:line]
