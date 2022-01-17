@@ -185,7 +185,7 @@ class P5aToSimpleHTML
     if e.has_attribute?('place')
       if "inline inline2 interlinear".include?(e['place'])
         r = traverse(e)
-        return "(#{r})"
+        return "<inline>(#{r})</inline>"
       end
     end
     ''

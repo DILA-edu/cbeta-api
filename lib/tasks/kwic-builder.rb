@@ -155,6 +155,10 @@ class KwicBuilder
         r += handle_text(e)
       elsif e.name == 'a'
         @lb = e['id']
+      elsif e.name == 'inline'
+        s = e.text
+        @text_with_punc += s
+        @offset += s.size
       end
     end
     

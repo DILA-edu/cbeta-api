@@ -29,6 +29,11 @@ namespace :kwic do
     KwicSortInfo.new.run
   end
 
+  task :test, [:env] => :environment do |t, args|
+    require_relative 'kwic-test'
+    KwicTest.new.run(args[:env])
+  end
+
   task :rotate => :environment do
     require_relative 'kwic-rotate'
     KwicRotate.new.run

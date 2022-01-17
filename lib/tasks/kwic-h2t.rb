@@ -82,7 +82,6 @@ class KwicHtml2Text
     end
   end
 
-
   def write_text(sa_unit, s1, s2)
     fn = @builder.abs_sa_path(sa_unit, 'all.txt')
     

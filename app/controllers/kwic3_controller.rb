@@ -74,6 +74,7 @@ class Kwic3Controller < ApplicationController
       h.delete('vol')
       h.delete('work')
       h.delete('juan')
+      h.delete('offset_in_text_with_punc')
     end
 
     r = { num_found: num_found, time: Time.now-t1, results: a}

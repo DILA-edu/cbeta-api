@@ -103,6 +103,7 @@ class KwicService
 
   def search_juan(query, args={})
     @option = OPTION.merge args
+    puts "search_juan, #{args.inspect}"
     
     if @option[:sort] == 'b'
       keywords = query.reverse
@@ -473,7 +474,7 @@ class KwicService
   end
 
   def open_info(sa_path)
-    if @option[:sort] == 'b'
+    if @option[:sort] == 'b' and not @option.key?(:juan)
       fn = abs_sa_path sa_path, 'info-b.dat'
     else
       fn = abs_sa_path sa_path, 'info.dat'
@@ -529,6 +530,7 @@ class KwicService
       end
       unless @f_txt.nil?
         @sa_last = @f_txt.size - 1 # sa 最後一筆的 offset
+        @size = @f_txt.size
         return
       end
     end
@@ -634,10 +636,15 @@ class KwicService
 
   # 單卷 info 檔的順序是依原 text 順序
   def read_info_block_juan(q, offset, size)
+    debug "[#{__LINE__}] size: #{@size}"
     r = []
     (0...size).each do |i|
       sa_offset = offset + i
       text_offset = sa(sa_offset)
+      if @option[:sort] == 'b'
+        text_offset = @size - text_offset - 1
+      end
+      Rails.logger.debug "read_info_block_juan, text_offset: #{text_offset}"
 
       h = read_info(text_offset)
       h['lb'] = "%s%s%02d" % [h['page'], h['col'], h['line']]
@@ -647,7 +654,12 @@ class KwicService
       h[:sa_offset] = sa_offset
 
       # 記錄 keyword 在「含標點、校注 全文」裡的結束位置
-      text_offset += q.size - 1
+      if @option[:sort] == 'b'
+        text_offset -= (q.size - 1)
+      else
+        text_offset += q.size - 1
+      end
+      Rails.logger.debug "read_info_block_juan, text_offset: #{text_offset}"
       h2 = read_info(text_offset)
       h['offset2'] = h2['offset_in_text_with_punc']
 
@@ -760,7 +772,7 @@ class KwicService
       length = @option[:around] * 4
       start = start_position * 4 - length
       b = text[start, length]
-    end    
+    end
     r += @encoding_converter.convert(b)
 
     # 讀 關鍵字 (可能夾雜標點、夾注)
