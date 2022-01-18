@@ -1,9 +1,9 @@
 namespace :sphinx do
   
   desc "將註解（校註、夾註）轉為 XML 供 Sphinx 建 Index"
-  task :notes, [:arg1] => :environment do |t, args|
+  task :notes, [:canon] => :environment do |t, args|
     require_relative 'sphinx-notes'
-    SphinxNotes.new.convert
+    SphinxNotes.new.convert(args[:canon])
   end
 
   desc "XML 轉 txt"

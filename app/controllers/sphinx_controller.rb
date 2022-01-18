@@ -101,6 +101,8 @@ class SphinxController < ApplicationController
       h['canon']    = facet_by_sphinx('canon')
     end
 
+    notes_inline_around(r)
+
     @mysql_client.close
     my_render r
   end
@@ -656,7 +658,7 @@ class SphinxController < ApplicationController
 
     # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
     @fields = "id, note_place, canon, category, vol, file, "\
-      "work, title, juan, lb, n, content, "\
+      "work, title, juan, lb, n, content, prefix, suffix,"\
       "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
   end
@@ -872,6 +874,23 @@ class SphinxController < ApplicationController
     end
 
     raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{q}，原查詢字串：#{params[:q]}"
+  end
+
+  def notes_inline_around(r)
+    r[:results].each do |h|
+      next unless h[:note_place] == 'inline'
+      hh = h[:highlight]
+      hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
+        hh = m[2]
+        s = h[:prefix] + '(' + m[1]
+        prefix = s[-@around..-1] || s
+        s = m[3] + ')' + h[:suffix]
+        suffix = s[0, @around]
+        h[:highlight] = "#{prefix}#{hh}#{suffix}"
+      end
+      h.delete(:prefix)
+      h.delete(:suffix)
+    end
   end
 
   def read_dynasty_order

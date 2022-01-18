@@ -3,8 +3,8 @@
 ## 執行步驟
 
     rake kwic:x2h
-    rake kwic:h2t
-    rake kwic:sa
+    rake kwic:h2t # 約 9.5 hrs
+    rake kwic:sa  # 約 9.5 hrs
     rake kwic:sort_info
     rake kwic:rotate
 

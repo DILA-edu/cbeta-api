@@ -13,10 +13,10 @@ require_relative 'share'
 # 產生 sphinx 所需的 xml 檔案
 class SphinxNotes
   # 內容不輸出的元素
-  PASS=['anchor', 'back', 'figDesc', 'pb', 'rdg', 'sic', 'teiHeader']
+  PASS = %w[anchor back figDesc mulu pb rdg sic teiHeader]
   
-  # 某版用字缺的符號
-  MISSING = '－'
+  MISSING = '－'  # 某版用字缺的符號
+  AROUND = 100 # 夾注前後文字數
   
   private_constant :PASS, :MISSING
 
@@ -95,6 +95,7 @@ class SphinxNotes
     @notes_orig = {}
     @notes_add = {}
     @notes_inline = {}
+    @offset = 0
     @sutra_no = File.basename(xml_fn, ".xml")
     $stderr.print "\nsphinx-notes #{@sutra_no}"
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
@@ -122,9 +123,9 @@ class SphinxNotes
   def convert_sutra(xml_fn)
     before_parse_xml(xml_fn)
 
-    text = parse_xml(xml_fn)
+    @text = parse_xml(xml_fn)
     write_notes_for_sphinx
-  end  
+  end
   
   def convert_vol(vol)
     canon = CBETA.get_canon_from_vol(vol)
@@ -151,6 +152,8 @@ class SphinxNotes
   end
 
   def e_g(e, mode)
+    @offset += 1 unless mode == 'note'
+
     gid = e['ref'][1..-1]
     
     if gid.start_with? 'CB'
@@ -162,29 +165,16 @@ class SphinxNotes
     abort "Line:#{__LINE__} 無缺字資料:#{gid}" if g.nil?
     zzs = g['composition']
     
-    if mode == 'txt'
-      return g['romanized'] if gid.start_with?('SD')
-      if zzs.nil?
-        abort "缺組字式：#{g}"
-      else
-        return zzs
-      end
-    end
-
     if gid.start_with?('SD')
-      return g['symbol'] if g.key? 'symbol'
-      return "<span class='siddam' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
-    end
-    
-    if gid.start_with?('RJ')
-      return "<span class='ranja' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
+      return g['symbol'] if g.key?('symbol')
+      return g['romanized'] if g.key?('romanized')
+      return CBETA.pua(gid)
     end
    
     if g.key?('unicode') and (not g['unicode'].empty?)
       return g['uni_char'] # 直接採用 unicode
     end
 
-    nor = ''
     # 註解常有用字差異，不用通用字，否則會變成兩個版本的用字一樣
     # 例：T02n0099, 181b08, 註：㝹【CB】，[少/免]【大】
     if @gaiji_norm.last # 如果 沒有特別說 不能用 通用字
@@ -198,8 +188,7 @@ class SphinxNotes
       end
     end
 
-    abort "缺組字式：#{gid}" if zzs.blank?
-    return zzs
+    CBETA.pua(gid)
   end
 
   def e_lb(e, mode)
@@ -288,10 +277,15 @@ class SphinxNotes
 
     if e.has_attribute?('place')
       if %w[inline inline2 interlinear].include?(e['place'])
+        offset = @offset
+        s = traverse(e)
         @notes_inline[@juan] << {
-          lb: @lb, 
-          text: traverse(e, 'note')
+          lb: @lb,
+          offset: offset,
+          text: s
         }
+        @offset += 2
+        return "(#{s})"
       end
     end
 
@@ -331,7 +325,10 @@ class SphinxNotes
 
   def e_unclear(e, mode)
     r = traverse(e, mode)
-    r = '▆' if r.empty?
+    if r.empty?
+      r = '▆'
+      @offset += 1 unless mode == 'note'
+    end
     r
   end
   
@@ -362,15 +359,12 @@ class SphinxNotes
     data
   end
 
-  def handle_node(e, mode='html')
+  def handle_node(e, mode='text')
     return '' if e.comment?
     
     if e.text?
-      if mode == 'note'
-        return handle_text(e, mode)
-      else
-        return ''
-      end
+      return e.text if mode =='note'
+      return handle_text(e, mode)
     end
 
     return '' if PASS.include?(e.name)
@@ -381,19 +375,15 @@ class SphinxNotes
     end
     @gaiji_norm.push norm
 
+    puts e.name if e.name.include?('mulu')
     r = case e.name
     when 'app'       then e_app(e, mode)
-    when 'div', 'p'
-      traverse(e, mode)
-      ''
     when 'g'         then e_g(e, mode)
-    when 'graphic'   then '【圖】'
     when 'lb'        then e_lb(e, mode)
     when 'lem'       then e_lem(e, mode)
     when 'note'      then e_note(e, mode)
     when 'milestone' then e_milestone(e)
     when 'reg'       then e_reg(e)
-    when 'sic'       then e_sic(e, mode)
     when 'unclear'   then e_unclear(e, mode)
     else traverse(e, mode)
     end
@@ -409,8 +399,10 @@ class SphinxNotes
 
     # cbeta xml 文字之間會有多餘的換行
     s.gsub(/[\n\r]/, '')
+
+    @offset += s.size unless mode == 'note'
+    s
   end
-  
 
   def open_xml(fn)
     s = File.read(fn)
@@ -426,7 +418,7 @@ class SphinxNotes
   end
   
   def parse_xml(xml_fn)
-    @pass = [false]
+    #@pass = [false]
 
     doc = open_xml(xml_fn)
     
@@ -438,23 +430,24 @@ class SphinxNotes
 
     root = doc.root()
     text_node = root.at_xpath("text")
-    @pass = [true]
+    #@pass = [true]
     
-    text = handle_node(text_node)
-    text
+    @offset = 0
+    handle_node(text_node)
   end
   
-  def traverse(e, mode='html')
-    pass = @pass.last
-    pass = false if mode == 'note'
-    @pass << pass
+  def traverse(e, mode='text')
+    #pass = @pass.last
+    #pass = false if mode == 'note'
+    #@pass << pass
     
     r = ''
     e.children.each { |c| 
       s = handle_node(c, mode)
+      abort "handle_node return nil, element: #{c.name}" if s.nil?
       r += s
     }
-    @pass.pop
+    #@pass.pop
     r
   end
 
@@ -507,7 +500,6 @@ class SphinxNotes
 
   def write_sphinx_doc(juan, note, n: nil, place: 'foot')
     @sphinx_doc_id += 1
-    s1 = note[:text].encode(xml: :text)
     xml = <<~XML
       <sphinx:document id="#{@sphinx_doc_id}">
         <note_place>#{place}</note_place>
@@ -521,6 +513,12 @@ class SphinxNotes
     XML
 
     xml += "  <n>#{n}</n>\n" unless n.nil?
+
+    if place == 'inline'
+      xml += text_around_note(note)
+    end
+
+    s1 = note[:text].encode(xml: :text)
     xml += "  <content>#{s1}</content>\n"
 
     @work_info.each_pair do |k,v|
@@ -529,6 +527,32 @@ class SphinxNotes
 
     xml += "</sphinx:document>\n"
     @fo.puts xml
+  end
+
+  def text_around_note(note)
+    i = note[:offset] - AROUND
+
+    if i < 0
+      i = 0
+      length = note[:offset]
+    else
+      length = AROUND
+    end
+
+    s = @text[i, length]
+    s = s.encode(xml: :text)
+    r = "  <prefix>#{s}</prefix>\n"
+
+    i = note[:offset] + note[:text].size + 2
+    s = @text[i, AROUND]
+    if s.nil?
+      puts "text size: #{@text.size}"
+      puts "offset: #{i}"
+      puts note.inspect
+      abort "#{__LINE__}"
+    end
+    s = s.encode(xml: :text)
+    r + "  <suffix>#{s}</suffix>\n"
   end
 
   include CbetaP5aShare

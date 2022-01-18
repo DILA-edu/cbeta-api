@@ -4,6 +4,8 @@ namespace :kwic do
     SuffixArrayLoader.new.run
   end
 
+  task build: %w[x2h h2t sa sort_info]
+
   task :x2h, [:canon] => :environment do |t, args|
     require_relative 'kwic-x2h'
     xml   = Rails.configuration.cbeta_xml
