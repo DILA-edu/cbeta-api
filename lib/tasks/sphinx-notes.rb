@@ -97,7 +97,6 @@ class SphinxNotes
     @notes_inline = {}
     @offset = 0
     @sutra_no = File.basename(xml_fn, ".xml")
-    $stderr.print "\nsphinx-notes #{@sutra_no}"
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @work_info = get_info_from_work(@work_id)
   end
@@ -121,10 +120,13 @@ class SphinxNotes
   end
   
   def convert_sutra(xml_fn)
+    puts '-' * 10
+    puts "sphinx-notes.rb #{File.basename(xml_fn, '.*')}\n"
+    t1 = Time.now
     before_parse_xml(xml_fn)
-
     @text = parse_xml(xml_fn)
     write_notes_for_sphinx
+    puts "\n花費時間：" + ChronicDuration.output(Time.now - t1)
   end
   
   def convert_vol(vol)

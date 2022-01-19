@@ -686,6 +686,11 @@ class KwicService
     end
   end
   
+  def read_str_with_punc(text, offset, length)
+    b = text[offset * 4, length * 4]
+    @encoding_converter.convert(b)
+  end
+
   def read_text_for_info_array(info_array, q)
     t1 = Time.now
     if @option[:kwic_w_punc] or @option[:kwic_wo_punc]
@@ -716,37 +721,67 @@ class KwicService
 
   def read_text_near(matches)
     m1 = matches.first
-    p1 = m1[:pos_sa][0]
+    puts "[#{__LINE__}] m1: #{m1.inspect}"
+    offset_wo_punc = m1[:pos_sa][0]
+    puts "[#{__LINE__}] offset_in_text_wo_punc: #{offset_wo_punc}"
+
     q1 = m1[:term]
 
+    info = read_info(offset_wo_punc)
+    text = cache_fetch_juan_text(info['vol'], info['work'], info['juan'])
+    p1 = info['offset_in_text_with_punc']
+    puts "[#{__LINE__}] p1: #{p1}"
+
     if p1 < @option[:around]
-      i1 = 0
-      r = read_str(0, p1)
+      r = read_str_with_punc(text, 0, p1)
     else
-      i1 = p1 - @option[:around]
-      r = read_str(i1, @option[:around])
+      start = p1 - @option[:around]
+      r = read_str_with_punc(text, start, @option[:around])
     end
 
-    r += "<mark>#{q1}</mark>"
-    i1 = p1 + q1.size
+    r += "<mark>"
+    offset2 = offset_wo_punc + q1.size - 1
+    p2 = get_t2_offset_by_t1_offset(offset2)
+    size = p2 - p1 + 1
+    r += read_str_with_punc(text, p1, size)
+    r += "</mark>"
 
     found = false
+    prev_p2 = p2
     matches[1..-1].each do |m|
       q2 = m[:term]
-      p2 = m[:pos_sa][0]
-      next if (p2+q2.size) <= i1 # 與上一個詞完全重疊
+      puts "[#{__LINE__}] q2: #{q2}"
+      offset1 = m[:pos_sa][0]
+      puts "[#{__LINE__}] offset1: #{offset1}"
+      offset2 = offset1 + q2.size
+      p2 = get_t2_offset_by_t1_offset(offset2)
+      next if p2 <= prev_p2 # 與上一個詞完全重疊
       
-      r += read_str(i1, p2-i1)
-      r += "<mark>#{q2}</mark>"
-      i1 = p2 + q2.size
+      p1 = get_t2_offset_by_t1_offset(offset1)
+      size = p1 - prev_p2 - 1
+      r += read_str_with_punc(text, prev_p2+1, size)
+
+      r += "<mark>"
+      size = p2 - p1
+      r += read_str_with_punc(text, p1, size)
+      r += "</mark>"
+
+      prev_p2 = p2
       found = true
     end
 
     return nil unless found
 
-    r + read_str(i1, @option[:around])
+    r + read_str_with_punc(text, p2, @option[:around])
   end
   
+  # t1_offset: 不含標點
+  # t2_offset: 含標點
+  def get_t2_offset_by_t1_offset(offset)
+    info = read_info(offset)
+    info['offset_in_text_with_punc']
+  end
+
   def read_text_with_punc(data, q)
     return nil unless @option.key?(:juan)
 

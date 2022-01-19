@@ -68,12 +68,14 @@
     cd /etc/sphinx
     sudo indexer --rotate cbeta4
     sudo indexer --rotate footnotes4
+    sudo indexer --config /etc/sphinx/sphinx.conf --rotate notes1
     sudo indexer --rotate titles4
 
 重新啟動 service
 
     sudo searchd --stop
-    sudo searchd
+    sudo chown -R sphinx:sphinx /var/lib/sphinx
+    sudo service sphinx restart
 
 ### CbetaOnline.cn
 
