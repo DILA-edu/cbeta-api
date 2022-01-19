@@ -678,6 +678,7 @@ class KwicService
   
   def read_str_with_punc(text, offset, length)
     b = text[offset * 4, length * 4]
+    return '' if b.nil?
     @encoding_converter.convert(b)
   end
 
@@ -711,16 +712,16 @@ class KwicService
 
   def read_text_near(matches)
     m1 = matches.first
-    puts "[#{__LINE__}] m1: #{m1.inspect}"
+    debug "[#{__LINE__}] m1: #{m1.inspect}"
     offset_wo_punc = m1[:pos_sa][0]
-    puts "[#{__LINE__}] offset_in_text_wo_punc: #{offset_wo_punc}"
+    debug "[#{__LINE__}] offset_in_text_wo_punc: #{offset_wo_punc}"
 
     q1 = m1[:term]
 
     info = suffix_info(offset_wo_punc)
     text = cache_fetch_juan_text(info['vol'], info['work'], info['juan'])
     p1 = info['offset_in_text_with_punc']
-    puts "[#{__LINE__}] p1: #{p1}"
+    debug "[#{__LINE__}] p1: #{p1}"
 
     if p1 < @option[:around]
       r = read_str_with_punc(text, 0, p1)
@@ -739,20 +740,25 @@ class KwicService
     found = false
     prev_p2 = p2
     matches[1..-1].each do |m|
+      debug "prev_p2: #{prev_p2}"
       q2 = m[:term]
-      puts "[#{__LINE__}] q2: #{q2}"
+      debug "[#{__LINE__}] q2: #{q2}"
       offset1 = m[:pos_sa][0]
-      puts "[#{__LINE__}] offset1: #{offset1}"
-      offset2 = offset1 + q2.size
+      debug "[#{__LINE__}] offset1: #{offset1}"
+      offset2 = offset1 + q2.size - 1
       p2 = get_t2_offset_by_t1_offset(offset2)
-      next if p2 <= prev_p2 # 與上一個詞完全重疊
+      debug "p2: #{p2}"
+      if p2 <= prev_p2 # 與上一個詞完全重疊
+        debug "與上一個詞完全重疊"
+        next 
+      end
       
       p1 = get_t2_offset_by_t1_offset(offset1)
       size = p1 - prev_p2 - 1
       r += read_str_with_punc(text, prev_p2+1, size)
 
       r += "<mark>"
-      size = p2 - p1
+      size = p2 - p1 + 1
       r += read_str_with_punc(text, p1, size)
       r += "</mark>"
 
@@ -762,7 +768,7 @@ class KwicService
 
     return nil unless found
 
-    r + read_str_with_punc(text, p2, @option[:around])
+    r + read_str_with_punc(text, p2+1, @option[:around])
   end
   
   # t1_offset: 不含標點
