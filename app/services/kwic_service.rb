@@ -646,11 +646,7 @@ class KwicService
       end
       Rails.logger.debug "read_info_block_juan, text_offset: #{text_offset}"
 
-      h = read_info(text_offset)
-      h['lb'] = "%s%s%02d" % [h['page'], h['col'], h['line']]
-      h.delete 'page'
-      h.delete 'col'
-      h.delete 'line'
+      h = suffix_info(text_offset)
       h[:sa_offset] = sa_offset
 
       # 記錄 keyword 在「含標點、校注 全文」裡的結束位置
@@ -660,18 +656,12 @@ class KwicService
         text_offset += q.size - 1
       end
       Rails.logger.debug "read_info_block_juan, text_offset: #{text_offset}"
-      h2 = read_info(text_offset)
+      h2 = suffix_info(text_offset)
       h['offset2'] = h2['offset_in_text_with_punc']
 
       r << h
     end
     r
-  end
-
-  def read_info(offset)
-    @f_info.seek(offset * SuffixInfo::SIZE)
-    block = @f_info.read(SuffixInfo::SIZE)
-    SuffixInfo::unpack(block)
   end
 
   def read_str(offset, length)
@@ -727,7 +717,7 @@ class KwicService
 
     q1 = m1[:term]
 
-    info = read_info(offset_wo_punc)
+    info = suffix_info(offset_wo_punc)
     text = cache_fetch_juan_text(info['vol'], info['work'], info['juan'])
     p1 = info['offset_in_text_with_punc']
     puts "[#{__LINE__}] p1: #{p1}"
@@ -778,7 +768,7 @@ class KwicService
   # t1_offset: 不含標點
   # t2_offset: 含標點
   def get_t2_offset_by_t1_offset(offset)
-    info = read_info(offset)
+    info = suffix_info(offset)
     info['offset_in_text_with_punc']
   end
 
@@ -972,10 +962,10 @@ class KwicService
         }
       end
       a.sort_by! { |x| x[:pos_sa].first }
-      sa_start = a[0][:pos_sa][1]
-      info = suffix_info(sa_start)
       kwic = read_text_near(a)
       unless kwic.nil?
+        offset_wo_punc = a[0][:pos_sa][0]
+        info = suffix_info(offset_wo_punc)
         info['kwic'] = kwic
         hits << info
       end
