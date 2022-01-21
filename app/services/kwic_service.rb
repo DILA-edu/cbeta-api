@@ -14,6 +14,9 @@ require 'pp'
 #       sa_block
 #       read_info_block
 #       read_text_for_info_array
+# search_juan
+#   search_sa_juan
+#   result_hash
 # search_near
 #   check_near
 #     open_files
@@ -812,6 +815,15 @@ class KwicService
     length = (stop_position - start_position + 1) * 4
     b = text[start, length]
     c = @encoding_converter.convert(b)
+    c.gsub!(/\((.*?)\)/) do |s|
+      if s.size > 30
+        s = $1
+        s = s[0,2] + "⋯中略#{s.size-4}字⋯" + s[-2..-1]
+        "(#{s})"
+      else
+        $&
+      end
+    end
     r += c    
     r += '</mark>' if @option[:mark]
     
