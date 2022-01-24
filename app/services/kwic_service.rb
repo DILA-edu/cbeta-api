@@ -28,6 +28,7 @@ class KwicService
   attr_reader :config, :size, :text
 
   PUNCS = "\n.()[]-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—"
+  ABRIDGE = 15 # 夾注字數超過此設定，會被節略
 
   OPTION = {
     sort: 'f', # 預設按 keyword 之後的字排序
@@ -816,7 +817,7 @@ class KwicService
     b = text[start, length]
     c = @encoding_converter.convert(b)
     c.gsub!(/\((.*?)\)/) do |s|
-      if s.size > 30
+      if s.size > ABRIDGE
         s = $1
         s = s[0,2] + "⋯中略#{s.size-4}字⋯" + s[-2..-1]
         "(#{s})"
