@@ -759,8 +759,10 @@ class KwicService
       
       p1 = get_t2_offset_by_t1_offset(offset1)
       size = p1 - prev_p2 - 1
-      r += read_str_with_punc(text, prev_p2+1, size)
-
+      s = read_str_with_punc(text, prev_p2+1, size)
+      puts "763 #{s}"
+      r += abridge_note(s)
+  
       r += "<mark>"
       size = p2 - p1 + 1
       r += read_str_with_punc(text, p1, size)
@@ -816,16 +818,7 @@ class KwicService
     length = (stop_position - start_position + 1) * 4
     b = text[start, length]
     c = @encoding_converter.convert(b)
-    c.gsub!(/\((.*?)\)/) do |s|
-      if s.size > ABRIDGE
-        s = $1
-        s = s[0,2] + "⋯中略#{s.size-4}字⋯" + s[-2..-1]
-        "(#{s})"
-      else
-        $&
-      end
-    end
-    r += c    
+    r += abridge_note(c)
     r += '</mark>' if @option[:mark]
     
     # 讀 關鍵字 之後的字
@@ -834,8 +827,20 @@ class KwicService
     b = text[start, len]
     r += @encoding_converter.convert(b) unless b.nil?      
     r
-  end    
-  
+  end
+
+  def abridge_note(str)
+    str.gsub(/\((.*?)\)/) do |s|
+      if s.size > ABRIDGE
+        s = $1
+        s = s[0,2] + "⋯中略#{s.size-4}字⋯" + s[-2..-1]
+        "(#{s})"
+      else
+        $&
+      end
+    end
+  end
+
   def read_text_wo_punc(offset, q)
     # 讀 關鍵字 之前的字
     if offset < @option[:around]
