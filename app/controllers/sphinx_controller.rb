@@ -495,7 +495,7 @@ class SphinxController < ApplicationController
       "GROUP BY #{f2} "\
       "ORDER BY hits DESC "\
       "LIMIT 9999999 "\
-      "OPTION ranker=wordcount;" # 這會影響 weight 的計算方式
+      "OPTION #{OPTION};" # 這會影響 weight 的計算方式
 
     result = @mysql_client.query(cmd, symbolize_keys: true)
     r = result.to_a
