@@ -760,7 +760,6 @@ class KwicService
       p1 = get_t2_offset_by_t1_offset(offset1)
       size = p1 - prev_p2 - 1
       s = read_str_with_punc(text, prev_p2+1, size)
-      puts "763 #{s}"
       r += abridge_note(s)
   
       r += "<mark>"
