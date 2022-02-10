@@ -12,6 +12,7 @@ require 'open3'
 class SphinxController < ApplicationController
   MAX_JUAN = 999_999
   OPTION = 'ranker=wordcount,max_matches=9999999'
+  FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 典籍數量 5,617
   before_action :init
   
   # 2019-11-01 決定不以經做 group, 因為不能以經的 term_hits 做排序
@@ -487,6 +488,8 @@ class SphinxController < ApplicationController
       f1 = f2 = facet
     end
 
+    # ranker=wordcount, 這會影響 weight 的計算方式
+    # max_matches: 回傳筆數上限，影響記憶體用量、效率
     cmd = "SELECT GROUPBY() as #{f1}, "\
       "COUNT(*) as docs, "\
       "SUM(weight()) as hits "\
@@ -494,8 +497,8 @@ class SphinxController < ApplicationController
       "WHERE #{@where} "\
       "GROUP BY #{f2} "\
       "ORDER BY hits DESC "\
-      "LIMIT 9999999 "\
-      "OPTION #{OPTION};" # 這會影響 weight 的計算方式
+      "LIMIT #{FACET_MAX} "\
+      "OPTION ranker=wordcount, max_matches=#{FACET_MAX};"
 
     result = @mysql_client.query(cmd, symbolize_keys: true)
     r = result.to_a
