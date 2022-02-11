@@ -10,9 +10,9 @@ require 'csv'
 require 'open3'
 
 class SphinxController < ApplicationController
-  MAX_JUAN = 999_999
-  OPTION = 'ranker=wordcount,max_matches=9999999'
+  RANKER = 'wordcount' # ranking by the keyword occurrences count.
   FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 典籍數量 5,617
+
   before_action :init
   
   # 2019-11-01 決定不以經做 group, 因為不能以經的 term_hits 做排序
@@ -90,6 +90,7 @@ class SphinxController < ApplicationController
     
     @mysql_client = sphinx_mysql_connection
     @where = "MATCH('#{@q}')" + @filter
+    @max_matches = count_docs
     r = sphinx_search(@fields, @where, @start, @rows, order: @order)
 
     if params[:facet] == '1'
@@ -243,7 +244,7 @@ class SphinxController < ApplicationController
     @where = %{MATCH('#{@q}')} + @filter
     select = "SELECT work, title FROM #{@index}"\
       " WHERE #{@where} ORDER BY canon_order ASC"\
-      " LIMIT #{@start}, #{@rows} OPTION #{OPTION}"
+      " LIMIT #{@start}, #{@rows} OPTION ranker=#{RANKER}, max_matches=#{@max_matches}"
     @mysql_client = sphinx_mysql_connection
     results = @mysql_client.query(select, symbolize_keys: true)    
     @mysql_client.close
@@ -325,18 +326,17 @@ class SphinxController < ApplicationController
   def all_in_one_sub
     @canon_name = {}
     @mysql_client = sphinx_mysql_connection
+    @exclude = nil
 
     # 1. Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到,
     #    例如: 意樂 NEAR/7 增上意樂
     #    但這不是我們要的結果, 所以 sphinx 先傳回全部，再由 KWIC 過濾
     if @q.include?('NEAR')
+      @mode = 'near'
       @start = 0
       @rows = 99_999
-    end
-
-    # Sphinx 沒有 Exclude 功能，所以同 NEAR.
-    @exclude = nil
-    if @q.match(/^"(.*?)" \-"(.*)"$/)
+    elsif @q.match(/^"(.*?)" \-"(.*)"$/) # Sphinx 沒有 Exclude 功能，所以同 NEAR.
+      @mode = 'exclude'
       @q = $1
       @exclude = $2
       @start = 0
@@ -350,6 +350,10 @@ class SphinxController < ApplicationController
       @q = %("#{@q}")
     end
     @where = %{MATCH('#{@q}')} + @filter
+
+    # 因為 max_matches 參數如果太大，會影響效率
+    # 所以先計算最多會有多少 documents 符合條件
+    @max_matches = count_docs
 
     if @order.empty?
       @order = 'ORDER BY canon_order ASC'
@@ -394,6 +398,13 @@ class SphinxController < ApplicationController
     r
   end
 
+  def count_docs
+    logger.debug "count_docs, index: #{@index}, where: #{@where}"
+    cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
+    r = @mysql_client.query(cmd)
+    r.first['docs']
+  end
+
   def downsize_vars_array(vars)
     return vars if vars.size < 5
     vars2 = vars.clone
@@ -424,7 +435,7 @@ class SphinxController < ApplicationController
   end
 
   def exclude_by_sphinx(r1)
-    r2 = sphinx_search_simple(@exclude)
+    r2 = sphinx_search_simple(@exclude) # 要被排除的
     h = {}
     r2.each do |juan|
       k = "#{juan[:work]}_#{juan[:juan]}"
@@ -490,7 +501,7 @@ class SphinxController < ApplicationController
       f1 = f2 = facet
     end
 
-    # ranker=wordcount, 這會影響 weight 的計算方式
+    # ranker 會影響 weight 的計算方式
     # max_matches: 回傳筆數上限，影響記憶體用量、效率
     cmd = "SELECT GROUPBY() as #{f1}, "\
       "COUNT(*) as docs, "\
@@ -500,7 +511,7 @@ class SphinxController < ApplicationController
       "GROUP BY #{f2} "\
       "ORDER BY hits DESC "\
       "LIMIT #{FACET_MAX} "\
-      "OPTION ranker=wordcount, max_matches=#{FACET_MAX};"
+      "OPTION ranker=#{RANKER}, max_matches=#{FACET_MAX};"
 
     result = @mysql_client.query(cmd, symbolize_keys: true)
     r = result.to_a
@@ -570,7 +581,7 @@ class SphinxController < ApplicationController
   end
   
   def get_hit_count(where)
-    select = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION #{OPTION};)
+    select = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
     r = @mysql_client.query(select)
     return 0 if r.count==0
     r.each do |row|
@@ -796,7 +807,6 @@ class SphinxController < ApplicationController
   end
 
   def kwic_by_juan(r)
-    t1 = Time.now
     base = Rails.configuration.x.kwic.base
     se = KwicService.new(base)
     r[:results].each do |juan|
@@ -823,8 +833,6 @@ class SphinxController < ApplicationController
     if params.key?(:fields) and !params[:fields].include?('kwics')
       r[:results].each { |x| x.delete(:kwics) }
     end
-
-    logger.debug "kwic_by_juan 花費時間： #{Time.now - t1}"
   end
   
   # boolean search 回傳 kwic
@@ -845,9 +853,7 @@ class SphinxController < ApplicationController
     keys = q.split
 
     keys.each do |k|
-      t1 = Time.now
       h = se.search(k, opts)
-      logger.debug "kwic search 花費時間: #{Time.now - t1}, work: #{opts[:work]}, juan: #{opts[:juan]}"
       num_found += h[:num_found]
       a += h[:results]
     end
@@ -1010,6 +1016,7 @@ class SphinxController < ApplicationController
   end
 
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)
+    logger.debug "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
     t1 = Time.now
     
     @select = %(
@@ -1017,7 +1024,7 @@ class SphinxController < ApplicationController
       FROM #{@index} 
       WHERE #{where} #{order} 
       LIMIT #{start}, #{rows} 
-      OPTION #{OPTION}
+      OPTION ranker=#{RANKER}, max_matches=#{@max_matches}
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{facet}" unless facet.nil?
@@ -1050,7 +1057,7 @@ class SphinxController < ApplicationController
     if total_found == 0
       total_term_hits = 0
     else
-      select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION #{OPTION};)
+      select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
       r = @mysql_client.query(select2)
       total_term_hits = r.to_a[0]['sum']
     end
@@ -1069,15 +1076,18 @@ class SphinxController < ApplicationController
   end
 
   def sphinx_search_simple(q)
+    logger.debug "begin sphinx_search_simple, q: #{q}"
     where = %{MATCH('"#{q}"')} + @filter
     fields = 'weight() as term_hits, work, juan'
+
     select = %(
       SELECT #{fields}
       FROM #{@index}
       WHERE #{where}
-      LIMIT 0, #{MAX_JUAN}
-      OPTION #{OPTION}
+      LIMIT 0, #{@max_matches}
+      OPTION ranker=#{RANKER}, max_matches=#{@max_matches}
     ).gsub(/\s+/, " ").strip
+    logger.debug select
     
     results = @mysql_client.query(select, symbolize_keys: true)
     results.to_a
@@ -1097,7 +1107,10 @@ class SphinxController < ApplicationController
     select = "SELECT #{fields} FROM #{@index} WHERE #{@opts[:where]}"
     select += " GROUP BY " + @opts[:group] if @opts.key?(:group)
     select += " ORDER BY " + @opts[:order] if @opts.key?(:order)
-    select += " LIMIT #{@opts[:start]}, #{@opts[:rows]} OPTION #{OPTION}"
+    select += " LIMIT #{@opts[:start]}, #{@opts[:rows]} OPTION ranker=#{RANKER}"
+    unless @max_matches.nil?
+      select += ", max_matches=#{@max_matches}"
+    end
     results = @mysql_client.query(select, symbolize_keys: true)    
     results.to_a
   end
@@ -1111,7 +1124,7 @@ class SphinxController < ApplicationController
     if found == 0
       term_hits = 0
     else
-      select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{@where} OPTION #{OPTION};)
+      select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{@where} OPTION ranker=#{RANKER};)
       r = @mysql_client.query(select2)
       term_hits = r.to_a[0]['sum']
     end

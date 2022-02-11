@@ -107,7 +107,6 @@ class KwicService
 
   def search_juan(query, args={})
     @option = OPTION.merge args
-    puts "search_juan, #{args.inspect}"
     
     if @option[:sort] == 'b'
       keywords = query.reverse
@@ -565,7 +564,6 @@ class KwicService
   end
   
   def paginate(q, sa_results)
-    Rails.logger.warn "paginate, q: #{q}"
     if @option.key?(:juan) and @option[:sort]=='location'
       return paginate_by_location(q, sa_results)
     end
@@ -640,7 +638,6 @@ class KwicService
 
   # 單卷 info 檔的順序是依原 text 順序
   def read_info_block_juan(q, offset, size)
-    debug "[#{__LINE__}] size: #{@size}"
     r = []
     (0...size).each do |i|
       sa_offset = offset + i
@@ -648,7 +645,6 @@ class KwicService
       if @option[:sort] == 'b'
         text_offset = @size - text_offset - 1
       end
-      Rails.logger.debug "read_info_block_juan, text_offset: #{text_offset}"
 
       h = suffix_info(text_offset)
       h[:sa_offset] = sa_offset
@@ -659,7 +655,6 @@ class KwicService
       else
         text_offset += q.size - 1
       end
-      Rails.logger.debug "read_info_block_juan, text_offset: #{text_offset}"
       h2 = suffix_info(text_offset)
       h['offset2'] = h2['offset_in_text_with_punc']
 
@@ -716,16 +711,13 @@ class KwicService
 
   def read_text_near(matches)
     m1 = matches.first
-    debug "[#{__LINE__}] m1: #{m1.inspect}"
     offset_wo_punc = m1[:pos_sa][0]
-    debug "[#{__LINE__}] offset_in_text_wo_punc: #{offset_wo_punc}"
 
     q1 = m1[:term]
 
     info = suffix_info(offset_wo_punc)
     text = cache_fetch_juan_text(info['vol'], info['work'], info['juan'])
     p1 = info['offset_in_text_with_punc']
-    debug "[#{__LINE__}] p1: #{p1}"
 
     if p1 < @option[:around]
       r = read_str_with_punc(text, 0, p1)
@@ -744,14 +736,10 @@ class KwicService
     found = false
     prev_p2 = p2
     matches[1..-1].each do |m|
-      debug "prev_p2: #{prev_p2}"
       q2 = m[:term]
-      debug "[#{__LINE__}] q2: #{q2}"
       offset1 = m[:pos_sa][0]
-      debug "[#{__LINE__}] offset1: #{offset1}"
       offset2 = offset1 + q2.size - 1
       p2 = get_t2_offset_by_t1_offset(offset2)
-      debug "p2: #{p2}"
       if p2 <= prev_p2 # 與上一個詞完全重疊
         debug "與上一個詞完全重疊"
         next 
@@ -950,7 +938,6 @@ class KwicService
 
   # 單卷範圍內 做 NEAR 搜尋
   def search_near_juan(query, args={})
-    Rails.logger.warn "search_near_juan, query: #{query}"
     sa_path = sa_rel_path('juan')
     return nil unless open_files(sa_path)
 
@@ -997,13 +984,11 @@ class KwicService
   end
   
   def search_sa(sa_path, q)
-    Rails.logger.warn "search_sa, q: #{q}"
     return nil unless open_files(sa_path)
     search_sa_after_open_files(q)
   end
 
   def search_sa_juan(sa_path, q)
-    Rails.logger.warn "search_sa_juan, q: #{q}"
     return nil unless open_files(sa_path)
     search_sa_after_open_files_juan(q)
   end
