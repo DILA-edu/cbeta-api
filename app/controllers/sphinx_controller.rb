@@ -15,7 +15,7 @@ class SphinxController < ApplicationController
 
   before_action :init
   
-  # 2019-11-01 決定不以經做 group, 因為不能以經的 term_hits 做排序
+  # 2019-11-01 決定不以「經」做 group, 因為不能以「經」的 term_hits 做排序
   def all_in_one
     logger.debug Time.now
     @mode = 'extend' # 允許 boolean search

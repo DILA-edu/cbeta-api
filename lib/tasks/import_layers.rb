@@ -34,9 +34,9 @@ class ImportLayers
     @gaijis = MyCbetaShare.get_cbeta_gaiji
   end
 
-  def import(start)
+  def import(target_work)
     t1 = Time.now
-    @start = start || ''
+    @target = target_work
     @count = { 'place' => 0, 'person' => 0 }
     @mismatch = 0
     @log = File.open(LOG, 'w')
@@ -114,6 +114,7 @@ class ImportLayers
 
     name = TERM_NOR[name] if TERM_NOR.key?(name)
 
+    @log.puts "check_start, name: #{name}, text: #{text}<br>\n"
     if text.size < name.size
       flag = check_start_str(name, text)
     else
@@ -237,7 +238,9 @@ class ImportLayers
 
   def import_file(fn)
     @basename = File.basename(fn, '.csv')
-    return if @basename < @start
+    unless @target.nil?
+      return unless @basename == @target
+    end
     
     puts @basename
     read_cbeta_lines
@@ -317,6 +320,8 @@ class ImportLayers
       @log.puts "#{@work}<br>\n"
       @log.puts "[Line: #{__LINE__}] HTML 檔裡找不到 #{id}<br>"
       return
+    else
+      @log.puts "<p>找到行號: #{start_lb}</p>"
     end
 
     start_lb.xpath("./following::span[@class='t']").each do |node|
@@ -333,10 +338,13 @@ class ImportLayers
   end
 
   def import_row_traverse(node)
+    @log.puts "import_row_traverse, l: #{node['l']}, w: #{node['w']}\n"
+    @log.puts "<blockquote>\n"
     r = false
     node.children.each do |c| 
       next '' if c.comment?
 
+      @log.puts "layer_pos: #{@layer_pos}, html_pos: #{@html_pos}<br>\n"
       if @row['type'] == 'start' and @html_pos > @layer_pos
         check_text(@line_text, @row)
         c.add_previous_sibling(@anchor)
@@ -374,6 +382,7 @@ class ImportLayers
         end
       end
     end
+    @log.puts "</blockquote>\n"
     r
   end
 
@@ -399,6 +408,7 @@ class ImportLayers
 
   def import_row_text(e)
     text = e.text
+    @log.puts "import_row_text, text: #{text}<br>\n"
     i = @html_pos + text.size
 
     if i < @layer_pos

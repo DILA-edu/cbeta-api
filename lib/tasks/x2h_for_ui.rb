@@ -1079,7 +1079,7 @@ class P5aToHTMLForUI
     text_size = MyCbetaShare.remove_puncs(s).size
     
     if @pass.last and mode == 'html'
-      r = s.gsub(/([。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—]+)/, '<span class="pc">\1</span>')
+      r = s.gsub(/([．。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—]+)/, '<span class="pc">\1</span>')
       r.gsub!(/&/, '&amp;')
     else
       # 把 & 轉為 &amp;
