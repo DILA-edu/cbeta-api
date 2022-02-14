@@ -49,8 +49,10 @@ class ImportLayers
 
     if @mismatch == 0
       puts "成功，無差異。".colorize(:green)
-      puts "copy #{@out_base} => #{@html_base}"
-      `cp -r #{@out_base}/* #{@html_base}`
+      if @target.nil?
+        puts "copy #{@out_base} => #{@html_base}"
+        `cp -r #{@out_base}/* #{@html_base}`
+      end
     else
       s = "文字不符筆數：#{@mismatch}\n"
       puts s.red
@@ -58,6 +60,7 @@ class ImportLayers
       @log.puts "<hr>\n"
       @log.puts s
     end
+    
     @log.close
     puts @count
     puts "花費時間：" + ChronicDuration.output(Time.now - t1)
