@@ -65,6 +65,7 @@ class CheckP5a
   end
 
   def e_rdg(e)
+    return if e['type'] == 'cbetaRemark'
     unless e.key?('wit')
       error "rdg 缺少 wit 屬性, lb: #{@lb}"
     end
