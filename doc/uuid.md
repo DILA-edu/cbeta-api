@@ -3,11 +3,13 @@
 供 Asia Network 使用
 Resource Provider API 說明：<https://rise.mpiwg-berlin.mpg.de/pages/doc_for_resource_providers>
 
-要先準備好 data/juan-line, 產生各卷的 UUID 要用到：
+1. 先準備好 data/juan-line
 
     bundle exec rake convert:juanline
 
-產生 UUID, 在 local 端執行
+上面的 juan-line 在產生各卷的 UUID 時要用到。
+
+2. 產生 UUID, 在 local 端執行
 
     bundle exec rake import:work_id
     bundle exec rake create:uuid
