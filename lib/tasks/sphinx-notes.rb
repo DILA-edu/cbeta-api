@@ -280,9 +280,10 @@ class SphinxNotes
     if e.has_attribute?('place')
       if %w[inline inline2 interlinear].include?(e['place'])
         offset = @offset
+        lb_start = @lb
         s = traverse(e)
         @notes_inline[@juan] << {
-          lb: @lb,
+          lb: lb_start,
           offset: offset,
           text: s
         }
