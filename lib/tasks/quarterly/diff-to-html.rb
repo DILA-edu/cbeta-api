@@ -72,7 +72,7 @@ class DiffToHTML
 
   def add_canon(folder, canon)
     puts "add_canon: #{folder}, #{canon}"
-    canon_folder = File.join(folder, canon)
+    canon_folder = File.join(@base, folder, canon)
     Dir.entries(canon_folder).sort.each do |vol|
       next if vol.end_with? '.'
       rel_path = File.join(folder, canon, vol)
