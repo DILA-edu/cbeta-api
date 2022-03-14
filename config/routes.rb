@@ -65,6 +65,7 @@ Rails.application.routes.draw do
   get 'static_pages/kwic3'
   get 'static_pages/line'
   get 'static_pages/log'
+  get 'static_pages/log_old'
   get 'static_pages/rise_shine'
   get 'static_pages/sc2tc'
   get 'static_pages/scope_selector'
