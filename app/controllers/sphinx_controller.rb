@@ -12,6 +12,7 @@ require 'open3'
 class SphinxController < ApplicationController
   RANKER = 'wordcount' # ranking by the keyword occurrences count.
   FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 典籍數量 5,617
+  MAX_MATCHES = 99_999
 
   before_action :init
   
@@ -48,6 +49,7 @@ class SphinxController < ApplicationController
     
     @mysql_client = sphinx_mysql_connection
     where = %{MATCH('"#{@q}"')} + @filter
+    @max_matches = MAX_MATCHES
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     @mysql_client.close
     my_render r
@@ -242,6 +244,7 @@ class SphinxController < ApplicationController
     t1 = Time.now
     @index = Rails.application.config.x.sphinx_titles
     @where = %{MATCH('#{@q}')} + @filter
+    @max_matches = MAX_MATCHES
     select = "SELECT work, title FROM #{@index}"\
       " WHERE #{@where} ORDER BY canon_order ASC"\
       " LIMIT #{@start}, #{@rows} OPTION ranker=#{RANKER}, max_matches=#{@max_matches}"
@@ -594,6 +597,8 @@ class SphinxController < ApplicationController
   end
   
   def init
+    @max_matches = 999_999
+
     unless params.key? :q
       render plain: '缺少必要參數：q'
       return false

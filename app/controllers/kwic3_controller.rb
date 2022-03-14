@@ -147,10 +147,10 @@ class Kwic3Controller < ApplicationController
   end
 
   def log_action_time
-    logger.warn("開始處理 " + CGI.unescape(request.url))
+    #logger.warn("開始處理 " + CGI.unescape(request.url))
     init
     yield
-    logger.warn("結束處理 " + CGI.unescape(request.url))
+    #logger.warn("結束處理 " + CGI.unescape(request.url))
   end
   
 end
