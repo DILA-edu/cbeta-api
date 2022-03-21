@@ -529,6 +529,7 @@ class KwicService
     if @option.key?(:juan)
       k = "#{@cache}/text/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
       @f_txt = Rails.cache.fetch(k) do
+        raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
         File.read(fn, encoding: "UTF-32LE")
       end
       unless @f_txt.nil?

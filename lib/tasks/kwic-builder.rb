@@ -67,7 +67,17 @@ class KwicBuilder
     doc = File.open(fn) { |f| Nokogiri::HTML(f) }
     body = doc.at_xpath('/html/body')
   
+    @lb = ''
     r = traverse(body)
+
+    if @juan_cross_vol["#{@work_fn}_#{@juan}"] == 1
+      puts "卷跨冊的上半部，最後不加空字元：#{@work_fn}_#{@juan}"
+    else
+      r += 0.chr
+      @text_with_punc += 0.chr
+      @info += create_suffix_info.pack
+    end
+
     @sa_units.each { |sa_unit| 
       write_info(sa_unit) 
     }
@@ -130,6 +140,31 @@ class KwicBuilder
     }
     SuffixInfo.new(data)
   end
+
+  def handle_node(e, mode)
+    return '' if e.comment?
+    
+    if e.text?
+      if mode=='text' 
+        return handle_text(e) 
+      else
+        return e.text
+      end
+    end
+      
+    r = ''
+
+    case e.name
+    when 'a'
+      @lb = e['id']
+    when 'inline'
+      s = traverse(e, 'inline')
+      @text_with_punc += s
+      @offset += s.size
+    end
+
+    r
+  end
   
   def handle_text(e)
     s = e.content()
@@ -146,30 +181,11 @@ class KwicBuilder
     r
   end
   
-  def traverse(parent)
+  def traverse(e, mode='text')
     r = ''
-    @lb = ''
-    parent.children.each do |e|
-      next if e.comment?
-      if e.text?
-        r += handle_text(e)
-      elsif e.name == 'a'
-        @lb = e['id']
-      elsif e.name == 'inline'
-        s = e.text
-        @text_with_punc += s
-        @offset += s.size
-      end
+    e.children.each do |c|
+      r += handle_node(c, mode)
     end
-    
-    if @juan_cross_vol["#{@work_fn}_#{@juan}"] == 1
-      puts "卷跨冊的上半部，最後不加空字元：#{@work_fn}_#{@juan}"
-    else
-      r += 0.chr
-      @text_with_punc += 0.chr
-      @info += create_suffix_info.pack
-    end
-
     r
   end    
   

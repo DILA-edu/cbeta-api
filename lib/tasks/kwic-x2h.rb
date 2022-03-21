@@ -152,7 +152,7 @@ class P5aToSimpleHTML
     return '' if e['ed'] != @series # 卍續藏裡有 新文豐 版行號
 
     @lb = e['n']
-    r = %(<a id="lb#{@lb}"></a>)
+    r = %(<a \nid="lb#{@lb}"></a>)
     unless @next_line_buf.empty?
       r += @next_line_buf + "\n"
       @next_line_buf = ''
