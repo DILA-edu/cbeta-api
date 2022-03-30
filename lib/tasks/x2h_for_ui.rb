@@ -79,45 +79,6 @@ class P5aToHTMLForUI
   
   include CbetaShare
   
-  # 取得 app 下的修訂依據
-  def app_note_cf(app)
-    # ex: T32n1670A.xml, p. 703a16
-    # <note type="cf1">K30n1002_p0257a01-a23</note>
-    refs = []
-    app.xpath('descendant::note').each do |n|
-      if n.key?('type') and n['type'].start_with? 'cf'
-        s = n.content
-        refs << s
-      end
-    end
-    if refs.empty?
-      ''
-    else
-      '修訂依據：' + refs.join('、') + '。'
-    end
-  end
-  
-  def app_readings(app)
-    readings = []
-    lem = ''
-    app.xpath('lem|rdg').each do |e|
-      s = traverse(e, 'footnote')
-      s = MyCbetaShare.remove_puncs(s)
-      lem = s if e.name == 'lem'
-      w = e['wit']
-      readings.each do |r|
-        if s == r[:text]
-          r[:wit] += w
-          s = nil
-          break
-        end
-      end
-      next if s.nil?
-      readings << { wit: w, text: s}
-    end
-    return lem, readings
-  end
-  
   def before_parse_xml(xml_fn)
     @back = { 0 => '' }
     @back_orig = { 0 => '' }
@@ -243,15 +204,6 @@ class P5aToHTMLForUI
     if e['type'] == 'star'
       c = e['corresp'][1..-1]
       r = "<a class='noteAnchor star' href='#n#{c}'></a>"
-    elsif e.key? 'n'
-      # 先不自動產生 app table, 等 cbeta 修改 <note type="mod">
-      #@app_n = e['n']
-      #lem, readings = app_readings(e)
-      #note = readings_to_note(readings)
-      #note += app_note_cf(e)
-      #if @notes_mod[@juan].key? @app_n
-      #  @notes_mod[@juan][@app_n] += note
-      #end
     end
     r + traverse(e)
   end
@@ -668,6 +620,8 @@ class P5aToHTMLForUI
   end
 
   def e_lem(e)
+    return traverse(e) if @canon=='Y' or @canon=='TX'
+
     app = e.parent
     if app.key?('n')
       n = app['n']
@@ -754,6 +708,7 @@ class P5aToHTMLForUI
 
   def e_note(e, mode)
     return e_note_foot(e) if mode == 'footnote'
+    return '' if e['rend'] == 'hide'
       
     n = e['n']
     if e.has_attribute?('type')
@@ -787,11 +742,13 @@ class P5aToHTMLForUI
       r = traverse(e)
       
       c = case e['place']
-      when 'interlinear' then 'interlinear-note'
-      when 'inline', 'inline2' then 'doube-line-note'
+      when 'interlinear'       then 'inline-note interlinear-note'
+      when 'inline', 'inline2' then 'inline-note doube-line-note'
+      else
+        abort "未知的 note place 屬性：" + e['place']
       end
       
-      return "<span class='#{c}'>#{r}</span>"
+      return "<small class='#{c}'>#{r}</small>"
     else
       return traverse(e)
     end
@@ -1059,22 +1016,6 @@ class P5aToHTMLForUI
     frag.to_html
   end
   
-  def get_editions(doc)
-    r = Set.new [@orig, "【CBETA】"] # 至少有底本及 CBETA 兩個版本
-    doc.xpath('//lem|//rdg').each do |e|
-      if not e.key?('wit')
-        if e.content.empty?
-          next
-        else
-          abort "\n#{e.name} 元素沒有 wit 屬性" 
-        end
-      end
-      w = e['wit'].scan(/【.*?】/)
-      r.merge w
-    end
-    r
-  end
-
   def handle_node(e, mode='html')
     return '' if e.comment?
     return handle_text(e, mode) if e.text?
@@ -1138,7 +1079,7 @@ class P5aToHTMLForUI
     text_size = MyCbetaShare.remove_puncs(s).size
     
     if @pass.last and mode == 'html'
-      r = s.gsub(/([。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—]+)/, '<span class="pc">\1</span>')
+      r = s.gsub(/([．。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—]+)/, '<span class="pc">\1</span>')
       r.gsub!(/&/, '&amp;')
     else
       # 把 & 轉為 &amp;
@@ -1296,8 +1237,6 @@ class P5aToHTMLForUI
     text_node = root.at_xpath("text")
     @pass = [true]
     
-    @editions = get_editions(doc)
-
     text = handle_node(text_node)
     text
   end
@@ -1326,24 +1265,6 @@ class P5aToHTMLForUI
     $stderr.puts "新文豐嘉興藏 pb 數量：#{@j_pages}，相當於民族出版社版頁數：#{@j_pages * 3}"
   end
 
-  #def readings_to_note(readings)
-  #  r = ''
-  #  readings.each do |reading|
-  #    w = reading[:wit].sub(/【麗】/, '【麗-CB】')
-  #    w.sub!(/【CBETA】/, '【CB】')
-  #    s = reading[:text]
-  #    s1 = s.gsub(/<a class='gaijiAnchor' href='.*?'>(.*?)<\/a>/, '\1')
-  #    s1.gsub!(/<span class='siddam'[^>]*?>/, '')
-  #    if s1.include? '<'
-  #      puts "app@n: #{@app_n}"
-  #      puts s1
-  #      abort
-  #    end
-  #    r += "<tr><td>#{w}</td><td>#{s}</td></tr>"
-  #  end
-  #  %(<table class="app">#{r}</table>)
-  #end
-  
   def to_html(e)
     e.to_xml(
       encoding: 'UTF-8',

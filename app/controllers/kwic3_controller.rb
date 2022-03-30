@@ -4,8 +4,7 @@ class Kwic3Controller < ApplicationController
   def init
     return unless params.key?(:q)
 
-    base = Rails.application.config.kwic_base
-    #@se = Kwic3Helper::SearchEngine.new(base)
+    base = Rails.configuration.x.kwic.base
     @se = KwicService.new(base)
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
@@ -17,11 +16,10 @@ class Kwic3Controller < ApplicationController
     a = %w(category canon sort works negative_lookahead negative_lookbehind)
     a.each {|s| @opts[s.to_sym] = params[s] if params.key? s }
     
-    a = %w(around juan rows start)
+    a = %w(around juan rows start word_count)
     a.each {|s| @opts[s.to_sym] = params[s].to_i if params.key? s }
     
     @opts[:place]        = true  if params['place']         == '1'
-    @opts[:word_count]   = true  if params['word_count']    == '1'
     @opts[:kwic_w_punc]  = false if params['kwic_w_punc']   == '0'
     @opts[:kwic_wo_punc] = true  if params['kwic_wo_punc']  == '1'
     @opts[:mark]         = true  if params['mark']          == '1'
@@ -76,6 +74,7 @@ class Kwic3Controller < ApplicationController
       h.delete('vol')
       h.delete('work')
       h.delete('juan')
+      h.delete('offset_in_text_with_punc')
     end
 
     r = { num_found: num_found, time: Time.now-t1, results: a}
@@ -148,10 +147,10 @@ class Kwic3Controller < ApplicationController
   end
 
   def log_action_time
-    logger.warn("開始處理 " + CGI.unescape(request.url))
+    #logger.warn("開始處理 " + CGI.unescape(request.url))
     init
     yield
-    logger.warn("結束處理 " + CGI.unescape(request.url))
+    #logger.warn("結束處理 " + CGI.unescape(request.url))
   end
   
 end

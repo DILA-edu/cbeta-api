@@ -14,7 +14,9 @@
     %td q
     %td
       %p
-        要搜尋的關鍵字，也可使用
+        要搜尋的關鍵字。（標點符號會被去除，包括半形小括號）
+      %p 
+        也可使用
         =link_to 'Extended 語法', controller: 'static_pages', action: 'sphinx_extended'
         。例如：
       %ul
@@ -45,7 +47,11 @@
             %li
               排除後搭配
               =link_to_url '/sphinx/all_in_one?q="舍利" -"舍利弗"'
-
+  %tr
+    %td fields
+    %td 
+      指定要回傳哪些欄位，例：
+      =link_to_url '/sphinx/all_in_one?q=法鼓&fields=work,juan,term_hits'
   %tr
     %td facet
     %td 

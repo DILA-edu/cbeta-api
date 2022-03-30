@@ -1,2 +1,2 @@
 server 'sakya.dila.edu.tw', user: 'ray', roles: %w{app db web}
-set :deploy_to, '/var/www/cbapi2'
+set :deploy_to, '/var/www/cbapi1'

@@ -14,6 +14,9 @@ require 'pp'
 #       sa_block
 #       read_info_block
 #       read_text_for_info_array
+# search_juan
+#   search_sa_juan
+#   result_hash
 # search_near
 #   check_near
 #     open_files
@@ -25,6 +28,7 @@ class KwicService
   attr_reader :config, :size, :text
 
   PUNCS = "\n.()[]-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—"
+  ABRIDGE = 15 # 夾注字數超過此設定，會被節略
 
   OPTION = {
     sort: 'f', # 預設按 keyword 之後的字排序
@@ -33,7 +37,7 @@ class KwicService
     start: 0,
     around: 5, # 預設顯示關鍵字的前後五個字
     place: false,
-    word_count: false,
+    word_count: 0,
     mark: false,
     kwic_w_punc: true, # 是否回傳含標點的文字
     kwic_wo_punc: false, # 是否回傳不含標點的文字
@@ -71,9 +75,7 @@ class KwicService
     
     @total_found = 0
     sa_results = search_sa_according_to_option(q)
-    #sa_results = exclude_filter2(sa_results, q)
-    
-    sort_word_count(q, sa_results) if @option[:word_count]
+    sort_word_count(q, sa_results) if @option[:word_count] > 0
 
     # 根據每頁筆數，只回傳一頁資料
     hits = paginate(q, sa_results)
@@ -82,7 +84,7 @@ class KwicService
       num_found: @total_found
     }
 
-    if @option[:word_count]
+    if @option[:word_count] > 0
       result[:prev_word_count] = @prev_word_count
       result[:next_word_count] = @next_word_count
     end
@@ -117,15 +119,11 @@ class KwicService
     sa_path = sa_rel_path('juan')
     hits = []
     keywords.split(',').each do |q| # 可能有多個關鍵字
-      t1 = Time.now
       start, found = search_sa_juan(sa_path, q)
-      t2 = Time.now
-      #warn "search_sa, q: #{q}, 花費時間: #{t2 - t1}"
       next if start.nil?
       hits += result_hash(q, start, found)
-      #warn "result_hash 花費時間: #{Time.now - t2}"
     end
-    hits.sort_by! { |x| x['offset'] }
+    hits.sort_by! { |x| x['offset_in_text_with_punc'] }
   
     { 
       num_found: @total_found,
@@ -479,7 +477,7 @@ class KwicService
   end
 
   def open_info(sa_path)
-    if @option[:sort] == 'b'
+    if @option[:sort] == 'b' and not @option.key?(:juan)
       fn = abs_sa_path sa_path, 'info-b.dat'
     else
       fn = abs_sa_path sa_path, 'info.dat'
@@ -531,10 +529,12 @@ class KwicService
     if @option.key?(:juan)
       k = "#{@cache}/text/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
       @f_txt = Rails.cache.fetch(k) do
+        raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
         File.read(fn, encoding: "UTF-32LE")
       end
       unless @f_txt.nil?
         @sa_last = @f_txt.size - 1 # sa 最後一筆的 offset
+        @size = @f_txt.size
         return
       end
     end
@@ -565,7 +565,6 @@ class KwicService
   end
   
   def paginate(q, sa_results)
-    Rails.logger.warn "paginate, q: #{q}"
     if @option.key?(:juan) and @option[:sort]=='location'
       return paginate_by_location(q, sa_results)
     end
@@ -602,7 +601,7 @@ class KwicService
     sa_results.each do |sa_path, start, found|
       hits += result_hash(q, start, found)
     end
-    hits.sort_by! { |x| x['offset'] }
+    hits.sort_by! { |x| x['offset_in_text_with_punc'] }
     hits[@option[:start], @option[:rows]]
   end
 
@@ -618,8 +617,9 @@ class KwicService
     end
   end
 
-  #def read_info_block(sa_array, offset, size)
-  def read_info_block(offset, size)
+  def read_info_block(q, offset, size)
+    return read_info_block_juan(q, offset, size) if @option.key?(:juan)
+
     @f_info.seek (offset * SuffixInfo::SIZE)
     block = @f_info.read(SuffixInfo::SIZE * size)
     r = []
@@ -631,8 +631,34 @@ class KwicService
       h.delete 'page'
       h.delete 'col'
       h.delete 'line'
-      #h[:sa_offset] = sa_array[i]
       h[:sa_offset] = sa(offset + i)
+      r << h
+    end
+    r
+  end
+
+  # 單卷 info 檔的順序是依原 text 順序
+  def read_info_block_juan(q, offset, size)
+    r = []
+    (0...size).each do |i|
+      sa_offset = offset + i
+      text_offset = sa(sa_offset)
+      if @option[:sort] == 'b'
+        text_offset = @size - text_offset - 1
+      end
+
+      h = suffix_info(text_offset)
+      h[:sa_offset] = sa_offset
+
+      # 記錄 keyword 在「含標點、校注 全文」裡的結束位置
+      if @option[:sort] == 'b'
+        text_offset -= (q.size - 1)
+      else
+        text_offset += q.size - 1
+      end
+      h2 = suffix_info(text_offset)
+      h['offset2'] = h2['offset_in_text_with_punc']
+
       r << h
     end
     r
@@ -650,112 +676,159 @@ class KwicService
     end
   end
   
+  def read_str_with_punc(text, offset, length)
+    b = text[offset * 4, length * 4]
+    return '' if b.nil?
+    @encoding_converter.convert(b)
+  end
+
   def read_text_for_info_array(info_array, q)
     t1 = Time.now
     if @option[:kwic_w_punc] or @option[:kwic_wo_punc]
-      if @option[:kwic_w_punc]
-        info_array.each do |data|
-          data['kwic'] = read_text_with_punc(data, q)
-        end
-      end
-    
       if @option[:kwic_wo_punc]
         info_array.each do |data|      
           data['kwic_no_punc'] = read_text_wo_punc(data[:sa_offset], q)
+        end
+      end
+
+      if @option[:kwic_w_punc]
+        info_array.each do |data|
+          if @option.key?(:juan) # 單卷才提供含標點的 kwic
+            data['kwic'] = read_text_with_punc(data, q)
+          elsif @option[:kwic_wo_punc]
+            data['kwic'] = data['kwic_no_punc']
+          else
+            data['kwic'] = read_text_wo_punc(data[:sa_offset], q)
+          end
         end
       end
     end
     
     info_array.each do |h|
       h.delete :sa_offset
+      h.delete 'offset2'
     end
   end
 
   def read_text_near(matches)
     m1 = matches.first
-    p1 = m1[:pos_sa][0]
+    offset_wo_punc = m1[:pos_sa][0]
+
     q1 = m1[:term]
 
+    info = suffix_info(offset_wo_punc)
+    text = cache_fetch_juan_text(info['vol'], info['work'], info['juan'])
+    p1 = info['offset_in_text_with_punc']
+
     if p1 < @option[:around]
-      i1 = 0
-      r = read_str(0, p1)
+      r = read_str_with_punc(text, 0, p1)
     else
-      i1 = p1 - @option[:around]
-      r = read_str(i1, @option[:around])
+      start = p1 - @option[:around]
+      r = read_str_with_punc(text, start, @option[:around])
     end
 
-    r += "<mark>#{q1}</mark>"
-    i1 = p1 + q1.size
+    r += "<mark>"
+    offset2 = offset_wo_punc + q1.size - 1
+    p2 = get_t2_offset_by_t1_offset(offset2)
+    size = p2 - p1 + 1
+    r += read_str_with_punc(text, p1, size)
+    r += "</mark>"
 
     found = false
+    prev_p2 = p2
     matches[1..-1].each do |m|
       q2 = m[:term]
-      p2 = m[:pos_sa][0]
-      next if (p2+q2.size) <= i1 # 與上一個詞完全重疊
+      offset1 = m[:pos_sa][0]
+      offset2 = offset1 + q2.size - 1
+      p2 = get_t2_offset_by_t1_offset(offset2)
+      if p2 <= prev_p2 # 與上一個詞完全重疊
+        debug "與上一個詞完全重疊"
+        next 
+      end
       
-      r += read_str(i1, p2-i1)
-      r += "<mark>#{q2}</mark>"
-      i1 = p2 + q2.size
+      p1 = get_t2_offset_by_t1_offset(offset1)
+      size = p1 - prev_p2 - 1
+      s = read_str_with_punc(text, prev_p2+1, size)
+      r += abridge_note(s)
+  
+      r += "<mark>"
+      size = p2 - p1 + 1
+      r += read_str_with_punc(text, p1, size)
+      r += "</mark>"
+
+      prev_p2 = p2
       found = true
     end
 
     return nil unless found
 
-    r + read_str(i1, @option[:around])
+    r + read_str_with_punc(text, p2+1, @option[:around])
   end
   
+  # t1_offset: 不含標點
+  # t2_offset: 含標點
+  def get_t2_offset_by_t1_offset(offset)
+    info = suffix_info(offset)
+    info['offset_in_text_with_punc']
+  end
+
   def read_text_with_punc(data, q)
+    return nil unless @option.key?(:juan)
+
     text = cache_fetch_juan_text(data['vol'], data['work'], data['juan'])
     
     r = ''
     position = nil
-    i = data['offset']
 
     # 如果 sort=b, offset 指向 q 的最後一個字，要先將 pointer 移至 q 的第一個字
     if @option[:sort] == 'b'
-      position = i * 4
-      j = q.size
-      while j > 1
-        c = @encoding_converter.convert(text[i * 4, 4])
-        j -= 1 unless PUNCS.include? c
-        i -= 1
-      end
+      start_position = data['offset2']
+      stop_position  = data['offset_in_text_with_punc']
+    else
+      start_position = data['offset_in_text_with_punc']
+      stop_position  = data['offset2']
     end
     
     # 讀 關鍵字 前面的字
-    if i < @option[:around]
-      position = i * 4
-      b = text[0, position]
+    if start_position < @option[:around]
+      length = start_position * 4
+      b = text[0, length]
     else
-      start = (i - @option[:around]) * 4
       length = @option[:around] * 4
+      start = start_position * 4 - length
       b = text[start, length]
-      position = start + length
     end
-    
     r += @encoding_converter.convert(b)
+
+    # 讀 關鍵字 (可能夾雜標點、夾注)
     r += '<mark>' if @option[:mark]
-    
-    # 讀 關鍵字 (可能夾雜標點)
-    len = q.size
-    while (len > 0) and (position < text.size)
-      b = text[position, 4]
-      position += 4
-      
-      c = @encoding_converter.convert(b)
-      r += c
-      len -= 1 unless PUNCS.include? c
-    end
-    
+    start = start_position * 4
+    length = (stop_position - start_position + 1) * 4
+    b = text[start, length]
+    c = @encoding_converter.convert(b)
+    r += abridge_note(c)
     r += '</mark>' if @option[:mark]
     
     # 讀 關鍵字 之後的字
+    start = (stop_position + 1) * 4
     len = @option[:around] * 4
-    b = text[position, len]
+    b = text[start, len]
     r += @encoding_converter.convert(b) unless b.nil?      
     r
-  end    
-  
+  end
+
+  def abridge_note(str)
+    str.gsub(/\((.*?)\)/) do |s|
+      if s.size > ABRIDGE
+        s = $1
+        s = s[0,2] + "⋯中略#{s.size-4}字⋯" + s[-2..-1]
+        "(#{s})"
+      else
+        $&
+      end
+    end
+  end
+
   def read_text_wo_punc(offset, q)
     # 讀 關鍵字 之前的字
     if offset < @option[:around]
@@ -795,15 +868,12 @@ class KwicService
   def result_hash(q, start, rows)
     return [] if rows == 0
     return [] if start.nil?
-    #sa_array = sa_block(start, rows)
-    #info_array = read_info_block(sa_array, start, rows)
-    info_array = read_info_block(start, rows)
+    info_array = read_info_block(q, start, rows)
     
     if @option.key?(:juan)
       if @option.key?(:negative_lookbehind) or @option.key?(:negative_lookahead)
         t1 = Time.now
         exclude_filter2(info_array, q)
-        #debug "exclude_filter2 花費時間： #{Time.now - t1}"
       end
     end
 
@@ -869,7 +939,6 @@ class KwicService
 
   # 單卷範圍內 做 NEAR 搜尋
   def search_near_juan(query, args={})
-    Rails.logger.warn "search_near_juan, query: #{query}"
     sa_path = sa_rel_path('juan')
     return nil unless open_files(sa_path)
 
@@ -904,10 +973,10 @@ class KwicService
         }
       end
       a.sort_by! { |x| x[:pos_sa].first }
-      sa_start = a[0][:pos_sa][1]
-      info = suffix_info(sa_start)
       kwic = read_text_near(a)
       unless kwic.nil?
+        offset_wo_punc = a[0][:pos_sa][0]
+        info = suffix_info(offset_wo_punc)
         info['kwic'] = kwic
         hits << info
       end
@@ -916,13 +985,11 @@ class KwicService
   end
   
   def search_sa(sa_path, q)
-    Rails.logger.warn "search_sa, q: #{q}"
     return nil unless open_files(sa_path)
     search_sa_after_open_files(q)
   end
 
   def search_sa_juan(sa_path, q)
-    Rails.logger.warn "search_sa_juan, q: #{q}"
     return nil unless open_files(sa_path)
     search_sa_after_open_files_juan(q)
   end
@@ -979,9 +1046,10 @@ class KwicService
 
   def sort_word_count(q, sa_results)
     Rails.logger.warn "sort_word_count: #{q}"
-    @next_word_count = {}
-    @prev_word_count = {}
+    @next_word_count = Hash.new(0)
+    @prev_word_count = Hash.new(0)
     
+    wc = @option[:word_count].to_i
     sa_results.each do |sa_path, start, rows|
       next unless open_files(sa_path)
       (0...rows).each do |i|
@@ -990,7 +1058,10 @@ class KwicService
         s = read_str(k, 10+q.size) # 前後各取5個字
         s.gsub!("\n", '　')
       
-        update_word_count(q, s)
+        s.match /(.{#{wc}})?#{q}(.{#{wc}})?/ do
+          @prev_word_count[$1] += 1 unless $1.nil?
+          @next_word_count[$2] += 1 unless $2.nil?
+        end    
       end
     end
     
@@ -1018,25 +1089,6 @@ class KwicService
     r
   end
   
-  def update_word_count(q, s)
-    s.match /(.)?#{q}(.)?/ do
-      unless $1.nil?
-        if @prev_word_count.key? $1
-          @prev_word_count[$1] += 1
-        else
-          @prev_word_count[$1] = 1
-        end
-      end
-      unless $2.nil?
-        if @next_word_count.key? $2
-          @next_word_count[$2] += 1
-        else
-          @next_word_count[$2] = 1
-        end
-      end
-    end
-  end
-
   include ApplicationHelper
 
 end # end of class SearchEngine

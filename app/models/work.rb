@@ -63,6 +63,7 @@ class Work < ActiveRecord::Base
     r = {
       work: n,
       uuid: uuid,
+      canon: canon,
       category: category,
       orig_category: orig_category,
       vol: vol,

@@ -8,8 +8,8 @@
 
 ## 匯入
 
-Update metatada from GitHub.
-
-由 cbeta-metadata/variants/variants.txt 匯入資料到 model: Variant，執行
+1. Update metatada from GitHub.
+2. 啟動 sphinx
+3. 由 cbeta-metadata/variants/variants.txt 匯入資料到 model: Variant，執行
 
     bundle exec rake import:vars

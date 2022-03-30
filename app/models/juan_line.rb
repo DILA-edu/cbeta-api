@@ -4,7 +4,8 @@ class JuanLine < ActiveRecord::Base
     if jl.nil?
       raise CbetaError.new(404), "無此冊號: #{vol}"
     end
-    return jl.work, jl.juan, jl.lb
+    lb = jl.lb.sub(/^0000/, '')
+    return jl.work, jl.juan, lb
   end
   
   def self.find_by_vol_lb(vol, lb)
@@ -15,7 +16,15 @@ class JuanLine < ActiveRecord::Base
     lb2 = "0000#{lb2}" unless lb2.match(/^\d/)
     
     jl = JuanLine.where("vol=? AND lb<=?", vol, lb2).order(:lb).last
-    raise CbetaError.new(404), "無此冊數、行號, 冊號: #{vol}, 行號: #{lb2}, juan_line.rb, find_by_vol_lb" if jl.nil?
+    if jl.nil?
+      msg = "無此冊數、行號, 冊號: #{vol}, 行號: #{lb2}, juan_line.rb, find_by_vol_lb"
+      raise CbetaError.new(404), msg
+    end
+
+    if lb2 > jl.lb_end
+      raise CbetaError.new(406), "行號 #{lb } 超出最後一行: #{jl.lb_end}"
+    end
+
     return jl.work, jl.juan
   end
   

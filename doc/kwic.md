@@ -1,19 +1,12 @@
 # KWIC
 
-## 工作資料夾
-
-### 開發環境
-
-    cd /Users/ray/git-repos/kwic25
-
-### server
-
-    cd ~/git-repos
-    git clone git@gitlab.com:dila/kwic25.git
-
 ## 執行步驟
 
-按照 ~/git-repos/kwic25/README.md 說明。
+    rake kwic:x2h
+    rake kwic:h2t # 約 9.5 hrs
+    rake kwic:sa  # 約 9.5 hrs
+    rake kwic:sort_info
+    rake kwic:rotate
 
 ## clear cache
 

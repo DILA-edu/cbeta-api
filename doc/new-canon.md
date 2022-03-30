@@ -14,6 +14,7 @@
   * bulei_nav.xhtml
 * 更新部類目錄：手動編輯 catalog/cbeta.xml
 * 更新冊別目錄：例如呂澂著作，編輯 catalog/vol-lc.xml
+* 更新說明頁： /app/view/catalog.html.haml 各藏冊別目錄
 
 ### titles
 

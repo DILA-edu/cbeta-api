@@ -1,9 +1,9 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  config.x.v = '2'
-  config.x.ver = '1.2.26.13'
-  config.x.q = '2021q3' # 季號
+  config.x.v = '1'
+  config.x.ver = '1.2.27'
+  config.x.q = '2022q1' # 季號
 
   GIT = '/Users/ray/git-repos'
   config.x.git       = GIT
@@ -16,12 +16,15 @@ Rails.application.configure do
   config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
 
-  d = '/Volumes/Ray-3TB/cbeta-api/kwic25'
-  config.kwic_base = Dir.exist?(d) ? d : Rails.root.join('data', 'kwic25')
+  d = '/Volumes/Ray-3TB/cbeta-api/kwic'
+  #config.x.kwic.base = Dir.exist?(d) ? d : Rails.root.join('data', 'kwic')
+  config.x.kwic.base = Rails.root.join('data', 'kwic')
+  config.x.kwic.html = File.join(config.x.kwic.base, 'html')
+  config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
   
   config.sphinx_index = "cbeta"
   config.x.sphinx_titles = "titles"
-  config.x.sphinx_notes = 'footnotes'
+  config.x.sphinx_notes = 'notes'
   
   config.log_level = :debug
 

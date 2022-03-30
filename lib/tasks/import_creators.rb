@@ -27,6 +27,7 @@ class ImportCreators
   end
   
   def import_all_creators
+    Person.delete_all
     fn = File.join(Rails.application.config.cbeta_data, 'creators', 'all-creators.json')
     creators = JSON.parse(File.read(fn))
     inserts = []

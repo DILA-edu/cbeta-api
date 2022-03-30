@@ -1,5 +1,4 @@
-%h1 使用 Sphinx 搜尋：校勘條目、註解
-%p.text-danger 警告：本功能將於 2020 Q2 停用，請改用 /sphinx/notes.
+%h1 使用 Sphinx 搜尋：校勘條目、註解、夾註
 
 %h2 1 參數
 %table.table
@@ -9,6 +8,9 @@
   %tr
     %td q
     %td 要搜尋的字詞，於下詳述。
+  %tr
+    %td note_place
+    %td 註解出現的位置，預設回傳全部，可以接受 "foot" 或 "inline" 兩種類型。
   %tr
     %td start
     %td 分頁回傳的起始 offset，預設為 0.
@@ -25,7 +27,7 @@
 %h2 2 q 參數
 .ml-4
   %p
-    例：#{link_to_url '/sphinx/footnotes?q="法鼓"'}
+    例：#{link_to_url '/sphinx/notes?q="法鼓"'}
 
   %p 請注意上面的雙引號不可省略。
 
@@ -37,16 +39,16 @@
 
   %h3 2.1 AND
   %p 多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
-  %p 例：#{link_to_url '/sphinx/footnotes?q="法鼓" "印順"'}
+  %p 例：#{link_to_url '/sphinx/notes?q="法鼓" "印順"'}
 
   %h3 2.2 OR
-  %p 例：#{link_to_url '/sphinx/footnotes?q="波羅蜜"|"波羅密"'}
+  %p 例：#{link_to_url '/sphinx/notes?q="波羅蜜"|"波羅密"'}
 
   %h3 2.3 NOT
-  %p 例：#{link_to_url '/sphinx/footnotes?q="迦葉" !"迦葉佛"'}
+  %p 例：#{link_to_url '/sphinx/notes?q="迦葉" !"迦葉佛"'}
 
   %h3 2.4 NEAR
-  %p 例：#{link_to_url '/sphinx/footnotes?q="阿含" NEAR/5 "迦葉"'}
+  %p 例：#{link_to_url '/sphinx/notes?q="阿含" NEAR/5 "迦葉"'}
   %p 上例表示「阿含」跟「迦葉」之間距離不超過5個字。
 
 %h2 3 限制搜尋範圍

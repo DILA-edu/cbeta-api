@@ -63,8 +63,8 @@ namespace :import do
     importer.import
   end
   
-  # 可以指定起始檔名
-  # 例如： bundle exec rake import:layers[GA032n0032]
+  # 可以指定 某一部典籍
+  # 例如： bundle exec rake 'import:layers[GA090n0089]'
   task :layers, [:arg1] => :environment do |t, args|
       require "tasks/import_layers"
     importer = ImportLayers.new

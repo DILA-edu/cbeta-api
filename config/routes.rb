@@ -40,8 +40,9 @@ Rails.application.routes.draw do
 
   match 'sphinx/all_in_one', via: [:get, :post]
   match 'sphinx/facet/:facet_by', to: 'sphinx#facet', via: [:get, :post]
-  match 'sphinx/footnotes', via: [:get, :post]
+  match 'sphinx/footnotes', to: 'sphinx#notes', defaults: { note_place: 'foot' }, via: [:get, :post]
   match 'sphinx/extended',  via: [:get, :post]
+  match 'sphinx/notes',     via: [:get, :post]
   match 'sphinx/sc',        via: [:get, :post]
   match 'sphinx/synonym',   via: [:get, :post]
   match 'sphinx/title',     via: [:get, :post]
@@ -64,6 +65,7 @@ Rails.application.routes.draw do
   get 'static_pages/kwic3'
   get 'static_pages/line'
   get 'static_pages/log'
+  get 'static_pages/log_old'
   get 'static_pages/rise_shine'
   get 'static_pages/sc2tc'
   get 'static_pages/scope_selector'
@@ -72,6 +74,7 @@ Rails.application.routes.draw do
   get 'static_pages/sphinx_facet'
   get 'static_pages/sphinx_filter'
   get 'static_pages/sphinx_footnotes'
+  get 'static_pages/sphinx_notes'
   get 'static_pages/sphinx_sc'
   get 'static_pages/sphinx_synonym'
   get 'static_pages/sphinx_title'
