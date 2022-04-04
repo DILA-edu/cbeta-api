@@ -8,16 +8,19 @@
     <dc:date><%= Date.today.to_s %></dc:date>
     <dc:publisher>CBETA</dc:publisher>
     <dc:contributor>DILA</dc:contributor>
-    <dc:rights>http://www.cbeta.org/copyright.php</dc:rights>
-    <meta name="cover" content="cover-image" />
+    <dc:rights>https://www.cbeta.org/copyright.php</dc:rights>
+    <meta name="cover" content="cover"/>
   </metadata>
   <manifest>
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg"/>
+    <item id="cover" href="images/cover.jpg" media-type="image/jpeg"/>
     <item id="css" href="cbeta.css" media-type="text/css"/>
     <%= @manifest %>
   </manifest>
   <spine toc="ncx">
     <%= @spin %>
   </spine>
+  <guide>
+    <reference href="titlepage.xhtml" title="封面" type="cover"/>
+  </guide>
 </package>

@@ -169,7 +169,7 @@ class CbetaEpub
   end
   
   def create_epub(output_path)
-    @epub_uid = "http://www.cbeta.org/epub2/#{@book_id}"
+    @epub_uid = "https://www.cbeta.org/epub2/#{@book_id}"
     prepare_mimetype
     prepare_meta_inf
     prepare_oebps
@@ -925,6 +925,8 @@ eos
     folder = File.join(@temp_folder, 'OEBPS')
     Dir.mkdir(folder) unless Dir.exist? folder
     
+    copy_oebps_file(@settings[:title_page], 'titlepage.xhtml')
+    add_xhtml('titlepage', 'titlepage.xhtml')
     add_xhtml('toc', 'toc.xhtml')
     
     if @settings[:front_page]
