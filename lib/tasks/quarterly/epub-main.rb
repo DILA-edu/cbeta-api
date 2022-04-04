@@ -7,6 +7,7 @@ class CbetaEbook
   def initialize(config)
     options = {
       version: config[:quarter], # ex: 2019.Q3
+      title_page: File.join(config[:epub_template], 'titlepage.xhtml'),
       front_page: File.join(config[:epub_template], 'readme.xhtml'),
       front_page_title: '編輯說明',
       back_page: File.join(config[:epub_template], 'donate.xhtml'),
