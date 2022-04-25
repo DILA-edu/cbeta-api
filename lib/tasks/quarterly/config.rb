@@ -1,8 +1,8 @@
 module Config
+  APP1 = 'cbapi1' # 用於：從上一季複製資料
+  APP2 = 'cbapi3' # 有時候會跳過一季
+  
   def get_config(env=nil)
-    APP1 = 'cbapi1' # 用於：從上一季複製資料
-    APP2 = 'cbapi3' # 有時候會跳過一季
-
     r = {
       v: 3, # 第幾季，用於 sphinx index 編號
       q1: '2022Q1', # 製作 change log 時比對 q1, q2
