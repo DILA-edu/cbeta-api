@@ -8,7 +8,7 @@ class KwicSuffixArray
     compile_cpp
   end
 
-  def build    
+  def build
     t1 = Time.now
     source = File.join(Rails.configuration.x.kwic.temp, 'sa')
     handle_folder(source)

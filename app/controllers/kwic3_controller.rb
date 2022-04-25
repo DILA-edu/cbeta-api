@@ -13,7 +13,7 @@ class Kwic3Controller < ApplicationController
     
     @opts = {}
     
-    a = %w(category canon sort works negative_lookahead negative_lookbehind)
+    a = %w(sort negative_lookahead negative_lookbehind)
     a.each {|s| @opts[s.to_sym] = params[s] if params.key? s }
     
     a = %w(around juan rows start word_count)
@@ -39,21 +39,6 @@ class Kwic3Controller < ApplicationController
     end
   end
   
-  def index
-    if @q.match(/^"(\S+)" NEAR\/(\d+) "(\S+)"/)
-      result = @se.search_near(@q, @opts)
-    else
-      result = @se.search(@q, @opts)
-    end
-    my_render result
-  rescue CbetaError => e
-    r = { 
-      num_found: 0,
-      error: { code: e.code, message: $!, backtrace: e.backtrace }
-    }
-    my_render(r)
-  end
-
   def juan
     return unless juan_check_params
 

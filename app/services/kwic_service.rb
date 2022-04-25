@@ -727,12 +727,12 @@ class KwicService
       r = read_str_with_punc(text, start, @option[:around])
     end
 
-    r += "<mark>"
+    r << "<mark>"
     offset2 = offset_wo_punc + q1.size - 1
     p2 = get_t2_offset_by_t1_offset(offset2)
     size = p2 - p1 + 1
-    r += read_str_with_punc(text, p1, size)
-    r += "</mark>"
+    r << read_str_with_punc(text, p1, size)
+    r << "</mark>"
 
     found = false
     prev_p2 = p2
@@ -749,12 +749,12 @@ class KwicService
       p1 = get_t2_offset_by_t1_offset(offset1)
       size = p1 - prev_p2 - 1
       s = read_str_with_punc(text, prev_p2+1, size)
-      r += abridge_note(s)
+      r << abridge_note(s)
   
-      r += "<mark>"
+      r << "<mark>"
       size = p2 - p1 + 1
-      r += read_str_with_punc(text, p1, size)
-      r += "</mark>"
+      r << read_str_with_punc(text, p1, size)
+      r << "</mark>"
 
       prev_p2 = p2
       found = true
@@ -798,22 +798,22 @@ class KwicService
       start = start_position * 4 - length
       b = text[start, length]
     end
-    r += @encoding_converter.convert(b)
+    r << @encoding_converter.convert(b)
 
     # 讀 關鍵字 (可能夾雜標點、夾注)
-    r += '<mark>' if @option[:mark]
+    r << '<mark>' if @option[:mark]
     start = start_position * 4
     length = (stop_position - start_position + 1) * 4
     b = text[start, length]
     c = @encoding_converter.convert(b)
-    r += abridge_note(c)
-    r += '</mark>' if @option[:mark]
+    r << abridge_note(c)
+    r << '</mark>' if @option[:mark]
     
     # 讀 關鍵字 之後的字
     start = (stop_position + 1) * 4
     len = @option[:around] * 4
     b = text[start, len]
-    r += @encoding_converter.convert(b) unless b.nil?      
+    r << @encoding_converter.convert(b) unless b.nil?
     r
   end
 
@@ -859,7 +859,7 @@ class KwicService
     if @option[:sort] == 'b'
       text = s.reverse + text
     else
-      text += s
+      text << s
     end
     
     text.gsub("\n", '　')
@@ -896,44 +896,16 @@ class KwicService
     end
   end
 
+  # 本來有 canon, category, works 多種選項
+  # 後來改成只有單卷了
   def sa_paths_by_option
-    if @option.key? :works
-      works = @option[:works].split(',').uniq
-      r = []
-      works.each do |w|
-        @option[:work] = w
-        r << sa_rel_path('work')
-      end
-      return r
-    end
-
-    if @option.key? :canon
-      canons = @option[:canon].split(',').uniq
-      r = []
-      canons.each do |c|
-        @option[:canon] = c
-        r << sa_rel_path('canon')
-      end
-      return r
-    end
-
-    return [sa_rel_path('juan')] if @option.key? :juan # 如果有指定卷號
-    return [sa_rel_path('work')] if @option.key? :work
-    return [sa_rel_path('category')] if @option.key? :category
-
-    [sa_rel_path('all')]
+    [sa_rel_path('juan')]
   end
 
+  # 本來有 canon, category, works 多種選項
+  # 後來改成只有單卷了
   def sa_rel_path(sa_unit)
-    relative_path = case sa_unit
-    when 'juan'     then File.join(@option[:work], "%03d" % @option[:juan])
-    when 'work'     then File.join(@option[:work])
-    when 'canon'    then File.join(@option[:canon])
-    when 'category' then File.join(@option[:category])
-    when 'all'      then ''
-    else
-      abort "error: 錯誤的 sa_unit"
-    end
+    relative_path = File.join(@option[:work], "%03d" % @option[:juan])
     File.join(sa_unit, relative_path)
   end
 

@@ -154,7 +154,7 @@ class P5aToSimpleHTML
     @lb = e['n']
     r = %(<a \nid="lb#{@lb}"></a>)
     unless @next_line_buf.empty?
-      r += @next_line_buf + "\n"
+      r << @next_line_buf + "\n"
       @next_line_buf = ''
     end
     r
@@ -175,8 +175,8 @@ class P5aToSimpleHTML
     r = ''
     if e['unit'] == 'juan'
       @juan = e['n'].to_i
-      r += "<juan #{@juan}>"
-      r += %(<a id="lb#{@lb}"></a>) unless @lb.nil?
+      r << "<juan #{@juan}>"
+      r << %(<a id="lb#{@lb}"></a>) unless @lb.nil?
     end
     r
   end
@@ -282,7 +282,7 @@ class P5aToSimpleHTML
     when 0
       return r + '　'
     when 1
-      @next_line_buf += r + '　'
+      @next_line_buf << r + '　'
       return ''
     else
       return r
@@ -426,8 +426,7 @@ class P5aToSimpleHTML
   def traverse(e)
     r = ''
     e.children.each { |c| 
-      s = handle_node(c)
-      r += s
+      r << handle_node(c)
     }
     r
   end
@@ -465,14 +464,15 @@ class P5aToSimpleHTML
   end
   
   def write_juan_to_file(fn, html)
-    text = <<-END.gsub(/^\s+\|/, '')
-      |<!DOCTYPE html>
-      |<html>
-      |<head>
-      |  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-      |</head>
-    END
-    text += "<body>#{html}</body></html>"
+    text = <<~HTML
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      </head>
+      <body>#{html}</body>
+      </html>
+    HTML
     File.write(fn, text)
   end
 

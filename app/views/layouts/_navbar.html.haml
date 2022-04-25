@@ -9,7 +9,8 @@
       =render 'layouts/navbar_catalog'
       =render 'layouts/navbar_work'
       =render 'layouts/navbar_sphinx'
-      =render 'layouts/navbar_kwic'
+      %li.nav-item
+        =link_to 'KWIC3', { controller: 'static_pages', action: 'kwic3_juan'}, class: 'nav-link'
       =render 'layouts/navbar_download'
       =render 'layouts/navbar_export'
       =render 'layouts/navbar_chinese_tools'

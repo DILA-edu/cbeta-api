@@ -21,7 +21,9 @@ class KwicBuilder
     if Rails.env == 'cn'
       @sa_units = ['juan']
     else
-      @sa_units = %w(juan work canon category all)
+      # 本來有 all, canon, category 等多種 index
+      # 2022 改成只限單卷
+      @sa_units = %w(juan)
     end
 
     @html_base = Rails.configuration.x.kwic.html
@@ -73,9 +75,9 @@ class KwicBuilder
     if @juan_cross_vol["#{@work_fn}_#{@juan}"] == 1
       puts "卷跨冊的上半部，最後不加空字元：#{@work_fn}_#{@juan}"
     else
-      r += 0.chr
-      @text_with_punc += 0.chr
-      @info += create_suffix_info.pack
+      r << 0.chr
+      @text_with_punc << 0.chr
+      @info << create_suffix_info.pack
     end
 
     @sa_units.each { |sa_unit| 
@@ -159,7 +161,7 @@ class KwicBuilder
       @lb = e['id']
     when 'inline'
       s = traverse(e, 'inline')
-      @text_with_punc += s
+      @text_with_punc << s
       @offset += s.size
     end
 
@@ -170,11 +172,11 @@ class KwicBuilder
     s = e.content()
     return '' if s.empty?
     r = ''
-    @text_with_punc += s
+    @text_with_punc << s
     s.each_char do |c|
       unless PUNCS.include? c # 去除標點
-        @info += create_suffix_info.pack
-        r += c
+        @info << create_suffix_info.pack
+        r << c
       end
       @offset += 1 # 記錄該字元位於該卷文字中的位置，含標點
     end
@@ -184,7 +186,7 @@ class KwicBuilder
   def traverse(e, mode='text')
     r = ''
     e.children.each do |c|
-      r += handle_node(c, mode)
+      r << handle_node(c, mode)
     end
     r
   end    
