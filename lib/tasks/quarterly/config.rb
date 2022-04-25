@@ -1,9 +1,14 @@
 module Config
   def get_config(env=nil)
-    r = { v: 3 } # 影響 /var/www 下資料夾名稱
-    r[:q1]      = '2022Q1' # 製作 change log 時比對 q1, q2
-    r[:q2]      = '2022Q3'
-    r[:publish] = '2022-04' # 版權資訊 => 版本記錄 => 發行日期
+    APP1 = 'cbapi1' # 用於：從上一季複製資料
+    APP2 = 'cbapi3' # 有時候會跳過一季
+
+    r = {
+      v: 3, # 第幾季，用於 sphinx index 編號
+      q1: '2022Q1', # 製作 change log 時比對 q1, q2
+      q2: '2022Q3',
+      publish: '2022-04' # 版權資訊 => 版本記錄 => 發行日期
+    }
 
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
     r[:env] = env || Rails.env
@@ -12,9 +17,9 @@ module Config
     case Rails.env
     when 'production'
       r[:git]           = '/home/ray/git-repos'
-      r[:old]           = "/var/www/cbapi#{r[:v]-1}/shared"
+      r[:old]           = "/var/www/#{APP1}/shared"
       r[:old_data]      = File.join(r[:old],  'data')
-      r[:root]          = "/var/www/cbapi#{r[:v]}/shared"
+      r[:root]          = "/var/www/#{APP2}/shared"
       r[:change_log]    = '/home/ray/cbeta-change-log'
       r[:ebook_convert] = '/usr/bin/ebook-convert'
     when 'development'

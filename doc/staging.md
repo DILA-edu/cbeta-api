@@ -17,9 +17,9 @@ cap staging deploy
   * sudo su - postgres
   * psql
 * 建資料庫
-  * create database cbdata15;
-  * grant all privileges on database cbdata15 to pg_cbdata;
-  * ALTER DATABASE cbdata15 OWNER TO pg_cbdata;
+  * create database cbdata3;
+  * grant all privileges on database cbdata3 to pgcbapi;
+  * ALTER DATABASE cbdata3 OWNER TO pgcbapi;
 * 離開 psql
   * \q
   * exit
@@ -32,9 +32,9 @@ cap staging deploy
 database.yml 裡先只放 primary, 先不放存取記錄 (analytics), 以免被清掉.
 
 新建 tables
-    be rake db:schema:load DISABLE_DATABASE_ENVIRONMENT_CHECK=1
+    RAILS_ENV=staging be rake db:schema:load
 
-再把 analytics 加回 database.yml
+tables 建好後，再把 analytics 加回 database.yml。
 
 ## 更新異體字資料
 

@@ -104,8 +104,13 @@ Clone from GutHub, GitLab:
 
 ## Create Tables
 
-rails db:environment:set RAILS_ENV=production
-bundle exec rake db:schema:load DISABLE_DATABASE_ENVIRONMENT_CHECK=1
+### staging
+
+RAILS_ENV=staging bundle exec rake db:schema:load
+
+### production
+
+RAILS_ENV=production bundle exec rake db:schema:load
 
 ## Configuring Apache and Passenger
 
@@ -190,3 +195,12 @@ install
     $ crf_test -h
     CRF++: Yet Another CRF Tool Kit
     Copyright (C) 2005-2013 Taku Kudo, All rights reserved.
+
+## progress
+
+供 複製大檔時 顯示 progress bar.
+
+安裝：
+    sudo apt install progress
+
+[progress 使用說明](http://manpages.ubuntu.com/manpages/bionic/man1/progress.1.html)

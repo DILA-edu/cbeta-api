@@ -71,4 +71,5 @@ rake download:ebooks
 
 ## 建立下一季開發環境
 
-建 database, 參考 postgresql.md
+* 建 database, 參考 postgresql.md
+* 參考 staging.md
