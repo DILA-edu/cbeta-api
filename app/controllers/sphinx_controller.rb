@@ -358,6 +358,9 @@ class SphinxController < ApplicationController
     # 所以先計算最多會有多少 documents 符合條件
     @max_matches = count_docs
 
+    # max_matches must be from 1 to 100M
+    @max_matches = 1 if @max_matches == 0
+
     if @order.empty?
       @order = 'ORDER BY canon_order ASC'
     end
