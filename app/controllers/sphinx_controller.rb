@@ -1042,6 +1042,7 @@ class SphinxController < ApplicationController
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     rescue
+      logger.fatal $!
       logger.fatal "environment: #{Rails.env}"
       logger.fatal "select: #{@select}"
       raise
