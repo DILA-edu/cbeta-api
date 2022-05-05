@@ -1029,6 +1029,10 @@ class SphinxController < ApplicationController
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)
     logger.debug "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
     t1 = Time.now
+
+    if start >= @max_matches
+      raise CbetaError.new(400), "start 參數超出範圍: #{start}, max_matches: #{@max_matches}"
+    end
     
     @select = %(
       SELECT #{fields}
