@@ -32,6 +32,9 @@ class SphinxController < ApplicationController
     r[:time] = Time.now - t1
     
     my_render r
+  rescue CbetaError => e
+    r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
+    my_render(r)
   rescue Exception => e
     e.backtrace.each { |s| logger.debug s }
     r = { 
@@ -1031,7 +1034,7 @@ class SphinxController < ApplicationController
     t1 = Time.now
 
     if start >= @max_matches
-      raise CbetaError.new(400), "start 參數超出範圍: #{start}, max_matches: #{@max_matches}"
+      raise CbetaError.new(400), "start 參數超出範圍: #{start}, max_matches: #{@max_matches}, where: #{where}"
     end
     
     @select = %(
