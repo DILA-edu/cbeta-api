@@ -32,6 +32,9 @@ class SphinxController < ApplicationController
     r[:time] = Time.now - t1
     
     my_render r
+  rescue CbetaError => e
+    r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
+    my_render(r)
   rescue Exception => e
     e.backtrace.each { |s| logger.debug s }
     r = { 
@@ -92,7 +95,7 @@ class SphinxController < ApplicationController
     
     @mysql_client = sphinx_mysql_connection
     @where = "MATCH('#{@q}')" + @filter
-    @max_matches = count_docs
+    estimate_max_matches
     r = sphinx_search(@fields, @where, @start, @rows, order: @order)
 
     if params[:facet] == '1'
@@ -356,7 +359,7 @@ class SphinxController < ApplicationController
 
     # 因為 max_matches 參數如果太大，會影響效率
     # 所以先計算最多會有多少 documents 符合條件
-    @max_matches = count_docs
+    estimate_max_matches
 
     if @order.empty?
       @order = 'ORDER BY canon_order ASC'
@@ -401,12 +404,6 @@ class SphinxController < ApplicationController
     r
   end
 
-  def count_docs
-    logger.debug "count_docs, index: #{@index}, where: #{@where}"
-    cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
-    r = @mysql_client.query(cmd)
-    r.first['docs']
-  end
 
   def downsize_vars_array(vars)
     return vars if vars.size < 5
@@ -435,6 +432,18 @@ class SphinxController < ApplicationController
       total_term_hits: 0,
       results: []
     }
+  end
+
+  # 因為 max_matches 參數如果太大，會影響效率
+  # 所以先計算最多會有多少 documents 符合條件
+  def estimate_max_matches
+    logger.debug "estimate_max_matches, index: #{@index}, where: #{@where}"
+    cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
+    r = @mysql_client.query(cmd)
+    @max_matches = r.first['docs']
+
+    # max_matches must be from 1 to 100M
+    @max_matches = 1 if @max_matches == 0
   end
 
   def exclude_by_sphinx(r1)
@@ -1023,6 +1032,10 @@ class SphinxController < ApplicationController
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)
     logger.debug "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
     t1 = Time.now
+
+    if start >= @max_matches
+      raise CbetaError.new(400), "start 參數超出範圍: #{start}, max_matches: #{@max_matches}, where: #{where}"
+    end
     
     @select = %(
       SELECT #{fields}
@@ -1036,6 +1049,7 @@ class SphinxController < ApplicationController
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     rescue
+      logger.fatal $!
       logger.fatal "environment: #{Rails.env}"
       logger.fatal "select: #{@select}"
       raise

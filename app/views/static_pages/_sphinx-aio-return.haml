@@ -1,7 +1,7 @@
 :preserve
   {
     "query_string": "法鼓",
-    "SQL": "SELECT id, juan, canon, vol, work, byline, weight() as term_hits FROM cbeta WHERE MATCH('\"法鼓\"') LIMIT 0, 20 OPTION ranker=wordcount,max_matches=9999999",
+    "SQL": "SELECT id, juan, canon, vol, work, byline, weight() as term_hits FROM cbeta WHERE MATCH('\"法鼓\"') LIMIT 0, 20 OPTION ranker=wordcount,max_matches=1062",
     "time": 0.272479,
     "num_found": 1059,
     "total_term_hits": 1492,
