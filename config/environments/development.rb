@@ -16,7 +16,7 @@ Rails.application.configure do
   config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
 
-  d = '/Volumes/2015-2TB/cbeta-api/kwic'
+  d = '/Volumes/Ray-3TB/cbeta-api/kwic'
   config.x.kwic.base = Dir.exist?(d) ? d : Rails.root.join('data', 'kwic')
   config.x.kwic.html = File.join(config.x.kwic.base, 'html')
   config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')

@@ -425,9 +425,7 @@ class P5aToSimpleHTML
 
   def traverse(e)
     r = ''
-    e.children.each { |c| 
-      r << handle_node(c)
-    }
+    e.children.each { |c| r << handle_node(c) }
     r
   end
 

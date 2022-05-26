@@ -896,16 +896,44 @@ class KwicService
     end
   end
 
-  # 本來有 canon, category, works 多種選項
-  # 後來改成只有單卷了
   def sa_paths_by_option
-    [sa_rel_path('juan')]
+    if @option.key? :works
+      works = @option[:works].split(',').uniq
+      r = []
+      works.each do |w|
+        @option[:work] = w
+        r << sa_rel_path('work')
+      end
+      return r
+    end
+
+    if @option.key? :canon
+      canons = @option[:canon].split(',').uniq
+      r = []
+      canons.each do |c|
+        @option[:canon] = c
+        r << sa_rel_path('canon')
+      end
+      return r
+    end
+
+    return [sa_rel_path('juan')] if @option.key? :juan # 如果有指定卷號
+    return [sa_rel_path('work')] if @option.key? :work
+    return [sa_rel_path('category')] if @option.key? :category
+
+    [sa_rel_path('all')]
   end
 
-  # 本來有 canon, category, works 多種選項
-  # 後來改成只有單卷了
   def sa_rel_path(sa_unit)
-    relative_path = File.join(@option[:work], "%03d" % @option[:juan])
+    relative_path = case sa_unit
+    when 'juan'     then File.join(@option[:work], "%03d" % @option[:juan])
+    when 'work'     then File.join(@option[:work])
+    when 'canon'    then File.join(@option[:canon])
+    when 'category' then File.join(@option[:category])
+    when 'all'      then ''
+    else
+      abort "error: 錯誤的 sa_unit"
+    end
     File.join(sa_unit, relative_path)
   end
 
