@@ -6,14 +6,14 @@
     %td n
     %td
       目錄節點編號，可以用於取得下層目錄。例如：
-      =link_to_url '/catalog_entry?q=CBETA.001'
+      =link_to_path '/catalog_entry', q: 'CBETA.001'
   %tr
     %td node_type
     %td
       %p 如果 node_type 為 'alt' 表示 CBETA 未收錄此經全文，而是對應到其他藏經的全文。
       %p
         例如：
-        =link_to_url '/catalog_entry?q=Vol-J.001'
+        =link_to_path '/catalog_entry', q: 'Vol-J.001'
         回傳：
         %pre
           :preserve
@@ -34,7 +34,7 @@
       juan_end
     %td
       目錄節點所指向的可能是某部典籍的部份卷數，例如：
-      =link_to_url '/catalog_entry?q=CBETA.003.001'
+      =link_to_path '/catalog_entry', q: 'CBETA.003.001'
       %p 回傳：
       %pre
         :preserve

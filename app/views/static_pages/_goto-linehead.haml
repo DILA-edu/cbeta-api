@@ -4,15 +4,17 @@
   %ul
     %li
       例如：
-      =link_to_url '/juans/goto?linehead=T01n0001_p0066c25'
+      =link_to_path '/juans/goto', linehead: 'T01n0001_p0066c25'
 
 %h3 （二）指定 CBETA 引用格式資訊
 .section
-  %p 要先將引用資訊 escape，例如「CBETA, T01, no. 1, p. 67, a13」escape 成為「CBETA,%20T01,%20no.%201,%20p.%2067,%20a13」。
+  - linehead = 'CBETA, T01, no. 1, p. 67, a13'
+  - s = URI.encode_www_form_component(linehead)
+  %p= "要先將引用資訊 escape，例如「#{linehead}」escape 成為「#{s}」。"
   %ul
     %li
       例如：
-      =link_to_url URI.escape('/juans/goto?linehead=CBETA, T01, no. 1, p. 67, a13')
+      =link_to_path('/juans/goto', linehead: 'CBETA, T01, no. 1, p. 67, a13')
   %h4 CBETA 2017 新引用格式
   %ul
     %li 單行：CBETA, T30, no. 1579, p. 279a7
@@ -21,7 +23,7 @@
     %li 跨頁：CBETA, T30, no. 1579, pp. 279a7-280b26
   %h4 CBETA 2019 新引用格式
   例如：
-  =link_to_url URI.escape('/juans/goto?linehead=CBETA 2019.Q3, T01, no. 1, p. 67, a13')
+  =link_to_path '/juans/goto', linehead: 'CBETA 2019.Q3, T01, no. 1, p. 67, a13'
   %ul
     %li 單行：CBETA 2019.Q3, T30, no. 1579, p. 279a7
     %li 跨行：CBETA 2019.Q3, T30, no. 1579, p. 279a7-23
@@ -32,17 +34,17 @@
 .section
   %ul
     - @cit_formats.each do |s|
-      %li= link_to_url URI.escape("/juans/goto?linehead=#{s}"), s
+      %li= link_to_path "/juans/goto", s, linehead: s
 
 %h3 （四）快速代碼
 .section
   %p
     例如代碼 DA1 可以跳到 T01n0001_p0001b11：
-    =link_to_url URI.escape("/juans/goto?linehead=DA1")
+    =link_to_path "/juans/goto", linehead: "DA1"
 
   %p
     代碼 SN1.1 可以跳到 N13n0006_p0001a12：
-    =link_to_url URI.escape("/juans/goto?linehead=SN1.1")
+    =link_to_path "/juans/goto", linehead: "SN1.1"
 
   %p 常用的北傳四阿含與南傳四尼科耶代碼如下：
 
