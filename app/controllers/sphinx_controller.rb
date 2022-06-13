@@ -112,6 +112,9 @@ class SphinxController < ApplicationController
 
     @mysql_client.close
     my_render r
+  rescue
+    r = { num_found: 0, error: $!, sphinx_select: @select }
+    my_render r
   end
 
   def facet
@@ -977,7 +980,11 @@ class SphinxController < ApplicationController
     end
     
     if params.key? :works
-      works = params[:works].split(',')
+      works = Set.new
+      params[:works].split(',').each do |w|
+        works << w
+      end
+      works = works.to_a
       works.map! { |x| %('#{x}')}
       @filter += " AND work IN (%s)" % works.join(',')
     end
@@ -1002,11 +1009,11 @@ class SphinxController < ApplicationController
         n = Category.get_n_by_name(exp)
         and_conditions << "category_ids = #{n}"
       else # 多值
-        a = []
+        set = Set.new
         names.each do |name|
-          a << Category.get_n_by_name(name).to_s
+          set << Category.get_n_by_name(name).to_s
         end
-        and_conditions << "(category_ids IN (%s))" % a.join(',')
+        and_conditions << "(category_ids IN (%s))" % set.to_a.join(',')
       end
     end
 
@@ -1018,11 +1025,11 @@ class SphinxController < ApplicationController
     return unless params.key? :creator
     and_conditions = []
     params[:creator].split('+').each do |exp|
-      a = []
+      set = Set.new
       exp.split(',').each do |c|
-        a << c.sub(/^A0*(\d+)$/, '\1')
+        set << c.sub(/^A0*(\d+)$/, '\1')
       end
-      s = a.join(',')
+      s = set.to_a.join(',')
       and_conditions << "creator_id IN (#{s})"
     end
 
