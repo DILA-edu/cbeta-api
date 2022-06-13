@@ -17,6 +17,8 @@ class ImportWorkInfo
     @total_cjk_chars = 0
     @total_en_words = 0
     @max_cjk_chars = 0
+
+    init_regexp
   end
   
   def import
@@ -55,28 +57,13 @@ class ImportWorkInfo
     en_words = []
     
     # 英數梵巴, 計算後去除
-    # 不能使用 free mode, 會 match 到 U+000A
-    # don't 算一個 word
-    # Saddharma-puṇḍarīka 算一個 word
-    regexp = /[\da-zA-Z\-\u0027\u0080-\u024F\u0370-\u04FF\u1E00-\u1EFF\u2150-\u218F\u2460-\u24FF\u2C60-\u2C7F\uA720-\uA7FF\uAB30-\uAB6F]+/
-
-    text.gsub!(regexp) do
+    text.gsub!(@regexp_en_word) do
       en_words << $& unless $& == '-'
       ''
     end
   
     # 去標點, 剩下的就是 CJK 字元
-    puncs = /[
-      \u0000-\u007F # ASCII
-      \u02B0-\u036F # Modifier_Letters, Diacriticals
-      \u2000-\u206F # Punctuation
-      \u2190-\u22FF # Arrows, Small_Forms
-      \u2500-\u26FF # Box_Drawing, Block_Elements, Geometric_Shapes, Misc_Symbols
-      \u3000-\u3002〄\u3008-\u3011\u3014-\u301F〰〷\u303D-\u303F
-      \uFE30-\uFE6F # CJK_Compat_Forms, Small_Forms
-      \uFF00-\uFFEF # Half_And_Full_Forms
-    ]/x
-    text.gsub!(puncs, '')
+    text.gsub!(@regexp_not_cjk, '')
     
     return text, en_words
   end
@@ -231,6 +218,49 @@ class ImportWorkInfo
     update_work(data)
 
     data
+  end
+
+  def init_regexp
+    # 構成 en_word 的字元
+    s = '\da-zA-Z'
+    s << "'"  # don't 算一個 word
+    s << '\-' # Saddharma-puṇḍarīka 算一個 word
+    s << "\u00C0-\u00D6" # C1 Controls and Latin-1 Supplement => Letters
+    s << "\u00D8-\u00F6" # C1 Controls and Latin-1 Supplement => Letters
+    s << "\u00F8-\u00FF" # C1 Controls and Latin-1 Supplement => Letters
+    s << "\u0100-\u017F" # Latin Extended-A
+    s << "\u0180-\u024F" # Latin Extended-B
+    s << "\u02BC"        # MODIFIER LETTER APOSTROPHE
+    s << "\u0300-\u036F"
+    s << "\u0370-\u04FF" # Greek and Coptic, Cyrillic
+    s << "\u1E00-\u1EFF" # Latin Extended Additional
+    s << "\u2150-\u218F" # Number Forms
+    s << "\u2460-\u24FF" # Enclosed Alphanumerics: ①②③④⑤⑥⑦⑧⑨⑩
+    s << "\u2C60-\u2C7F" # Latin Extended-C
+    s << "\uA720-\uA7FF" # Latin Extended-D
+    s << "\uAB30-\uAB6F" # Latin Extended-E
+    s << "\uFF10-\uFF19" # ０１２３４５６７８９
+    s << "\uFF21-\uFF3A" # Ａ..Ｚ
+    s << "\uFF41-\uFF5A" # ａｂｃｄｅｉｕ
+    @regexp_en_word = Regexp.new("[#{s}]+")
+
+    # 不計入 cjk_chars 的字元
+    s = "\u0000-\u00FF" # C0 Controls and Basic Latin, C1 Controls and Latin-1 Supplement
+    s << "\u02B0-\u036F" # ʼˇˋ ̐
+    s << "\u2000-\u206F" # – — ’ “ ” … ‧ ※ ⁉
+    s << "\u2150-\u218F" # ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ
+    s << "\u2190-\u22FF" # ←↑→↓↖↗↘↙∕√∞∟∠∴∵≡⊕⊙⊥
+    s << "\u2460-\u26FF" # ①..⑩─│┌┐└┘├┤┬┴┼═║╭╮╯╰╱╲╳▔■□▲△▽◇○◎●◐◑☆
+    s << "\u2C60-\u2C7F" # Latin Extended-C
+    s << "\u3000-\u3002" # 全形空格、。
+    s << "〄"
+    s << "\u3008-\u3011" # 〈〉《》「」『』【】
+    s << "\u3014-\u301F" # 〔〕
+    s << "〰〷"
+    s << "\u303D-\u303F" # 〽〾〿
+    s << "\uFE30-\uFE6F" # ︵︶﹁﹂﹄﹏﹐﹑﹒﹔﹕﹖﹗﹘﹙﹚﹛﹜﹝﹞﹟﹠﹡﹢﹣﹤﹥﹦﹨﹩﹪﹫
+    s << "\uFF01-\uFF64" # ！＆＇（）＊＋，－．／０１..９：；＜＝＞？＠Ａ..Ｚ［＼］＾＿｀ａ..ｚ｜｝～
+    @regexp_not_cjk = Regexp.new("[#{s}]+")
   end
 
   def log_chars(cjk_chars, en_words)
