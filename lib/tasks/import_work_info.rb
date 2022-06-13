@@ -27,7 +27,7 @@ class ImportWorkInfo
     import_title_from_metadata
     puts "total_cjk_chars: %s" % number_with_delimiter(@total_cjk_chars)
     puts "total_en_words: %s" % number_with_delimiter(@total_en_words)
-    puts "max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
+    puts "單部典籍最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
   end
   
   private
