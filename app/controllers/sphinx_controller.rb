@@ -54,12 +54,13 @@ class SphinxController < ApplicationController
     where = %{MATCH('"#{@q}"')} + @filter
     @max_matches = MAX_MATCHES
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    @mysql_client.close
     my_render r
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
-  end  
+  ensure
+    @mysql_client.close
+  end
 
   def test
     remove_puncs_from_query
@@ -69,11 +70,12 @@ class SphinxController < ApplicationController
     @mysql_client = sphinx_mysql_connection
     where = %{MATCH('#{@q}')} + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    @mysql_client.close
     my_render r
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
+  ensure
+    @mysql_client.close
   end  
 
   def extended
@@ -85,8 +87,9 @@ class SphinxController < ApplicationController
     @mysql_client = sphinx_mysql_connection
     where = "MATCH('#{@q}')" + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    @mysql_client.close
     my_render r
+  ensure
+    @mysql_client.close
   end
 
   def notes
@@ -109,12 +112,12 @@ class SphinxController < ApplicationController
     end
 
     notes_inline_around(r)
-
-    @mysql_client.close
     my_render r
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
+  ensure
+    @mysql_client.close
   end
 
   def facet
@@ -136,14 +139,14 @@ class SphinxController < ApplicationController
       r['dynasty']  = facet_by_sphinx('dynasty')
       r['work']     = facet_by_sphinx('work')
     end
-        
-    @mysql_client.close
-    
+            
     my_render r
   rescue CbetaError => e
     r = empty_result
     r[:error] = { code: e.code, message: $!, backtrace: e.backtrace }
     my_render(r)
+  ensure
+    @mysql_client.close
   end
   
   def fuzzy
@@ -154,11 +157,12 @@ class SphinxController < ApplicationController
     @mysql_client = sphinx_mysql_connection
     where = %{MATCH('#{@q}')} + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    @mysql_client.close
     my_render r
   rescue
     r = { num_found: 0, error: $! }
     my_render r
+  ensure
+    @mysql_client.close
   end
 
   # 根據異體字表，回傳各種可能異體字串及搜尋結果筆數
@@ -185,7 +189,6 @@ class SphinxController < ApplicationController
       i = get_hit_count(where)
       results << { q: q, hits: i } unless i==0
     end
-    @mysql_client.close
     
     r = {
       time: Time.now - t1,
@@ -194,6 +197,8 @@ class SphinxController < ApplicationController
       results: results
     }
     my_render r
+  ensure
+    @mysql_client.close
   end
 
   # 以簡體字查詢
@@ -209,7 +214,6 @@ class SphinxController < ApplicationController
     @mysql_client = sphinx_mysql_connection
     where = %{MATCH('"#{@q}"')} + @filter
     i = get_hit_count(where)
-    @mysql_client.close
     
     r = {
       time: Time.now - t1,
@@ -220,6 +224,8 @@ class SphinxController < ApplicationController
   rescue CbetaError => e
     r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
     my_render(r)
+  ensure
+    @mysql_client.close
   end
 
   # 根據同義詞表，回傳各種可能字串及搜尋結果筆數
@@ -256,7 +262,6 @@ class SphinxController < ApplicationController
       " LIMIT #{@start}, #{@rows} OPTION ranker=#{RANKER}, max_matches=#{@max_matches}"
     @mysql_client = sphinx_mysql_connection
     results = @mysql_client.query(select, symbolize_keys: true)    
-    @mysql_client.close
 
     hits = results.to_a
     hits.each do |h|
@@ -277,6 +282,8 @@ class SphinxController < ApplicationController
     r[:results] = hits
     r[:time] = Time.now - t1
     my_render r
+  ensure
+    @mysql_client.close
   end
 
   private
@@ -380,7 +387,6 @@ class SphinxController < ApplicationController
       exclude_by_sphinx(r)
     end
 
-    @mysql_client.close
     logger.debug "#{Time.now} sphinx search 完成"
 
     if @q.include?('NEAR')
@@ -405,6 +411,8 @@ class SphinxController < ApplicationController
     end
 
     r
+  ensure
+    @mysql_client.close
   end
 
 
