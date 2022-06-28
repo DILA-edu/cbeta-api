@@ -198,7 +198,7 @@ class SphinxController < ApplicationController
     }
     my_render r
   ensure
-    @mysql_client.close
+    @mysql_client.close unless @mysql_client.nil?
   end
 
   # 以簡體字查詢
