@@ -511,7 +511,6 @@ class KwicService
     end
     
     begin
-      Rails.logger.warn "open sa from file: #{fn}"
       @f_sa = File.open(fn, 'rb')
       @sa_files[fn] = @f_sa
     rescue
@@ -548,7 +547,6 @@ class KwicService
     end
 
     begin
-      Rails.logger.warn "open text from file: #{fn}"
       @f_txt = File.open(fn, 'rb')
       @size = @f_txt.size / 4
       @sa_last = @size - 1 # sa 最後一筆的 offset
