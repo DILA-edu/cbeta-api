@@ -16,7 +16,7 @@ require_relative 'cbeta_p5a_share'
 # 轉檔規則請參考: http://wiki.ddbc.edu.tw/pages/CBETA_XML_P5a_轉_HTML
 class P5aToTextForDownload
   # 內容不輸出的元素
-  PASS=['anchor', 'back', 'mulu', 'teiHeader']
+  PASS=['anchor', 'back', 'teiHeader']
 
   # 某版用字缺的符號
   MISSING = '－'
@@ -196,6 +196,13 @@ class P5aToTextForDownload
     r
   end
 
+  def e_mulu(e)
+    return '' if e['type'] == '卷'
+    i = e['level'].to_i - 1
+    @toc << '  ' * i + e.text + "\n"
+    ''
+  end
+
   def e_note(e)
     n = e['n']
     r = ''
@@ -322,6 +329,7 @@ class P5aToTextForDownload
     when 'list'      then e_list(e)
     when 'note'      then e_note(e)
     when 'milestone' then e_milestone(e)
+    when 'mulu'      then e_mulu(e)
     when 'p'         then e_p(e)
     when 'reg'       then e_reg(e)
     when 'sg'        then e_sg(e)
@@ -347,6 +355,7 @@ class P5aToTextForDownload
     @next_line_buf = ''
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
+    @toc = ''
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     $stderr.puts "x2t_for_download #{@work_id}"
     @updated_at = MyCbetaShare::get_update_date(xml_fn)
@@ -356,20 +365,8 @@ class P5aToTextForDownload
     end    
     
     text = parse_xml(xml_fn)
-
-    juans = text.split(/(<juan \d+>)/)
-    juan_no = nil
-    buf = ''
-    # 一卷一檔
-    juans.each { |j|
-      if j =~ /<juan (\d+)>$/
-        juan_no = $1.to_i
-      elsif juan_no.nil?
-        buf = j
-      else
-        write_juan(juan_no, buf+j)
-      end
-    }
+    write_juans(text)
+    write_toc
   end
 
   def handle_text(e)
@@ -487,6 +484,30 @@ class P5aToTextForDownload
     FileUtils.mkdir_p dest
     dest = File.join(dest, fn)
     File.write(dest, text)
+  end
+
+  def write_juans(text)
+    juans = text.split(/(<juan \d+>)/)
+    juan_no = nil
+    buf = ''
+
+    # 一卷一檔
+    juans.each do |j|
+      if j =~ /<juan (\d+)>$/
+        juan_no = $1.to_i
+      elsif juan_no.nil?
+        buf = j
+      else
+        write_juan(juan_no, buf+j)
+      end
+    end
+  end
+
+  def write_toc
+    fn = "#{@work_id}-toc.txt"
+    
+    dest = File.join(@out_root, @series, @work_id, fn)
+    File.write(dest, @toc)
   end
 
   def write_work_yaml(doc)
