@@ -240,8 +240,8 @@ class XMLToHTML
 
       c = g['norm_big5_char']
       unless c.blank?
-        nor += ', ' unless nor==''
-        nor += c
+        nor << ', ' unless nor==''
+        nor << c
         default = c if default.empty?
       end
     end
@@ -314,8 +314,10 @@ class XMLToHTML
     @lb = e['n']
     
     r = ''
+    r = "\n" if @pre.last
+
     unless @next_line_buf.empty?
-      r += @next_line_buf
+      r << @next_line_buf
       @next_line_buf = ''
     end
     r
@@ -361,7 +363,7 @@ class XMLToHTML
     r = ''
     if e['unit'] == 'juan'
 
-      r += "</div>" * @open_divs.size  # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
+      r << "</div>" * @open_divs.size  # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
       @juan = e['n'].to_i
       @back[@juan] = @back[0]
       @back[0] = ''
@@ -373,9 +375,9 @@ class XMLToHTML
         @notes_add[@juan] = []
       end
 
-      r += "<juan #{@juan}>"
+      r << "<juan #{@juan}>"
       @open_divs.each { |d|
-        r += "<div class='div-#{d['type']}'>"
+        r << "<div class='div-#{d['type']}'>"
       }
     end
     r
@@ -431,7 +433,7 @@ class XMLToHTML
     i = @notes_add[@juan].size + 1
     n = "cb_note_#{i}"
     s = traverse(e, 'footnote')
-    s += e_note_add_cf(e)
+    s << e_note_add_cf(e)
     note = <<~HTML
       <div class='footnote' id='#{n}'>
         [<a href='#cb_note_anchor#{i}'>A#{i}</a>] #{s}
@@ -502,10 +504,14 @@ class XMLToHTML
   def e_p(e, mode)
     return traverse(e, mode) if mode=='footnote'
     
-    node = HtmlNode.new('p')
-
     classes = []
-    classes << e['type'] if e.key? 'type'
+    if e['type'] == 'pre'
+      @pre << true
+      node = HtmlNode.new('pre')
+    else
+      node = HtmlNode.new('p')
+      classes << e['type'] if e.key? 'type'
+    end
 
     # p 的 rend 屬性可能有空格隔開的多值
     classes += e['rend'].split if e.key? 'rend'
@@ -513,8 +519,8 @@ class XMLToHTML
 
     node['style'] = e['style'] if e.key? 'style'
     
-    node.content = line_info
-    node.content += traverse(e)
+    node.content = line_info + traverse(e)
+    @pre.pop if e['type'] == 'pre'
     node.to_s + "\n"
   end
   
@@ -569,7 +575,7 @@ class XMLToHTML
     when 0
       return r + '　'
     when 1
-      @next_line_buf += r + '　'
+      @next_line_buf << r + '　'
       return ''
     else
       return r
@@ -721,6 +727,7 @@ class XMLToHTML
     @notes_mod = {}
     @notes_orig = {}
     @open_divs = []
+    @pre = [false]
     @sutra_no = File.basename(xml_fn, ".xml")
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @notes_add = {} unless juan_cross_vol(@vol, @work_id) == 2
@@ -791,10 +798,10 @@ class XMLToHTML
   def html_back(juan_no)
     r = @back[juan_no]
     @notes_mod[juan_no].each_pair do |k,v|
-      r += "<span class='footnote' id='n#{k}'><a href='#note_anchor_#{k}'>[#{k}]</a> #{v}</span>\n"
+      r << "<span class='footnote' id='n#{k}'><a href='#note_anchor_#{k}'>[#{k}]</a> #{v}</span>\n"
     end
     unless juan_cross_vol(@vol, @work_id, juan_no) == 1
-      r += @notes_add[juan_no].join("\n") 
+      r << @notes_add[juan_no].join("\n") 
     end
     r
   end
@@ -845,11 +852,11 @@ class XMLToHTML
       if rdg['wit'].include? @orig
         s = traverse(rdg, 'back')
         s = MISSING if s.empty?
-        r += @orig + s
+        r << @orig + s
       end
     }
     @pass.pop
-    r += '。' unless r.empty?
+    r << '。' unless r.empty?
     r
   end
 
@@ -933,7 +940,7 @@ class XMLToHTML
     r = ''
     e.children.each { |c| 
       s = handle_node(c, mode)
-      r += s
+      r << s
     }
     r
   end
