@@ -393,6 +393,7 @@ class XMLToHTML
   
   def e_note(e, mode=nil)
     return e_note_foot(e) if mode == 'footnote'
+    return '' if e['rend'] == 'hide'
 
     n = e['n']
     if e.has_attribute?('type')
