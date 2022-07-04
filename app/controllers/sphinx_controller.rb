@@ -93,7 +93,8 @@ class SphinxController < ApplicationController
   end
 
   def notes
-    @mode = 'extend'    
+    @mode = 'extend'
+    remove_puncs_from_query
     return empty_result if @q.empty?
     
     @mysql_client = sphinx_mysql_connection
