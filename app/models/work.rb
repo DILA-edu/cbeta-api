@@ -40,7 +40,7 @@ class Work < ActiveRecord::Base
     r
   end
   
-  # 本部典籍的第一個 XML 主檔名
+  # 本部佛典的第一個 XML 主檔名
   def first_file
     f = XmlFile.where(work: n).order(:file).first
     if f.nil?

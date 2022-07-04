@@ -36,7 +36,7 @@ properties:
           example: T09
         work:
           type: string
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           example: T0270
         term_hits:
           type: integer
@@ -68,13 +68,13 @@ properties:
           example: 劉宋
         time_from:
           type: integer
-          description: 典籍成立時間：起始公元年
+          description: 佛典成立時間：起始公元年
           example: 420
         time_to:
           type: integer
-          description: 典籍成立時間：結束公元年
+          description: 佛典成立時間：結束公元年
           example: 479
         juan_list:
           type: string
-          description: 典籍下卷號清單
+          description: 佛典下卷號清單
           example: 1,2

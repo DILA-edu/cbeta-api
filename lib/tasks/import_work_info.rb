@@ -27,7 +27,7 @@ class ImportWorkInfo
     import_title_from_metadata
     puts "total_cjk_chars: %s" % number_with_delimiter(@total_cjk_chars)
     puts "total_en_words: %s" % number_with_delimiter(@total_en_words)
-    puts "單部典籍最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
+    puts "單部佛典最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
   end
   
   private
@@ -134,11 +134,11 @@ class ImportWorkInfo
     @data_folder = Rails.application.config.cbeta_data
     fn = File.join(@data_folder, 'titles', 'all-title-byline.csv')
     CSV.foreach(fn, headers: true) do |row|
-      w = Work.find_by n: row['典籍編號']
+      w = Work.find_by n: row['佛典編號']
       if w.nil?
-        $stderr.puts "Work table 中無此編號: #{row['典籍編號']}"
+        $stderr.puts "Work table 中無此編號: #{row['佛典編號']}"
       else
-        w.update(title: row['典籍名稱'])
+        w.update(title: row['佛典名稱'])
       end
     end
   end
@@ -176,7 +176,7 @@ class ImportWorkInfo
     @max_cjk_chars = data[:cjk_chars] if data[:cjk_chars] > @max_cjk_chars
   end
 
-  # 典籍跨冊時，讀取多個 XML 檔
+  # 佛典跨冊時，讀取多個 XML 檔
   def import_work_files
     files = @work_cross_vol[@work]
     unless files.kind_of?(Array)

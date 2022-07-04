@@ -11,7 +11,7 @@ require 'open3'
 
 class SphinxController < ApplicationController
   RANKER = 'wordcount' # ranking by the keyword occurrences count.
-  FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 典籍數量 5,617
+  FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 佛典數量 5,617
   MAX_MATCHES = 99_999
 
   before_action :init
@@ -573,7 +573,7 @@ class SphinxController < ApplicationController
         end
       end
     when 'work'
-      # 取得 典籍 title
+      # 取得 佛典 title
       r.each do |row|
         id = row[:category_id].to_s
         w = Work.find_by n: row[:work]

@@ -2,7 +2,7 @@ work:
   name: work
   in: query
   required: true
-  description: 典籍編號
+  description: 佛典編號
   example: T0001
   schema:
     type: string
@@ -19,7 +19,7 @@ work_info:
   in: query
   required: false
   description: >
-    是否一併回傳「典籍資訊」
+    是否一併回傳「佛典資訊」
 
     * 預設為 0: 不回傳
     * 若設為 1: 回傳

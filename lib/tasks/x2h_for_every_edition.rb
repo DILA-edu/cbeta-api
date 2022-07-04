@@ -51,7 +51,7 @@ class P5aToHTMLForEveryEdition
     if arg.size.between?(1,2)
       convert_canon(arg)
     else
-      puts "因為某些典籍單卷跨冊，轉檔必須以某部藏經為單位，例如參數 T 表示轉換整個大正藏。"
+      puts "因為某些佛典單卷跨冊，轉檔必須以某部藏經為單位，例如參數 T 表示轉換整個大正藏。"
     end
   end
 

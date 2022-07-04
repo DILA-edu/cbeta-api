@@ -1,4 +1,4 @@
-# 如果有 新增藏經 ID 或 新加入的典籍
+# 如果有 新增藏經 ID 或 新加入的佛典
 
 ## 更新 cbeta metadata
 
@@ -53,11 +53,11 @@
   * time/year-by-canon
 * output: textref/cbeta.csv
 
-如果典籍有跨冊，要更新 special-works.
+如果佛典有跨冊，要更新 special-works.
 
-### 更新 替代典籍
+### 更新 替代佛典
 
-各部藏經重複收錄的典籍，CBETA 只收錄一次，例如 X0002 《父子合集經》在大正藏之中已經有了 T0320，CBETA 就不收錄 X0002，而是建立 X0002 與 T0320 的對應關係。
+各部藏經重複收錄的佛典，CBETA 只收錄一次，例如 X0002 《父子合集經》在大正藏之中已經有了 T0320，CBETA 就不收錄 X0002，而是建立 X0002 與 T0320 的對應關係。
 
 有新的藏經加入時，要更新這份對應清單。執行 /Users/ray/Documents/Projects/cbeta/catalog/bin/alt.rb 會從 CBReader 的 Toc 資料取出對應關係表。
 
@@ -65,11 +65,11 @@
 
 ### work-id
 
-根據 xml p5a 以及上一步驟的「替代典籍 對照表」，產生全部的 work id:
+根據 xml p5a 以及上一步驟的「替代佛典 對照表」，產生全部的 work id:
 
     /Users/ray/Documents/Projects/cbeta/catalog/bin/work-id.rb
 
-來自「替代典籍 對照表」的 work id 會缺少冊數，這需要手動根據 cbeta-metadata/catalog/cbeta.xml 裡的資訊補上
+來自「替代佛典 對照表」的 work id 會缺少冊數，這需要手動根據 cbeta-metadata/catalog/cbeta.xml 裡的資訊補上
 
 更新到 cbeta metadata
 

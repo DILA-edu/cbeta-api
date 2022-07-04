@@ -2,7 +2,7 @@ work:
   name: work
   in: query
   required: true
-  description: 典籍編號，限制搜尋範圍在某部典籍之中。
+  description: 佛典編號，限制搜尋範圍在某部佛典之中。
   example: X0600
   schema:
     type: string

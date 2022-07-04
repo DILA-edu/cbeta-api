@@ -3,35 +3,35 @@
 
 %h2 URL 說明
 .ml-5
-  %p URL: download/{電子書格式}/{藏經代碼}/{典籍編號}.{副檔名}
+  %p URL: download/{電子書格式}/{藏經代碼}/{佛典編號}.{副檔名}
   %h3 電子書格式
   %p 可能值： epub, mobi, pdf
   %h3 藏經代碼
   %p 
     請參考： 
     =link_to nil, "https://www.cbeta.org/format/id.php"
-  %h3 典籍編號
+  %h3 佛典編號
   %p
     請參考：
     =link_to nil, "https://github.com/DILA-edu/cbeta-documentation/blob/master/xml/file-structure.md"
 
 %h2 EPUB
 %ul
-  %li 單部典籍下載例： #{ link_to_url '/download/epub/A/A1057.epub' }
+  %li 單部佛典下載例： #{ link_to_url '/download/epub/A/A1057.epub' }
   %li 
     全部下載：
     =link_to_url "/download/cbeta-epub-#{q}.zip"
 
 %h2 MOBI
 %ul
-  %li 單部典籍下載例： #{ link_to_url '/download/mobi/A/A1057.mobi' }
+  %li 單部佛典下載例： #{ link_to_url '/download/mobi/A/A1057.mobi' }
   %li 
     全部下載： 
     =link_to_url "/download/cbeta-mobi-#{q}.zip"
 
 %h2 PDF
 %p 
-  單部典籍下載例：
+  單部佛典下載例：
   =link_to_url '/download/pdf/A/A1057.pdf'
 %p 全部下載：
 %ul

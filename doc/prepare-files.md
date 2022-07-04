@@ -25,7 +25,7 @@
 
 ## UUID
 
-如果有新增典籍，要產生 UUID，參考 uuid.md
+如果有新增佛典，要產生 UUID，參考 uuid.md
 
 ## 自動分詞
 

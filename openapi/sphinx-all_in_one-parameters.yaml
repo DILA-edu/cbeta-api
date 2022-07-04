@@ -10,4 +10,4 @@ facet:
   description: |
     0: 不回傳 facet。
     
-    1: 回傳五種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、典籍 (work)。
+    1: 回傳五種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。

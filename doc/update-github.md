@@ -8,7 +8,7 @@
 
 git@github.com:cbeta-org/cbeta_gaiji.git
 
-## 如果有 新增藏經 ID 或 新加入的典籍
+## 如果有 新增藏經 ID 或 新加入的佛典
 
 參考 new-canon.md
 

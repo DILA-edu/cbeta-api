@@ -285,12 +285,12 @@ paths:
                 format: binary
   /download/docusky/{filename}.docusky.xml:
     get: 
-      summary: 下載 Docusky XML 格式典籍
+      summary: 下載 Docusky XML 格式佛典
       tags: [download]
       parameters:
         - name: filename
           in: path
-          description: 典籍編號（經號） 或 典籍編號（經號）+ 卷號（三碼）
+          description: 佛典編號（經號） 或 佛典編號（經號）+ 卷號（三碼）
           required: true
           schema:
             type: string
@@ -299,7 +299,7 @@ paths:
               summary: 單卷
               value: A0157_001
             work:
-              summary: 整部典籍
+              summary: 整部佛典
               value: A0157
       responses:
         '200':
@@ -322,7 +322,7 @@ paths:
           example: A
         - name: work
           in: path
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           required: true
           schema:
             type: string
@@ -349,7 +349,7 @@ paths:
           example: T
         - name: work
           in: path
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           required: true
           schema:
             type: string
@@ -375,7 +375,7 @@ paths:
       parameters:
         - name: work_juan
           in: path
-          description: 典籍編號（經號） + 卷號（三碼）
+          description: 佛典編號（經號） + 卷號（三碼）
           required: true
           schema:
             type: string
@@ -389,13 +389,13 @@ paths:
                 type: string
   /download/html/{work}.html.zip:
     get:
-      summary: 下載某部典籍 ZIP 檔
+      summary: 下載某部佛典 ZIP 檔
       tags: [download]
       description:  解壓縮之後有多個 HTML 檔，適合直接閱讀用。
       parameters:
         - name: work
           in: path
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           required: true
           schema:
             type: string
@@ -422,7 +422,7 @@ paths:
           example: A
         - name: work
           in: path
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           required: true
           schema:
             type: string
@@ -449,7 +449,7 @@ paths:
           example: A
         - name: work
           in: path
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           required: true
           schema:
             type: string
@@ -485,7 +485,7 @@ paths:
       parameters:
         - name: work_juan
           in: path
-          description: 典籍編號（經號）+ 卷號（三碼）
+          description: 佛典編號（經號）+ 卷號（三碼）
           required: true
           schema:
             type: string
@@ -500,12 +500,12 @@ paths:
                 format: binary
   /download/text/{work}.txt.zip:
     get:
-      summary: 下載某部典籍 純文字版 ZIP 檔
+      summary: 下載某部佛典 純文字版 ZIP 檔
       tags: [download]
       parameters:
         - name: work
           in: path
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           required: true
           schema:
             type: string
@@ -567,11 +567,11 @@ paths:
                   properties:
                     work:
                       type: string
-                      description: 典籍編號
+                      description: 佛典編號
                       example: T0001
                     title:
                       type: string
-                      description: 典籍標題（經名）
+                      description: 佛典標題（經名）
                       example: 長阿含經
                     juans:
                       type: array
@@ -593,7 +593,7 @@ paths:
           example: J
       responses:
         '200':
-          description: 嘉興藏 典籍、卷 列表
+          description: 嘉興藏 佛典、卷 列表
           content:
             text/csv:
               schema: 
@@ -648,7 +648,7 @@ paths:
       tags: [export]
       responses:
         '200':
-          description: 全部朝代列表，及其起始年、結束年、典籍數。
+          description: 全部朝代列表，及其起始年、結束年、佛典數。
           content:
             application/json:
               schema: 
@@ -660,10 +660,10 @@ paths:
                   results:
                     type: string
                     description: CSV
-                    example: "朝代,起始年,結束年,典籍數\n東漢,25,220,80"
+                    example: "朝代,起始年,結束年,佛典數\n東漢,25,220,80"
   /export/dynasty_works:
     get:
-      summary: 範圍選擇清單-依朝代期間典籍列表
+      summary: 範圍選擇清單-依朝代期間佛典列表
       tags: [export]
       description: 供前端做「範圍選擇」樹狀目錄使用。
       responses:
@@ -735,7 +735,7 @@ paths:
                       description: Tree Node
   /juans:
     get:
-      summary: 典籍的某一卷
+      summary: 佛典的某一卷
       tags: [juan]
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/juans-parameters.yaml#/work'
@@ -775,7 +775,7 @@ paths:
       tags: [kwic]
       description: |
         * 回傳的 KWIC 字串含標點
-        * 回傳結果可以依「典籍編號+卷號」排序
+        * 回傳結果可以依「佛典編號+卷號」排序
         * 可以選擇是否要回傳
           * 地理資訊、經緯度座標
           * next_word_count, prev_word_count
@@ -957,7 +957,7 @@ paths:
     get:
       summary: Faceted Search by Category (CBETA 部類)
       tags: [sphinx]
-      description: 一部典籍可能屬於多個部類。
+      description: 一部佛典可能屬於多個部類。
       parameters:
         - name: q
           in: query
@@ -1031,7 +1031,7 @@ paths:
     get:
       summary: Faceted Search by Dynasty (朝代)
       tags: [sphinx]
-      description: 根據典籍成立的朝代。
+      description: 根據佛典成立的朝代。
       parameters:
         - name: q
           in: query
@@ -1065,7 +1065,7 @@ paths:
     get:
       summary: Faceted Search by Work
       tags: [sphinx]
-      description: 根據典籍。
+      description: 根據佛典。
       parameters:
         - name: q
           in: query
@@ -1086,7 +1086,7 @@ paths:
                   properties:
                     work:
                       type: string
-                      description: 典籍編號 (經號)
+                      description: 佛典編號 (經號)
                       example: B0088
                     docs:
                       type: integer
@@ -1098,7 +1098,7 @@ paths:
                       example: 569
                     title:
                       type: string
-                      description: 典籍標題 (經名)
+                      description: 佛典標題 (經名)
                       example: 古今圖書集成選輯（上）
   /sphinx/facet:
     get:
@@ -1162,7 +1162,7 @@ paths:
     get:
       summary: Search Titles
       tags: [sphinx]
-      description: 搜尋典籍標題（經名）
+      description: 搜尋佛典標題（經名）
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/sphinx-extended-parameters.yaml#/q'
       responses:
@@ -1259,7 +1259,7 @@ paths:
       description: >
         # 目次
         
-        ## 取得某部典籍內的目次
+        ## 取得某部佛典內的目次
         
         例如取得 T0001 的目次: /toc?work=T0001
         
@@ -1267,8 +1267,8 @@ paths:
         
         在三大部份中搜尋：
           * 部類目錄
-          * 典籍標題（經名）
-          * 典籍內目次
+          * 佛典標題（經名）
+          * 佛典內目次
       parameters:
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-parameters.yaml#/work'
         - $ref: 'https://raw.githubusercontent.com/DILA-edu/cbeta-api/main/openapi/toc-parameters.yaml#/q'
@@ -1277,7 +1277,7 @@ paths:
           description: >
             部類目錄的搜尋結果依出現次序排序。  
             
-            經名搜尋結果，按「CBETA 全文檢索順序」+ 典籍編號(經號)：
+            經名搜尋結果，按「CBETA 全文檢索順序」+ 佛典編號(經號)：
               * 藏經主體
                 * T (大正藏)
                 * X (新纂卍續藏)
@@ -1303,7 +1303,7 @@ paths:
                 * GA (民國新編—中國佛寺志-A)
                 * GB (民國新編—中國佛寺志-B)
             
-            典籍內目次搜尋結果排序同上。
+            佛典內目次搜尋結果排序同上。
           content:
             application/json:
               schema: 
@@ -1342,11 +1342,11 @@ paths:
                   example: /當/觀/色/無常/。/如是/觀/者/，/則/為/正觀/。/正觀/者/，/則/生/厭離/；/厭離/者/，/喜/貪/盡/；/喜/貪/盡/者/，/說/心解脫/。/
   /works:
     get:
-      summary: 典籍相關資訊
+      summary: 佛典相關資訊
       tags: [work]
       description: >
         例：
-          * 取得某部典籍的資訊, 取得 T0001 的資訊： /works?work=T0001
+          * 取得某部佛典的資訊, 取得 T0001 的資訊： /works?work=T0001
           * 指定冊數起迄： /works?canon=T&vol_start=1&vol_end=2
           * 指定經號起迄： /works?canon=T&work_start=1&work_end=2
           * 指定 嘉興藏 經號起迄： /works?canon=J&work_start=A1&work_end=A2

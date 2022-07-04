@@ -23,7 +23,7 @@ namespace :update do
     end
   end
   
-  # @param n [String] 典籍編號
+  # @param n [String] 佛典編號
   # @return [String] 排序用編號
   def sort_order(n)
     return @work_sort_order[n] if @work_sort_order.key? n

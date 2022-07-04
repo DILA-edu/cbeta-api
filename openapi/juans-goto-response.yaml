@@ -16,7 +16,7 @@ properties:
           example: T01
         work:
           type: string
-          description: 典籍編號
+          description: 佛典編號
           example: T0001
         file:
           type: string

@@ -156,7 +156,7 @@ class JuansController < ApplicationController
     work = Work.find_by n: @work_id
     if work.nil?
       return { 
-        error: { code: 404, message: "Work ID (典籍編號) not found: #{@work_id}" }
+        error: { code: 404, message: "Work ID (佛典編號) not found: #{@work_id}" }
       }
     end
     
@@ -203,7 +203,7 @@ class JuansController < ApplicationController
       vol, start_lb = JuanLine.get_first_lb_by_work_juan(@work_id, @juan)
       start_page = start_lb.sub(/^(\d{4}).*$/, '\1')
       if page < start_page
-        raise CbetaError.new(400), "頁碼小於起始頁碼, 典籍編號: #{@work_id}, 卷號: #{@juan}, 起始頁碼: #{start_lb}, 要求頁碼: #{page}" 
+        raise CbetaError.new(400), "頁碼小於起始頁碼, 佛典編號: #{@work_id}, 卷號: #{@juan}, 起始頁碼: #{start_lb}, 要求頁碼: #{page}" 
       end
     end
 

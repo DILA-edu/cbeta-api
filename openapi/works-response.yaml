@@ -11,13 +11,13 @@ properties:
       properties:
         work:
           type: string
-          description: 典籍編號
+          description: 佛典編號
         uuid:
           type: string
-          description: 典籍之 UUID
+          description: 佛典之 UUID
         category:
           type: string
-          description: 典籍所屬 CBETA 部類
+          description: 佛典所屬 CBETA 部類
         orig_category:
           type: string
           description: 原書分類
@@ -26,28 +26,28 @@ properties:
           description: volume number (冊號)
         title:
           type: string
-          description: 典籍標題 (經名)
+          description: 佛典標題 (經名)
         juan:
           type: integer
-          description: 典籍卷數
+          description: 佛典卷數
         juan_list:
           type: string
-          description: 典籍下卷號清單（卷號不一定會連續）
+          description: 佛典下卷號清單（卷號不一定會連續）
         zh_chars:
           type: integer
-          description: 典籍中文字數
+          description: 佛典中文字數
         en_words:
           type: integer
-          description: 典籍英文字數
+          description: 佛典英文字數
         file:
           type: string
-          description: 典籍之 CBETA XML 主檔名
+          description: 佛典之 CBETA XML 主檔名
         juan_start:
           type: integer
-          description: 典籍之起始卷號（不一定是第一卷）
+          description: 佛典之起始卷號（不一定是第一卷）
         byline:
           type: string
-          description: 典籍之作譯者行
+          description: 佛典之作譯者行
         creators:
           type: string
           description: 作者、譯者
@@ -56,10 +56,10 @@ properties:
           description: 作者、譯者 (含 DILA Authority 人名 ID)
         time_dynasty:
           type: string
-          description: 典籍成立時間：朝代
+          description: 佛典成立時間：朝代
         time_from:
           type: integer
-          description: 典籍成立時間：起始西元年
+          description: 佛典成立時間：起始西元年
         time_to:
           type: integer
-          description: 典籍成立時間：結束西元年
+          description: 佛典成立時間：結束西元年

@@ -25,12 +25,12 @@ class Kwic3Controller < ApplicationController
     @opts[:mark]         = true  if params['mark']          == '1'
     @opts[:seg]          = true  if params['seg']           == '1'
     
-    # 檢查 典籍編號 是否存在
+    # 檢查 佛典編號 是否存在
     if params.key?('work')
       n = params['work']
       w = Work.find_by n: n
       if w.nil?
-        r = { success: false, num_found: 0, results: [], error: '典籍編號不存在'}
+        r = { success: false, num_found: 0, results: [], error: '佛典編號不存在'}
         my_render r
         return
       else
@@ -129,7 +129,7 @@ class Kwic3Controller < ApplicationController
 
   def juan_check_params
     unless params.key?('work')
-      r = { success: false, error: '缺少必要參數： work 典籍編號'}
+      r = { success: false, error: '缺少必要參數： work 佛典編號'}
       my_render r
       return false
     end

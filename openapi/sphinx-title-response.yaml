@@ -2,7 +2,7 @@ type: object
 properties:
   num_found:
     type: integer
-    description: number of found works (符合的典籍筆數)
+    description: number of found works (符合的佛典筆數)
     example: 1
   results:
     type: array
@@ -12,7 +12,7 @@ properties:
       properties:
         work:
           type: string
-          description: 典籍編號（經號）
+          description: 佛典編號（經號）
           example: T0270
         title:
           type: string
@@ -28,13 +28,13 @@ properties:
           example: 求那跋陀羅(A000527)
         time_dynasty:
           type: string
-          description: 典籍成立時間：朝代
+          description: 佛典成立時間：朝代
           example: 劉宋
         time_from:
           type: integer
-          description: 典籍成立時間：起始西元年
+          description: 佛典成立時間：起始西元年
           example: 435
         time_to:
           type: integer
-          description: 典籍成立時間：結束西元年
+          description: 佛典成立時間：結束西元年
           example: 443

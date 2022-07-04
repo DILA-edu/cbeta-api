@@ -31,7 +31,7 @@ class JuanLine < ActiveRecord::Base
   # 取得某經、某卷 的 第一個 lb 及其冊數
   def self.get_first_lb_by_work_juan(work, juan)
     jl = JuanLine.where("work=? AND juan=?", work, juan).first
-    raise CbetaError.new(404), "找不到 典籍編號: #{work}, 卷號: #{juan}" if jl.nil?
+    raise CbetaError.new(404), "找不到 佛典編號: #{work}, 卷號: #{juan}" if jl.nil?
     return jl.vol, jl.lb
   end
   

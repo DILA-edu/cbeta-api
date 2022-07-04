@@ -11,13 +11,13 @@ module RunbookSectionRDB
         command 'rake import:toc'
       end
 
-      step '匯入 全部典籍編號 (rake import:work_id)' do
+      step '匯入 全部佛典編號 (rake import:work_id)' do
         command 'rake import:work_id'
       end
 
       # 由 GitHub 上的 cbeta-metadata 匯入，
       # 這要在上一個步驟 work id 都已匯入資料庫之後才能做：
-      step '替代典籍 對照表 匯入資料庫 (rake import:alt)' do
+      step '替代佛典 對照表 匯入資料庫 (rake import:alt)' do
         command 'rake import:alt'
       end
 
@@ -33,7 +33,7 @@ module RunbookSectionRDB
         command 'rake import:catalog'
       end
 
-      step '更新「典籍所屬部類」資訊 (rake import:category)' do
+      step '更新「佛典所屬部類」資訊 (rake import:category)' do
         command 'rake import:category'
       end
 
@@ -43,8 +43,8 @@ module RunbookSectionRDB
 
       # 這要在 import:work_info 之後做，跨冊的 title 才會對（ex: Y0030)。
       # 由 GitHub 上的 cbeta-metadata 及 p5a 匯入:
-      step '匯入「典籍跨冊」資訊 (rake import:cross)' do
-        confirm '如果有新增的典籍跨冊，要更新 cbeta-metadata/special-works'
+      step '匯入「佛典跨冊」資訊 (rake import:cross)' do
+        confirm '如果有新增的佛典跨冊，要更新 cbeta-metadata/special-works'
         command 'rake import:cross'
       end
 

@@ -62,7 +62,7 @@ class P5aToHTMLForUI
         arg = target.upcase
         convert_canon(arg)
       else
-        puts "注意：因為某些典籍單卷跨冊，轉檔必須以某部藏經為單位，例如參數 T 表示轉換整個大正藏。"
+        puts "注意：因為某些佛典單卷跨冊，轉檔必須以某部藏經為單位，例如參數 T 表示轉換整個大正藏。"
         work_id = CBETA.get_work_id_from_file_basename(target)
         @canon = CBETA.get_canon_id_from_work_id(work_id)
         convert_canon_init(@canon)
@@ -1261,7 +1261,7 @@ class P5aToHTMLForUI
       i += v.size
     end
     $stderr.print "\n#{i} 幅嘉興藏圖像的連結，"
-    $stderr.puts "分佈於 #{@jm_facsimile.size} 部典籍 #{@j_facs_juans.size} 卷中。"
+    $stderr.puts "分佈於 #{@jm_facsimile.size} 部佛典 #{@j_facs_juans.size} 卷中。"
     $stderr.puts "新文豐嘉興藏 pb 數量：#{@j_pages}，相當於民族出版社版頁數：#{@j_pages * 3}"
   end
 

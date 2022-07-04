@@ -15,9 +15,9 @@
 
     rake import:toc[T]
 
-## 匯入 全部典籍編號
+## 匯入 全部佛典編號
 
-如果有典籍編號有更動（例如新增藏經 ID），要更新 cbeta-metadata/work-id。
+如果有佛典編號有更動（例如新增藏經 ID），要更新 cbeta-metadata/work-id。
 
 由 GitHub 上的 cbeta-metadata 匯入：
 
@@ -26,7 +26,7 @@
 DocuSky 會讀 cbeta-metadata/textref 裡的目錄資料，
 測試版時還不要更新，等正式版再更新。
 
-## 替代典籍 對照表 匯入資料庫
+## 替代佛典 對照表 匯入資料庫
 
 由 GitHub 上的 cbeta-metadata 匯入，
 這要在上一個步驟 work id 都已匯入資料庫之後才能做：
@@ -63,7 +63,7 @@ DocuSky 會讀 cbeta-metadata/textref 裡的目錄資料，
 
     rake import:catalog
 
-## 更新「典籍所屬部類」資訊
+## 更新「佛典所屬部類」資訊
 
 由 GitHub 上的 cbeta-metadata 匯入:
 
@@ -75,9 +75,9 @@ DocuSky 會讀 cbeta-metadata/textref 裡的目錄資料，
 
     rake import:work_info
 
-## 匯入「典籍跨冊」資訊
+## 匯入「佛典跨冊」資訊
 
-如果有新增的典籍跨冊，要更新 cbeta-metadata/special-works
+如果有新增的佛典跨冊，要更新 cbeta-metadata/special-works
 
 這要在 import:work_info 之後做，跨冊的 title 才會對（ex: Y0030)。
 

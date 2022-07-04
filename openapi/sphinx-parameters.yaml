@@ -65,7 +65,7 @@ work:
   name: work
   in: query
   required: false
-  description: 典籍編號，限制搜尋範圍在某部典籍之中。
+  description: 佛典編號，限制搜尋範圍在某部佛典之中。
   example: T0026
   schema:
     type: string
@@ -73,7 +73,7 @@ works:
   name: works
   in: query
   required: false
-  description: 典籍編號列表，限制搜尋範圍在某些典籍之中。
+  description: 佛典編號列表，限制搜尋範圍在某些佛典之中。
   example: T0026,T0099
   schema:
     type: string
@@ -82,7 +82,7 @@ creator:
   in: query
   required: false
   description: |
-    作譯者ID列表，限制搜尋範圍在某些作譯者的典籍之中。
+    作譯者ID列表，限制搜尋範圍在某些作譯者的佛典之中。
 
     參數值如果為「a,b+c,d」格式，表示 (a OR b) AND (c OR d)，例如「禪宗部類+史傳部類」。
 
@@ -98,7 +98,7 @@ dynasty:
   name: dynasty
   in: query
   required: false
-  description: 朝代列表，限制搜尋範圍在某些朝代的典籍之中。
+  description: 朝代列表，限制搜尋範圍在某些朝代的佛典之中。
   example: 隋,唐
   schema:
     type: string
@@ -106,7 +106,7 @@ time:
   name: time
   in: query
   required: false
-  description: '西元年(ex: 800) 或 西元年期間(ex: 800..900)，限制搜尋範圍在這期間成立的典籍。'
+  description: '西元年(ex: 800) 或 西元年期間(ex: 800..900)，限制搜尋範圍在這期間成立的佛典。'
   example: '800..900'
   schema:
     type: string
@@ -171,9 +171,9 @@ order:
       * category: 部類
       * juan: 卷號
       * vol: 冊號，例如：T01
-      * work: 典籍編號，例如：T0001
-      * time_from: 典籍成立的起始年代
-      * time_to: 典籍成立的結束年代
+      * work: 佛典編號，例如：T0001
+      * time_from: 佛典成立的起始年代
+      * time_to: 佛典成立的結束年代
       * term_hits: 該卷中關鍵字出現的筆數
   example: year
   schema:

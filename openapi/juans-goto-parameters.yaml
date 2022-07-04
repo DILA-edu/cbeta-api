@@ -10,7 +10,7 @@ work:
   name: work
   in: query
   required: false
-  description: 典籍編號
+  description: 佛典編號
   example: 1
   schema:
     type: string

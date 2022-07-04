@@ -140,7 +140,7 @@ class WorksController < ApplicationController
       r << w.to_hash
     end
     
-    # 某些典籍跨冊，例如 T0220 的 vol 記錄為 T05..T07
+    # 某些 佛典 跨冊，例如 T0220 的 vol 記錄為 T05..T07
     Work.where('vol LIKE ?', '%..%').each do |w|
       vol1, vol2 = w.vol.split('..')
       if (vol1 <= v1) and (vol2 >= v2)

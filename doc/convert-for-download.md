@@ -30,7 +30,7 @@
 讀取 CBETA XML P5a, 每一卷都產生一個 Text 檔, 再壓縮為 zip 檔
 如果有圖檔，也會包在 zip 檔裡。
 
-整部典籍也包成一個 zip 檔。
+整部佛典也包成一個 zip 檔。
 
 先暫存在 data/text-for-download-tmp, 再移到 public/download/text
 
