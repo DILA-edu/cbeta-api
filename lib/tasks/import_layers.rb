@@ -93,11 +93,14 @@ class ImportLayers
 
     unless flag
       @mismatch += 1
-      @log.puts "<hr>\n"
-      @log.puts "mismatch: #{@mismatch}<br>\n"
-      @log.puts "名稱結束處文字不符<br>"
-      @log.puts "#{@work}<br>\n"
-      @log.puts row.to_s + "<br>\n"
+      @log_buf[:dirty] = true
+      @log_buf[:text] << <<~HTML
+        <hr>
+        mismatch: #{@mismatch}<br>
+        名稱結束處文字不符<br>
+        #{@work}<br>\n
+        #{row.to_s}<br>
+      HTML
     end
   end
 
@@ -117,7 +120,7 @@ class ImportLayers
 
     name = TERM_NOR[name] if TERM_NOR.key?(name)
 
-    @log.puts "check_start, name: #{name}, text: #{text}<br>\n"
+    @log_buf[:text] << "check_start, name: #{name}, text: #{text}<br>\n"
     if text.size < name.size
       flag = check_start_str(name, text)
     else
@@ -125,11 +128,14 @@ class ImportLayers
     end
     unless flag
       @mismatch += 1
-      @log.puts "<hr>\n"
-      @log.puts "mismatch: #{@mismatch}<br>\n"
-      @log.puts "名稱起始處文字不符\n"
-      @log.puts "#{@work}<br>\n"
-      @log.puts row.to_s + "<br>\n"
+      @log_buf[:dirty] = true
+      @log_buf[:text] << <<~HTML
+        <hr>
+        mismatch: #{@mismatch}<br>
+        名稱起始處文字不符
+        #{@work}<br>
+        #{row.to_s}<br>
+      HTML
     end
   end
 
@@ -147,12 +153,12 @@ class ImportLayers
     i = row['position'].to_i
     if i > line_text.size
       @mismatch += 1
-      @log.write <<~MSG
+      @log_buf[:dirty] = true
+      @log_buf[:text] << <<~MSG
         <hr>
         位置超出文字範圍<br>
         #{row.to_s}
       MSG
-      return
     end
 
     case row['type']
@@ -162,10 +168,13 @@ class ImportLayers
       check_end(line_text, i, row)
     else
       @mismatch += 1
-      @log.puts '-' * 10
-      @log.puts "mismatch: #{@mismatch}"
-      @log.puts "未知的 type: #{row['type']}"
-      @log.puts "key: #{row['key']}"
+      @log_buf[:dirty] = true
+      @log_buf[:text] << <<~MSG
+        <hr>
+        mismatch: #{@mismatch}
+        未知的 type: #{row['type']}
+        key: #{row['key']}
+      MSG
     end
   end
 
@@ -323,10 +332,10 @@ class ImportLayers
       @log.puts "#{@work}<br>\n"
       @log.puts "[Line: #{__LINE__}] HTML 檔裡找不到 #{id}<br>"
       return
-    else
-      @log.puts "<p>找到行號: #{start_lb}</p>"
     end
 
+    @log_buf = { dirty: false, text: '' }
+    @log_buf[:text] << "<p>找到行號: #{start_lb}</p>"
     start_lb.xpath("./following::span[@class='t']").each do |node|
       if node['l'] > lb
         puts '-' * 20
@@ -338,16 +347,18 @@ class ImportLayers
       @html_pos = node['w'].to_i - 1
       break if import_row_traverse(node)
     end
+
+    @log.puts @log_buf[:text] if @log_buf[:dirty]
   end
 
   def import_row_traverse(node)
-    @log.puts "import_row_traverse, l: #{node['l']}, w: #{node['w']}\n"
-    @log.puts "<blockquote>\n"
+    @log_buf[:text] << "import_row_traverse, l: #{node['l']}, w: #{node['w']}\n"
+    @log_buf[:text] << "<blockquote>\n"
     r = false
     node.children.each do |c| 
       next '' if c.comment?
 
-      @log.puts "layer_pos: #{@layer_pos}, html_pos: #{@html_pos}<br>\n"
+      @log_buf[:text] << "layer_pos: #{@layer_pos}, html_pos: #{@html_pos}<br>\n"
       if @row['type'] == 'start' and @html_pos > @layer_pos
         check_text(@line_text, @row)
         c.add_previous_sibling(@anchor)
@@ -372,7 +383,6 @@ class ImportLayers
         end
       end
 
-
       if c.text?
         if import_row_text(c)
           r = true
@@ -385,7 +395,7 @@ class ImportLayers
         end
       end
     end
-    @log.puts "</blockquote>\n"
+    @log_buf[:text] << "</blockquote>\n"
     r
   end
 
@@ -411,7 +421,7 @@ class ImportLayers
 
   def import_row_text(e)
     text = e.text
-    @log.puts "import_row_text, text: #{text}<br>\n"
+    @log_buf[:text] << "import_row_text, text: #{text}<br>\n"
     i = @html_pos + text.size
 
     if i < @layer_pos
