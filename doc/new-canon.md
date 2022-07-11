@@ -14,7 +14,6 @@
   * bulei_nav.xhtml
 * 更新部類目錄：手動編輯 catalog/cbeta.xml
 * 更新冊別目錄：例如呂澂著作，編輯 catalog/vol-lc.xml
-* 更新說明頁： /app/view/catalog.html.haml 各藏冊別目錄
 
 ### titles
 
@@ -25,23 +24,10 @@
   * titles/titles-by-canon
   * titles/all-title-byline.csv'
 
-### creators
+### work-info
 
-* 手動編輯 creators/creators-by-canon
-* 執行 creators/bin/list-all.rb
-  * input:
-    * creators/creators-by-canon
-    * titles/titles-by-canon
+* 手動編輯 work-info
 * 如果有新增 Authority ID, Github 上的 Authority XML 也要更新, 後面執行 `rake create:creators` 時要用到。
-
-### time
-
-* 手動編輯 time/year-by-canon
-* 執行 time/bin/dynasty-all.rb
-  * input: titles/titles-by-canon
-  * output
-    * time/dynasty-works.json
-    * time/dynasty-all.csv'
 
 ### textref
 

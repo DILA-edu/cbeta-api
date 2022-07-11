@@ -7,7 +7,7 @@ module Config
       v: 3, # 第幾季，用於 sphinx index 編號
       q1: '2022Q1', # 製作 change log 時比對 q1, q2
       q2: '2022Q3',
-      publish: '2022-04' # 版權資訊 => 版本記錄 => 發行日期
+      publish: '2022-07' # 版權資訊 => 版本記錄 => 發行日期
     }
 
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
