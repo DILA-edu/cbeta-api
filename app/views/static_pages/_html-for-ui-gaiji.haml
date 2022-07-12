@@ -1,15 +1,38 @@
 %h2#gaiji 缺字
+
+%p 如果有對應的 Unicode 3.0 以內字元，會直接採用，不會有任何標示。
+%p 否則會有如下標記：
+.code
+  %pre
+    :escaped
+      <a class='gaijiAnchor' href='CB缺字碼'>預設呈現字元</a>
+
+%p 「預設呈現字元」優先次序如下：
+%ul
+  %li Unicode 10.0 以內的字元
+  %li Unicode 通用字在 Unicode 10.0 以內
+  %li Big5 通用字
+  %li 組字式
+
 %p 例 T01n0011_p0223b16
 .code
   %pre
     :escaped
       <a class='gaijiAnchor' href='#CB00595'>麨</a>
 %p 上例中的 CB00595 是缺字碼，「麨」是它的通用字。
+
+
 %p 
-  CBETA 缺字資訊可以在這裡查到：
+  檔尾會以
+  %code &lt;span class="gaijiInfo"> 
+  標記提供相關資訊。例如：
+  .code
+    %pre
+      :escaped
+        <span id="CB00595" class="gaijiInfo" 
+          figure_url="https://raw.githubusercontent.com/cbeta-org/gaiji-CB/master/00/CB00595.gif" 
+          zzs="[麩-夫+少]">麨</span>
+
+%p 
+  完整的 CBETA 缺字資訊可以在這裡查到：
   =link_to nil, 'https://github.com/cbeta-org/cbeta_gaiji'
-%p 某些缺字沒有通用字，a 裡面就會包組字式，例如：T01n0020_p0261c10
-.code
-  %pre
-    :escaped
-      <a class='gaijiAnchor' href='#CB01887'>[佩-一]</a>
