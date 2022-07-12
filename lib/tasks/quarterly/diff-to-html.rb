@@ -386,8 +386,8 @@ class DiffToHTML
     fn = File.join(@config[:metadata], 'titles/all-title-byline.csv')
     r = {}
     CSV.foreach(fn, headers: true) do |row|
-      id = row['佛典編號']
-      r[id] = row['佛典名稱']
+      id = row['典籍編號']
+      r[id] = row['典籍名稱']
     end
     r
   end
