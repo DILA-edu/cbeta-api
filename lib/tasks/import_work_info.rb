@@ -134,11 +134,11 @@ class ImportWorkInfo
     @data_folder = Rails.application.config.cbeta_data
     fn = File.join(@data_folder, 'titles', 'all-title-byline.csv')
     CSV.foreach(fn, headers: true) do |row|
-      w = Work.find_by n: row['佛典編號']
+      w = Work.find_by n: row['典籍編號']
       if w.nil?
-        $stderr.puts "Work table 中無此編號: #{row['佛典編號']}"
+        $stderr.puts "#{__LINE__} Work table 中無此編號: #{row['典籍編號']}"
       else
-        w.update(title: row['佛典名稱'])
+        w.update(title: row['典籍名稱'])
       end
     end
   end
@@ -287,7 +287,7 @@ class ImportWorkInfo
   def update_work(data)
     w = Work.find_by n: @work
     if w.nil?
-      $stderr.puts "Work table 中無此編號: #{@work}"
+      $stderr.puts "#{__LINE__} Work table 中無此編號: #{@work}"
     else
       if data.key? :juan_list_array
         data[:juan_list] = data[:juan_list_array].join(',')

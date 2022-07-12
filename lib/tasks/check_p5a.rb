@@ -129,8 +129,8 @@ class CheckP5a
     fn = File.join(Rails.configuration.cbeta_data, 'titles/all-title-byline.csv')
     r = {}
     CSV.foreach(fn, headers: true) do |row|
-      id = row['佛典編號']
-      r[id] = row['佛典名稱']
+      id = row['典籍編號']
+      r[id] = row['典籍名稱']
     end
     r
   end
