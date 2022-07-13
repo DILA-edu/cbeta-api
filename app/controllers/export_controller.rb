@@ -1,6 +1,6 @@
 class ExportController < ApplicationController
   def all_creators
-    fn = File.join(Rails.application.config.cbeta_data, 'creators', 'all-creators.json')
+    fn = Rails.root.join('data', 'all-creators.json')
     s = File.read(fn)
     data = JSON.parse(s)
     r = {}

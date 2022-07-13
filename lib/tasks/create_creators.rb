@@ -5,26 +5,19 @@ class CreateCreatorsList
   end
   
   def create
-    fn = File.join(Rails.application.config.cbeta_data, 'creators', 'all-creators.json')
-    $stderr.puts "read #{fn}"
-    s = File.read(fn)
-    data = JSON.parse(s)
-
-    result = {}
-    data.each do |a|
-      id = a.first
-      if @person_names.key?(id)
-        result[id] = @person_names[id]
-      else
-        $stderr.puts "#{__LINE__} Authority 裡沒有 #{id}".red
-      end
-    end
+    result = read_contributors
 
     folder = Rails.root.join('data')
     FileUtils.makedirs(folder)
+
+    fn = File.join(folder, 'all-creators.json')
+    $stderr.puts "write #{fn}"
+    s = JSON.pretty_generate(@all_creators)
+    File.write(fn, s)
+
     fn = File.join(folder, 'all-creators-with-alias.json')
     $stderr.puts "write #{fn}"
-    s = JSON.pretty_generate(result)
+    s = JSON.pretty_generate(@all_creators_with_alias)
     File.write(fn, s)
   end
   
@@ -53,10 +46,46 @@ class CreateCreatorsList
       @person_names[id][:aliases_byline] = aliases_byline.to_a
     end
   end
+
+  def read_contributors
+    @all_creators = {}
+    @all_creators_with_alias = {}
+
+    folder = File.join(Rails.application.config.cbeta_data, 'work-info')
+    Dir["#{folder}/*.json"].each do |f|
+      $stderr.puts "read #{f}"
+      works = JSON.parse(File.read(f))
+
+      works.each_value do |work|
+        next unless work.key?('contributors')
+        work['contributors'].each do |h|
+          next unless h.key?('id')
+          id = h['id']
+          unless @all_creators.key?(id)
+            @all_creators[id] = h['name']
+          end
+          next if @all_creators_with_alias.key?(id)
+          if @person_names.key?(id)
+            @all_creators_with_alias[id] = @person_names[id]
+          else
+            $stderr.puts "#{__LINE__} Authority 裡沒有 #{id}".red
+          end
+        end
+      end
+    end
+
+    # 按 id 排序
+    @all_creators = @all_creators.to_a.sort
+    @all_creators_with_alias = @all_creators_with_alias.sort.to_h
+  end
   
   def read_person_authority
     @person_names = {}
-    fn = File.join(Rails.configuration.x.authority, 'authority_person', 'Buddhist_Studies_Person_Authority.xml')
+    fn = File.join(
+      Rails.configuration.x.authority, 
+      'authority_person', 
+      'Buddhist_Studies_Person_Authority.xml'
+    )
     $stderr.puts "read #{fn}"
     doc = File.open(fn) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
@@ -67,6 +96,5 @@ class CreateCreatorsList
       print number_with_delimiter(i) + ' ' if (i % 500) == 0
     end
   end
-
 
 end
