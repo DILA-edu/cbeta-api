@@ -1,3 +1,4 @@
+# 停用，完全按照 authority 的資料
 require 'net/http'
 class DiffCreators
   def self.diff

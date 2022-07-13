@@ -1,3 +1,4 @@
+# 停用, 改用 import_work_info, 2022-07
 # import byline, creators from cbeta metadata
 
 require 'pp'

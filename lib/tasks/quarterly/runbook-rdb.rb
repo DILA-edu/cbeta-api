@@ -38,6 +38,12 @@ module RunbookSectionRDB
       end
 
       step '匯入 佛典資訊 (經名、卷數、title) (rake import:work_info)' do
+        # 要從 authority.dila 更新【大正藏】作譯者資料到 GitHub cbeta-metadata.
+        #   (參考 2019-08-29 會議記錄)
+        confirm <<~MSG
+          要先執行 cbeta-metadata/work-info/bin/update-from-authority.rb
+          從 authority.dila 《大正藏》作譯者資料 更新到 GitHub cbeta-metadata
+        MSG
         command 'rake import:work_info'
       end
 
@@ -48,27 +54,20 @@ module RunbookSectionRDB
         command 'rake import:cross'
       end
 
-      ## 要從 authority.dila 更新【大正藏】作譯者資料到 GitHub cbeta-metadata.
-      ## (參考 2019-08-29 會議記錄)
-      #step '比對 authority 與 github cbeta-metadata 的【大正藏】作譯者資料差異' do
-      #  command 'rake custom:compare_creators'
-      #  note '有差異的地方請佳瑜修改'
+      # 改讀 work-info, 2022-07
+      #step '匯入 作譯者 (rake import:creators)' do
+      #  command 'rake import:creators'
       #end
-
-      step '匯入 作譯者 (rake import:creators)' do
-        confirm 'authority.dila 《大正藏》作譯者資料已更新到 GitHub cbeta-metadata'
-        command 'rake import:creators'
-      end
 
       step '匯入地理資訊 (rake import:place)' do
         command 'rake import:place'
       end
 
-      step '匯入時間資訊 (rake import:time)' do
-        command 'rake import:time'
-        note '會產生一個全部朝代列表：log/dynasty-all.txt'
-      end
-
+      # 改讀 work-info, 2022-07
+      #step '匯入時間資訊 (rake import:time)' do
+      #  command 'rake import:time'
+      #  note '會產生一個全部朝代列表：log/dynasty-all.txt'
+      #end
 
       step '匯入 卍續藏 行號對照表 (rake import:lb_maps)' do
         command 'rake import:lb_maps'

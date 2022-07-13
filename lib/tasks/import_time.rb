@@ -1,3 +1,5 @@
+# 停用, 改用 import_work_info, 2022-07
+
 class ImportTime
   def initialize
     @folder = File.join(Rails.application.config.cbeta_data, 'time', 'year-by-canon')

@@ -24,7 +24,7 @@ class ImportWorkInfo
   def import
     import_from_xml
     import_from_alt
-    import_title_from_metadata
+    import_from_metadata
     puts "total_cjk_chars: %s" % number_with_delimiter(@total_cjk_chars)
     puts "total_en_words: %s" % number_with_delimiter(@total_en_words)
     puts "單部佛典最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
@@ -130,17 +130,64 @@ class ImportWorkInfo
     end
   end
 
-  def import_title_from_metadata
-    @data_folder = Rails.application.config.cbeta_data
-    fn = File.join(@data_folder, 'titles', 'all-title-byline.csv')
-    CSV.foreach(fn, headers: true) do |row|
-      w = Work.find_by n: row['典籍編號']
-      if w.nil?
-        $stderr.puts "#{__LINE__} Work table 中無此編號: #{row['典籍編號']}"
-      else
-        w.update(title: row['典籍名稱'])
+  def import_from_metadata
+    @people_inserts = []
+
+    each_canon(@xml_root) do |c|
+      fn = File.join(@data_folder, 'work-info', "#{c}.json")
+      puts "update from #{fn}"
+      works_info = JSON.parse(File.read(fn))
+      works_info.each do |k, v|
+        w = Work.find_by n: k
+        if w.nil?
+          $stderr.puts "#{__LINE__} Work table 中無此編號: #{k}"
+        else
+          update_work_from_metadata(w, v)
+        end
       end
     end
+
+    insert_into_people
+  end
+
+  def insert_into_people
+    puts "Insert #{@people_inserts.size} records into people table:"
+    sql = 'INSERT INTO people '
+    sql += '("id2", "name")'
+    sql += ' VALUES ' + @people_inserts.join(", ")
+    puts Benchmark.measure {
+      ActiveRecord::Base.connection.execute(sql) 
+    }
+  end
+
+  def update_work_from_metadata(w, v)
+    w.title = v['title']
+    w.byline = v['byline']
+
+    if v.key?('contributors')
+      people = v['contributors']
+
+      people.each do |x|
+        @people_inserts << "('#{x['id']}', '#{x['name']}')"
+      end  
+
+      a = people.map { |x| x['name'] }
+      w.creators = a.join(',')
+
+      a = people.map { |x| "#{x['name']}(#{x['id']})" }
+      w.creators_with_id = a.join(';')
+    end
+
+    if v.key?('dynasty')
+      w.time_dynasty = v['dynasty']
+    else
+      w.time_dynasty = 'unknown'
+    end
+
+    w.time_from = v['time_from'] if v.key?('time_from')
+    w.time_to   = v['time_to']   if v.key?('time_to')
+
+    w.save
   end
   
   def import_vol(path)
