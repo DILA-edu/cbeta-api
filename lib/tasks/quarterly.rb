@@ -8,7 +8,7 @@ class Quarterly
   require_relative 'quarterly/runbook-convert'
   require_relative 'quarterly/runbook-sphinx'
   require_relative 'quarterly/runbook-kwic'
-  require_relative 'quarterly/runbook-download-ebook'
+  require_relative 'quarterly/runbook-download-ebooks'
 
   def initialize(env)
     @config = get_config(env)
@@ -75,7 +75,7 @@ class Quarterly
   include RunbookSectionConvert
   include RunbookSectionSphinx
   include RunbookSectionKwic
-  include RunbookSectionDownloadEbook
+  include RunbookSectionDownloadEbooks
 
   def define_runbook(config)
     section_prepare    = define_section_prepare(config)
@@ -86,7 +86,7 @@ class Quarterly
     section_convert    = define_section_convert(config)
     section_sphinx     = define_section_sphinx(config)
     section_kwic       = define_section_kwic(config)
-    section_download_ebook = define_section_download_ebook(config)
+    section_download_ebooks = define_section_download_ebooks(config)
   
     Runbook.book "CBData Quarterly" do
       description "CBData 每季更新\n"
@@ -100,7 +100,7 @@ class Quarterly
       add section_convert
       add section_sphinx
       add section_kwic  unless config[:env] == 'staging'
-      add section_download_ebook
+      add section_download_ebooks
     end
   end
 end
