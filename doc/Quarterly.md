@@ -6,8 +6,12 @@ CBETA XML 新一季定案後執行。
 
 ## 編輯 config 參數
 
-* config/application.rb
-* config/deploy/staging.rb
+* config
+  * application.rb
+  * deploy/staging.rb
+  * environments
+    * staging.rb: config.x.q
+    * production.rb: config.x.q
 * lib/tasks/quarterly/config.rb
 
 ## 從 GitHub 更新資料
@@ -58,9 +62,13 @@ CBETA XML 新一季定案後執行。
 
 ## EPUB 給 heaven 轉 PDF, MOBI
 
+2022-07 起，EPUB 也改由 heaven 產生。
+
 ## 電子書
 
-rake download:ebooks
+下載 heaven 做好的 EPUB, PDF, Mobi
+
+    rake download:ebooks
 
 ## 檢測
 

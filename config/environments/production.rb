@@ -3,7 +3,7 @@ Rails.application.configure do
   
   config.x.v = '1'
   config.x.ver = '1.2.27'
-  config.x.q = '2022q1' # 季號
+  config.x.q = '2022q3' # 季號
 
   GIT = '/home/ray/git-repos'
   config.x.git = GIT
