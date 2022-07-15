@@ -5,12 +5,19 @@ class DownloadEbooks
     @q = Rails.configuration.x.q
   end
 
-  def run
+  def run(type=nil)
     dest_folder = Rails.root.join('public', 'download')
     Dir.chdir(dest_folder) do
-      download_one_zip('epub')
-      download_one_zip('mobi')
-      download_pdf
+      case type
+      when 'epub', 'mobi'
+        download_one_zip(type)
+      when 'pdf'
+        download_pdf
+      else
+        download_one_zip('epub')
+        download_one_zip('mobi')
+        download_pdf
+      end
     end
   end
 

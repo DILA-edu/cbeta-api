@@ -70,6 +70,10 @@ CBETA XML 新一季定案後執行。
 
     rake download:ebooks
 
+也可以指定下載其中一種，例如：
+
+    rake download:ebooks[epub]
+
 ## 檢測
 
 /Users/ray/Documents/Projects/CBETAOnline/test
