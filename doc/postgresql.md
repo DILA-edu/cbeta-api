@@ -31,6 +31,9 @@ change to the postgres unix user
 
 ### create database
 
+在 psql 裡可以用 `\l` 列出已有哪些 database.
+
+建新 database 方法：
     create database cbdata1;
     create database cb_analytics;
     grant all privileges on database cbdata1 to pgcbapi;
@@ -78,6 +81,6 @@ change to the postgres unix user
 
 查看 database 佔用的磁碟空間
 
-    sudo su - postgres 
+    sudo su - postgres
     psql
     postgres=# SELECT pg_database_size('cbdata13');

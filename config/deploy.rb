@@ -1,7 +1,7 @@
 # config valid only for current version of Capistrano
 lock '3.16.0'
 
-set :application, 'cbapi1'
+set :application, 'cbapi4'
 set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
 # deploy current branch

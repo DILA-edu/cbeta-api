@@ -24,8 +24,8 @@ cap staging deploy
   * \q
   * exit
 * 測試連線
-  * sudo su - pg_cbdata
-  * psql -d cbdata15 -U pg_cbdata
+  * sudo su - pgcbapi
+  * psql -d cbdata4 -U pgcbapi
   * \q
   * exit
 
