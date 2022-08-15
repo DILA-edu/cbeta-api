@@ -6,6 +6,7 @@
   * set application
 * 修改 config/deploy/staging.rb
   * deploy_to
+* 修改 lib/tasks/quarterly/config.rb
 
 ## Deploy
 

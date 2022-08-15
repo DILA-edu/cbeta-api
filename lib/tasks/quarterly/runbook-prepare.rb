@@ -47,6 +47,7 @@ module Prepare
     return nil unless Dir.exist?(config[:old_data])
 
     Runbook.step '從上一季複製 data 資料夾' do
+      confirm "請確認將由 #{config[:old_data]} 複製資料到 #{config[:data]}"
       ruby_command do |rb_cmd, metadata, run|
         Quarterly.copy_folder(config[:old_data], config[:data], ['figures'])
       end

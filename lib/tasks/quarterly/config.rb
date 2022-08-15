@@ -1,14 +1,20 @@
 module Config
-  APP1 = 'cbapi1' # 用於：從上一季複製資料
-  APP2 = 'cbapi3' # 有時候會跳過一季
+  Q1 = '2022Q3'
+  Q2 = '2022Q4' # 有時候會跳過一季
 
   def get_config(env=nil)
+    app1 = Q1.sub(/^\d+Q(\d)$/, 'cbapi\1') # 用於：從上一季複製資料
+    app2 = Q2.sub(/^\d+Q(\d)$/, 'cbapi\1')
+
     r = {
-      v: 3, # 第幾季，用於 sphinx index 編號
-      q1: '2022Q1', # 製作 change log 時比對 q1, q2
-      q2: '2022Q3',
-      publish: '2022-07' # 版權資訊 => 版本記錄 => 發行日期
+      v:  Q2[-1].to_i, # 第幾季，用於 sphinx index 編號
+      q1: Q1, # 製作 change log 時比對 q1, q2
+      q2: Q2,
+      publish: '2022-10' 
     }
+
+    # 版權資訊 => 版本記錄 => 發行日期
+    r[:publish] = "#{Q2[0, 4]}-%02d" % (r[:v] * 3 - 2)
 
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
     r[:env] = env || Rails.env
@@ -17,9 +23,9 @@ module Config
     case Rails.env
     when 'production'
       r[:git]           = '/home/ray/git-repos'
-      r[:old]           = "/var/www/#{APP1}/shared"
+      r[:old]           = "/var/www/#{app1}/shared"
       r[:old_data]      = File.join(r[:old],  'data')
-      r[:root]          = "/var/www/#{APP2}/shared"
+      r[:root]          = "/var/www/#{app2}/shared"
       r[:change_log]    = '/home/ray/cbeta-change-log'
       r[:ebook_convert] = '/usr/bin/ebook-convert'
     when 'development'
