@@ -30,7 +30,6 @@ Rails.application.routes.draw do
   match 'juans', to: 'juans#index', via: [:get, :post]
 
   match 'kwic3/juan', to: 'kwic3#juan', via: [:get, :post]
-  match 'kwic3',      to: 'kwic3#index', via: [:get, :post]
   
   match 'lines', to: 'lines#index', via: [:get, :post]
   

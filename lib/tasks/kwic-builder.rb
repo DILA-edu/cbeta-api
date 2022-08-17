@@ -21,7 +21,9 @@ class KwicBuilder
     if Rails.env == 'cn'
       @sa_units = ['juan']
     else
-      @sa_units = %w(juan work canon category all)
+      # 本來有 all, canon, category 等多種 index
+      # 2022-08 改成只限單卷
+      @sa_units = %w(juan)
     end
 
     @html_base = Rails.configuration.x.kwic.html
