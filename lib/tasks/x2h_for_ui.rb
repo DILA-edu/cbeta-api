@@ -92,6 +92,7 @@ class P5aToHTMLForUI
     @next_line_buf = ''
     @notes_mod = {}
     @notes_add = {}
+    @note_star_count = Hash.new(0)
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
     $stderr.print "\nx2h_for_ui #{@sutra_no}"
@@ -203,7 +204,9 @@ class P5aToHTMLForUI
     r = ''
     if e['type'] == 'star'
       c = e['corresp'][1..-1]
-      r = "<a class='noteAnchor star' href='#n#{c}'></a>"
+      @note_star_count[c] += 1
+      star_no = "#{c[-3..-1].to_i}-#{@note_star_count[c]}"
+      r = "<a class='noteAnchor star' href='#n#{c}' data-star-no='#{star_no}'></a>"
     end
     r + traverse(e)
   end
