@@ -728,7 +728,14 @@ class P5aToHTMLForUI
       when 'orig'       then return e_note_orig(e)
       when 'mod'
         @notes_mod[@juan][n] = traverse(e, 'footnote')
-        return "<a class='noteAnchor' href='#n#{n}'></a>"
+
+        node = HtmlNode.new('a')
+        node['class'] = 'noteAnchor'
+        node['href'] = "#n#{n}"
+        node['data-key'] = e['note_key'] if e.key?('note_key')
+        node.to_s + "\n"
+
+        return node.to_s
       when 'star'
         href = 'n' + e['corresp'].sub(/^#(.*)$/, '\1')
         return "<a class='noteAnchor star' href='##{href}'></a>"
