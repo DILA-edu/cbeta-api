@@ -123,6 +123,11 @@ class ConvertToc
     end
     current = @toc_stack[-1]
     data = { title: e.text, file: @file, juan: @juan, lb: @lb }
+    data[:type] = e['type'] if e.key?('type')
+    data[:title].match(/^(\d+)/) do
+      data[:n] = $1.to_i
+    end
+
     if current.is_a?(Hash)
       current[:isFolder] = true
       current[:children] = []
@@ -133,7 +138,6 @@ class ConvertToc
     @toc_stack << data
   end
   
-    
   def convert_vol(path)
     Dir.entries(path).sort.each do |f|
       next if f.start_with? '.'
