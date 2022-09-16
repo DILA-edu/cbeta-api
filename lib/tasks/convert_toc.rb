@@ -124,8 +124,10 @@ class ConvertToc
     current = @toc_stack[-1]
     data = { title: e.text, file: @file, juan: @juan, lb: @lb }
     data[:type] = e['type'] if e.key?('type')
-    data[:title].match(/^(\d+)/) do
+    if m = data[:title].match(/^(\d+)/)
       data[:n] = $1.to_i
+    elsif e.key?('n')
+      data[:n] = e['n'].to_i
     end
 
     if current.is_a?(Hash)
