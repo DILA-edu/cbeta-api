@@ -113,6 +113,18 @@ class P5aToTextForDownload
     r
   end
   
+  def e_caesura(e)
+    i = 2
+    
+    if e.key?('style')
+      e['style'].match(/text-indent:(\d+)em/) do
+        i = $1.to_i
+      end
+    end
+
+    return '　' * i
+  end
+  
   def e_foreign(e)
     return '' if e.key?('place') and e['place'].include?('foot')
     traverse(e)
@@ -320,6 +332,7 @@ class P5aToTextForDownload
     end
     
     r = case e.name
+    when 'caesura'   then e_caesura(e)
     when 'foreign'   then e_foreign(e)
     when 'g'         then e_g(e)
     when 'graphic'   then e_graphic(e)
