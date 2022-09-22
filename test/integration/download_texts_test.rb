@@ -1,4 +1,4 @@
-require "application_system_test_case"
+require "test_helper"
 
 class DownloadTextsTest < ActionDispatch::IntegrationTest
   test "download text" do
