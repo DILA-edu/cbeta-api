@@ -17,14 +17,15 @@
     %p
       Total: 
       = number_with_delimiter(@total)
-    -#%table.table.table-striped.fit
-    %table.table-striped
+    %table.table-striped.table-bordered
       %tr
         %th URL
+        %th Referer
         %th Count
       - total = 0
       - @visits.each do |a|
         - total += a[1]
         %tr
-          %td.fit= a[0]
+          %td.fit= a[0][0]
+          %td.fit= a[0][1]
           %td.text-right.fit= number_with_delimiter(a[1])

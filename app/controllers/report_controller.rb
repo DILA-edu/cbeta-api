@@ -9,7 +9,7 @@ class ReportController < ApplicationController
   def url
     @d1 = h2d(params[:d1])
     @d2 = h2d(params[:d2])
-    @visits = Visit.where(:accessed_at => @d1..@d2).group(:url)
+    @visits = Visit.where(:accessed_at => @d1..@d2).group(:url, :referer)
     h = @visits.sum(:count)
     @visits = h.sort_by { |k,v| -v }
     @total = @visits.sum(0) { |x| x[1] }

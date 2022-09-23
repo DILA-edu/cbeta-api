@@ -10,13 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_11_10_030553) do
+ActiveRecord::Schema.define(version: 2022_09_23_035010) do
 
   create_table "visits", force: :cascade do |t|
     t.string "url"
     t.date "accessed_at"
     t.integer "count"
+    t.string "referer"
     t.index ["url", "accessed_at"], name: "index_visits_on_url_and_accessed_at"
+    t.index ["url", "referer", "accessed_at"], name: "index_visits_on_url_and_referer_and_accessed_at"
   end
 
 end

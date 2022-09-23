@@ -132,7 +132,29 @@ class ApplicationController < ActionController::Base
   end
 
   def record_visit
-    v = Visit.find_or_create_by(url: request.path, accessed_at: Date.today)
+    path = request.path
+
+    # 開發版 不記錄
+    #return if path.start_with?('/dev/')
+
+    # 去掉 sub domain
+    path.sub!(%r{^/(stable|v1.2)/}, '/')
+
+    referer = request.referer
+    unless referer.nil?
+      # 如果 referer 來自 CBData, 只記錄 host name
+      if Rails.env.development?
+        referer.sub!(%r{^(http://localhost:3000)/.*$}, '\1')
+      else
+        referer.sub!(%r{^(https://cbdata.dila.edu.tw)/.*$}, '\1')
+      end
+    end
+
+    v = Visit.find_or_create_by(
+      url: path, 
+      referer: referer,
+      accessed_at: Date.today
+    )
     v.update(count: v.count + 1)
   end
   
