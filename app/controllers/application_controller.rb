@@ -138,7 +138,7 @@ class ApplicationController < ActionController::Base
     #return if path.start_with?('/dev/')
 
     # 去掉 sub domain
-    path.sub!(%r{^/(stable|v1.2)/}, '/')
+    path.sub!(%r{^/(dev|stable|v1.2)/}, '/')
 
     referer = request.referer
     unless referer.nil?
