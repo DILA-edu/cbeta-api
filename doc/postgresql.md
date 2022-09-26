@@ -36,10 +36,13 @@ change to the postgres unix user
 建新 database 方法：
     create database cbdata1;
     create database cb_analytics;
+    create database analytics_dev;
     grant all privileges on database cbdata1 to pgcbapi;
     grant all privileges on database cb_analytics to pgcbapi;
+    grant all privileges on database analytics_dev to pgcbapi;
     ALTER DATABASE cbdata1 OWNER TO pgcbapi;
     ALTER DATABASE cb_analytics OWNER TO pgcbapi;
+    ALTER DATABASE analytics_dev OWNER TO pgcbapi;
 
 執行 `\q` 離開 PostgreSQL console.
 

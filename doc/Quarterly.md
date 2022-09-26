@@ -81,6 +81,12 @@ CBETA XML 新一季定案後執行。
     ruby test.rb dev
     ruby test-by-change-log.rb 2019Q4
 
+## 切換為正式版
+
+修改 server 上的 /etc/apache2/sites-available
+  * cbdata-sub.conf
+  * cbdata-cn.conf
+
 ## 建立下一季開發環境
 
 * 建 database, 參考 postgresql.md

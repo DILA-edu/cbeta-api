@@ -3,7 +3,8 @@ class ReportController < ApplicationController
     @visits = Visit.group(:accessed_at).order(accessed_at: :desc).sum(:count)
     a = @visits.values
     @max = a.max
-    @avg = a.sum(0) / a.size
+    @sum = a.sum(0)
+    @avg = @sum / a.size
   end
 
   def url
