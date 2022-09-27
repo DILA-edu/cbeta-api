@@ -34,7 +34,7 @@ Rails.application.routes.draw do
   match 'lines', to: 'lines#index', via: [:get, :post]
   
   get 'report/access'
-  get 'report/daily', to: 'report#daily'
+  get 'report/daily', to: 'report#daily', as: :report_daily
   match 'report/url', to: 'report#url', as: :report_url, via: [:get, :post]
 
   match 'sphinx/all_in_one', via: [:get, :post]

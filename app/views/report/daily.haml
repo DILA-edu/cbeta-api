@@ -1,6 +1,7 @@
 .row.justify-content-center
   .col-auto
     %h1 API 存取次數 日統計表
+    %p.text-center= link_to 'Export CSV', report_daily_path(format: "csv")
     %p
       資料庫總筆數： 
       =number_with_delimiter(Visit.count)
