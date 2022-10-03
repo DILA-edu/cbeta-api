@@ -99,3 +99,8 @@ gem 'runbook'
 gem 'diff-lcs'
 gem 'unihan2', '>= 0.2.0'
 gem 'open3'
+
+# fix error: cannot load such file -- net/smtp
+gem 'net-smtp', require: false
+gem 'net-imap', require: false
+gem 'net-pop', require: false
