@@ -13,11 +13,6 @@ class KwicBuilder
     @work_base = Rails.configuration.x.kwic.temp
     @sa_base = File.join(@work_base, 'sa')
     
-    # work id 對應 部類名稱
-    fn = Rails.root.join('data-static', 'categories.json')
-    s = File.read(fn)
-    @categories = JSON.parse(s)
-
     if Rails.env == 'cn'
       @sa_units = ['juan']
     else
@@ -31,16 +26,7 @@ class KwicBuilder
   end
   
   def abs_sa_path(sa_unit, fn)
-    relative_path = case sa_unit
-    when 'juan'     then File.join(@work, @juan)
-    when 'work'     then File.join(@work)
-    when 'canon'    then File.join(@canon)
-    when 'category' then File.join(@category)
-    when 'all'      then ''
-    else
-      abort "error: 錯誤的 sa_unit"
-    end
-  
+    relative_path = File.join(@work, @juan)  
     folder = File.join(@sa_base, sa_unit, relative_path)
     FileUtils.mkdir_p folder
     File.join(folder, fn)
@@ -60,7 +46,6 @@ class KwicBuilder
     @canon, @vol, @work_fn, @juan = rel_path.split('/')
     @work = CBETA.get_work_id_from_file_basename(@work_fn)
     @juan.sub!(/^(.*)\.html$/, '\1')
-    @category = @categories[@work] || '其他'
   
     before_parse_html
   

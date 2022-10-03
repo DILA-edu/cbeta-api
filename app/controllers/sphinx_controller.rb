@@ -24,7 +24,7 @@ class SphinxController < ApplicationController
     return empty_result if @q.empty?
 
     t1 = Time.now
-    key = "#{Rails.configuration.x.v}/%s" % params.to_s
+    key = "#{Rails.configuration.x.q}/%s" % params.to_s
     r = Rails.cache.fetch(key) do
       all_in_one_sub
     end
@@ -549,7 +549,7 @@ class SphinxController < ApplicationController
       end
     when 'category'
       # 取得部類名稱
-      fn = File.join(Rails.application.config.cbeta_data, 'category', 'categories.json')
+      fn = Rails.root.join('data-static', 'categories.json')
       categories = JSON.parse(File.read(fn))
       r.each do |row|
         id = row[:category_id].to_s

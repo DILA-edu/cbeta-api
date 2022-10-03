@@ -6,6 +6,8 @@
 
 ### category
 
+2022 Q4 起改用 Authority.
+
 手動編輯 category/work_categories.json
 
 ### catalog

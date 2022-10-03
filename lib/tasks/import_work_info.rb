@@ -10,6 +10,13 @@ class ImportWorkInfo
     @work_info_dir = Rails.configuration.x.work_info    
     @xml_root      = Rails.configuration.cbeta_xml
     
+    @category_name2id = {}
+    fn = Rails.root.join('data-static', 'categories.json')
+    h = JSON.load_file(fn)
+    h.each do |k, v|
+      @category_name2id[v] = k
+    end
+
     fn = Rails.root.join('log', 'import.log')
     @log = File.open(fn, 'w')
     
@@ -209,7 +216,7 @@ class ImportWorkInfo
       @canon = c
       fn = File.join(@work_info_dir, "#{c}.json")
       puts "update from #{fn}"
-      works_info = JSON.parse(File.read(fn))
+      works_info = JSON.load_file(fn, symbolize_names: true)
       works_info.each do |k, v|
         w = Work.find_or_create_by(n: k)
         update_work_from_authority(w, v)
@@ -230,18 +237,18 @@ class ImportWorkInfo
   end
 
   def update_contributors(w, v)
-    return unless v.key?('contributors')
+    return unless v.key?(:contributors)
 
-    people = v['contributors']
+    people = v[:contributors]
     people.each do |x|
-      @people_inserts << "('#{x['id']}', '#{x['name']}')"
+      @people_inserts << "('#{x[:id]}', '#{x[:name]}')"
     end
 
-    a = people.map { |x| x['name'] }
+    a = people.map { |x| x[:name] }
     w.creators = a.join(',')
 
-    a = people.select { |x| x.key?('id') }
-    a.map! { |x| "#{x['name']}(#{x['id']})" }
+    a = people.select { |x| x.key?(:id) }
+    a.map! { |x| "#{x[:name]}(#{x[:id]})" }
     w.creators_with_id = a.join(';')
   end
 
@@ -251,8 +258,8 @@ class ImportWorkInfo
       title: title
     }
 
-    if v.key?('dynasty')
-      d = v['dynasty']
+    if v.key?(:dynasty)
+      d = v[:dynasty]
       w.time_dynasty = d      
       @works_dynasty[d] << work_h
     else
@@ -263,29 +270,30 @@ class ImportWorkInfo
 
   def update_work_from_authority(w, v)
     w.canon     = @canon
-    w.vol       = v['vol']
-    w.title     = v['title']
-    w.byline    = v['byline']
-    w.work_type = v['type'] || 'textbody' # 預設：正文
+    w.vol       = v[:vol]
+    w.title     = v[:title]
+    w.byline    = v[:byline]
+    w.work_type = v[:type] || 'textbody' # 預設：正文
 
-    title = v['title'].sub(/\(第\d+卷\-第\d+卷\)$/, '')
+    title = v[:title].sub(/\(第\d+卷\-第\d+卷\)$/, '')
     title.sub!(/\(第\d+卷\)$/, '')
     long_title = "#{w.n} #{title}"
     unless %w(N Y ZS ZW).include? @canon
-      long_title << " (#{v['juans']}卷)"
+      long_title << " (#{v[:juans]}卷)"
     end
-    long_title << "【#{v['byline']}】" if v.key?('byline')
+    long_title << "【#{v[:byline]}】" if v.key?(:byline)
 
     update_contributors(w, v)
-    update_dynasty(w, v, long_title)  
+    update_dynasty(w, v, long_title)
+    update_category(w, v)
 
-    w.time_from = v['time_from'] if v.key?('time_from')
-    w.time_to   = v['time_to']   if v.key?('time_to')
+    w.time_from = v[:time_from] if v.key?(:time_from)
+    w.time_to   = v[:time_to]   if v.key?(:time_to)
 
-    if v.key?('alt')
+    if v.key?(:alt)
       # 例 B0130 因為 CBETA 也有選錄部份為 B23n0130, 所以不把 B0130 當做 alt
-      unless v['alt'].include? '選錄'        
-        w.alt = v['alt']
+      unless v[:alt].include? '選錄'        
+        w.alt = v[:alt]
       end
     end
 
@@ -432,7 +440,26 @@ class ImportWorkInfo
     s = File.read(fn)
     JSON.parse(s)
   end
-  
+
+  def update_category(w, v)
+    w.orig_category = v[:orig_category] if v.key?(:orig_category)
+
+    return unless v.key?(:category)
+
+    names = v[:category]
+    w.category = names
+
+    # 一部佛典可能屬於多個部類，例如 T2732
+    a = names.split(',').map do |name|
+      if @category_name2id.key?(name)
+        @category_name2id[name]
+      else
+        abort "#{__LINE__} category name 不存在： #{name}"
+      end
+    end
+    w.category_ids = a.join(',')
+  end
+
   def update_work(data)
     w = Work.find_by n: @work
     if w.nil?

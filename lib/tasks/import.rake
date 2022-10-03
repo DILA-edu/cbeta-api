@@ -11,14 +11,7 @@ namespace :import do
     importer = ImportCatalog.new
     importer.import args[:arg1]
   end
-  
-  desc "匯入 CBETA 部類"
-  task :category => :environment do
-    require "tasks/import_category"
-    importer = ImportCategory.new
-    importer.import
-  end
-    
+      
   desc "匯入佛典跨冊資訊"
   task :cross => :environment do
     require "tasks/import_cross"

@@ -50,7 +50,7 @@ class KwicService
     @txt_folder = File.join(base, 'text') # 含有標點的純文字檔
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
     @current_sa_path = nil
-    @cache = Rails.configuration.x.v
+    @cache = Rails.configuration.x.q
     @sa_files = {}
     @text_files = {}
   end
