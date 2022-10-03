@@ -69,9 +69,9 @@ class ImportWorkInfo
         
         dynasty_h = { key: dynasties }
         title = "#{dynasties} #{y1} "
-        title << y1<0 ? 'BCE' : 'CE'
+        title << (y1<0 ? 'BCE' : 'CE')
         title << " ~ #{y2} "
-        title << y2<0 ? 'BCE' : 'CE'
+        title << (y2<0 ? 'BCE' : 'CE')
         dynasty_h[:title] = title
         dynasty_h[:children] = works
         @dynasty_works << dynasty_h
@@ -296,7 +296,7 @@ class ImportWorkInfo
       data[:cjk_chars] = data[:cjk_chars].size
       data[:en_words]  = data[:en_words].size
 
-      update_xml_files(xml_path, data[:juan], data[:juan_start])
+      update_xml_files(xml_path, data[:juan_start])
       
       update_work(data)
     end
@@ -323,15 +323,12 @@ class ImportWorkInfo
       info = get_info_from_xml(xml_path)
       if data.nil?
         data = info
-        update_xml_files(xml_path, data[:juan], data[:juan_start])
+        update_xml_files(xml_path, data[:juan_start])
       else
-        data[:juan] += info[:juan]
-
         # 如果是 卷跨冊
         unless data[:juan_list_array].empty? and info[:juan_list_array].empty?
           if data[:juan_list_array].last == info[:juan_list_array].first
             info[:juan_list_array].shift
-            data[:juan] -= 1
           end
         end
         
@@ -448,10 +445,9 @@ class ImportWorkInfo
     end
   end
   
-  def update_xml_files(xml_path, juans, juan_start)
+  def update_xml_files(xml_path, juan_start)
     XmlFile.find_or_create_by(vol: @vol, work: @work) do |w|
       w.file = File.basename(xml_path, '.xml')
-      w.juans =  juans
       w.juan_start = juan_start
     end
   end
