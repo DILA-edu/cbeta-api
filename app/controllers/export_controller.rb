@@ -64,20 +64,19 @@ class ExportController < ApplicationController
   end
   
   def creator_strokes
-    fn = File.join(Rails.application.config.cbeta_data, 'creators', 'creators-by-strokes.json')
+    fn = Rails.root.join('data', 'creators-by-strokes.json')
     s = File.read(fn)
     render :json => s
   end
   
   def creator_strokes_works
-    fn = 'creators-by-strokes-with-works.json'
-    fn = File.join(Rails.application.config.cbeta_data, 'creators', fn)
+    fn = Rails.root.join('data', 'creators-by-strokes-with-works.json')
     s = File.read(fn)
     render :json => s
   end
   
   def dynasty
-    fn = File.join(Rails.application.config.cbeta_data, 'time', 'dynasty-all.csv')
+    fn = Rails.root.join('data', 'dynasty-all.csv')
     s = File.read(fn)
     r = {}
     r[:num_found] = s.split("\n").size - 1
@@ -86,7 +85,7 @@ class ExportController < ApplicationController
   end
 
   def dynasty_works
-    fn = File.join(Rails.application.config.cbeta_data, 'time', 'dynasty-works.json')
+    fn = Rails.root.join('data', 'dynasty-works.json')
     s = File.read(fn)
     render :json => s
   end

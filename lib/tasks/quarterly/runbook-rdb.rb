@@ -11,15 +11,9 @@ module RunbookSectionRDB
         command 'rake import:toc'
       end
 
-      step '匯入 全部佛典編號 (rake import:work_id)' do
-        command 'rake import:work_id'
-      end
-
-      # 由 GitHub 上的 cbeta-metadata 匯入，
-      # 這要在上一個步驟 work id 都已匯入資料庫之後才能做：
-      step '替代佛典 對照表 匯入資料庫 (rake import:alt)' do
-        command 'rake import:alt'
-      end
+      #step '匯入 全部佛典編號 (rake import:work_id)' do
+      #  command 'rake import:work_id'
+      #end
 
       step '匯入 行資訊 (rake import:lines, 約需 22 分鐘)' do
         note '由 XML P5a 匯入行號、該行 HTML、該行註解'
@@ -27,25 +21,20 @@ module RunbookSectionRDB
         command 'rake import:lines'
       end
 
+      step '匯入 佛典資訊 (經名、卷數、title) (rake import:work_info)' do
+        command 'rake import:work_info'
+      end
+
       # 由 GitHub 上的 cbeta-metadata 匯入，
-      # 需要: import:alt, import:lines
+      # 需要: import:lines, import:work_info
       step '匯入 部類目錄 (rake import:catelog)' do
         command 'rake import:catalog'
       end
 
-      step '更新「佛典所屬部類」資訊 (rake import:category)' do
-        command 'rake import:category'
-      end
+      #step '更新「佛典所屬部類」資訊 (rake import:category)' do
+      #  command 'rake import:category'
+      #end
 
-      step '匯入 佛典資訊 (經名、卷數、title) (rake import:work_info)' do
-        # 要從 authority.dila 更新【大正藏】作譯者資料到 GitHub cbeta-metadata.
-        #   (參考 2019-08-29 會議記錄)
-        confirm <<~MSG
-          要先執行 cbeta-metadata/work-info/bin/update-from-authority.rb
-          從 authority.dila 《大正藏》作譯者資料 更新到 GitHub cbeta-metadata
-        MSG
-        command 'rake import:work_info'
-      end
 
       # 這要在 import:work_info 之後做，跨冊的 title 才會對（ex: Y0030)。
       # 由 GitHub 上的 cbeta-metadata 及 p5a 匯入:
@@ -53,11 +42,6 @@ module RunbookSectionRDB
         confirm '如果有新增的佛典跨冊，要更新 cbeta-metadata/special-works'
         command 'rake import:cross'
       end
-
-      # 改讀 work-info, 2022-07
-      #step '匯入 作譯者 (rake import:creators)' do
-      #  command 'rake import:creators'
-      #end
 
       step '匯入地理資訊 (rake import:place)' do
         command 'rake import:place'

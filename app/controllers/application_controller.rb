@@ -54,7 +54,6 @@ class ApplicationController < ActionController::Base
     #   CBETA, T30, no. 1579, p. 279a7-23
     #   CBETA, T30, no. 1579, p. 279a7
     elsif lh.match(/^CBETA(?: \d+\.Q\d)?, ?((?:#{CBETA::CANON})\d+), ?no\. ?([A-Za-z]?\d+[A-Za-z]?), ?pp?\. *([a-z]?\d+)([a-z])(\d+)/)
-      puts "page: #{$3}"
       r = goto_info vol: $1, work: $2, page: $3, col: $4, line: $5
       logger.debug "Line: #{__LINE__}"
       logger.debug r

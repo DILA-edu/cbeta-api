@@ -3,12 +3,12 @@ require_relative 'cbeta_p5a_share'
 
 class ImportWorkInfo
   def initialize
-    @data_folder = Rails.application.config.cbeta_data
-    
-    fn = File.join(@data_folder, 'special-works', 'work-cross-vol.json')
+    folder = Rails.application.config.cbeta_data
+    fn = File.join(folder, 'special-works', 'work-cross-vol.json')
     @work_cross_vol = File.open(fn) { |f| JSON.load(f) }
-    
-    @xml_root = Rails.application.config.cbeta_xml
+
+    @work_info_dir = Rails.configuration.x.work_info    
+    @xml_root      = Rails.configuration.cbeta_xml
     
     fn = Rails.root.join('log', 'import.log')
     @log = File.open(fn, 'w')
@@ -17,14 +17,21 @@ class ImportWorkInfo
     @total_cjk_chars = 0
     @total_en_words = 0
     @max_cjk_chars = 0
+    @works_dynasty = Hash.new { |h, k| h[k] = [] }
+    @works_no_dynasty = []
 
     init_regexp
   end
   
   def import
+    #import_from_alt
+    import_from_authority
     import_from_xml
-    import_from_alt
-    import_from_metadata
+
+    dynasty_combine_and_sort
+    dynasty_write_count
+    dynasty_write_works    
+    
     puts "total_cjk_chars: %s" % number_with_delimiter(@total_cjk_chars)
     puts "total_en_words: %s" % number_with_delimiter(@total_en_words)
     puts "單部佛典最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
@@ -32,6 +39,71 @@ class ImportWorkInfo
   
   private
 
+  def dynasty_combine_and_sort
+    @dynasty_works = []
+    @dynasty_works_count = []
+
+    # 朝代順序依據 dynasty-year.csv
+    fn = Rails.root.join('data-static', 'dynasty-order.csv')
+    CSV.foreach(fn, headers: true) do |row|
+      dynasties = row['dynasty']
+      y1 = row['time_from'].to_i
+      y2 = row['time_to'].to_i
+      
+      works = []
+      dynasties.split('/').each do |dynasty|
+        next unless @works_dynasty.key? dynasty
+        next if @works_dynasty[dynasty].empty?
+        works += @works_dynasty[dynasty]
+        @works_dynasty.delete dynasty
+      end
+      
+      unless works.empty?
+        @dynasty_works_count << [dynasties, y1, y2, works.size]
+        
+        dynasty_h = { key: dynasties }
+        title = "#{dynasties} #{y1} "
+        title += y1<0 ? 'BCE' : 'CE'
+        title += " ~ #{y2} "
+        title += y2<0 ? 'BCE' : 'CE'
+        dynasty_h[:title] = title
+        dynasty_h[:children] = works
+        @dynasty_works << dynasty_h
+      end
+    end
+
+    @dynasty_works << {
+      key: 'unknown',
+      title: '朝代未知',
+      children: @works_no_dynasty
+    }
+  end
+
+  def dynasty_write_count
+    fn = Rails.root.join('data', 'dynasty-all.csv')
+    puts "write #{fn}"
+    CSV.open(fn, "wb") do |csv|
+       csv << %w(朝代 起始年 結束年 典籍數)
+       @dynasty_works_count.each do |a|
+         csv << a
+       end
+    end
+  end
+
+  def dynasty_write_works
+    r = [
+      {
+        title: '選擇全部',
+        children: @dynasty_works
+      }
+    ]
+    s = JSON.pretty_generate(r)
+    fn = Rails.root.join('data', 'dynasty-works.json')
+    puts "write #{fn}"
+    File.write(fn, s)
+  end
+  
+  
   def count_chars(doc)
     # 去除 xml document 中不列入計算的元素
     doc.at_xpath('//teiHeader').remove
@@ -106,20 +178,20 @@ class ImportWorkInfo
     end
   end
   
-  def import_from_alt
-    folder = File.join(Rails.application.config.cbeta_data, 'alternates')
-    Dir["#{folder}/*.json"].each do |fn|
-      $stderr.puts "import_work_info from #{fn}"
-      basename = File.basename(fn, '.*')
-      @canon = fn.sub(/^.*alt\-([a-z]+).json$/, '\1').upcase
-      alts = File.open(fn) { |f| JSON.load(f) }
-      alts.each_pair do |k,v|
-        next if v['alt'].include? '選錄'
-        @work = k
-        update_work title: v['title'], alt: v['alt']
-      end
-    end
-  end  
+  # def import_from_alt
+  #   folder = File.join(Rails.application.config.cbeta_data, 'alternates')
+  #   Dir["#{folder}/*.json"].each do |fn|
+  #     $stderr.puts "import_work_info from #{fn}"
+  #     basename = File.basename(fn, '.*')
+  #     @canon = fn.sub(/^.*alt\-([a-z]+).json$/, '\1').upcase
+  #     alts = File.open(fn) { |f| JSON.load(f) }
+  #     alts.each_pair do |k,v|
+  #       next if v['alt'].include? '選錄'
+  #       @work = k
+  #       update_work title: v['title'], alt: v['alt']
+  #     end
+  #   end
+  # end  
   
   def import_from_xml
     @done = Set.new
@@ -130,20 +202,17 @@ class ImportWorkInfo
     end
   end
 
-  def import_from_metadata
+  def import_from_authority
     @people_inserts = []
 
     each_canon(@xml_root) do |c|
-      fn = File.join(@data_folder, 'work-info', "#{c}.json")
+      @canon = c
+      fn = File.join(@work_info_dir, "#{c}.json")
       puts "update from #{fn}"
       works_info = JSON.parse(File.read(fn))
       works_info.each do |k, v|
-        w = Work.find_by n: k
-        if w.nil?
-          $stderr.puts "#{__LINE__} Work table 中無此編號: #{k}"
-        else
-          update_work_from_metadata(w, v)
-        end
+        w = Work.find_or_create_by(n: k)
+        update_work_from_authority(w, v)
       end
     end
 
@@ -160,32 +229,65 @@ class ImportWorkInfo
     }
   end
 
-  def update_work_from_metadata(w, v)
-    w.title = v['title']
-    w.byline = v['byline']
+  def update_contributors(w, v)
+    return unless v.key?('contributors')
 
-    if v.key?('contributors')
-      people = v['contributors']
-
-      people.each do |x|
-        @people_inserts << "('#{x['id']}', '#{x['name']}')"
-      end  
-
-      a = people.map { |x| x['name'] }
-      w.creators = a.join(',')
-
-      a = people.map { |x| "#{x['name']}(#{x['id']})" }
-      w.creators_with_id = a.join(';')
+    people = v['contributors']
+    people.each do |x|
+      @people_inserts << "('#{x['id']}', '#{x['name']}')"
     end
+
+    a = people.map { |x| x['name'] }
+    w.creators = a.join(',')
+
+    a = people.select { |x| x.key?('id') }
+    a.map! { |x| "#{x['name']}(#{x['id']})" }
+    w.creators_with_id = a.join(';')
+  end
+
+  def update_dynasty(w, v, title)
+    work_h = {
+      key: w.n,
+      title: title
+    }
 
     if v.key?('dynasty')
-      w.time_dynasty = v['dynasty']
+      d = v['dynasty']
+      w.time_dynasty = d      
+      @works_dynasty[d] << work_h
     else
       w.time_dynasty = 'unknown'
+      @works_no_dynasty << work_h
     end
+  end
+
+  def update_work_from_authority(w, v)
+    w.canon     = @canon
+    w.vol       = v['vol']
+    w.title     = v['title']
+    w.byline    = v['byline']
+    w.work_type = v['type'] || 'textbody' # 預設：正文
+
+    title = v['title'].sub(/\(第\d+卷\-第\d+卷\)$/, '')
+    title.sub!(/\(第\d+卷\)$/, '')
+    long_title = "#{w.n} #{title}"
+    unless %w(N Y ZS ZW).include? @canon
+      long_title << " (#{v['juans']}卷)"
+    end
+    long_title << "【#{v['byline']}】" if v.key?('byline')
+
+    update_contributors(w, v)
+    update_dynasty(w, v, long_title)  
 
     w.time_from = v['time_from'] if v.key?('time_from')
     w.time_to   = v['time_to']   if v.key?('time_to')
+
+    if v.key?('alt')
+      # 例 B0130 因為 CBETA 也有選錄部份為 B23n0130, 所以不把 B0130 當做 alt
+      unless v['alt'].include? '選錄'        
+        w.alt = v['alt']
+      end
+    end
 
     w.save
   end

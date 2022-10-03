@@ -87,7 +87,6 @@ class LinesController < ApplicationController
   
   def get_previous_lines(linehead, before, result)
     lines = Line.where("linehead < ?", linehead).order(linehead: :desc).first(before)
-    puts lines.class
     add_lines_to_result result, lines
   end
 end

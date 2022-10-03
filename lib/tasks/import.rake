@@ -1,10 +1,4 @@
-namespace :import do
-  task :alt => :environment do
-    require "tasks/import_alt"
-    importer = ImportAlt.new
-    importer.import
-  end
-  
+namespace :import do  
   task :canons => :environment do
     require "tasks/import_canons"
     importer = ImportCanons.new
@@ -24,14 +18,7 @@ namespace :import do
     importer = ImportCategory.new
     importer.import
   end
-  
-  desc "匯入作譯者資訊"
-  task :creators, [:arg1] => :environment do |t, args|
-    require "tasks/import_creators"
-    importer = ImportCreators.new
-    importer.import args[:arg1]
-  end
-  
+    
   desc "匯入佛典跨冊資訊"
   task :cross => :environment do
     require "tasks/import_cross"
@@ -96,13 +83,6 @@ namespace :import do
     importer = ImportSynonym.new
     importer.import
   end
-
-  desc "匯入 朝代、年代"
-  task :time => :environment do
-    require "tasks/import_time"
-    importer = ImportTime.new
-    importer.import
-  end
   
   desc "匯入 佛典內目次"
   task :toc, [:arg1] => :environment do |t, args|
@@ -118,12 +98,13 @@ namespace :import do
     importer.import
   end
   
-  desc "匯入佛典編號"
-  task :work_id, [:arg1] => :environment do |t, args|
-    require "tasks/import_work_id"
-    importer = ImportWorkId.new
-    importer.import args[:arg1]
-  end
+  # 改由 import:work_info 執行
+  # desc "匯入佛典編號"
+  # task :work_id, [:arg1] => :environment do |t, args|
+  #   require "tasks/import_work_id"
+  #   importer = ImportWorkId.new
+  #   importer.import args[:arg1]
+  # end
   
   desc "匯入經名、卷數、作譯者"
   task :work_info => :environment do
