@@ -957,20 +957,17 @@ class SphinxController < ApplicationController
   def set_filter
     @filter = ''
     set_filter_category
-    set_filter_creator  
-    
-    if params.key? :canon
-      @filter += " AND canon='%s'" % params[:canon]
-    end
+    set_filter_creator
+    set_filter_canon    
     
     if params.key? :dynasty
       s = params[:dynasty]
       if s.include? ','
         a = s.split(',')
         a.map! { |x| "'#{x}'"}
-        @filter += " AND dynasty IN (%s)" % a.join(',')
+        @filter << " AND dynasty IN (%s)" % a.join(',')
       else
-        @filter += " AND dynasty='#{s}'"
+        @filter << " AND dynasty='#{s}'"
       end
     end
     
@@ -978,14 +975,14 @@ class SphinxController < ApplicationController
       s = params[:time]
       if s.include? '..'
         t1, t2 = s.split('..')
-        @filter += " AND time_from<=#{t2} AND time_to>=#{t1}"
+        @filter << " AND time_from<=#{t2} AND time_to>=#{t1}"
       else
-        @filter += " AND time_from<=#{s} AND time_to>=#{s}"
+        @filter << " AND time_from<=#{s} AND time_to>=#{s}"
       end
     end
     
     if params.key? :work
-      @filter += " AND work='%s'" % params[:work]
+      @filter << " AND work='%s'" % params[:work]
     end
     
     if params.key? :works
@@ -995,16 +992,28 @@ class SphinxController < ApplicationController
       end
       works = works.to_a
       works.map! { |x| %('#{x}')}
-      @filter += " AND work IN (%s)" % works.join(',')
+      @filter << " AND work IN (%s)" % works.join(',')
     end
 
     if params.key? :work_type
       t = params[:work_type]
-      @filter += " AND work_type='#{t}'"
+      @filter << " AND work_type='#{t}'"
     end
 
     if params.key? :note_place
-      @filter += " AND note_place='%s'" % params[:note_place]
+      @filter << " AND note_place='%s'" % params[:note_place]
+    end
+  end
+
+  def set_filter_canon
+    return unless params.key? :canon
+
+    s = params[:canon]
+    if s.include?(',')
+      a = s.split(',').map { |x| "'#{x}'"}
+      @filter << " AND canon IN (%s)" % a.join(',')
+    else
+      @filter << " AND canon='#{s}'"
     end
   end
 

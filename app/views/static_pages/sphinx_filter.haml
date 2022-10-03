@@ -6,8 +6,9 @@
 %p 例：#{link_to_url '/sphinx?q=大慧&category=禪宗部類%2b史傳部類'}
 
 %h2 某部藏經
-%p
-  例如只搜大正藏：#{link_to_url '/sphinx?q=法鼓&canon=T'}
+%ul
+  %li 例如只搜大正藏： #{link_to_url '/sphinx?q=法鼓&canon=T'}
+  %li 允許多值： #{link_to_url '/sphinx?q=法鼓&canon=T,X'}
   
 %h2 某些佛典
 %p
