@@ -31,7 +31,6 @@ class ImportWorkInfo
   end
   
   def import
-    #import_from_alt
     import_from_authority
     import_from_xml
 
@@ -70,9 +69,9 @@ class ImportWorkInfo
         
         dynasty_h = { key: dynasties }
         title = "#{dynasties} #{y1} "
-        title += y1<0 ? 'BCE' : 'CE'
-        title += " ~ #{y2} "
-        title += y2<0 ? 'BCE' : 'CE'
+        title << y1<0 ? 'BCE' : 'CE'
+        title << " ~ #{y2} "
+        title << y2<0 ? 'BCE' : 'CE'
         dynasty_h[:title] = title
         dynasty_h[:children] = works
         @dynasty_works << dynasty_h
@@ -151,16 +150,7 @@ class ImportWorkInfo
     r = {}
     doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
-    
-    s = doc.at_xpath('//titleStmt/title').text
-    s = s.split[-1]
-    s.sub!(/^(.*)\(.*?\)$/, '\1')
-    r[:title] = s
-    
-    s = doc.at_xpath('//fileDesc/extent').text
-    s.sub!(/^(\d+)卷$/, '\1')
-    r[:juan] = s.to_i
-    
+        
     juans = doc.xpath("//milestone[@unit='juan']")
     r[:juan_start] = juans.first['n'].to_i
     
@@ -184,22 +174,7 @@ class ImportWorkInfo
       import_vol(p)
     end
   end
-  
-  # def import_from_alt
-  #   folder = File.join(Rails.application.config.cbeta_data, 'alternates')
-  #   Dir["#{folder}/*.json"].each do |fn|
-  #     $stderr.puts "import_work_info from #{fn}"
-  #     basename = File.basename(fn, '.*')
-  #     @canon = fn.sub(/^.*alt\-([a-z]+).json$/, '\1').upcase
-  #     alts = File.open(fn) { |f| JSON.load(f) }
-  #     alts.each_pair do |k,v|
-  #       next if v['alt'].include? '選錄'
-  #       @work = k
-  #       update_work title: v['title'], alt: v['alt']
-  #     end
-  #   end
-  # end  
-  
+    
   def import_from_xml
     @done = Set.new
     each_canon(@xml_root) do |c|
@@ -272,11 +247,11 @@ class ImportWorkInfo
     w.canon     = @canon
     w.vol       = v[:vol]
     w.title     = v[:title]
+    w.juan      = v[:juans]
     w.byline    = v[:byline]
     w.work_type = v[:type] || 'textbody' # 預設：正文
 
-    title = v[:title].sub(/\(第\d+卷\-第\d+卷\)$/, '')
-    title.sub!(/\(第\d+卷\)$/, '')
+    title = v[:title]
     long_title = "#{w.n} #{title}"
     unless %w(N Y ZS ZW).include? @canon
       long_title << " (#{v[:juans]}卷)"
@@ -323,7 +298,6 @@ class ImportWorkInfo
 
       update_xml_files(xml_path, data[:juan], data[:juan_start])
       
-      data[:alt] = nil
       update_work(data)
     end
 
@@ -371,7 +345,6 @@ class ImportWorkInfo
     data[:en_words]  = @en_words.size
     log_chars(@cjk_chars, @en_words)
 
-    data[:alt] = nil
     update_work(data)
 
     data
