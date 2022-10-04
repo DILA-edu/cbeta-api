@@ -172,6 +172,7 @@ class SphinxController < ApplicationController
   #   * 大比丘三千威儀
   #   * 阿耨多羅三藐三菩提
   def variants
+    logger.info "scope: #{params[:scope]}"
     t1 = Time.now
     @mysql_client = sphinx_mysql_connection
     q_ary = get_query_variants(@q)
@@ -487,16 +488,32 @@ class SphinxController < ApplicationController
   end
   
   def exist_in_cbeta(q)
-    select = %(SELECT id FROM #{@index} WHERE MATCH('"#{q}"') LIMIT 0, 1)
-    result = @mysql_client.query(select)
-    if result.size == 0
-      return false
-    else
-      return true
-    end    
+    logger.info "exist_in_cbeta, q: #{q}"
+    if params[:scope] == 'title'
+      index = Rails.configuration.x.sphinx_titles
+      r = exist_in_index(q, index)
+      logger.warn "exist_in_cbeta: #{r}"
+      r
+    end
+
+    r = exist_in_index(q, Rails.configuration.sphinx_index)
+    return true if r
+
+    r = exist_in_index(q, Rails.configuration.x.sphinx_notes)
+    return true if r
+
+    r = exist_in_index(q, Rails.configuration.x.sphinx_titles)
+    return true if r
   end
   
+  def exist_in_index(q, index)
+    select = %(SELECT id FROM #{index} WHERE MATCH('"#{q}"') LIMIT 0, 1)
+    result = @mysql_client.query(select)
+    result.size > 0
+  end
+
   def expand_vars_array(vars, chk_exist)
+    logger.info "expand_vars_array, vars: #{vars}, chk_exist: #{chk_exist}"
     t1 = Time.now
     #vars = downsize_vars_array(vars) if vars.size > 4
     args = vars[1..-1]
@@ -591,6 +608,7 @@ class SphinxController < ApplicationController
   end
   
   def get_query_variants(q)
+    logger.info "get_query_variants, q: #{q}"
     remove_puncs_from_query
     vars = []
     q.each_char do |c|
@@ -601,7 +619,7 @@ class SphinxController < ApplicationController
       end
     end
     vars = downsize_vars_array(vars)
-    return expand_vars_array(vars, false)
+    return expand_vars_array(vars, true)
   end
   
   def get_hit_count(where)
@@ -642,9 +660,16 @@ class SphinxController < ApplicationController
       init_notes
     when 'title'
       init_title
+    when 'variants'
+      init_fields
+      @index = 
+        if params[:scope] == 'title'
+          Rails.configuration.x.sphinx_titles
+        else
+          Rails.application.config.sphinx_index
+        end
     else
       init_fields
-  
       @index = Rails.application.config.sphinx_index
     end
     
