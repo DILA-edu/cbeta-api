@@ -25,12 +25,13 @@ class MyCbetaShare
   end
   
   def self.get_work_categories
-    fn = File.join(Rails.application.config.cbeta_data, 'category', 'work_categories.json')
-    s = File.read(fn)
-    works = JSON.parse(s)
     r = {}
-    works.each_pair do |k,v|
-      r[k] = v['category_names']
+    folder = Rails.configuration.x.work_info
+    Dir.glob("#{folder}/*.json") do |f|
+      works = JSON.load_file(f)
+      works.each do |k, h|
+        r[k] = h['category']
+      end
     end
     r
   end

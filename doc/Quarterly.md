@@ -44,6 +44,9 @@ CBETA XML 新一季定案後執行。
 
 ## Server 端執行 rake quarterly
 
+編輯 shared/.asdf-vars
+    RAILS_ENV=staging
+
 編輯 lib/tasks/quarterly/config.rb
 
     bundle exec rake quarterly:view # 查看 steps
@@ -86,6 +89,9 @@ CBETA XML 新一季定案後執行。
 修改 server 上的 /etc/apache2/sites-available
   * cbdata-sub.conf
   * cbdata-cn.conf
+
+編輯 shared/.asdf-vars
+    RAILS_ENV=production
 
 ## 建立下一季開發環境
 

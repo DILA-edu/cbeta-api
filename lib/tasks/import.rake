@@ -11,13 +11,6 @@ namespace :import do
     importer = ImportCatalog.new
     importer.import args[:arg1]
   end
-      
-  desc "匯入佛典跨冊資訊"
-  task :cross => :environment do
-    require "tasks/import_cross"
-    importer = ImportCross.new
-    importer.import
-  end
 
   task :gaiji => :environment do
     require "tasks/import_gaiji"
@@ -90,15 +83,7 @@ namespace :import do
     importer = ImportVars.new
     importer.import
   end
-  
-  # 改由 import:work_info 執行
-  # desc "匯入佛典編號"
-  # task :work_id, [:arg1] => :environment do |t, args|
-  #   require "tasks/import_work_id"
-  #   importer = ImportWorkId.new
-  #   importer.import args[:arg1]
-  # end
-  
+    
   desc "匯入經名、卷數、作譯者"
   task :work_info => :environment do
     require "tasks/import_work_info"

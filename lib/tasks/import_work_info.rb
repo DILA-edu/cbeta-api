@@ -3,10 +3,6 @@ require_relative 'cbeta_p5a_share'
 
 class ImportWorkInfo
   def initialize
-    folder = Rails.application.config.cbeta_data
-    fn = File.join(folder, 'special-works', 'work-cross-vol.json')
-    @work_cross_vol = File.open(fn) { |f| JSON.load(f) }
-
     @work_info_dir = Rails.configuration.x.work_info    
     @xml_root      = Rails.configuration.cbeta_xml
     
@@ -28,9 +24,12 @@ class ImportWorkInfo
     @works_no_dynasty = []
 
     init_regexp
+    @work_xml_files = build_work_xml_files
   end
   
   def import
+    XmlFile.delete_all
+
     import_from_authority
     import_from_xml
 
@@ -44,6 +43,16 @@ class ImportWorkInfo
   end
   
   private
+
+  def build_work_xml_files
+    r = Hash.new { |h, k| h[k] = [] }
+    Dir.glob("#{@xml_root}/**/*.xml") do |f|
+      basename = File.basename(f, '.xml')
+      id = CBETA.get_work_id_from_file_basename(basename)
+      r[id] << basename
+    end
+    r
+  end
 
   def dynasty_combine_and_sort
     @dynasty_works = []
@@ -154,6 +163,9 @@ class ImportWorkInfo
     juans = doc.xpath("//milestone[@unit='juan']")
     r[:juan_start] = juans.first['n'].to_i
     
+    extent = doc.at_xpath("//extent").text
+    r[:juan] = extent.delete_suffix('卷').to_i
+
     # 卷 milestone 可能跳號，要逐一列舉
     juan_list = []
     juans.each do |j|
@@ -165,13 +177,13 @@ class ImportWorkInfo
     r
   end
   
-  def import_canon(path)
+  def import_canon_from_xml(path)
     Dir.entries(path).sort.each do |f|
       next if f.start_with? '.'
       @vol = f
       $stderr.puts "import_work_info #{@vol}"
       p = File.join(path, f)
-      import_vol(p)
+      import_vol_from_xml(p)
     end
   end
     
@@ -180,7 +192,7 @@ class ImportWorkInfo
     each_canon(@xml_root) do |c|
       @canon = c
       p = File.join(@xml_root, c)
-      import_canon(p)
+      import_canon_from_xml(p)
     end
   end
 
@@ -275,20 +287,20 @@ class ImportWorkInfo
     w.save
   end
   
-  def import_vol(path)
+  def import_vol_from_xml(path)
     Dir.entries(path).sort.each do |f|
       next if f.start_with? '.'
       basename = File.basename(f, '.xml')
       @work = CBETA.get_work_id_from_file_basename(basename)
       p = File.join(path, f)
-      import_work(p)
+      import_work_from_xml(p)
     end
   end
   
-  def import_work(xml_path)
+  def import_work_from_xml(xml_path)
     return if @done.include? @work
 
-    if @work_cross_vol.key? @work
+    if @work_xml_files[@work].size > 1
       data = import_work_files
     else
       data = get_info_from_xml(xml_path)
@@ -296,7 +308,7 @@ class ImportWorkInfo
       data[:cjk_chars] = data[:cjk_chars].size
       data[:en_words]  = data[:en_words].size
 
-      update_xml_files(xml_path, data[:juan_start])
+      update_xml_files(xml_path, @vol, data)
       
       update_work(data)
     end
@@ -309,10 +321,7 @@ class ImportWorkInfo
 
   # 佛典跨冊時，讀取多個 XML 檔
   def import_work_files
-    files = @work_cross_vol[@work]
-    unless files.kind_of?(Array)
-      files = files['files']
-    end
+    files = @work_xml_files[@work]
 
     data = nil
     @cjk_chars = ''
@@ -321,9 +330,9 @@ class ImportWorkInfo
       vol = f.sub(/^(.*?)n.*$/, '\1')
       xml_path = File.join(@xml_root, @canon, vol, f+'.xml')
       info = get_info_from_xml(xml_path)
+
       if data.nil?
         data = info
-        update_xml_files(xml_path, data[:juan_start])
       else
         # 如果是 卷跨冊
         unless data[:juan_list_array].empty? and info[:juan_list_array].empty?
@@ -331,9 +340,10 @@ class ImportWorkInfo
             info[:juan_list_array].shift
           end
         end
-        
         data[:juan_list_array] += info[:juan_list_array]
       end
+
+      update_xml_files(xml_path, vol, info)
       @cjk_chars += info[:cjk_chars]
       @en_words  += info[:en_words]
     end
@@ -445,10 +455,12 @@ class ImportWorkInfo
     end
   end
   
-  def update_xml_files(xml_path, juan_start)
-    XmlFile.find_or_create_by(vol: @vol, work: @work) do |w|
-      w.file = File.basename(xml_path, '.xml')
-      w.juan_start = juan_start
+  def update_xml_files(xml_path, vol, info)
+    basename = File.basename(xml_path, '.xml')
+    XmlFile.find_or_create_by(work: @work, file: basename) do |w|
+      w.vol = vol
+      w.juan_start = info[:juan_start]
+      w.juans = info[:juan]
     end
   end
   

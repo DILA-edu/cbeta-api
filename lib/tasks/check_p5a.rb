@@ -4,7 +4,6 @@ class CheckP5a
 
   def initialize
     @gaijis = CBETA::Gaiji.new(Rails.application.config.cbeta_gaiji)
-    @titles = read_titles
   end
   
   def check
@@ -123,16 +122,6 @@ class CheckP5a
       path = File.join(folder, f)
       handle_file(path)
     end
-  end
-
-  def read_titles
-    fn = File.join(Rails.configuration.cbeta_data, 'titles/all-title-byline.csv')
-    r = {}
-    CSV.foreach(fn, headers: true) do |row|
-      id = row['典籍編號']
-      r[id] = row['典籍名稱']
-    end
-    r
   end
 
   def traverse(e)

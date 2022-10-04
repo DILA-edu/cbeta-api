@@ -31,8 +31,6 @@ class P5aToDocusky
     @cbeta = CBETA.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
-    @work_categories = MyCbetaShare.get_work_categories
-    @work_places = read_places
     @us = UnicodeService.new
     
     FileUtils::mkdir_p @out_root
@@ -363,8 +361,7 @@ class P5aToDocusky
   def handle_collection(c)
     $stderr.puts "handle_collection: #{c}"
     @series = c
-    @work_creators = read_creators_by_canon(c)
-    @work_time = read_time_by_canon(c)
+    @works_info = read_info_by_canon(c)
     @work_docs = ''
     @work_id = nil
     @work_metadata = {}
@@ -597,82 +594,66 @@ class P5aToDocusky
     text
   end
   
-  def read_creators_by_canon(canon)
-    folder = File.join(Rails.application.config.cbeta_data, 'creators', 'creators-by-canon')
-    fn = "#{folder}/#{canon}.json"
-    s = File.read(fn)
-    creators = JSON.parse(s)
-    r = {}
-    creators.each_pair do |k,v|
-      if v.key? 'creators_with_id'
-        r[k] = v['creators_with_id']
-      elsif v.key? 'creators'
-        r[k] = v['creators']
-      end
-    end
-    r
+  def read_info_by_canon(canon)
+    fn = File.join(Rails.configuration.x.work_info, "#{canon}.json")
+    JSON.load_file(fn)
   end
-
-  def read_places
-    fn = Rails.root.join('data', 'places.json')
-    s = File.read(fn)
-    works = JSON.parse(s)
-    r = {}
-    works.each do |k,v|
-      r[k] = "#{v['place_name']}(#{v['place_id']})"
-    end
-    r
-  end
-  
-  def read_time_by_canon(canon)
-    folder = File.join(Rails.application.config.cbeta_data, 'time', 'year-by-canon')
-    fn = "#{folder}/#{canon}.json"
-    s = File.read(fn)
-    JSON.parse(s)
-  end
-  
+    
   def set_work_metadata
     return if @work_metadata.key? @work_id
-    s = "<corpus>%s</corpus>\n"
-    s += "<docclass>#{@work_id}</docclass>\n"
-    s += "<title>#{@title}</title>\n"
-    s += "<doctype>#{@work_categories[@work_id]}</doctype>\n"
+    puts "work_id: #{@work_id}"
+    info = @works_info[@work_id]
+    abort __LINE__ if info.nil?
+
+    xml = "<corpus>%s</corpus>\n"
+    xml << "<docclass>#{@work_id}</docclass>\n"
+    xml << "<title>#{@title}</title>\n"
+    xml << "<doctype>#{info['category']}</doctype>\n"
     
-    s2 = "<xml_metadata>\n"
-    s2 += "\t<TextNo>#{@work_id}</TextNo>\n"
-    s2 += "\t<TextTitle>#{@title}</TextTitle>\n"
-    s2 += "\t<Catgeory>#{@work_categories[@work_id]}</Catgeory>\n"
+    xml2 = "<xml_metadata>\n"
+    xml2 << "\t<TextNo>#{@work_id}</TextNo>\n"
+    xml2 << "\t<TextTitle>#{@title}</TextTitle>\n"
+    xml2 << "\t<Catgeory>#{info['category']}</Catgeory>\n"
     
-    if @work_creators.key? @work_id
-      s  += "<author>#{@work_creators[@work_id]}</author>\n"
-      s2 += "\t<Author>#{@work_creators[@work_id]}</Author>\n"
+    if info.key?('contributors')
+      a = info['contributors'].map do |x|
+        s = x['name']
+        s << "(#{x['id']})" if x.key?('id')
+      end
+      creators = a.join(';')
+      xml  << "<author>#{creators}</author>\n"
+      xml2 << "\t<Author>#{creators}</Author>\n"
     end
     
-    if @work_places.key? @work_id
-      s  += "<geo>#{@work_places[@work_id]}</geo>\n"
-      s2 += "\t<Place>#{@work_places[@work_id]}</Place>\n"
+    if info.key?('places')
+      a = info['places'].map do |x|
+        s = x['name']
+        s << "(#{x['id']})" if x.key?('id')
+      end
+      places = a.join(',')
+      xml  << "<geo>#{places}</geo>\n"
+      xml2 << "\t<Place>#{places}</Place>\n"
     end
     
-    if @work_time.key? @work_id
-      h = @work_time[@work_id]
-      unless h['time_from'].nil?
-        s  += "<date_not_before>#{h['time_from']}</date_not_before>\n"
-        s2 += "\t<DateNotBefore>#{h['time_from']}</DateNotBefore>\n"
-      end
-      unless h['time_to'].nil?
-        s  += "<date_not_after>#{h['time_to']}</date_not_after>\n"
-        s2 += "\t<DateNotAfter>#{h['time_to']}</DateNotAfter>\n"
-      end
-      if h.key? 'dynasty'
-        s  += "<time_dynasty>#{h['dynasty']}</time_dynasty>\n"
-        s2 += "\t<Dynasty>#{h['dynasty']}</Dynasty>\n"
-      end
+    if i = info['time_from']
+      xml  << "<date_not_before>#{i}</date_not_before>\n"
+      xml2 << "\t<DateNotBefore>#{i}</DateNotBefore>\n"
     end
 
-    s2 += "</xml_metadata>\n"
+    if i = info['time_to']
+      xml  << "<date_not_after>#{i}</date_not_after>\n"
+      xml2 << "\t<DateNotAfter>#{i}</DateNotAfter>\n"
+    end
+
+    if s = info['dynasty']
+      xml  << "<time_dynasty>#{s}</time_dynasty>\n"
+      xml2 << "\t<Dynasty>#{s}</Dynasty>\n"
+    end
+
+    xml2 << "</xml_metadata>\n"
     
-    @work_metadata[@work_id]  = s
-    @work_metadata2[@work_id] = s2
+    @work_metadata[@work_id]  = xml
+    @work_metadata2[@work_id] = xml2
   end
   
   def traverse(e, mode='html')
