@@ -19,7 +19,12 @@
       %li=link_to '缺字', '#gaiji'
       %li=link_to '標點', '#punc'
       %li=link_to '圖片', '#graphic'
-      %li=link_to '註解', '#note'
+      %li
+        =link_to '註解', '#note'
+        %ul
+          %li=link_to '星號校注', '#note_star'
+          %li=link_to 'CBETA 加的註解', '#note_cbeta'
+          %li=link_to '連結 CBETA 校注考證資料庫', '#note_research'
       %li=link_to '人名', '#person'
       %li=link_to '地名', '#place'
   %li

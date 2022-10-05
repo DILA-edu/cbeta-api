@@ -1,3 +1,4 @@
+%hr
 %h2#note 註解
 
 %p 例 T01n0001_p0001a02
@@ -17,7 +18,20 @@
           ...
       </div>
 
-%h3 CBETA 加的註解
+%h3#note_star 星號校注
+%p 例 T01n0001_p0002a05 指向 [26] 的第一個星號校注：
+.code
+  %pre
+    :escaped
+      <a class='noteAnchor star' href='#n0001026' data-star-no='26-1'></a>
+
+%p data-star-no 提供校注編號及序號，又例 T01n0001_p0002a17 指向 [26] 的第二個星號校注：
+.code
+  %pre
+    :escaped
+      <a class='noteAnchor star' href='#n0001026' data-star-no='26-2'></a>
+
+%h3#note_cbeta CBETA 加的註解
 %p 例 T01n0001_p0001b02
 .code
   %pre
@@ -37,3 +51,13 @@
       </div>
 
 %p &lt;span class='cbeta'> 表示這是 CBETA 修訂過的文字。
+
+%h3#note_research 連結 CBETA 校注考證資料庫
+%p 例 T01n0001_p0005b03
+.code
+  %pre
+    :escaped
+      <a class="noteAnchor" href="#n0005009" data-key="T01.0005b03.12"></a>
+%p 
+  data-key 欄位可用來連結：
+  =link_to nil, "https://www.cbeta.org/revised_research.php?notekey=T01.0005b03.12"

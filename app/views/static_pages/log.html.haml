@@ -4,10 +4,29 @@
 %ul
   %li 穩定版網址改為 https://cbdata.dila.edu.tw/stable, 舊網址 https://cbdata.dila.edu.tw/v1.2 將於 2023 Q1 起停用。
   %li 
+    校注
+    %ul
+      %li 
+        星號校注新增流水號，詳見：
+        =link_to_url '/static_pages/html_for_ui#note_star'
+      %li
+        提供資訊可用來連結至「CBETA 校注考證資料庫」，見：
+        =link_to_url '/static_pages/html_for_ui#note_research'
+  %li 
     佛典相關資訊（作譯者、年代等）改由
     =link_to "DILA Authority", "https://github.com/DILA-edu/Authority-Databases/tree/master/authority_catalog"
     取得。
-  %li Sphinx all_in_one 參數 canon 允許多值。
+  %li 目次回傳資料在允許情況下提供 type 與 n 欄位。
+  %li
+    全文檢索
+    %ul
+      %li Sphinx all_in_one 參數 canon 允許多值。
+      %li sphinx/variants 異體字查詢，允許參數 scope=title，於經名中存在的才回傳。方便前端提供「搜尋經名」功能時可提供「異體字建議」。
+  %li 
+    存取紀錄
+    %ul
+      %li 新增 Referer 欄位，建議呼叫 API 時在 HTTP request header 設定 Referer，以便存取分析。
+      %li 可匯出 CSV.
   
 %h2 2022-08
 %ul

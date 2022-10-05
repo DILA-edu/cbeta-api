@@ -1,10 +1,15 @@
 %h1
   CBETA API 
   =Rails.configuration.x.ver
-%p
-  提供各種 API 搜尋、存取
-  %a{href: 'http://www.cbeta.org'} CBETA
-  電子佛典。
+%ul
+  %li
+    提供各種 API 搜尋、存取
+    %a{href: 'http://www.cbeta.org'} CBETA
+    電子佛典。
+  %li 
+    請於呼叫 API 時在 HTTP request header 設定
+    =link_to "Referer", "https://zh.wikipedia.org/wiki/HTTP參照位址"
+    ，以便存取分析。
 
 %h1 說明文件
 %p=link_to nil, "https://app.swaggerhub.com/apis-docs/Ray.Chou/CBETA-API/1.2"
