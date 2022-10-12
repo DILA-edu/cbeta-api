@@ -26,12 +26,12 @@ class P5aToHTMLForUI
   
   private_constant :PASS, :MISSING
 
-  # @param xml_root [String] 來源 CBETA XML P5a 路徑
-  # @param out_root [String] 輸出 HTML 路徑
-  def initialize(publish, xml_root, out_root)
-    @publish_date = publish
-    @xml_root = xml_root
-    @out_root = out_root
+  # @param params [Hash]
+  #   :xml_root [String] 來源 CBETA XML P5a 路徑
+  #   :out_root [String] 輸出 HTML 路徑
+  def initialize(params)
+    @format = 'html'
+    @params = params
     @cbeta = CBETA.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
@@ -67,7 +67,7 @@ class P5aToHTMLForUI
         @canon = CBETA.get_canon_id_from_work_id(work_id)
         convert_canon_init(@canon)
         @vol = target.sub(/^(#{@canon}\d+).*$/, '\1')
-        fn = File.join(@xml_root, @canon, @vol, "#{target}.xml")
+        fn = File.join(@params[:xml_root], @canon, @vol, "#{target}.xml")
         convert_sutra(fn)
       end
     end
@@ -101,7 +101,7 @@ class P5aToHTMLForUI
   end
 
   def convert_all
-    each_canon(@xml_root) do |c|
+    each_canon(@params[:xml_root]) do |c|
       convert_canon(c)
     end
   end
@@ -109,7 +109,7 @@ class P5aToHTMLForUI
   def convert_canon(c)
     convert_canon_init(c)
     $stderr.puts 'convert canon: ' + c
-    folder = File.join(@xml_root, @canon)
+    folder = File.join(@params[:xml_root], @canon)
     
     FileUtils::rm_rf @out_folder
     FileUtils::mkdir_p @out_folder
@@ -122,7 +122,7 @@ class P5aToHTMLForUI
 
   def convert_canon_init(c)
     @canon = c
-    @out_folder = File.join(@out_root, @canon)
+    @out_folder = File.join(@params[:out_root], @canon)
     @html_buf = {}
     @back_buf = {}
 
@@ -163,7 +163,7 @@ class P5aToHTMLForUI
   def convert_vol(vol)
     @vol = vol
     
-    source = File.join(@xml_root, @canon, vol)
+    source = File.join(@params[:xml_root], @canon, vol)
     Dir.entries(source).sort.each do |f|
       next if f.start_with? '.'
       fn = File.join(source, f)
@@ -195,21 +195,6 @@ class P5aToHTMLForUI
     ''
   end
 
-  def e_app(e, mode)
-    if mode=='footnote'
-      lem = e.at('lem')
-      return traverse(lem, mode)
-    end
-    
-    r = ''
-    if e['type'] == 'star'
-      c = e['corresp'][1..-1]
-      @note_star_count[c] += 1
-      star_no = "#{c[-3..-1].to_i}-#{@note_star_count[c]}"
-      r = "<a class='noteAnchor star' href='#n#{c}' data-star-no='#{star_no}'></a>"
-    end
-    r + traverse(e)
-  end
 
   def e_byline(e, mode)
     return traverse(e, mode) if mode=='footnote'
@@ -326,7 +311,7 @@ class P5aToHTMLForUI
     abort "Line:#{__LINE__} 無缺字資料:#{gid}" if g.nil?
     zzs = g['composition']
     
-    if mode == 'txt'
+    if mode == 'text'
       return g['romanized'] if gid.start_with?('SD')
       if zzs.nil?
         abort "缺組字式：#{g}"
@@ -629,7 +614,7 @@ class P5aToHTMLForUI
     if app.key?('n')
       n = app['n']
       if @notes_mod[@juan].key?(n)
-        @notes_mod[@juan][n] += e_lem_cf(e)
+        @notes_mod[@juan][n] += ele_lem_cf(e)
       end
     end
 
@@ -642,23 +627,6 @@ class P5aToHTMLForUI
     end
   end
 
-  def e_lem_cf(e)
-    cfs = []
-    e.xpath('note').each do |c|
-      next unless c.key?('type')
-      next unless c['type'].match(/^cf\d+$/)
-      s = traverse(c, 'footnote')
-      if s.match(/^T\d{2,3}n.{5}p[a-z\d]\d{3}[a-z]\d\d$/)
-        s = "<span class='cbeta-linehead'>#{s}</span>"
-      end
-      cfs << s
-    end
-
-    return '' if cfs.empty?
-
-    s = cfs.join('; ')
-    "(cf. #{s})"
-  end
 
   def e_list(e, mode)
     s = traverse(e, mode)
@@ -686,8 +654,7 @@ class P5aToHTMLForUI
       @back[@juan] = @back[0]
       @back_orig[@juan] = @back_orig[0]
       @first_lb_in_juan = true
-      @notes_mod[@juan] = {}
-      @notes_add[@juan] = []
+      ele_milestone_juan
       r += "<juan #{@juan}>"
       @open_divs.each { |d|
         r += "<div class='div-#{d['type']}'>"
@@ -702,122 +669,12 @@ class P5aToHTMLForUI
     r = ''
     if e['type'] == '品'
       @pass << false
-      r = "<mulu class='pin' s='%s'/>" % traverse(e, 'txt')
+      r = "<mulu class='pin' s='%s'/>" % traverse(e, 'text')
       @pass.pop
     end
     r
   end
-  
-
-  def e_note(e, mode)
-    return e_note_foot(e) if mode == 'footnote'
-    return '' if e['rend'] == 'hide'
-      
-    n = e['n']
-    if e.has_attribute?('type')
-      t = e['type']
-      case t
-      when 'add'
-        n = @notes_add[@juan].size + 1
-        n = "cb_note_#{n}"
-        s = traverse(e, 'footnote')
-        s += e_note_add_cf(e)
-        @notes_add[@juan] << "<span class='footnote add' id='#{n}'>#{s}</span>"
-        return "<a class='noteAnchor add' href='##{n}'></a>"
-      when 'equivalent', 'rest' then return ''
-      when 'orig'       then return e_note_orig(e)
-      when 'mod'
-        @notes_mod[@juan][n] = traverse(e, 'footnote')
-
-        node = HtmlNode.new('a')
-        node['class'] = 'noteAnchor'
-        node['href'] = "#n#{n}"
-        node['data-key'] = e['note_key'] if e.key?('note_key')
-        node.to_s + "\n"
-
-        return node.to_s
-      when 'star'
-        href = 'n' + e['corresp'].sub(/^#(.*)$/, '\1')
-        return "<a class='noteAnchor star' href='##{href}'></a>"
-      else
-        return '' if t.start_with?('cf')
-      end
-    end
-
-    if e.has_attribute?('resp')
-      return '' if e['resp'].start_with? 'CBETA'
-    end
-
-    if e.has_attribute?('place')
-      r = traverse(e)
-      
-      c = case e['place']
-      when 'interlinear'       then 'inline-note interlinear-note'
-      when 'inline', 'inline2' then 'inline-note doube-line-note'
-      else
-        abort "未知的 note place 屬性：" + e['place']
-      end
-      
-      return "<small class='#{c}'>#{r}</small>"
-    else
-      return traverse(e)
-    end
-  end
-
-  def e_note_add_cf(e)
-    n = e['n']
-    return '' if n.nil?
-
-    app = e.next_sibling
-    return '' if app.nil?
-    return '' unless app.name == 'app'
-    return '' unless app['n'] == n
-
-    lem = app.at_xpath('lem')
-    return '' if lem.nil?
-    e_lem_cf(lem)
-  end
-  
-  def e_note_foot(e)
-    return '' unless e.key?('place')
-    if %w(interlinear inline inline2).include? e['place']
-      return '(%s)' % traverse(e, 'footnote')
-    else
-      return ''
-    end
-  end
-
-
-  def e_note_orig(e)
-    n = e['n']
-    return '' if @mod_notes.include?(n+'a')
-
-    subtype = e['subtype']
-    s = traverse(e, 'footnote')
-    @notes_mod[@juan][n] = s
     
-    #c = @canon
-    
-    # 如果 CBETA 沒有修訂，就跟底本的註一樣
-    # 但是 CBETA 修訂後的編號，有時會加上 a, b
-    # T01n0026, p. 506b07, 大正藏校勘 0506007, CBETA 拆為 0506007a, 0506007b
-    #c += " cb" unless @mod_notes.include?(n) or @mod_notes.include?(n+'a')
-
-    label = case subtype
-    when 'biao' then " data-label='標#{n[-2..-1]}'"
-    when 'jie'  then " data-label='解#{n[-2..-1]}'"
-    when 'ke'   then " data-label='科#{n[-2..-1]}'"
-    else ''
-    end
-    
-    if @mod_notes.include?(n)
-      return ''
-    else
-      #return "<a class='noteAnchor #{c}' href='#n#{n}'#{label}></a>"
-      return "<a class='noteAnchor' href='#n#{n}'#{label}></a>"
-    end
-  end
-  
   def e_p(e, mode)
     return traverse(e, mode) if mode=='footnote'
     
@@ -1032,7 +889,7 @@ class P5aToHTMLForUI
     return '' if PASS.include?(e.name)
     r = case e.name
     when 'anchor'    then e_anchor(e, mode)
-    when 'app'       then e_app(e, mode)
+    when 'app'       then ele_app(e, mode)
     when 'bibl'      then html_span(e, mode)
     when 'biblScope' then html_span(e, mode)
     when 'byline'    then e_byline(e, mode)
@@ -1055,7 +912,7 @@ class P5aToHTMLForUI
     when 'lg'        then e_lg(e, mode)
     when 'list'      then e_list(e, mode)
     when 'mulu'      then e_mulu(e, mode)
-    when 'note'      then e_note(e, mode)
+    when 'note'      then ele_note(e, mode)
     when 'milestone' then e_milestone(e)
     when 'p'         then e_p(e, mode)
     when 'pb'        then e_pb(e, mode)
@@ -1182,7 +1039,7 @@ class P5aToHTMLForUI
     fn = CBETA.linehead_to_xml_file_path(s)
     return false if fn.nil?
     
-    path = File.join(@xml_root, fn)
+    path = File.join(@params[:xml_root], fn)
     File.exist? path
   end
 
@@ -1204,12 +1061,6 @@ class P5aToHTMLForUI
     doc.remove_namespaces!()
     doc
   end
-
-  def read_mod_notes(doc)
-    doc.xpath("//note[@type='mod']").each { |e|
-      @mod_notes << e['n']
-    }
-  end
   
   def rend_to_css(rend)
     a = rend.split(';')
@@ -1228,7 +1079,7 @@ class P5aToHTMLForUI
     doc = open_xml(xml_fn)
     
     e = doc.xpath("//titleStmt/title")[0]
-    @title = traverse(e, 'txt')
+    @title = traverse(e, 'text')
     @title = @title.split()[-1]
     
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")

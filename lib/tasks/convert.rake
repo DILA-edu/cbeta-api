@@ -49,10 +49,15 @@ namespace :convert do
   desc "XML 轉 下載用 Text"
   task :x2t4d, [:publish, :canon] => :environment do |t, args|
     require 'tasks/convert_x2t_for_download'
-    c = ConvertX2tForDownload.new
-    c.convert(args[:publish], args[:canon])
+    ConvertX2tForDownload.new.convert(args[:publish], args[:canon])
   end
   
+  desc "XML 轉 下載用 Text (含校注)"
+  task :x2t4d2, [:publish, :canon] => :environment do |t, args|
+    require 'tasks/convert_x2t4d2'
+    ConvertX2T4D2.new.convert(args[:publish], args[:canon])
+  end
+
   desc "XML 轉 目次 toc JSON 檔"
   task :toc, [:arg1] => :environment do |t, args|
     require 'tasks/convert_toc'

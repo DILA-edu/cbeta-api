@@ -1,15 +1,18 @@
 require 'chronic_duration'
 require_relative 'x2h_for_ui'
 
-class ConvertX2h
-    
+class ConvertX2h    
   def convert(publish, canon)
     t1 = Time.now
-    xml_root = Rails.application.config.cbeta_xml
 
     tmpdir = Rails.root.join('data', 'html-tmp')
-    
-    x2h = P5aToHTMLForUI.new(publish, xml_root, tmpdir)
+    args = {
+      notes: true,
+      publish: publish,
+      xml_root: Rails.application.config.cbeta_xml,
+      out_root: tmpdir
+    }
+    x2h = P5aToHTMLForUI.new(args)
     x2h.convert(canon)
 
     unless canon.nil?

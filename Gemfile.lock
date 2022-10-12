@@ -116,7 +116,7 @@ GEM
     ffi (1.15.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
-    haml (6.0.3)
+    haml (6.0.5)
       temple (>= 0.8.2)
       thor
       tilt
@@ -162,8 +162,6 @@ GEM
     net-ssh (7.0.1)
     nio4r (2.5.8)
     nokogiri (1.13.8-arm64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.13.8-x86_64-linux)
       racc (~> 1.4)
     numerizer (0.1.1)
     open3 (0.1.1)
@@ -249,7 +247,6 @@ GEM
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
     sqlite3 (1.5.2-arm64-darwin)
-    sqlite3 (1.5.2-x86_64-linux)
     sshkit (1.21.0)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
@@ -306,7 +303,6 @@ GEM
 
 PLATFORMS
   arm64-darwin-21
-  x86_64-linux
 
 DEPENDENCIES
   bootsnap (>= 1.1.0)
@@ -352,4 +348,4 @@ RUBY VERSION
    ruby 3.1.2p20
 
 BUNDLED WITH
-   2.3.19
+   2.3.22

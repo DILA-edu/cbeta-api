@@ -1,15 +1,20 @@
 %h1 下載 純文字 格式佛典
 
 %h2 一卷一檔
-%p 例： #{ link_to_url '/download/text/T0001_001.txt.zip' }
+%ul
+  %li 含校注： #{ link_to_url '/download/text-with-notes/T0001_001.txt.zip' }
+  %li 不含校注： #{ link_to_url '/download/text/T0001_001.txt.zip' }
 
 %h2 一部佛典一個 zip 檔
 %ul
-  %li 例： #{ link_to_url '/download/text/T0001.txt.zip' }
+  %li 含校注： #{ link_to_url '/download/text-with-notes/T0001.txt.zip' }
+  %li 不含校注： #{ link_to_url '/download/text/T0001.txt.zip' }
   %li 含目次，例如上述 zip 檔解壓縮後裡面有 T0001-toc.txt.
 
 %h2 全部 CBETA 一個 zip 檔
-%p 例： #{ link_to_url '/download/cbeta-text.zip' }
+%ul
+  %li 含校注： #{ link_to_url '/download/cbeta-text-with-notes.zip' }
+  %li 不含校注： #{ link_to_url '/download/cbeta-text.zip' }
 
 %h2 悉曇字
 

@@ -55,6 +55,9 @@ module RunbookSectionConvert
           system "ln -sf text-for-asia-network cbeta-text"
           system "zip -r -X temp.zip cbeta-text"
           system "mv temp.zip cbeta-text.zip"
+
+          system "zip -r -X temp.zip cbeta-text-with-notes"
+          system "mv temp.zip cbeta-text-with-notes.zip"
         end
       end
     end

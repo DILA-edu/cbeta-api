@@ -23,20 +23,19 @@ class P5aToTextForDownload
   
   private_constant :PASS, :MISSING
 
-  # @param xml_root [String] 來源 CBETA XML P5a 路徑
-  # @param out_root [String] 輸出 HTML 路徑
-  def initialize(publish, xml_root, out_root, txt_root)
-    @publish_date = publish
-    @xml_root = xml_root
-    @out_root = out_root
-    @txt_root = txt_root
+  # @param params [Hash]
+  #   :xml_root [String] 來源 CBETA XML P5a 路徑
+  #   :out_root [String] 輸出 路徑
+  def initialize(params)
+    @params = params
+    @format = 'text'
     @cbeta = CBETA.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
     @us = UnicodeService.new
     
-    FileUtils.rm_rf @out_root
-    FileUtils::mkdir_p @out_root
+    FileUtils.rm_rf    @params[:out_root]
+    FileUtils::mkdir_p @params[:out_root]
   end
 
   # 將 CBETA XML P5a 轉為 HTML
@@ -77,7 +76,7 @@ class P5aToTextForDownload
   private
   
   def convert_all
-    each_canon(@xml_root) do |c|
+    each_canon(@params[:xml_root]) do |c|
       handle_collection(c)
     end
   end
@@ -105,7 +104,7 @@ class P5aToTextForDownload
     n = @sutra_no.sub(/^[A-Z]\d{2,3}n0*([^0].*)$/, '\1')
     r = "#%s\n" % ('-' * 70)
     r += "#【經文資訊】#{orig}第 #{v} 冊 No. #{n} #{@title}\n"
-    r += "#【版本記錄】發行日期：#{@publish_date}，最後更新：#{@updated_at}\n"
+    r += "#【版本記錄】發行日期：#{@params[:publish]}，最後更新：#{@updated_at}\n"
     r += "#【編輯說明】本資料庫由中華電子佛典協會（CBETA）依#{orig}所編輯\n"
     r += "#【原始資料】#{@contributors}\n"
     r += "#【其他事項】本資料庫可自由免費流通，詳細內容請參閱【中華電子佛典協會資料庫版權宣告】\n"
@@ -164,12 +163,12 @@ class P5aToTextForDownload
     url = File.basename(e['url'])
     src = File.join(Rails.configuration.x.figures, @series, url)
     
-    dest = File.join(@out_root, @series, @work_id)
+    dest = File.join(@params[:out_root], @series, @work_id)
     FileUtils.mkdir_p dest
     FileUtils.cp src, dest
     
     j = "#{@work_id}_%03d" % @juan
-    dest = File.join(@out_root, @series, j)
+    dest = File.join(@params[:out_root], @series, j)
     FileUtils.mkdir_p dest
     FileUtils.cp src, dest
     
@@ -203,6 +202,7 @@ class P5aToTextForDownload
     r = ''
     if e['unit'] == 'juan'
       @juan = e['n'].to_i
+      ele_milestone_juan
       r += "<juan #{@juan}>"
     end
     r
@@ -214,17 +214,6 @@ class P5aToTextForDownload
     @toc << '  ' * i + e.text + "\n"
     ''
   end
-
-  def e_note(e)
-    n = e['n']
-    r = ''
-    if e.has_attribute?('place')
-      if %w(inline inline2 interlinear).include? e['place']
-        r = "(%s)" % traverse(e)
-      end
-    end
-    r
-  end
   
   def e_p(e)
     if e['type'] == 'pre'
@@ -233,6 +222,7 @@ class P5aToTextForDownload
       @lb_break << false
     end
     r = traverse(e) + "\n\n"
+    r += write_block_notes
     @lb_break.pop
     r
   end
@@ -308,7 +298,7 @@ class P5aToTextForDownload
   def handle_collection(c)
     @series = c
     $stderr.puts "x2t_for_download #{c}"
-    folder = File.join(@xml_root, @series)
+    folder = File.join(@params[:xml_root], @series)
     Dir.entries(folder).sort.each { |vol|
       next if ['.', '..', '.DS_Store'].include? vol
       handle_vol(vol)
@@ -324,7 +314,9 @@ class P5aToTextForDownload
     return '' if %w(rdg sic).include? e.name
     
     if %w(byline figure head juan lg list table).include? e.name
-      return traverse(e) + "\n\n"
+      r = traverse(e) + "\n"
+      r << "\n" unless e.name == 'lg'
+      return r + write_block_notes
     end
     
     if %w(cell docNumber row).include? e.name
@@ -332,6 +324,7 @@ class P5aToTextForDownload
     end
     
     r = case e.name
+    when 'app'       then ele_app(e)
     when 'caesura'   then e_caesura(e)
     when 'foreign'   then e_foreign(e)
     when 'g'         then e_g(e)
@@ -339,8 +332,7 @@ class P5aToTextForDownload
     when 'item'      then e_item(e)
     when 'l'         then e_l(e)
     when 'lb'        then e_lb(e)
-    when 'list'      then e_list(e)
-    when 'note'      then e_note(e)
+    when 'note'      then ele_note(e, 'text')
     when 'milestone' then e_milestone(e)
     when 'mulu'      then e_mulu(e)
     when 'p'         then e_p(e)
@@ -364,7 +356,6 @@ class P5aToTextForDownload
     @juan = 0
     @lb_break = [false]
     @lg_row_open = false
-    @mod_notes = Set.new
     @next_line_buf = ''
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
@@ -400,7 +391,7 @@ class P5aToTextForDownload
     @vol = vol
     @series = CBETA.get_canon_from_vol(vol)
     
-    source = File.join(@xml_root, @series, vol)
+    source = File.join(@params[:xml_root], @series, vol)
     Dir[source+"/*"].each { |f|
       handle_sutra(f)
     }
@@ -410,7 +401,7 @@ class P5aToTextForDownload
   def handle_vols(v1, v2)
     puts "convert volumns: #{v1}..#{v2}"
     @series = CBETA.get_canon_from_vol(v1)
-    folder = File.join(@xml_root, @series)
+    folder = File.join(@params[:xml_root], @series)
     Dir.foreach(folder) { |vol|
       next if vol < v1
       next if vol > v2
@@ -442,24 +433,21 @@ class P5aToTextForDownload
     doc
   end
 
-  def read_mod_notes(doc)
-    doc.xpath("//note[@type='mod']").each { |e|
-      n = e['n']
-      @mod_notes << n
-      
-      # 例 T01n0026_p0506b07, 原註標為 7, CBETA 修訂為 7a, 7b
-      n.match(/[a-z]$/) {
-        @mod_notes << n[0..-2]
-      }
-    }
-  end
-
   def parse_xml(xml_fn)
     @pass = [false]
 
+    if @params[:notes]
+      @mod_notes = Set.new
+      @notes_add = {}
+      @notes_mod = {}
+      @note_star_count = Hash.new(0)
+      @block_notes = []
+    end
+
     doc = open_xml(xml_fn)
+
+    read_mod_notes(doc) if @params[:notes]
     write_work_yaml(doc)
-    read_mod_notes(doc)
 
     root = doc.root()
     text_node = root.at_xpath("text")
@@ -469,7 +457,7 @@ class P5aToTextForDownload
     text
   end
 
-  def traverse(e)
+  def traverse(e, mode=nil)
     r = ''
     e.children.each { |c| 
       s = handle_node(c)
@@ -477,23 +465,34 @@ class P5aToTextForDownload
     }
     r
   end
+
+  def write_block_notes
+    return '' unless @params[:notes]
+    return '' if @block_notes.empty?
+
+    r = @block_notes.join("\n    ")
+    @block_notes = []
+    '    ' + r + "\n\n"
+  end
   
   def write_juan(juan_no, body)
     fn = "#{@work_id}_%03d.txt" % juan_no
     text = copyright(@work_id, juan_no) + body
     
-    dest = File.join(@out_root, @series, @work_id)
+    dest = File.join(@params[:out_root], @series, @work_id)
     FileUtils.mkdir_p dest
     dest = File.join(dest, fn)
     File.write(dest, text)
     
-    dest = File.join(@txt_root, @series, @work_id)
-    FileUtils.mkdir_p dest
-    dest = File.join(dest, fn)
-    File.write(dest, text)
+    if @params.key?(:out2)
+      dest = File.join(@params[:out2], @series, @work_id)
+      FileUtils.mkdir_p dest
+      dest = File.join(dest, fn)
+      File.write(dest, text)
+    end
     
     j = "#{@work_id}_%03d" % juan_no
-    dest = File.join(@out_root, @series, j)
+    dest = File.join(@params[:out_root], @series, j)
     FileUtils.mkdir_p dest
     dest = File.join(dest, fn)
     File.write(dest, text)
@@ -519,7 +518,7 @@ class P5aToTextForDownload
   def write_toc
     fn = "#{@work_id}-toc.txt"
     
-    dest = File.join(@out_root, @series, @work_id, fn)
+    dest = File.join(@params[:out_root], @series, @work_id, fn)
     File.write(dest, @toc)
   end
 
@@ -544,7 +543,7 @@ class P5aToTextForDownload
       'id' => @work_id,
       'title' => @title,
       'source' => @canon_name,
-      'publish_date' => @publish_date,
+      'publish_date' => @params[:publish],
       'last_modified' => Date.parse(@updated_at),
       'publisher' => '中華電子佛典協會（CBETA）',
       'contributors' => @contributors,
@@ -555,23 +554,25 @@ class P5aToTextForDownload
     fn = "#{@work_id}.yaml"
     text = h.to_yaml
 
-    dest = File.join(@out_root, @series, @work_id)
+    dest = File.join(@params[:out_root], @series, @work_id)
     FileUtils.mkdir_p dest
     path = File.join(dest, fn)
     File.write(path, text)
 
-    dest = File.join(@txt_root, @series, @work_id)
-    FileUtils.mkdir_p dest
-    path = File.join(dest, fn)
-    File.write(path, text)
+    if @params.key?(:out2)
+      dest = File.join(@params[:out2], @series, @work_id)
+      FileUtils.mkdir_p dest
+      path = File.join(dest, fn)
+      File.write(path, text)
+    end
   end
   
   def zip_by_work(canon)
-    canon_folder = File.join(@out_root, @series)
+    canon_folder = File.join(@params[:out_root], @series)
     Dir.entries(canon_folder).each do |f|
       next if f.start_with? '.'
       folder = File.join(canon_folder, f)
-      zipfile_name = File.join(@out_root, "#{f}.txt.zip")
+      zipfile_name = File.join(@params[:out_root], "#{f}.txt.zip")
       Zip::File.open(zipfile_name, Zip::File::CREATE) do |zipfile|
         Dir.entries(folder).sort.each do |filename|
           next if filename.start_with? '.'
