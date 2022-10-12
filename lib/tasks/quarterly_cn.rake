@@ -1,4 +1,4 @@
-desc "每季執行"
+desc "每季執行 (停用)"
 task :quarterly_cn, [:env] => :environment do |t, args|
   require_relative 'quarterly/config'
   include Config

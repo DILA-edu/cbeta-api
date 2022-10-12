@@ -10,9 +10,9 @@ class Quarterly
   require_relative 'quarterly/runbook-kwic'
   require_relative 'quarterly/runbook-download-ebooks'
 
-  def initialize(env)
-    @config = get_config(env)
-    puts "Environment: #{@config[:env]}"
+  def initialize
+    @config = get_config
+    puts "Environment: #{Rails.env}"
     @book = define_runbook(@config)
     @work_dir = Rails.root.join('lib', 'tasks', 'quarterly')
   end
@@ -92,14 +92,14 @@ class Quarterly
       description "CBData 每季更新\n"
       add section_prepare
       add section_check
-      unless config[:env] == 'staging'
+      unless Rails.env.staging?
         add section_html
         add section_change_log
       end
       add section_rdb
       add section_convert
       add section_sphinx
-      add section_kwic  unless config[:env] == 'staging'
+      add section_kwic  unless Rails.env.staging?
       add section_download_ebooks
     end
   end

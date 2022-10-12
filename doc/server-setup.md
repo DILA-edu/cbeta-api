@@ -164,7 +164,7 @@ $ ln -s text-for-asia-network cbeta-text
 
 ## Quarterly
 
-$ bundle exec rake quarterly:run[staging]
+$ bundle exec rake quarterly:run
 
 ## OpenCC
 

@@ -2,7 +2,7 @@ module Config
   Q1 = '2022Q3'
   Q2 = '2022Q4' # 有時候會跳過一季
 
-  def get_config(env=nil)
+  def get_config
     app1 = Q1.sub(/^\d+Q(\d)$/, 'cbapi\1') # 用於：從上一季複製資料
     app2 = Q2.sub(/^\d+Q(\d)$/, 'cbapi\1')
 
@@ -17,11 +17,10 @@ module Config
     r[:publish] = "#{Q2[0, 4]}-%02d" % (r[:v] * 3 - 2)
 
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
-    r[:env] = env || Rails.env
 
     puts "mode: #{Rails.env}"
     case Rails.env
-    when 'production'
+    when 'production', 'staging'
       r[:git]           = '/home/ray/git-repos'
       r[:old]           = "/var/www/#{app1}/shared"
       r[:old_data]      = File.join(r[:old],  'data')
