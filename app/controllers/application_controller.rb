@@ -133,8 +133,12 @@ class ApplicationController < ActionController::Base
   def record_visit
     # 去掉 sub domain
     path = request.path.sub(%r{^/(dev|stable|v1.2)/}, '/')
-    referer = request.referer
+    if path.start_with?('/download')
+      a = path.split('/')
+      path = a.first(3).join('/')
+    end
 
+    referer = request.referer
     unless referer.nil?
       # referer 只記錄 host
       referer = referer.split('//').last.split('/').first

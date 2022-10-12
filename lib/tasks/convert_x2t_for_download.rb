@@ -13,13 +13,13 @@ class ConvertX2tForDownload
       publish: publish,
       xml_root: Rails.application.config.cbeta_xml,
       out_root: tmpdir,
-      out2: Rails.root.join('public', 'download', 'text-for-asia-network')
+      out2: Rails.root.join('data', 'download', 'text-for-asia-network')
     }
     x2t = P5aToTextForDownload.new(args)
     x2t.convert(canon)
     
     src = tmpdir
-    dest = Rails.root.join('public', 'download', 'text')
+    dest = Rails.root.join('data', 'download', 'text')
     FileUtils.mkdir_p(dest)
     
     # 備份舊資料

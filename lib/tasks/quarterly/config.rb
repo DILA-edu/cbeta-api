@@ -43,7 +43,7 @@ module Config
     r[:figures]  = Rails.configuration.x.figures
 
     # eBook
-    r[:download] = File.join(r[:public], 'download')
+    r[:download] = File.join(r[:data], 'download')
     r[:epub] = File.join(r[:download], 'epub')
     r[:mobi] = File.join(r[:download], 'mobi')
     r[:epub_template] = Rails.root.join('lib/tasks/quarterly/epub-template')

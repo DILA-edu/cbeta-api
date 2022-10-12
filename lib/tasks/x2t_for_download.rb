@@ -297,7 +297,7 @@ class P5aToTextForDownload
 
   def handle_collection(c)
     @series = c
-    $stderr.puts "x2t_for_download #{c}"
+    $stderr.puts "x2t_for_download #{c}, notes: #{@params[:notes]}"
     folder = File.join(@params[:xml_root], @series)
     Dir.entries(folder).sort.each { |vol|
       next if ['.', '..', '.DS_Store'].include? vol
@@ -361,7 +361,7 @@ class P5aToTextForDownload
     @sutra_no = File.basename(xml_fn, ".xml")
     @toc = ''
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
-    $stderr.puts "x2t_for_download #{@work_id}"
+    $stderr.puts "x2t_for_download #{@work_id}, notes: #{@params[:notes]}"
     @updated_at = MyCbetaShare::get_update_date(xml_fn)
     
     if @sutra_no.match(/^(T05|T06|T07)n0220/)

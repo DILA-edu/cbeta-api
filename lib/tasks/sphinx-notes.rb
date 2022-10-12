@@ -487,7 +487,7 @@ class SphinxNotes
   end
 
   def write_footnotes_for_download(all_notes)
-    folder = Rails.root.join('public', 'download', 'footnotes', @canon, @work_id)
+    folder = Rails.root.join('data', 'download', 'footnotes', @canon, @work_id)
     FileUtils.makedirs(folder)
     all_notes.each_pair do |juan, notes|
       fn = File.join(folder, "%03d.csv" % juan)

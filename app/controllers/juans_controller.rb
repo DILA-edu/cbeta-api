@@ -89,7 +89,7 @@ class JuansController < ApplicationController
     work = Work.find_by n: juan.work
     
     fn = "#{work.n}_%03d.txt" % juan.juan
-    fn = Rails.root.join('public', 'download', 'text-for-asia-network', work.canon, work.n, fn)
+    fn = Rails.root.join('data', 'download', 'text-for-asia-network', work.canon, work.n, fn)
     
     if File.exist? fn
       s = File.read(fn)

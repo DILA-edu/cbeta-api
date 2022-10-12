@@ -15,12 +15,12 @@ class ConvertX2T4D2
       xml_root: Rails.application.config.cbeta_xml,
       out_root: tmpdir,
       # out2: 供壓縮為 cbeta-text-with-notes.zip
-      out2: Rails.root.join('public', 'download', 'cbeta-text-with-notes')
+      out2: Rails.root.join('data', 'download', 'cbeta-text-with-notes')
     }
     x2t = P5aToTextForDownload.new(args)
     x2t.convert(canon)
     
-    dest = Rails.root.join('public', 'download', 'text-with-notes')
+    dest = Rails.root.join('data', 'download', 'text-with-notes')
     FileUtils.mkdir_p(dest)
     
     # 備份舊資料

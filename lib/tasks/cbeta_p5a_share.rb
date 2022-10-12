@@ -49,6 +49,7 @@ module CbetaP5aShare
   end
 
   def ele_milestone_juan
+    return unless @params[:notes]
     @notes_mod[@juan] = {}
     @notes_add[@juan] = []
   end
