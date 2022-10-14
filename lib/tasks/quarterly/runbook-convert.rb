@@ -7,22 +7,20 @@ module RunbookSectionConvert
     step_zip_text = define_step_zip_text(config)
 
     Runbook.section "Convert (runbook-convert.rb)" do
-      if config[:env] != 'staging'
-        step '作品內目次 轉為 一部作品一個 JSON 檔 (rake convert:toc)' do
-          command 'rake convert:toc'
-        end
-        step '產生供下載用的 HTML 檔 (rake convert:x2h4d)' do
-          command "rake convert:x2h4d[#{config[:publish]}]"
-        end
-        add step_creators_list
-        add step_t4d
-        add step_zip_text
+      step '作品內目次 轉為 一部作品一個 JSON 檔 (rake convert:toc)' do
+        command 'rake convert:toc'
       end
 
-      if config[:env] == 'production' # cn 不必做
-        step '產生供 DocuSky 使用的 DocuXML 檔 (16分鐘) (rake convert:docusky)' do
-          command 'rake convert:docusky'
-        end
+      step '產生供下載用的 HTML 檔 (rake convert:x2h4d)' do
+        command "rake convert:x2h4d[#{config[:publish]}]"
+      end
+      
+      add step_creators_list
+      add step_t4d
+      add step_zip_text
+
+      step '產生供 DocuSky 使用的 DocuXML 檔 (16分鐘) (rake convert:docusky)' do
+        command 'rake convert:docusky'
       end
     end
   end # end of define_section_convert(config)

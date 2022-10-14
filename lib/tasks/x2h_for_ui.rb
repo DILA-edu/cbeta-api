@@ -63,8 +63,8 @@ class P5aToHTMLForUI
         convert_canon(arg)
       else
         puts "注意：因為某些佛典單卷跨冊，轉檔必須以某部藏經為單位，例如參數 T 表示轉換整個大正藏。"
-        work_id = CBETA.get_work_id_from_file_basename(target)
-        @canon = CBETA.get_canon_id_from_work_id(work_id)
+        @work_id = CBETA.get_work_id_from_file_basename(target)
+        @canon = CBETA.get_canon_id_from_work_id(@work_id)
         convert_canon_init(@canon)
         @vol = target.sub(/^(#{@canon}\d+).*$/, '\1')
         fn = File.join(@params[:xml_root], @canon, @vol, "#{target}.xml")
@@ -98,6 +98,7 @@ class P5aToHTMLForUI
     $stderr.print "\nx2h_for_ui #{@sutra_no}"
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @updated_at = MyCbetaShare.get_update_date(xml_fn)
+    @title = Work.get_info_by_id(@work_id)[:title]
   end
 
   def convert_all
@@ -1077,11 +1078,7 @@ class P5aToHTMLForUI
     @pass = [false]
 
     doc = open_xml(xml_fn)
-    
-    e = doc.xpath("//titleStmt/title")[0]
-    @title = traverse(e, 'text')
-    @title = @title.split()[-1]
-    
+        
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
     @contributors = e.text

@@ -92,11 +92,14 @@ class Quarterly
       description "CBData 每季更新\n"
       add section_prepare
       add section_check
+      add section_rdb
+
+      # 需要 Work.title
+      add section_html
+
       unless Rails.env.staging?
-        add section_html
         add section_change_log
       end
-      add section_rdb
       add section_convert
       add section_sphinx
       add section_kwic  unless Rails.env.staging?
