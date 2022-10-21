@@ -38,13 +38,6 @@ CBETA XML 新一季定案後執行。
 
 視需要產生 UUID, 參考 uuid.md
 
-## 作譯者
-
-由 authority.dila 取得 大正藏 作譯者
-
-    cd /Users/ray/git-repos/cbeta-metadata/creators/bin
-    ruby get-creators-from-authority.rb
-
 ## Server 端執行 rake quarterly
 
 編輯 shared/.asdf-vars

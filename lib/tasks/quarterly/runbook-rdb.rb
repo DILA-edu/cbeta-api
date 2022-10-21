@@ -31,18 +31,6 @@ module RunbookSectionRDB
         command 'rake import:catalog'
       end
 
-      #step '更新「佛典所屬部類」資訊 (rake import:category)' do
-      #  command 'rake import:category'
-      #end
-
-
-      # 這要在 import:work_info 之後做，跨冊的 title 才會對（ex: Y0030)。
-      # 由 GitHub 上的 cbeta-metadata 及 p5a 匯入:
-      step '匯入「佛典跨冊」資訊 (rake import:cross)' do
-        confirm '如果有新增的佛典跨冊，要更新 cbeta-metadata/special-works'
-        command 'rake import:cross'
-      end
-
       step '匯入地理資訊 (rake import:place)' do
         command 'rake import:place'
       end
