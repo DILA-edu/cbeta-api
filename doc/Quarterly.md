@@ -8,7 +8,9 @@ CBETA XML 新一季定案後執行。
 
 * config
   * application.rb
-  * deploy/staging.rb
+  * deploy
+    * staging.rb
+    * production.rb
   * environments
     * staging.rb: config.x.q
     * production.rb: config.x.q
@@ -16,7 +18,8 @@ CBETA XML 新一季定案後執行。
 
 ## 從 GitHub 更新資料
 
-在開發端執行 `bundle exec rake quarterly:run` 最前面的 update from github
+在開發端執行 `bundle exec rake quarterly:run` 
+只做最前面的 update from github
 
 ## Update cbeta-metadata on GitHub
 

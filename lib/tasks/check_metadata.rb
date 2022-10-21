@@ -1,9 +1,4 @@
 class CheckMetadata
-
-  def initialize
-    @metadata = Rails.configuration.cbeta_data
-  end
-  
   def check
     $stderr.puts "check metadata"
     @titles = read_titles
@@ -16,8 +11,10 @@ class CheckMetadata
         errors << bn
       end
     end
-    unless errors.empty?
-      puts "以下佛典缺 title:"
+    if errors.empty?
+      puts "檢查通過，未發現錯誤。".green
+    else
+      puts "以下佛典缺 title:".red
       puts errors.join(', ')
     end
     errors.empty?
@@ -26,11 +23,13 @@ class CheckMetadata
   private
 
   def read_titles
-    fn = File.join(@metadata, 'titles/all-title-byline.csv')
+    src = Rails.configuration.x.work_info
     r = {}
-    CSV.foreach(fn, headers: true) do |row|
-      id = row['典籍編號']
-      r[id] = row['典籍名稱']
+    Dir.glob("#{src}/*.json") do |f|
+      works = JSON.load_file(f)
+      works.each do |id, h|
+        r[id] = h['title']
+      end
     end
     r
   end

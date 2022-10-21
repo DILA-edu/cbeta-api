@@ -1,9 +1,9 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
   
-  config.x.v = '3' # 季號, 用於 sphinx index name
-  config.x.ver = '1.2.28'
-  config.x.q = '2022q3' # 季號，用於 cache key
+  config.x.v = '4' # 季號, 用於 sphinx index name
+  config.x.ver = '1.2.29'
+  config.x.q = '2022q4' # 季號，用於 cache key
 
   GIT = '/home/ray/git-repos'
   config.x.git = GIT

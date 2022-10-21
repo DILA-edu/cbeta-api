@@ -11,7 +11,7 @@ Resource Provider API 說明：<https://rise.mpiwg-berlin.mpg.de/pages/doc_for_r
 
 2. 產生 UUID, 在 local 端執行
 
-    bundle exec rake import:work_id
+    bundle exec rake import:work_info
     bundle exec rake create:uuid
 
 以上命令會產生 JSON 格式的 uuid 放在 data-static/uuid 資料夾裡
