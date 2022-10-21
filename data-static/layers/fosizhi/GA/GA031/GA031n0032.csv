@@ -6875,10 +6875,10 @@ lb,position,tag,type,key,name
 0515a05,2,person,end,A022008,明秀
 0515a07,17,place,start,PL55454,胥彌
 0515a07,18,place,end,PL55454,胥彌
-0515a09,2,person,start,A002799,如來
-0515a09,3,person,end,A002799,如來
-0515a09,6,person,start,A002803,觀音
-0515a09,7,person,end,A002803,觀音
+0515a09,3,person,start,A002799,如來
+0515a09,4,person,end,A002799,如來
+0515a09,7,person,start,A002803,觀音
+0515a09,8,person,end,A002803,觀音
 0520a02,1,place,start,PL11848,徑山
 0520a02,2,place,end,PL11848,徑山
 0520a02,6,person,start,A021970,文苪

@@ -315,7 +315,12 @@ class ImportLayers
       @count[tag] += 1
       i = @count[tag]
       if (i % 100) == 0
-        puts "#{tag}: #{i}, mismatch: #{@mismatch}"
+        print "#{tag}: #{i}"        
+        if @mismatch > 0
+          puts ", mismatch: #{@mismatch}"
+        else
+          puts
+        end
       end
     end
 

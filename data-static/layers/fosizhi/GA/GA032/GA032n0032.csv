@@ -3495,8 +3495,8 @@ lb,position,tag,type,key,name
 0729a09,10,person,end,A022600,福生
 0730a01,3,place,start,PL11508,杭
 0730a01,3,place,end,PL11508,杭
-0730a01,6,place,start,PL11772,徑山
-0730a01,7,place,end,PL11772,徑山
+0730a01,8,place,start,PL11772,徑山
+0730a01,9,place,end,PL11772,徑山
 0730a02,4,place,start,PL11796,寶安
 0730a02,5,place,end,PL11796,寶安
 0730a02,8,place,start,PL56363,富春渚
@@ -3517,9 +3517,9 @@ lb,position,tag,type,key,name
 0731a07,3,person,end,A022746,邵不朋
 0731a07,17,person,start,A022746,不朋
 0731a07,18,person,end,A022746,不朋
-0732a01,7,person,start,A022746,不朋
-0732a01,8,person,end,A022746,不朋
-0732a01,18,person,start,A014488,智和尚
+0732a01,9,person,start,A022746,不朋
+0732a01,10,person,end,A022746,不朋
+0732a01,20,person,start,A014488,智和尚
 0732a02,1,person,end,A014488,智和尚
 0732a06,11,place,start,PL42526,阿房
 0732a06,12,place,end,PL42526,阿房
