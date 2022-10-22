@@ -97,12 +97,10 @@ class Quarterly
       # 需要 Work.title
       add section_html
 
-      unless Rails.env.staging?
-        add section_change_log
-      end
+      add section_change_log
       add section_convert
       add section_sphinx
-      add section_kwic  unless Rails.env.staging?
+      add section_kwic
       add section_download_ebooks
     end
   end
