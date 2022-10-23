@@ -52,7 +52,7 @@ struct CMP {
 };
 
 void suffix_array(char *arg, string dir) {
-  std::cout << "sa.cpp: begin suffix_array(), dir: " << dir << "\n";
+  //std::cout << "sa.cpp: begin suffix_array(), dir: " << dir << "\n";
   std::string base;
   base.assign(arg);
   base += '/';
@@ -67,7 +67,7 @@ void suffix_array(char *arg, string dir) {
     fn_text = base + "all-b.txt";
     fn_sa = base + "sa-b.dat";
   }
-  std::cout << "fn_sa: " << fn_sa << "\n";
+  //std::cout << "fn_sa: " << fn_sa << "\n";
 
   // 開檔並移至檔尾
   f_text.open(fn_text, ios::binary|ios::ate);
@@ -131,7 +131,7 @@ void suffix_array(char *arg, string dir) {
   myFile.open (fn_sa, ios::out | ios::binary);
   myFile.write ((char*)sa, size_in_bytes);
   myFile.close();
-  std::cout << "sa.cpp: end of suffix_array()\n";
+  //std::cout << "sa.cpp: end of suffix_array()\n";
 }
 
 int main(int argc, char* argv[])

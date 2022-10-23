@@ -3,10 +3,8 @@ require 'diff/lcs'
 require 'cbeta'
 require 'csv'
 
+# 前置作務： import:work_info
 class DiffToHTML
-
-  #API = 'http://cbdata.dila.edu.tw/v1.2'
-  API = 'http://cbdata.dila.edu.tw/dev'
   PUNCS = '.()[] 。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—　'
   WORD = %r{
     \[[^\]]+\]|  # 組字式
@@ -29,7 +27,6 @@ class DiffToHTML
     fn = File.join(@base, 'diff-to-html-log.htm')
     @log = File.open(fn, 'w')
     @log.puts html_header
-    @titles = read_titles
 
     p = Regexp.quote(PUNCS)
     @puncs_regexp = /[#{p}]/
@@ -87,7 +84,7 @@ class DiffToHTML
     a.shift
     f = a.join('/')
     work_id = CBETA.get_work_id_from_file_basename(work)
-    title = @titles[work_id]
+    title = Work.find_by(n: work_id).title
     @added += "<li>#{f}/#{work}《#{title}》卷#{juan}</li>\n"
   end
 
@@ -106,7 +103,7 @@ class DiffToHTML
     a.shift
     f = a.join('/')
     work_id = CBETA.get_work_id_from_file_basename(work)
-    title = @titles[work_id]
+    title = Work.find_by(n: work_id).title 
     @added += "<li>#{f}/#{work}《#{title}》</li>\n"
   end
 
@@ -268,7 +265,7 @@ class DiffToHTML
     basename = tokens[2]
     juan = tokens.last.sub(/^0*(\d+)\.txt$/, '\1')
     work_id = CBETA.get_work_id_from_file_basename(basename)
-    title = @titles[work_id]
+    title = Work.find_by(n: work_id).title
 
     # 2019Q1 Y 重新分卷
     if @v2 == '2019Q1' and basename.start_with?('Y')
@@ -378,16 +375,6 @@ class DiffToHTML
       s = diff_chars(s1, s2)
       s.gsub("\n", "<br>")
       r += s
-    end
-    r
-  end
-
-  def read_titles
-    fn = File.join(@config[:metadata], 'titles/all-title-byline.csv')
-    r = {}
-    CSV.foreach(fn, headers: true) do |row|
-      id = row['典籍編號']
-      r[id] = row['典籍名稱']
     end
     r
   end
