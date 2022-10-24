@@ -49,7 +49,7 @@ class ExportController < ApplicationController
   end
   
   def check_list
-    c = params[:canon]
+    c = params[:canon] || 'J'
     works = Work.where('n like ?', "#{c}%").order(:n)
     csv_string = CSV.generate do |csv|
       csv << ["經號", "經名", "卷次"]
