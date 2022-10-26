@@ -6,7 +6,7 @@ class DownloadEbooks
   end
 
   def run(type=nil)
-    dest_folder = Rails.root.join('public', 'download')
+    dest_folder = Rails.root.join('data', 'download')
     Dir.chdir(dest_folder) do
       case type
       when 'epub', 'mobi'
