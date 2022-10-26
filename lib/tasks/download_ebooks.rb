@@ -6,6 +6,7 @@ class DownloadEbooks
   end
 
   def run(type=nil)
+    @errors = ""
     dest_folder = Rails.root.join('data', 'download')
     Dir.chdir(dest_folder) do
       case type
@@ -19,6 +20,7 @@ class DownloadEbooks
         download_pdf
       end
     end
+    puts @errors
   end
 
   private
@@ -34,11 +36,17 @@ class DownloadEbooks
   end
 
   def download_one_zip(type)
-    download("#{BASE}/epub/cbeta_#{type}_#{@q}.zip")
+    download("#{BASE}/#{type}/cbeta_#{type}_#{@q}.zip")
     File.rename("cbeta_#{type}_#{@q}.zip", "cbeta-#{type}-#{@q}.zip")
-    system "unzip cbeta-#{type}-#{@q}.zip"
-    system "rm -rf #{type}"
-    system "mv cbeta_#{type}_#{@q} #{type}"
+    fn = "cbeta-#{type}-#{@q}.zip"
+    if system("unzip #{fn}")
+      system "rm -rf #{type}"
+      system "mv cbeta_#{type}_#{@q} #{type}"
+      true
+    else
+      @errors << "解壓縮失敗: #{fn}\n"
+      false
+    end
   end
 
   def download_pdf
