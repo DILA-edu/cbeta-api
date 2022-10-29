@@ -104,7 +104,11 @@ module CbetaP5aShare
     if @format == 'html'
       n = "cb_note_#{n}"
       @notes_add[@juan] << "<span class='footnote add' id='#{n}'>#{s}</span>"
-      return "<a class='noteAnchor add' href='##{n}'></a>"
+      node = HtmlNode.new('a')
+      node['class'] = 'noteAnchor add'
+      node['href'] = "##{n}"
+      node['data-key'] = e['note_key'] if e.key?('note_key')
+      return node.to_s
     else
       @notes_add[@juan] << "[A#{n}] #{s}"
       @block_notes << "[A#{n}] #{s}"
