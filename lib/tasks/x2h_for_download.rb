@@ -187,13 +187,7 @@ class P5aToHTMLForDownload
   
   def e_g(e, mode)
     gid = e['ref'][1..-1]
-
-    if gid.start_with? 'CB'
-      g = @gaijis[gid]
-    else
-      g = @gaijis_skt[gid]
-    end
-
+    g = gid.start_with?('CB') ? @gaijis[gid] : @gaijis_skt[gid]
     abort "Line:#{__LINE__} 無缺字資料:#{gid}" if g.nil?
     
     if mode == 'txt'
@@ -232,9 +226,9 @@ class P5aToHTMLForDownload
     nor = ''
     if @gaiji_norm.last # 如果沒有特別指定不能用通用字
       unless g['norm_uni_char'].blank?
-        nor = g['norm_uni_char']
+        nor = g['norm_uni_char'].clone
         if default.empty?
-          default = nor if @us.level2?(g['norm_unicode'])
+          default = nor.clone if @us.level2?(g['norm_unicode'])
         end
       end
 
@@ -247,7 +241,6 @@ class P5aToHTMLForDownload
     end
 
     default = g['composition'] if default.empty?
-
     %(<span class="gaiji" data-gid="#{gid}">#{default}</span>)
   end
 
