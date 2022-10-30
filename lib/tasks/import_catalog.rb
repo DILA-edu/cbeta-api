@@ -126,11 +126,17 @@ class ImportCatalog
           data[:juan_end] = data[:juan_start]
         end
       end
+      
       if node.key? 'file'
         data[:file] = node['file']
         if type == 'work'
           begin
-            title = get_title_from_xml_file(node['file'])
+            title = 
+              if work_id.match(/^(LC|TX|Y)/)
+                w.title
+              else
+                get_title_from_xml_file(node['file'])
+              end
           rescue
             $stderr.puts "error: #{$!}"
             $stderr.puts "add_work: work_id:#{work_id}, node:#{node}"
@@ -150,17 +156,13 @@ class ImportCatalog
     else
       data[:label] = "#{w.n}(=#{w.alt}) #{w.title}"
       
-      unless work_id.start_with? 'Y'
+      unless work_id.match(/^(LC|TX|Y)/)
         data[:label] += " (#{w.juan}卷)" unless w.juan.nil?
       end
       
       add_node data
       add_alts data[:n], w.alt
     end
-
-    #unless @canon.nil?
-    #  update_category work_id if work_id.start_with?(@canon)
-    #end
 
     @log.puts "</div>\n"
   end
@@ -192,8 +194,6 @@ class ImportCatalog
   def get_category(parent, name)
     if parent=='CBETA'
       @category = name.split[1]
-    #elsif parent.match(/^Cat-[A-Z]$/)
-    #  @orig_category = name.split[1]
     end
   end
   
@@ -301,15 +301,5 @@ div { margin-left: 1em; }
       end
     end
     i
-  end
-  
-  # def update_category(work)
-  #   w = Work.find_by n: work
-  #   return if w.nil?
-    
-  #   unless @orig_category.nil?
-  #     w.update orig_category: @orig_category
-  #   end
-  # end
-  
+  end  
 end
