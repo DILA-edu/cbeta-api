@@ -1,0 +1,119 @@
+%h1 Export
+%ul
+  %li= link_to '字數統計表', { controller: 'static_pages', action: 'word_count' }
+  %li= link_to '嘉興藏檢查表', '#check_list_j'
+  %li= link_to '全部作譯者列表', '#all_creators'
+  %li= link_to '全部作譯者列表(含別名)', '#all_creators2'
+  %li= link_to '全部佛典 卷列表', '#all_works'
+  %li= link_to '各朝代 佛典數量', '#dynasty'
+  %li= link_to '範圍選擇清單', { controller: 'static_pages', action: 'scope_selector' }
+  %li 
+    Metadata for
+    =link_to 'TextRef', 'https://textref.org/'
+    %ul
+      %li= link_to_url '/textref/meta.csv', 'MetaURL'
+      %li= link_to_url '/textref/data.csv', 'DataURL'
+      
+%h2#check_list_j 嘉興藏檢查表
+%p
+  URL: 
+  = link_to_url '/export/check_list?canon=J'
+%p 回傳 CSV 格式檔案，例：
+%pre.ml-3
+  經號,經名,卷次
+  JA001,大方廣佛華嚴經,卷1
+
+%h2#all_creators 全部作譯者列表
+%p
+  URL: 
+  = link_to_url '/export/all_creators'
+%p 回傳 JSON 例：
+%pre.ml-3
+  :preserve
+    {
+      "num_found": 2185,
+      "results": [
+        [
+          "A000001",
+          "金總持"
+        ],
+        [
+          "A000002",
+          "𧧌震"
+        ],
+        ...
+      ]
+    }
+
+%h2#all_creators2 全部作譯者列表(含別名)
+%p
+  URL: 
+  = link_to_url '/export/all_creators2'
+%p 回傳 JSON 例：
+%pre.ml-3
+  :preserve
+    {
+      "num_found": 2185,
+      "results": {
+        "A000001": {
+          "regular_name": "金總持",
+          "aliases_all": [
+            "金揔持",
+            "寶輪大師",
+            "明因妙善普濟法師"
+          ]
+        },
+        "A000002": {
+          "regular_name": "𧧌震",
+          "aliases_all": [
+            "仁山𧧌震",
+            "仁山大師",
+            "寂震",
+            "華頂震",
+            "仁叟"
+          ]
+        },
+        ...
+      }
+    }
+
+%h2#all_works 全部佛典 卷列表
+%p
+  URL: 
+  = link_to_url '/export/all_works'
+%p 回傳 JSON 例：
+%pre.ml-3
+  :preserve
+    [
+      {
+        "work": "Ba001",
+        "title": "出版說明",
+        "juans": [
+          "1"
+        ]
+      },
+      ...
+      {
+        "work": "T0001",
+        "title": "長阿含經",
+        "juans": [
+          "1",
+          "2",
+          ...
+          "22"
+        ]
+      },
+      ...
+    ]
+
+%h2#dynasty 各朝代 佛典數量
+%p
+  URL: 
+  = link_to_url '/export/dynasty'
+%p 回傳 JSON 例：
+%pre.ml-3
+  :preserve
+    {
+      "num_found": 38,
+      "results": "朝代,起始年,結束年,典籍數\n後漢,25,220,1\n...民國,1912,9999,75\n"
+    }

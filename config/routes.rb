@@ -57,6 +57,7 @@ Rails.application.routes.draw do
   get 'static_pages/download_footnotes'
   get 'static_pages/download_html'
   get 'static_pages/download_text'
+  get 'static_pages/export'
   get 'static_pages/get_html'
   get 'static_pages/goto'
   get 'static_pages/html_for_ui'
@@ -86,7 +87,8 @@ Rails.application.routes.draw do
   get 'static_pages/word_seg'
   get 'static_pages/works'
   get 'static_pages/work'
-
+  get 'textref/meta'
+  get 'textref/data'
   match 'toc', to: 'toc_node#index', via: [:get, :post]
 
   match 'word_seg2', to: 'word_seg#run', via: [:get, :post]

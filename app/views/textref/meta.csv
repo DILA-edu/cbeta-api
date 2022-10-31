@@ -1,0 +1,7 @@
+Field,Value
+MetaURL,https://cbdata.dila.edu.tw/stable/textref/meta.csv
+DataURL,https://cbdata.dila.edu.tw/stable/textref/data.csv
+ShortName,CBETA
+LongName,CBETA
+ResourceTemplate,http://cbetaonline.dila.edu.tw/{primary_id}
+SchemaURL,http://ctext.org/static/textrefschema.csv

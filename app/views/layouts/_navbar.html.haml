@@ -12,7 +12,8 @@
       %li.nav-item
         =link_to 'KWIC3', { controller: 'static_pages', action: 'kwic3_juan'}, class: 'nav-link'
       =render 'layouts/navbar_download'
-      =render 'layouts/navbar_export'
+      %li.nav-item
+        =link_to 'Export', { controller: 'static_pages', action: 'export'}, class: 'nav-link'
       =render 'layouts/navbar_chinese_tools'
       %li.nav-item
         =link_to 'SHINE API', { controller: 'static_pages', action: 'rise_shine'}, class: 'nav-link'

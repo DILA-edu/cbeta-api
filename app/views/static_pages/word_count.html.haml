@@ -2,3 +2,8 @@
 %ul
   %li=link_to "字數統計規則", "https://bit.ly/3MMH1V8"
   %li=link_to '下載字數統計表', { controller: 'works', action: 'word_count' }
+
+%p 回傳 CSV 格式檔案，內容是各部典籍字數統計。例：
+%pre.ml-3
+  work,cjk_chars,en_words,canon,category
+  A1057,38830,0,A,事彙部類

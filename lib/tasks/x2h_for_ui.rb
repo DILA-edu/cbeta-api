@@ -356,14 +356,14 @@ class P5aToHTMLForUI
     unless mode.include? 'footnote'
       if @gaiji_norm.last # 如果 沒有特別說 不能用 通用字
         if @us.level2?(g['norm_unicode'])
-          nor = g['norm_uni_char']
-          default = nor if default.empty?
+          nor = g['norm_uni_char'].clone
+          default = nor.clone if default.empty?
         end
 
         c = g['norm_big5_char']
         unless c.nil? or c.empty?
-          nor += ', ' unless nor==''
-          nor += c
+          nor << ', ' unless nor==''
+          nor << c
           default = c if default.empty?
         end
       end
