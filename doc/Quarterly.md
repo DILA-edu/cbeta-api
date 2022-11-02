@@ -84,7 +84,7 @@ CBETA XML 新一季定案後執行。
 
 修改 server 上的 /etc/apache2/sites-available
   * cbdata-sub.conf
-  * cbdata-cn.conf
+  * cbdata-cn.conf (停用)
 
 編輯 shared/.asdf-vars
     RAILS_ENV=production
