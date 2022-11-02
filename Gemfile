@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '3.1.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.0.3'
+gem 'rails', '~> 6.0.6'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3'
 # Use Puma as the app server
@@ -27,14 +27,7 @@ gem 'jquery-rails'
 #gem 'turbolinks', '~> 5'
 
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
-gem 'jbuilder', '~> 2.5'
-# Use Redis adapter to run Action Cable in production
-# gem 'redis', '~> 3.0'
-# Use ActiveModel has_secure_password
-# gem 'bcrypt', '~> 3.1.7'
-
-# Use Capistrano for deployment
-#gem 'capistrano-rails', group: :development
+gem 'jbuilder'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.1.0', require: false
@@ -87,14 +80,10 @@ group :development do
   gem 'capistrano-passenger'
 end
 
-#source 'https://rails-assets.org' do
-#  gem 'rails-assets-bootstrap'
-#end
 gem 'bootstrap', '~> 4.0.0'
 
 gem 'rubyzip'
 gem 'colorize'
-#gem 'rack-cors', require: 'rack/cors'
 gem 'runbook'
 gem 'diff-lcs'
 gem 'unihan2', '>= 0.2.0'

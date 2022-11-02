@@ -2,10 +2,12 @@
 
 ## Config
 
-* 修改 config/deploy.rb
-  * set application
-* 修改 config/deploy/staging.rb
-  * deploy_to
+* config
+  * 修改 deploy.rb
+    * set application
+  * deploy
+    * 修改 staging.rb 的 deploy_to
+    * 修改 procution.org 的 deploy_to
 * 修改 lib/tasks/quarterly/config.rb
 
 ## Deploy

@@ -1,6 +1,6 @@
 module Config
-  Q1 = '2022Q3'
-  Q2 = '2022Q4' # 有時候會跳過一季
+  Q1 = '2022Q4'
+  Q2 = '2023Q1' # 有時候會跳過一季
 
   def get_config
     app1 = Q1.sub(/^\d+Q(\d)$/, 'cbapi\1') # 用於：從上一季複製資料
