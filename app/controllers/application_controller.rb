@@ -8,7 +8,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery only: :create
 
   def referer_cn?
-    request.referer == 'cbetaonline.cn'
+    request.referer.end_with?('cbetaonline.cn')
   end
 
   def get_canon_from_work_id(id)
