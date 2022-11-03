@@ -5,7 +5,7 @@ Rails.application.configure do
   config.x.ver = '1.2.29'
   config.x.q = '2022q4' # 季號，用於 cache key
 
-  GIT = '/home/ray/git-repos'
+  GIT = '/home/ray/git-repos-stable'
   config.x.git = GIT
   config.cbeta_xml   = File.join(GIT, 'cbeta-xml-p5a')
   config.cbeta_data  = File.join(GIT, 'cbeta-metadata')

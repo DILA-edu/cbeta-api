@@ -6,6 +6,11 @@ class CatalogEntryController < ApplicationController
     elsif params[:q]
       results = get_entries_by_parent(params[:q])
       label = get_label_by_entry(params[:q])
+      puts '-' * 20
+      puts request.referer
+      if params[:q] == 'vol' and referer_cn?
+        results.reject! { |x| x[:n].match?(/^Vol-(TX|Y)$/) }
+      end
     else
       results = get_entries_by_parent('root')
       label = 'CBETA 漢文佛典集成'

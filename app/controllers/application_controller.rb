@@ -6,7 +6,11 @@ class ApplicationController < ActionController::Base
   # 因為回傳 json 要有 callback
   #protect_from_forgery with: :exception
   protect_from_forgery only: :create
-  
+
+  def referer_cn?
+    request.referer == 'cbetaonline.cn'
+  end
+
   def get_canon_from_work_id(id)
     id.sub(/^(GA|GB|[A-Z]).*$/, '\1')
   end
