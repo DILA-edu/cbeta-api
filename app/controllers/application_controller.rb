@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery only: :create
 
   def referer_cn?
+    return false if request.referer.nil?
     request.referer.end_with?('cbetaonline.cn')
   end
 
