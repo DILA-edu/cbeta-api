@@ -9,7 +9,8 @@ class ApplicationController < ActionController::Base
 
   def referer_cn?
     return false if request.referer.nil?
-    request.referer.end_with?('cbetaonline.cn')
+    host = request.referer.split('//').last.split('/').first
+    host.end_with?('.cn')
   end
 
   def get_canon_from_work_id(id)
