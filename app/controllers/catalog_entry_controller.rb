@@ -6,8 +6,10 @@ class CatalogEntryController < ApplicationController
     elsif params[:q]
       results = get_entries_by_parent(params[:q])
       label = get_label_by_entry(params[:q])
-      if params[:q] == 'vol' and referer_cn?
-        results.reject! { |x| x[:n].match?(/^Vol-(TX|Y)$/) }
+      if referer_cn?
+        results.reject! do |x|
+          x[:n].match?(/^Vol-(TX|Y)$/) or x[:label].match?(/^(TX|Y)/)
+        end
       end
     else
       results = get_entries_by_parent('root')
