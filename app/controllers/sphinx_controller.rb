@@ -1031,8 +1031,14 @@ class SphinxController < ApplicationController
   end
 
   def set_filter_canon
-    return unless params.key? :canon
+    if referer_cn?
+      a = Rails.configuration.cn_filter.map { |x| "'#{x}'" }
+      r = a.join(',')
+      @filter << " AND canon NOT IN (#{r})"
+    end
 
+    return unless params.key?(:canon) 
+    
     s = params[:canon]
     if s.include?(',')
       a = s.split(',').map { |x| "'#{x}'"}

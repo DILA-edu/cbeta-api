@@ -8,6 +8,7 @@ Bundler.require(*Rails.groups)
 
 module Cbdata4
   class Application < Rails::Application
+    config.cn_filter = %w[TX Y]
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
     config.time_zone = 'Taipei'
 

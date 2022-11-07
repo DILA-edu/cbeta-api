@@ -7,6 +7,21 @@ class ApplicationController < ActionController::Base
   #protect_from_forgery with: :exception
   protect_from_forgery only: :create
 
+  EMPTY_RESULT = { num_found: 0, results: [] }
+  
+  def filter_cn?(n: nil, id: nil)
+    r = Rails.configuration.cn_filter.join('|')
+    r = "(#{r})"
+
+    unless n.nil?
+      return true if n.match?(/^Vol-#{r}$/)
+    end
+
+    unless id.nil?
+      return true if id.match?(/^#{r}/)
+    end
+  end
+
   def referer_cn?
     return false if request.referer.nil?
     host = request.referer.split('//').last.split('/').first
@@ -118,6 +133,11 @@ class ApplicationController < ActionController::Base
       end
       r[:juan] = line.juan
     end
+
+    if referer_cn? and filter_cn?(id: r[:work])
+      r = EMPTY_RESULT
+    end
+
     r
   end
   

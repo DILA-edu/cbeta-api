@@ -5,11 +5,18 @@ class JuansController < ApplicationController
   
   def index
     work = params[:work]
+    
+    if referer_cn? and filter_cn?(id: work)
+      my_render EMPTY_RESULT
+      return
+    end
+
     canon = CBETA.get_canon_id_from_work_id(work)
     i = params[:juan].to_i
     juan_line = JuanLine.find_by(work: work, juan: i)
     juan = "%03d" % i
     fn = Rails.root.join('data', 'html', canon, work, juan+'.html')
+
     if File.exist? fn
       html = File.read(fn)
       r = {
@@ -21,8 +28,9 @@ class JuansController < ApplicationController
       r[:toc] = get_toc_by_work_id(work) if params[:toc]=='1'
       r[:work_info] = get_work_info_by_id(work) if params[:work_info]=='1'
     else
-      r = { num_found: 0, results: [] }
+      r = EMPTY_RESULT
     end
+
     my_render r
   end
   
@@ -31,11 +39,14 @@ class JuansController < ApplicationController
     if params.key? :linehead
       result = goto_linehead params
     elsif params.key? :canon
-      if params.key? :work
-        result = goto_by_work params
-      elsif params.key? :vol
-        result = goto_by_vol params
-      end
+      result = 
+        if referer_cn? and filter_cn?(id: params[:canon])
+          EMPTY_RESULT
+        elsif params.key? :work
+          goto_by_work params
+        elsif params.key? :vol
+          goto_by_vol params
+        end
     end
     
     if result.nil?
@@ -44,7 +55,7 @@ class JuansController < ApplicationController
       }
     elsif result.key?(:error)
       r = result
-    else
+    elsif result.key?(:work)
       w = Work.find_by n: result[:work]
       abort "work id 在 work table 中不存在：#{result[:work]}" if w.nil?
       result['title'] = w.title
@@ -52,6 +63,8 @@ class JuansController < ApplicationController
         num_found: 1,
         results: [result]
       }
+    else
+      r = result
     end
     
     my_render(r)

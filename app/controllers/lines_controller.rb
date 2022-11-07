@@ -1,6 +1,15 @@
 class LinesController < ApplicationController
   def index
     t1 = Time.now
+
+    if referer_cn?
+      lh = params[:linehead] || params[:linehead_start]
+      if filter_cn?(id: lh)
+        my_render(EMPTY_RESULT)
+        return
+      end
+    end
+
     result = []
     if params.key? :linehead
       lh = params[:linehead]

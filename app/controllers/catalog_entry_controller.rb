@@ -8,7 +8,7 @@ class CatalogEntryController < ApplicationController
       label = get_label_by_entry(params[:q])
       if referer_cn?
         results.reject! do |x|
-          x[:n].match?(/^Vol-(TX|Y)$/) or x[:label].match?(/^(TX|Y)/)
+          filter_cn?(n: x[:n]) or filter_cn?(id: x[:label])
         end
       end
     else
