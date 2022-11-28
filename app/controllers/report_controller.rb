@@ -29,6 +29,7 @@ class ReportController < ApplicationController
 
   def h2d(h)
     return Date.today if h.nil?
+    return Date.parse(h) if h.kind_of?(String)
     Date.new(h['year'].to_i, h['month'].to_i, h['day'].to_i)
   end
 
