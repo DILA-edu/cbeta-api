@@ -12,6 +12,10 @@ CBETA XML 新一季定案後執行。
     * staging.rb
     * production.rb
   * environments
+    * 版本編號 採 semantic versioning： Major.Minor.Patch
+      * Major version 做了不相容的更改
+      * Minor version 做了一些可以向下兼容的功能性新增
+      * Patch version 做了一些向下兼容的問題修正或調整
     * staging.rb: config.x.q
     * production.rb: config.x.q
 * lib/tasks/quarterly/config.rb
