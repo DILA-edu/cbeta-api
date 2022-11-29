@@ -10,14 +10,13 @@
         　結束日期：
         = select_date @d2, prefix: :d2
         = submit_tag("送出")
-.row.justify-content-center
 
+.row.justify-content-center
   .col-auto
     %p
       = "日期範圍：#{@d1} ~ #{@d2}"
-      -#= link_to 'Export CSV', report_url_path(format: "csv", { :class => "btn-ex" } )
       = surround '(', ')' do
-        =link_to 'Export CSV', report_url_path(format: "csv")
+        =link_to 'Export CSV', report_url_path(format: 'csv', d1: @d1, d2: @d2)
     %p
       Total: 
       = number_with_delimiter(@total)
