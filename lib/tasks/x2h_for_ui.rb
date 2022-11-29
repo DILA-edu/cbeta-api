@@ -677,8 +677,6 @@ class P5aToHTMLForUI
   end
     
   def e_p(e, mode)
-    return traverse(e, mode) if mode=='footnote'
-    
     classes = []
     if e.at_xpath('figure')
       node = HtmlNode.new('div')
@@ -693,12 +691,14 @@ class P5aToHTMLForUI
     classes += e['rend'].split if e.key? 'rend'
     node['class'] = classes.join(' ') unless classes.empty?
 
-    node.content = line_info
+    node.content = line_info unless mode=='footnote'
 
     if e.key? 'style'
       node['style'] = e['style'] 
-      e['style'].match(/text-indent:(\d+)em/) do |m|
-        node.content += line_space(m[1].to_i)
+      unless mode=='footnote'
+        e['style'].match(/text-indent:(\d+)em/) do |m|
+          node.content += line_space(m[1].to_i)
+        end
       end
     end
     
@@ -965,7 +965,7 @@ class P5aToHTMLForUI
   def html_back(juan_no)
     r = @back[juan_no]
     @notes_mod[juan_no].each_pair do |k,v|
-      r += "<span class='footnote' id='n#{k}'>#{v}</span>\n"
+      r += "<div class='footnote' id='n#{k}'>#{v}</div>\n"
     end
     r += @notes_add[juan_no].join("\n")
     r
