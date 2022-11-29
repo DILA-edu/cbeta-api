@@ -6,7 +6,7 @@ require 'rails/all'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-module Cbdata4
+module Cbdata
   class Application < Rails::Application
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'

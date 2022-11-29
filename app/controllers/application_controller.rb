@@ -165,10 +165,13 @@ class ApplicationController < ActionController::Base
     end
 
     referer = request.referer
-    unless referer.nil?
-      # referer 只記錄 host
-      referer = referer.split('//').last.split('/').first
-    end
+    referer = 
+      if referer.nil?
+        request.remote_ip
+      else
+        # referer 只記錄 host
+        referer.split('//').last.split('/').first
+      end
 
     v = Visit.find_or_create_by(
       url: path, 

@@ -1,9 +1,9 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  config.x.v = '3' # 季號，用於 cache key
-  config.x.ver = '1.2.28'
-  config.x.q = '2022q3' # 季號
+  config.x.v = '1' # 季號，用於 cache key
+  config.x.ver = '1.2.30'
+  config.x.q = '2023q1' # 季號
 
   GIT = '/Users/ray/git-repos'
   config.x.git       = GIT
