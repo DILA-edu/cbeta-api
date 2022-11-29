@@ -1,69 +1,37 @@
-%h1 部類目錄
+%h1 目錄
 %h2 一、根目錄
 %p
   取得 CBETA 各種目錄:
   =link_to_url '/catalog_entry?q=root'
 
-%h2 二、綜合目錄
-.chapter
-  %h4 1. CBETA 部類目錄
-  .section
-    %p
-      取得 CBETA 部類目錄:
-      =link_to_url '/catalog_entry?q=CBETA'
+%h2 二、CBETA 部類目錄
+%p
+  取得 CBETA 部類目錄:
+  =link_to_url '/catalog_entry?q=CBETA'
 
-    %p 回傳：
-    %pre
-      :preserve
+%p 回傳：
+%pre
+  :preserve
+    {
+      "num_found": 21,
+      "results": [
         {
-          "num_found": 21,
-          "results": [
-            {
-              "n": "CBETA.001",
-              "label": "01 阿含部類 T01-02,25,33 etc."
-            },
-            ...
-            {
-              "n": "CBETA.021",
-              "label": "21 新編部類 ZS01, ZW01-09, I01"
-            }
-          ]
+          "n": "CBETA.001",
+          "label": "01 阿含部類 T01-02,25,33 etc."
+        },
+        ...
+        {
+          "n": "CBETA.021",
+          "label": "21 新編部類 ZS01, ZW01-09, I01"
         }
+      ]
+    }
 
-  %h4 2. 歷代藏經補輯
-  .section
-    %p=link_to_url '/catalog_entry?q=others'
-
-  %h4 3. 近代新編文獻
-  .section
-    %p=link_to_url '/catalog_entry?q=modern'
-
-%h2 三、各藏部別目錄
-%p
-  取得總目錄：
-  =link_to_url '/catalog_entry?q=bu'
-%p
-  例如要取得其中《大正藏》的部別目錄：
-  =link_to_url '/catalog_entry?q=Cat-T'
-
-%p 其他各藏，依此類推。
-
-%h2 三、各藏冊別目錄
+%h2 三、原書目錄
 %p 
-  取得總目錄：
-  =link_to_url '/catalog_entry?q=vol'
-%p
-  例如要取得其中《大正藏》冊別目錄：
-  =link_to_url "/catalog_entry?q=Vol-T"
-%p 其他各藏，依此類推。
+  取得原書目錄：
+  =link_to_url '/catalog_entry?q=orig'
 
-%h2 四、取得某一冊之下的佛典目錄
-.chapter
-  %p
-    例：
-    =link_to_url "/catalog_entry?vol=T01"
-
-
-%h2 五、回傳欄位
+%h2 四、回傳欄位
 .chapter
   =render partial: 'catalog-return'

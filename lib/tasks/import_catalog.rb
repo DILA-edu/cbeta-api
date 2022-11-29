@@ -240,8 +240,9 @@ class ImportCatalog
     end
 
     @category = nil
-    #@orig_category = nil
+    
     @doc = File.open(fn) { |f| Nokogiri::XML(f) }
+    @doc.do_xinclude
     @doc.remove_namespaces!
     traverse(@doc.root, @doc.root['id'])
   end
