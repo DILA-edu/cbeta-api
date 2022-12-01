@@ -25,6 +25,20 @@ class ReportController < ApplicationController
     end
   end
 
+  def referer
+    @d1 = h2d(params[:d1])
+    @d2 = h2d(params[:d2])
+    @visits = Visit.where(:accessed_at => @d1..@d2).group(:referer)
+    h = @visits.sum(:count)
+    @visits = h.sort_by { |k,v| -v }
+    @total = @visits.sum(0) { |x| x[1] }
+
+    respond_to do |format|
+      format.html { render }
+      format.csv { referer_csv }
+    end
+  end
+
   private
 
   def h2d(h)
@@ -53,5 +67,16 @@ class ReportController < ApplicationController
       end
     end
     send_data data, filename: "cbdata-url-#{Date.today}.csv"
+  end
+
+  def referer_csv
+    headers = %w[referer count]
+    data = CSV.generate(headers: true) do |csv|
+      csv << headers    
+      @visits.each do |a|
+        csv << [a[0], a[1]]
+      end
+    end
+    send_data data, filename: "cbdata-referer-#{Date.today}.csv"
   end
 end
