@@ -492,7 +492,7 @@ class SphinxController < ApplicationController
     if params[:scope] == 'title'
       index = Rails.configuration.x.sphinx_titles
       r = exist_in_index(q, index)
-      logger.warn "exist_in_cbeta: #{r}"
+      logger.info "exist_in_cbeta: #{r}"
       r
     end
 
