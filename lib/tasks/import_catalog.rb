@@ -272,7 +272,7 @@ div { margin-left: 1em; }
     e.children.each do |c|
       next unless c.name == 'node'
       data = { parent: parent }
-      n = serial_no(parent, i+1)
+      n = c['id'] || serial_no(parent, i+1)
       get_category(parent, c['name']) if c.key? 'name'
       children_count = traverse(c, n)
       if c.key? 'name'

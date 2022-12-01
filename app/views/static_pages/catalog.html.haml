@@ -32,6 +32,16 @@
   取得原書目錄：
   =link_to_url '/catalog_entry?q=orig'
 
+%p
+  可取得某一部藏經的原書目錄，例如要取得其中《大正藏》原書目錄：
+  =link_to_url "/catalog_entry?q=orig-T"
+
+%p 
+  其他各藏，依此類推在 
+  %code
+    "orig-" 
+  之後加上藏經 ID。
+
 %h2 四、回傳欄位
 .chapter
   =render partial: 'catalog-return'

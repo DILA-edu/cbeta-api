@@ -152,7 +152,7 @@ class ExportController < ApplicationController
       title: @canons.get_canon_attr(canon, 'chinese_name'),
       children: children
     }
-    id = "Vol-#{canon}"
+    id = "orig-#{canon}"
     add_catalog_entries(id, children)
     dest << d
   end
