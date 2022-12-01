@@ -32,7 +32,11 @@ class JuanLine < ActiveRecord::Base
   def self.get_first_lb_by_work_juan(work, juan)
     jl = JuanLine.where("work=? AND juan=?", work, juan).first
     raise CbetaError.new(404), "找不到 佛典編號: #{work}, 卷號: #{juan}" if jl.nil?
-    return jl.vol, jl.lb
+
+    # ex: LC0001, 卷1
+    lb = jl.lb.delete_prefix('0000')
+
+    return jl.vol, lb
   end
   
   def self.get_juan_by_vol_work_lb(vol, work, lb)
