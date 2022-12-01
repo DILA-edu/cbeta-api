@@ -29,6 +29,7 @@ class SphinxTitles
       data = {
         work: w.n,
         title: w.title,
+        canon: w.canon,
         canon_order: CBETA.get_sort_order_from_canon_id(w.canon)
       }
       write_xml(@fo, data)
