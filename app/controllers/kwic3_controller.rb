@@ -11,7 +11,7 @@ class Kwic3Controller < ApplicationController
     @q = handle_zzs(params[:q])
     @q = remove_puncs(@q)
     
-    @opts = {}
+    @opts = { referer_cn: referer_cn? }
     
     a = %w(sort negative_lookahead negative_lookbehind)
     a.each {|s| @opts[s.to_sym] = params[s] if params.key? s }

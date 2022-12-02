@@ -1,9 +1,4 @@
 namespace :kwic do
-  task :load => :environment do
-    require_relative 'suffix_array_loader'
-    SuffixArrayLoader.new.run
-  end
-
   task build: %w[x2h h2t sa sort_info]
 
   task :x2h, [:canon] => :environment do |t, args|

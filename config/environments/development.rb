@@ -18,8 +18,7 @@ Rails.application.configure do
   config.x.work_info = File.join(config.x.authority, 'authority_catalog', 'json')
 
   # KWIC 相關
-  d = '/Volumes/Ray-3TB/cbeta-api/kwic'
-  config.x.kwic.base = Dir.exist?(d) ? d : Rails.root.join('data', 'kwic')
+  config.x.kwic.base = Rails.root.join('data', 'kwic')
   config.x.kwic.html = File.join(config.x.kwic.base, 'html')
   config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
   
