@@ -24,7 +24,7 @@ class SphinxController < ApplicationController
     return empty_result if @q.empty?
 
     t1 = Time.now
-    key = "#{Rails.configuration.x.q}/%s" % params.to_s
+    key = "#{Rails.configuration.x.q}/#{params}-#{@referer_cn}"
     r = Rails.cache.fetch(key) do
       all_in_one_sub
     end
@@ -636,6 +636,7 @@ class SphinxController < ApplicationController
   end
   
   def init
+    @referer_cn = referer_cn?
     @max_matches = 999_999
 
     unless params.key? :q
@@ -867,7 +868,8 @@ class SphinxController < ApplicationController
         juan: juan[:juan].to_i,
         around: @around,
         mark: true,
-        rows: 99999
+        rows: 99999,
+        referer_cn: @referer_cn
       }
       juan[:kwics] = kwic_boolean(se, opts)
       
@@ -1031,7 +1033,7 @@ class SphinxController < ApplicationController
   end
 
   def set_filter_canon
-    if referer_cn?
+    if @referer_cn
       a = Rails.configuration.cn_filter.map { |x| "'#{x}'" }
       r = a.join(',')
       @filter << " AND canon NOT IN (#{r})"
