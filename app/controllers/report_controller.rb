@@ -20,7 +20,7 @@ class ReportController < ApplicationController
     @total = @visits.sum(0) { |x| x[1] }
 
     respond_to do |format|
-      format.html { render }
+      format.html
       format.csv { url_csv }
     end
   end
@@ -34,7 +34,7 @@ class ReportController < ApplicationController
     @total = @visits.sum(0) { |x| x[1] }
 
     respond_to do |format|
-      format.html { render }
+      format.html
       format.csv { referer_csv }
     end
   end

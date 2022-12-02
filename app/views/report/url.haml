@@ -1,15 +1,8 @@
 .row.justify-content-center
   .col-auto
-    %h1 API 存取 URL 統計表
-.row.justify-content-center
-  .col-auto
-    %p
-      = form_tag(url: report_url_path, method: :get) do
-        起始日期：
-        = select_date @d1, prefix: :d1
-        　結束日期：
-        = select_date @d2, prefix: :d2
-        = submit_tag("送出")
+    %h1 API 存取統計表 Group by URL
+
+= render partial: "datepicker" , locals: { url: report_url_path }
 
 .row.justify-content-center
   .col-auto
@@ -32,3 +25,7 @@
           %td.fit= a[0][0]
           %td.fit= a[0][1]
           %td.text-right.fit= number_with_delimiter(a[1])
+:javascript
+  $( function() {
+    report_init_datepicker()
+  } );
