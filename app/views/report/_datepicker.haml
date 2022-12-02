@@ -1,0 +1,9 @@
+.row.justify-content-center
+  .col-auto
+    %p
+      = form_with(url: url, method: :get, local: true) do |f|
+        起始日期：
+        = f.text_field :d1
+        結束日期：
+        = f.text_field :d2
+        = f.submit "送出"
