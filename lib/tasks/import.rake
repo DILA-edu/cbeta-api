@@ -56,13 +56,6 @@ namespace :import do
     importer.import args[:arg1]
   end  
   
-  desc "匯入 各部佛典的翻譯地點 及 地理資訊"
-  task :place => :environment do
-    require "tasks/import_place"
-    importer = ImportPlace.new
-    importer.import
-  end
-  
   desc "匯入 同義詞"
   task :synonym => :environment do
     require "tasks/import_synonym"

@@ -1,5 +1,6 @@
 class Work < ActiveRecord::Base
-  
+  has_and_belongs_to_many :places
+
   def self.first_file_in_vol(work_id, vol)
     f = XmlFile.where(work: work_id, vol: vol).order(:file).first
     if f.nil?
@@ -91,6 +92,17 @@ class Work < ActiveRecord::Base
     r[:time_from]        = time_from        unless time_from.nil?
     r[:time_to]          = time_to          unless time_to.nil?
     
+    unless places.empty?
+      r[:places] = []
+      places.each do |p|
+        r[:places] << {
+          name: p.name,
+          id: p.auth_id,
+          latitude: p.latitude,
+          longitude: p.longitude
+        }
+      end
+    end
     r
   end
   

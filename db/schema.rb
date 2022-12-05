@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_12_15_083341) do
+ActiveRecord::Schema.define(version: 2022_12_05_031807) do
 
   create_table "canons", force: :cascade do |t|
     t.string "id2"
@@ -89,6 +89,19 @@ ActiveRecord::Schema.define(version: 2021_12_15_083341) do
     t.index ["name"], name: "index_people_on_name"
   end
 
+  create_table "places", force: :cascade do |t|
+    t.string "auth_id"
+    t.string "name"
+    t.float "longitude"
+    t.float "latitude"
+    t.index ["auth_id"], name: "index_places_on_auth_id", unique: true
+  end
+
+  create_table "places_works", id: false, force: :cascade do |t|
+    t.integer "place_id", null: false
+    t.integer "work_id", null: false
+  end
+
   create_table "terms", force: :cascade do |t|
     t.string "term"
     t.text "synonyms"
@@ -133,10 +146,6 @@ ActiveRecord::Schema.define(version: 2021_12_15_083341) do
     t.integer "juan_start"
     t.string "orig_category"
     t.string "sort_order"
-    t.string "place_name"
-    t.string "place_id"
-    t.float "place_long"
-    t.float "place_lat"
     t.string "category_ids"
     t.text "juan_list"
     t.string "uuid"

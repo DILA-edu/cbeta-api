@@ -29,6 +29,7 @@ class ImportWorkInfo
   
   def import
     XmlFile.delete_all
+    Place.delete_all
 
     import_from_authority
     import_from_xml
@@ -181,7 +182,7 @@ class ImportWorkInfo
     Dir.entries(path).sort.each do |f|
       next if f.start_with? '.'
       @vol = f
-      $stderr.puts "import_work_info #{@vol}"
+      $stderr.puts "import_work_info from xml #{@vol}"
       p = File.join(path, f)
       import_vol_from_xml(p)
     end
@@ -273,6 +274,7 @@ class ImportWorkInfo
     update_contributors(w, v)
     update_dynasty(w, v, long_title)
     update_category(w, v)
+    update_places(w, v[:places])
 
     w.time_from = v[:time_from] if v.key?(:time_from)
     w.time_to   = v[:time_to]   if v.key?(:time_to)
@@ -454,7 +456,21 @@ class ImportWorkInfo
       w.update(data)
     end
   end
-  
+
+  def update_places(w, places)
+    return if places.nil?
+
+    w.places.delete_all
+    places.each do |h|
+      place = Place.find_or_create_by(auth_id: h[:id]) do |p|
+        p.name = h[:name]
+        p.longitude = h[:long]
+        p.latitude = h[:lat]
+      end
+      w.places << place
+    end
+  end
+
   def update_xml_files(xml_path, vol, info)
     basename = File.basename(xml_path, '.xml')
     XmlFile.find_or_create_by(work: @work, file: basename) do |w|

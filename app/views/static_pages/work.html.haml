@@ -6,48 +6,65 @@
 %table.table
   %tr
     %th 欄位名稱
+    %th type
     %th 說明
   %tr
     %td work
+    %td string
     %td 佛典編號（經號）
   %tr
     %td category
+    %td string
     %td 所屬部類 (CBETA 分類)
   %tr
     %td orig_category
+    %td string
     %td 底本分部，例如大正藏的阿含部、本緣部等。
   %tr
     %td title
+    %td string
     %td 佛典題名（經名）
   %tr
     %td byline
+    %td string
     %td 作譯者行
   %tr
     %td creators
+    %td string
     %td 作者、譯者或其他貢獻者姓名列表
   %tr
     %td time_dynasty
+    %td string
     %td 作品成立的朝代
   %tr
     %td time_from
+    %td int
     %td 作品成立的起始公元年
   %tr
     %td time_to
+    %td int
     %td 作品成立的結束公元年
   %tr
     %td cjk_chars
+    %td int
     %td 中日韓文字數 (不含標點)
   %tr
     %td en_words
+    %td int
     %td 英、半形數字、梵、巴 word 數
   %tr
     %td file
+    %td string
     %td 實體檔案
   %tr
     %td juan_start
+    %td int
     %td 於實體檔案中的起始卷數
+  %tr
+    %td places
+    %td array
+    %td 作品成立地點，多值。
 
-    
 %p 回傳範例：
 %pre
   :preserve
@@ -55,16 +72,39 @@
       "num_found": 1,
       "results": [
         {
-          "work": "T0001",
-          "category": "阿含部",
-          "title": "長阿含經",
-          "creators": "佛陀耶舍,竺佛念",
-          "file": "T01n0001",
+          "work": "T1501",
+          "uuid": "310699e8-2abd-4430-8403-d33b2777d5ca",
+          "canon": "T",
+          "category": "律部類",
+          "orig_category": "律部",
+          "vol": "T24",
+          "title": "菩薩戒本",
+          "juan": 1,
+          "juan_list": "1",
+          "cjk_chars": 7748,
+          "en_words": 4,
+          "file": "T24n1501",
           "juan_start": 1,
-          "byline": "後秦 佛陀耶舍共竺佛念譯",
-          "time_dynasty": "後秦",
-          "time_from": 384,
-          "time_to": 417
+          "byline": "彌勒菩薩說 唐 玄奘譯",
+          "creators": "彌勒菩薩,玄奘",
+          "creators_with_id": "彌勒菩薩(A001428);玄奘(A000294)",
+          "time_dynasty": "唐",
+          "time_from": 649,
+          "time_to": 649,
+          "places": [
+            {
+              "name": "大慈恩寺",
+              "id": "PL000000042410",
+              "latitude": 34.219161,
+              "longitude": 108.959356
+            },
+            {
+              "name": "翠微寺",
+              "id": "PL000000042513",
+              "latitude": 33.839563,
+              "longitude": 108.928138
+            }
+          ]
         }
       ]
     }

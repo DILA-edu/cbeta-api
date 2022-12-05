@@ -31,16 +31,6 @@ module RunbookSectionRDB
         command 'rake import:catalog'
       end
 
-      step '匯入地理資訊 (rake import:place)' do
-        command 'rake import:place'
-      end
-
-      # 改讀 work-info, 2022-07
-      #step '匯入時間資訊 (rake import:time)' do
-      #  command 'rake import:time'
-      #  note '會產生一個全部朝代列表：log/dynasty-all.txt'
-      #end
-
       step '匯入 卍續藏 行號對照表 (rake import:lb_maps)' do
         command 'rake import:lb_maps'
       end
