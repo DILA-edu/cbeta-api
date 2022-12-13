@@ -134,7 +134,7 @@ data/places.json 來自 /Users/ray/Documents/Projects/CBETA/place
 
 由 data-static/synonym.txt 匯入
 synonym.txt 來自 CBETA heaven 提供的 fdb_equivalent.txt 
-再經轉檔程式 GoogleDrive/小組雲端硬碟/CBETA專案/階段性任務/2019-05-同義搜尋/同義詞/bin/z2u.rb
+再經轉檔程式 共用雲端硬碟/CBETA專案/技術/同義字詞/同義詞/bin/z2u.rb
 將其中的組字式轉為 unicode
 
 ### 匯入
