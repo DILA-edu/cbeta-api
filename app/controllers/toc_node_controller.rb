@@ -44,6 +44,7 @@ class TocNodeController < ApplicationController
         abort
       end
       row.merge! w
+      row[:file] = t.file
       row[:juan_start] = t.juan
       r << row
     end
@@ -68,28 +69,26 @@ class TocNodeController < ApplicationController
       parent = "Vol-#{canon}"
       ce = CatalogEntry.where("(parent=?) AND (label LIKE ?)", parent, "#{q}%").first
       redirect_to controller: 'catalog_entry', action: 'index', q: ce.n
-    else
-      if q.match(/^(#{CBETA::CANON})\d{2,3}n(\w{4,5})$/) # ex: T01n0001
-        q = $1 + $2
-        w = Work.find_by n: q
+    elsif q.match(/^(#{CBETA::CANON})\d{2,3}n(\w{4,5})$/) # ex: T01n0001
+      q = $1 + $2
+      w = Work.find_by n: q
+      row = { type: 'work' }
+      row.merge! w.to_hash
+      result = [row]
+    elsif q.match(/^#{CBETA::CANON}[AB\d]\d{3}[a-zA-Z]?$/) # ex: T0001, JB271
+      works = Work.where("n LIKE ?", "#{q}%")
+      result = []
+      works.each do |w|
         row = { type: 'work' }
         row.merge! w.to_hash
-        result = [row]
-      elsif q.match(/^#{CBETA::CANON}[AB\d]\d{3}[a-zA-Z]?$/) # ex: T0001, JB271
-        works = Work.where("n LIKE ?", "#{q}%")
-        result = []
-        works.each do |w|
-          row = { type: 'work' }
-          row.merge! w.to_hash
-          result << row
-        end
-      else
-        result = find_catalog(q)
-        result += find_work(q)
-        result += find_toc(q)
+        result << row
       end
+    else
+      result = find_catalog(q)
+      result.concat(find_work(q))
+      result.concat(find_toc(q))
     end
     result
   end
-        
+
 end
