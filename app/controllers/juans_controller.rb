@@ -1,6 +1,7 @@
 class JuansController < ApplicationController
   include TocNodeHelper
   include WorksHelper
+  
   before_action :accept_all_params
   
   def index

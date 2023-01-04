@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   match 'category/:category', to: 'juans#index', via: [:get, :post]
   match 'chinese_tools/sc2tc', via: [:get, :post]
   get 'download/:id', to: 'download#index', id: /.+/
+  
   match 'export/all_creators2', via: [:get, :post]
   match 'export/all_creators', via: [:get, :post]
   match 'export/all_works', via: [:get, :post]

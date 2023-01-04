@@ -1,5 +1,8 @@
 class ApplicationController < ActionController::Base
+  before_action :log_action_start
   before_action :record_visit
+  after_action  :log_action_end
+
   # Prevent CSRF attacks by raising an exception.
   # For APIs, you may want to use :null_session instead.
   
@@ -188,11 +191,19 @@ class ApplicationController < ActionController::Base
         results: []
       }
     end
+
     if params.key? 'callback'
       render json: data, :callback => params['callback'], content_type: "application/javascript"
     else
       render json: data
     end
+  end
+
+  def my_render_error(code, message)
+    r = { 
+      error: { code: , message: } 
+    }
+    render json: r
   end
   
   # 將 卍續藏 新文豐 行號 轉為 X 行號
@@ -229,6 +240,16 @@ class ApplicationController < ActionController::Base
   
   def remove_puncs(s)
     s.gsub(/[\n\.\[\]\(\)\-\*　。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）—]/, '')
+  end
+
+  def log_action_end
+    logger.warn "end #{controller_name}##{action_name} #{@start_time}, spend_time: #{Time.now-@start_time}"
+  end
+
+  def log_action_start
+    @start_time = Time.now
+    logger.warn "start #{controller_name}##{action_name} #{@start_time}"
+    logger.warn params.inspect
   end
   
 end

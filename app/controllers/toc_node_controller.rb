@@ -1,5 +1,6 @@
-class TocNodeController < ApplicationController
+class TocNodeController < ApplicationController  
   include TocNodeHelper
+
   def index
     start = Time.now
     if params.key? :work
@@ -8,12 +9,15 @@ class TocNodeController < ApplicationController
     else
       result = search_by_query_term
     end
-    return if result.nil?
+
+    result = [] if result.nil?
+
     r = {
       num_found: result.size,
       time: Time.now - start,
       results: result
     }
+
     my_render(r)
   end
   

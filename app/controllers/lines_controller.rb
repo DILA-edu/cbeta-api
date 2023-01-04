@@ -1,4 +1,4 @@
-class LinesController < ApplicationController
+class LinesController < ApplicationController  
   def index
     t1 = Time.now
 

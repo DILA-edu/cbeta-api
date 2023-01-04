@@ -21,7 +21,11 @@ class SphinxController < ApplicationController
     logger.debug Time.now
     @mode = 'extend' # 允許 boolean search
     remove_puncs_from_query
-    return empty_result if @q.empty?
+
+    if @q.empty?
+      my_render(empty_result)
+      return
+    end
 
     t1 = Time.now
     key = "#{Rails.configuration.x.q}/#{params}-#{@referer_cn}"
@@ -33,8 +37,7 @@ class SphinxController < ApplicationController
     
     my_render r
   rescue CbetaError => e
-    r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
-    my_render(r)
+    my_render_error(e.code, $!)
   rescue Exception => e
     e.backtrace.each { |s| logger.debug s }
     r = { 
@@ -48,7 +51,10 @@ class SphinxController < ApplicationController
   def index
     remove_puncs_from_query
     
-    return empty_result if @q.empty?
+    if @q.empty?
+      my_render(empty_result)
+      return
+    end
     
     @mysql_client = sphinx_mysql_connection
     where = %{MATCH('"#{@q}"')} + @filter
@@ -65,7 +71,10 @@ class SphinxController < ApplicationController
   def test
     remove_puncs_from_query
     
-    return empty_result if @q.empty?
+    if @q.empty?
+      my_render(empty_result)
+      return
+    end
     
     @mysql_client = sphinx_mysql_connection
     where = %{MATCH('#{@q}')} + @filter
@@ -82,7 +91,10 @@ class SphinxController < ApplicationController
     @mode = 'extend'
     remove_puncs_from_query
     
-    return empty_result if @q.empty?
+    if @q.empty?
+      my_render(empty_result)
+      return
+    end
     
     @mysql_client = sphinx_mysql_connection
     where = "MATCH('#{@q}')" + @filter
@@ -95,7 +107,11 @@ class SphinxController < ApplicationController
   def notes
     @mode = 'extend'
     remove_puncs_from_query
-    return empty_result if @q.empty?
+
+    if @q.empty?
+      my_render(empty_result)
+      return
+    end
     
     @mysql_client = sphinx_mysql_connection
     @where = "MATCH('#{@q}')" + @filter
@@ -153,7 +169,10 @@ class SphinxController < ApplicationController
   def fuzzy
     remove_puncs_from_query
     
-    return empty_result if @q.empty?
+    if @q.empty?
+      my_render(empty_result)
+      return
+    end
     
     @mysql_client = sphinx_mysql_connection
     where = %{MATCH('#{@q}')} + @filter
@@ -254,7 +273,11 @@ class SphinxController < ApplicationController
 
   # 搜尋 title
   def title
-    return empty_result if @q.empty?
+    if @q.empty?
+      my_render(empty_result)
+      return
+    end
+
     t1 = Time.now
     @index = Rails.application.config.x.sphinx_titles
     @where = %{MATCH('#{@q}')} + @filter

@@ -1,5 +1,6 @@
 class WorksController < ApplicationController
   include WorksHelper
+
   def index
     if params.key? :work and not params[:work].empty?
       if referer_cn? and filter_cn?(id: params[:work])

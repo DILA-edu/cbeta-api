@@ -1,5 +1,5 @@
 class Kwic3Controller < ApplicationController
-  around_action :log_action_time
+  before_action :init
   
   def init
     return unless params.key?(:q)
@@ -131,11 +131,4 @@ class Kwic3Controller < ApplicationController
     true
   end
 
-  def log_action_time
-    #logger.warn("開始處理 " + CGI.unescape(request.url))
-    init
-    yield
-    #logger.warn("結束處理 " + CGI.unescape(request.url))
-  end
-  
 end

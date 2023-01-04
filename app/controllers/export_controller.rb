@@ -1,31 +1,48 @@
 class ExportController < ApplicationController
   def all_creators
     fn = Rails.root.join('data', 'all-creators.json')
-    s = File.read(fn)
-    data = JSON.parse(s)
+
     r = {}
-    r[:num_found] = data.size
-    r[:results] = data
+    if File.file?(fn)
+      s = File.read(fn)
+      data = JSON.parse(s)
+      r[:num_found] = data.size
+      r[:results] = data
+    else
+      r[:error] = { code: 500, message: "File not found: #{fn}" } 
+    end
+
     my_render(r)
   end
   
   def all_creators2
     fn = Rails.root.join('data', 'all-creators-with-alias.json')
-    s = File.read(fn)
-    data = JSON.parse(s)
     r = {}
-    r[:num_found] = data.size
-    r[:results] = data
+    if File.file?(fn)
+      s = File.read(fn)
+      data = JSON.parse(s)
+      r[:num_found] = data.size
+      r[:results] = data
+    else
+      r[:error] = { code: 500, message: "File not found: #{fn}" } 
+    end
+
     my_render(r)
   end
 
   def all_creators3
     fn = Rails.root.join('data', 'all-creators-with-alias3.json')
-    s = File.read(fn)
-    data = JSON.parse(s)
     r = {}
-    r[:num_found] = data.size
-    r[:results] = data
+
+    if File.file?(fn)
+      s = File.read(fn)
+      data = JSON.parse(s)
+      r[:num_found] = data.size
+      r[:results] = data
+    else
+      r[:error] = { code: 500, message: "File not found: #{fn}" } 
+    end
+
     my_render(r)
   end
 
@@ -45,7 +62,8 @@ class ExportController < ApplicationController
       end
       r << h
     end
-    render json: r
+
+    my_render(r)
   end
   
   def check_list
@@ -61,33 +79,51 @@ class ExportController < ApplicationController
       end
     end
     render plain: csv_string
+  rescue => e
+    my_render_error(500, $!)
   end
   
   def creator_strokes
     fn = Rails.root.join('data', 'creators-by-strokes.json')
-    s = File.read(fn)
-    render :json => s
+    if File.file?(fn)
+      s = File.read(fn)
+      my_render(s)
+    else
+      my_render_error(500, "File not exist: #{fn}")
+    end
   end
   
   def creator_strokes_works
     fn = Rails.root.join('data', 'creators-by-strokes-with-works.json')
-    s = File.read(fn)
-    render :json => s
+    if File.file?(fn)
+      s = File.read(fn)
+      my_render(s)
+    else
+      my_render_error(500, "File not exist: #{fn}")
+    end
   end
   
   def dynasty
     fn = Rails.root.join('data', 'dynasty-all.csv')
-    s = File.read(fn)
-    r = {}
-    r[:num_found] = s.split("\n").size - 1
-    r[:results] = s
-    my_render(r)
+    if File.file?(fn)
+      s = File.read(fn)
+      r = {}
+      r[:num_found] = s.split("\n").size - 1
+      r[:results] = s
+      my_render(r)
+    else
+      my_render_error(500, "File not exist: #{fn}")
+    end
   end
 
   def dynasty_works
     fn = Rails.root.join('data', 'dynasty-works.json')
-    s = File.read(fn)
-    render :json => s
+    if File.file?(fn)
+      s = File.read(fn)
+      my_render(s)
+    else
+      my_render_error(500, "File not exist: #{fn}")
+    end
   end
   
   def scope_selector_by_category
@@ -100,7 +136,7 @@ class ExportController < ApplicationController
       }
     ]
     add_catalog_entries('CBETA', children)
-    render json: r
+    my_render(r)
   end
   
   def scope_selector_by_vol
@@ -116,7 +152,7 @@ class ExportController < ApplicationController
     CBETA::SORT_ORDER.each do |canon|
       selector_add_canon(canon, children)
     end
-    render json: r
+    my_render(r)
   end
   
   private

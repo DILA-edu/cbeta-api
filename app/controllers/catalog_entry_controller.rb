@@ -171,4 +171,5 @@ class CatalogEntryController < ApplicationController
     data[:label] += " #{work_node.title} (#{juan})"
     data
   end
+
 end
