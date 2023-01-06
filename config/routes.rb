@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
   root 'static_pages#home'
+  get '/health', to: proc { [200, {}, ['success']] }
+
   match 'catalog_entry', to: 'catalog_entry#index', via: [:get, :post]
 
   match 'api/collections', to: 'canons#index', via: [:get, :post]
