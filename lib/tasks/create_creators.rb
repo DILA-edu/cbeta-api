@@ -5,6 +5,9 @@ class CreateCreatorsList
     @unihan = Unihan2.new
     @strokes = {}
     @unknown = []
+
+    fn = Rails.root.join('log', 'create_creators.log')
+    @log = File.open(fn, 'w')
   end
   
   def create
@@ -123,7 +126,7 @@ class CreateCreatorsList
 
       works.each do |work_id, work|
         next unless work.key?('contributors')
-
+        @log.puts "read_contributors, work_id: #{work_id}"
         long_title = "#{work_id} %s" % work['title']
         if work.key?('juans')
           long_title << " (%d卷)" % work['juans']
@@ -146,9 +149,11 @@ class CreateCreatorsList
           unless @all_creators.key?(id)
             @all_creators[id] = h['name']
           end
-          next if @all_creators_with_alias.key?(id)
+          
           if @person_names.key?(id)
-            @all_creators_with_alias[id] = @person_names[id]
+            unless @all_creators_with_alias.key?(id)
+              @all_creators_with_alias[id] = @person_names[id]
+            end
           else
             $stderr.puts "#{__LINE__} Authority 裡沒有 #{id}".red
           end      
@@ -195,13 +200,13 @@ class CreateCreatorsList
         children: []
       }
     end
-
     
     a = @strokes[stroke][char][creator_key][:children]
     a << {
       key: work_id,
       title: long_title
     }
+    @log.puts "stroke: #{stroke}, char: #{char}, creator_key: #{creator_key}, work_id: #{work_id}"
   end  
 
 end
