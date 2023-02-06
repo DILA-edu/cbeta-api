@@ -7,7 +7,6 @@ CBETA XML 新一季定案後執行。
 ## 編輯 config 參數
 
 * config
-  * application.rb
   * deploy
     * staging.rb
     * production.rb
@@ -19,6 +18,9 @@ CBETA XML 新一季定案後執行。
     * staging.rb: config.x.q
     * production.rb: config.x.q
 * lib/tasks/quarterly/config.rb
+* app/views/static_pages
+  * home.haml 製作日期
+  * log.haml
 
 ## 從 GitHub 更新資料
 

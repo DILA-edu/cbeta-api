@@ -14,10 +14,6 @@ module Prepare
       if config[:env] == 'staging'
         add step_copy_data_folder unless step_copy_data_folder.nil?
         add step_copy_public      unless step_copy_public.nil?
-
-        #step 'Create symbolic link for figures to GitHub' do
-        #  command "ln -sf #{config[:cbr_figures]} #{config[:figures]}"
-        #end
         add step_import_juanline
       else
         step 'update_from_github (update-github.rb)' do

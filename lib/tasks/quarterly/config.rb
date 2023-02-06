@@ -1,6 +1,7 @@
 module Config
-  Q1 = '2022Q4'
-  Q2 = '2023Q1' # 有時候會跳過一季
+  Q1  = '2022Q4'  # 上一個季號
+  Q2  = '2023Q1'  # 目前季號，有時候會跳過一季
+  PUB = '2023-02' # 版權資訊 => 版本記錄 => 發行日期
 
   def get_config
     app1 = Q1.sub(/^\d+Q(\d)$/, 'cbapi\1') # 用於：從上一季複製資料
@@ -10,12 +11,9 @@ module Config
       v:  Q2[-1].to_i, # 第幾季，用於 sphinx index 編號
       q1: Q1, # 製作 change log 時比對 q1, q2
       q2: Q2,
-      publish: '2022-10' 
+      publish: PUB
     }
-
-    # 版權資訊 => 版本記錄 => 發行日期
-    r[:publish] = "#{Q2[0, 4]}-%02d" % (r[:v] * 3 - 2)
-
+    
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
     r[:git] = Rails.configuration.x.git
 
@@ -48,7 +46,6 @@ module Config
 
     # GitHub Repositories
     r[:authority]   = File.join(r[:git], 'Authority-Databases')
-    #r[:cbr_figures] = File.join(r[:git], 'CBR2X-figures')
     r[:covers]      = File.join(r[:git], 'ebook-covers')
     r[:gaiji]       = File.join(r[:git], 'cbeta_gaiji')
     r[:metadata]    = File.join(r[:git], 'cbeta-metadata')
