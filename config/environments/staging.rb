@@ -5,6 +5,7 @@ Rails.application.configure do
   config.x.q = '2023q1' # 季號，用於 cache key
 
   GIT = '/home/ray/git-repos'
+  config.x.git = GIT
   config.x.authority = File.join(GIT, 'Authority-Databases')
   config.cbeta_xml   = File.join(GIT, 'cbeta-xml-p5a')
   config.cbeta_data  = File.join(GIT, 'cbeta-metadata')
