@@ -6,9 +6,9 @@ require 'rails/all'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-module Cbdata
+module CBData
   class Application < Rails::Application
-    config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽
+    config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
     config.time_zone = 'Taipei'
 

@@ -17,23 +17,21 @@ module Config
     r[:publish] = "#{Q2[0, 4]}-%02d" % (r[:v] * 3 - 2)
 
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
+    r[:git] = Rails.configuration.x.git
 
     puts "mode: #{Rails.env}"
     case Rails.env
     when 'production', 'staging'
-      r[:git]           = '/home/ray/git-repos'
       r[:old]           = "/var/www/#{app1}/shared"
       r[:old_data]      = File.join(r[:old],  'data')
       r[:root]          = "/var/www/#{app2}/shared"
       r[:change_log]    = '/home/ray/cbeta-change-log'
       r[:ebook_convert] = '/usr/bin/ebook-convert'
     when 'development'
-      r[:git]           = '/Users/ray/git-repos'
       r[:root]          = "/Users/ray/git-repos/cbeta-api"
       r[:change_log]    = '/Users/ray/Documents/Projects/CBETA/ChangeLog'
       r[:ebook_convert] = '/Applications/calibre.app/Contents/MacOS/ebook-convert'
     when 'cn'
-      r[:git] = '/mnt/CBETAOnline/git-repos'
       r[:root] = "/mnt/CBETAOnline/cbdata/shared"
     end
 

@@ -34,12 +34,5 @@ class MyCbetaShare
       end
     end
     r
-  end
-  
-  def self.remove_puncs(s)
-    return '' if s.empty?
-    r = /[#{Regexp.escape(CBETA::PUNCS)}]/
-    s.gsub(r, '')
-  end
-  
+  end  
 end

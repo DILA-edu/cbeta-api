@@ -65,7 +65,7 @@ class SphinxController < ApplicationController
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
   ensure
-    @mysql_client.close
+    @mysql_client.close unless @mysql_client.nil?
   end
 
   def test
@@ -163,7 +163,7 @@ class SphinxController < ApplicationController
     r[:error] = { code: e.code, message: $!, backtrace: e.backtrace }
     my_render(r)
   ensure
-    @mysql_client.close
+    @mysql_client.close unless @mysql_client.nil?
   end
   
   def fuzzy
@@ -991,17 +991,11 @@ class SphinxController < ApplicationController
 
   # 去除標點
   def remove_puncs_from_query
-    # 2022-01-10 Joey: 去半形小括號
-    puncs = '\n\.\[\]\(\)\*　。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）—'
-
     if @mode == 'normal'
-      regexp = /[#{puncs}\-]/
+      @q = CbetaString.new.remove_puncs(@q)
     else
-      # 允許半形 '-'
-      regexp = /[#{puncs}]/
+      @q = CbetaString.new(allow_hyphen: true).remove_puncs(@q)
     end
-
-    @q.gsub!(regexp, '')
   end
 
   def set_filter
@@ -1194,7 +1188,13 @@ class SphinxController < ApplicationController
   end
 
   def sphinx_mysql_connection
-    Mysql2::Client.new(:host => 0, :port => 9306, encoding: 'utf8mb4')
+    r = Mysql2::Client.new(:host => 0, :port => 9306, encoding: 'utf8mb4')
+    if r.nil?
+      msg = "sphinx_controller 開啟 MySQL connection 回傳 nil"
+      logger.fatal msg
+      raise CbetaError.new(500), msg
+    end
+    r
   end
 
   def sphinx_select(fields, opts={})

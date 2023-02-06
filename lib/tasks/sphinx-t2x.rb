@@ -6,11 +6,11 @@ require 'json'
 require 'set'
 require 'cbeta'
 
-class SphinxT2X
-  PUNCS = /[\n\.\(\)\[\]\-\d　．。，、？！：；／「」〃『』《》＜＞〈〉〔〕［］【】〖〗（）…—]/
+class SphinxT2X  
   def initialize
     @cbeta = CBETA.new
     @dynasty_labels = read_dynasty_labels
+    @cbs = CbetaString.new
   end
   
   def convert
@@ -40,7 +40,6 @@ class SphinxT2X
     f.close
   end
 
-
   def convert_canon(canon, folder)
     $stderr.puts "sphinx t2x: #{folder}"
     @canon = canon
@@ -64,12 +63,10 @@ class SphinxT2X
   
     @id += 1
     
-    data[:content] = File.read(text_file_path)
-  
+    s = File.read(text_file_path)  
+
     # 要把標點去掉，才能找到跨標點的詞，例如「不也天中天」
-    # 半形數字也去掉
-    # 半形空格不能去掉，否則會搜不到：Pāli Text Society
-    data[:content].gsub!(PUNCS, '')
+    data[:content] = @cbs.remove_puncs(s)
     write_xml(@f_wo, data)
   end
   
@@ -167,5 +164,4 @@ class SphinxT2X
     s += "</sphinx:document>\n"
     f.puts s
   end
-
 end

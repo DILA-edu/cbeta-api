@@ -9,7 +9,7 @@ class Kwic3Controller < ApplicationController
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
     @q = handle_zzs(params[:q])
-    @q = remove_puncs(@q)
+    @q = CbetaString.new.remove_puncs(@q)
     
     @opts = { referer_cn: referer_cn? }
     

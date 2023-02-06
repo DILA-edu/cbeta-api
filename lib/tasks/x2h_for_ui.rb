@@ -43,6 +43,7 @@ class P5aToHTMLForUI
     @j_facs_juans = Set.new
     @j_pages = 0
     @us = UnicodeService.new
+    @cbs = CbetaString.new(allow_space: false)
   end
 
   # 將 CBETA XML P5a 轉為 HTML
@@ -76,7 +77,6 @@ class P5aToHTMLForUI
   end
 
   private
-  
   include CbetaShare
   
   def before_parse_xml(xml_fn)
@@ -944,7 +944,7 @@ class P5aToHTMLForUI
     s.gsub!(/[\n\r]/, '')
     return s if mode=='footnote'
     
-    text_size = MyCbetaShare.remove_puncs(s).size
+    text_size = @cbs.remove_puncs(s).size
     
     if @pass.last and mode == 'html'
       r = s.gsub(/([．。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—]+)/, '<span class="pc">\1</span>')

@@ -7,7 +7,7 @@ require_relative '../../app/services/suffix_info'
 class KwicBuilder
   attr_accessor :juan, :offset, :relative_path, :text_with_punc, :canon, :vol, :work, :sa_units
   
-  PUNCS = "\n.()[]-　．。，、？！：；／「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—─▆"
+  PUNCS = "\n" + CbetaString::PUNCS
   
   def initialize
     @work_base = Rails.configuration.x.kwic.temp

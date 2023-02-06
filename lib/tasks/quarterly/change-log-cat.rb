@@ -1,6 +1,6 @@
 class ChangeLogCategory
 
-  PUNCS = " .*()[],～。‧．，、；？！：︰（）「」『』《》＜＞〈〉〔〕［］【】〖〗…　—\u2500│┬▆"
+  PUNCS = " " + CbetaString::PUNCS
 
   def initialize(config)
     @config = config

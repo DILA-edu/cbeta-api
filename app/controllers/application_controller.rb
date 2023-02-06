@@ -238,10 +238,6 @@ class ApplicationController < ActionController::Base
     r
   end
   
-  def remove_puncs(s)
-    s.gsub(/[\n\.\[\]\(\)\-\*　。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）—]/, '')
-  end
-
   def log_action_end
     logger.warn "end #{controller_name}##{action_name} #{@start_time}, spend_time: #{Time.now-@start_time}"
   end
@@ -250,6 +246,5 @@ class ApplicationController < ActionController::Base
     @start_time = Time.now
     logger.warn "start #{controller_name}##{action_name} #{@start_time}"
     logger.warn params.inspect
-  end
-  
+  end  
 end

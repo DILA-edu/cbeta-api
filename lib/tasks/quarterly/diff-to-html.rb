@@ -5,7 +5,7 @@ require 'csv'
 
 # 前置作務： import:work_info
 class DiffToHTML
-  PUNCS = '.()[] 。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—　'
+  PUNCS = ' ' + CbetaString::PUNCS
   WORD = %r{
     \[[^\]]+\]|  # 組字式
     [a-zA-Z\u{D1}-\u{227}\u{1E04}-\u{1EE5}]+ # 英梵巴
@@ -401,6 +401,4 @@ class DiffToHTML
   def s2a(s)
     s.scan(WORD)
   end
-
-
 end

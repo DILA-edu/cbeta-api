@@ -93,6 +93,7 @@ class ExportController < ApplicationController
     end
   end
   
+  # Online 選擇搜尋範圍 依作譯者選擇 會用到此功能
   def creator_strokes_works
     fn = Rails.root.join('data', 'creators-by-strokes-with-works.json')
     if File.file?(fn)

@@ -27,7 +27,6 @@ require 'pp'
 class KwicService
   attr_reader :config, :size, :text
 
-  PUNCS = "\n.()[]-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—"
   ABRIDGE = 15 # 夾注字數超過此設定，會被節略
 
   OPTION = {
