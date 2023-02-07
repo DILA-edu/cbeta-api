@@ -6,9 +6,8 @@ class CbetaString
 
   PUNCS = HALF_PUNCS + FULL_PUNCS
 
-  def initialize(allow_hyphen: false, allow_digit: false, allow_space: true)
+  def initialize(allow_digit: false, allow_space: true)
     s = PUNCS
-    s << '-'  unless allow_hyphen
     s = Regexp.quote(s)
     s << '\n'
     s << '\d' unless allow_digit

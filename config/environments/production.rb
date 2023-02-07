@@ -1,10 +1,5 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
-  
-  config.x.v = '1' # 季號, 用於 sphinx index name
-  config.x.ver = '1.3.0'
-  config.x.q = '2023q1' # 季號，用於 cache key
-
   GIT = '/home/ray/git-repos-stable'
   config.x.git = GIT
   config.cbeta_xml   = File.join(GIT, 'cbeta-xml-p5a')

@@ -22,6 +22,7 @@ module RunbookSectionRDB
       end
 
       step '匯入 佛典資訊 (經名、卷數、title) (rake import:work_info)' do
+        note '由 Authority.DILA 及 CBETA XML 取得佛典資訊。'
         command 'rake import:work_info'
       end
 

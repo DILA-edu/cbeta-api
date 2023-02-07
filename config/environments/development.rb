@@ -1,10 +1,5 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
-
-  config.x.v = '1' # 季號，用於 cache key
-  config.x.ver = '1.2.30'
-  config.x.q = '2023q1' # 季號
-
   GIT = '/Users/ray/git-repos'
   config.x.git       = GIT
   config.cbeta_xml   = File.join(GIT, 'cbeta-xml-p5a')

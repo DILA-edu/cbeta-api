@@ -991,11 +991,12 @@ class SphinxController < ApplicationController
 
   # 去除標點
   def remove_puncs_from_query
-    if @mode == 'normal'
-      @q = CbetaString.new.remove_puncs(@q)
-    else
-      @q = CbetaString.new(allow_hyphen: true).remove_puncs(@q)
-    end
+    # if @mode == 'normal'
+    #   @q = CbetaString.new.remove_puncs(@q)
+    # else
+    #   @q = CbetaString.new(allow_hyphen: true).remove_puncs(@q)
+    # end
+    @q = CbetaString.new.remove_puncs(@q)
   end
 
   def set_filter
