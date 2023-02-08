@@ -35,6 +35,9 @@ class P5aToHTMLForDownload
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
     @canon_names = read_canon_name
     @us = UnicodeService.new
+
+    fn = Rails.root.join('log', 'x2h_for_download.log')
+    @log = File.new(fn, 'w')
     
     FileUtils.rm_rf @out_root
     FileUtils::mkdir_p @out_root
@@ -187,6 +190,7 @@ class P5aToHTMLForDownload
   
   def e_g(e, mode)
     gid = e['ref'][1..-1]
+    @log.puts "#{__LINE__} e_g, gid: #{gid}"
     g = gid.start_with?('CB') ? @gaijis[gid] : @gaijis_skt[gid]
     abort "Line:#{__LINE__} 無缺字資料:#{gid}" if g.nil?
     
@@ -228,7 +232,10 @@ class P5aToHTMLForDownload
       unless g['norm_uni_char'].blank?
         nor = g['norm_uni_char'].clone
         if default.empty?
-          default = nor.clone if @us.level2?(g['norm_unicode'])
+          if @us.level2?(g['norm_unicode'])
+            default = nor.clone 
+            @log.puts "#{__LINE__} default: #{default}"
+          end
         end
       end
 
@@ -236,7 +243,10 @@ class P5aToHTMLForDownload
       unless c.blank?
         nor << ', ' unless nor==''
         nor << c
-        default = c if default.empty?
+        if default.empty?
+          default = c 
+          @log.puts "#{__LINE__} default: #{default}"
+        end
       end
     end
 
