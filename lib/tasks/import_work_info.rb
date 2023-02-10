@@ -30,6 +30,7 @@ class ImportWorkInfo
   def import
     XmlFile.delete_all
     Place.delete_all
+    Person.delete_all
 
     import_from_authority
     import_from_xml
@@ -198,7 +199,7 @@ class ImportWorkInfo
   end
 
   def import_from_authority
-    @people_inserts = []
+    @people = {}
 
     each_canon(@xml_root) do |c|
       @canon = c
@@ -215,10 +216,15 @@ class ImportWorkInfo
   end
 
   def insert_into_people
-    puts "Insert #{@people_inserts.size} records into people table:"
+    inserts = []
+    @people.each do |k, v|
+      inserts << "('#{k}', '#{k}')"
+    end
+
+    puts "Insert #{inserts.size} records into people table:"
     sql = 'INSERT INTO people '
     sql += '("id2", "name")'
-    sql += ' VALUES ' + @people_inserts.join(", ")
+    sql += ' VALUES ' + inserts.join(", ")
     puts Benchmark.measure {
       ActiveRecord::Base.connection.execute(sql) 
     }
@@ -227,15 +233,14 @@ class ImportWorkInfo
   def update_contributors(w, v)
     return unless v.key?(:contributors)
 
-    people = v[:contributors]
-    people.each do |x|
-      @people_inserts << "('#{x[:id]}', '#{x[:name]}')"
+    v[:contributors].each do |x|
+      @people[x[:id]] = x[:name]
     end
 
-    a = people.map { |x| x[:name] }
+    a = v[:contributors].map { |x| x[:name] }
     w.creators = a.join(',')
 
-    a = people.select { |x| x.key?(:id) }
+    a = v[:contributors].select { |x| x.key?(:id) }
     a.map! { |x| "#{x[:name]}(#{x[:id]})" }
     w.creators_with_id = a.join(';')
   end

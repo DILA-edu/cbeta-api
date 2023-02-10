@@ -15,7 +15,7 @@ set :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
 # set :log_level, :debug
 
 append :linked_files, ".asdf-vars", "config/master.key", "config/database.yml"
-append :linked_dirs, 'data', 'public/download', 'public/help', 'config/credentials'
+append :linked_dirs, 'data', 'public/help', 'config/credentials'
 
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }

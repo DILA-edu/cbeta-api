@@ -33,8 +33,13 @@ class JuanLine < ActiveRecord::Base
     jl = JuanLine.where("work=? AND juan=?", work, juan).first
     raise CbetaError.new(404), "找不到 佛典編號: #{work}, 卷號: #{juan}" if jl.nil?
 
-    # ex: LC0001, 卷1
-    lb = jl.lb.delete_prefix('0000')
+    lb = jl.lb
+
+    # LC0001 的第一頁是 a001, 
+    # 為了讓它的排序在 0001 之前, JuanLine 在 lb 前加了 0000
+    # 所以這裡要去掉。
+    # 但是 GA0077 的第一頁又真的是 0000, 所以要先判斷 lb 的 size
+    lb.delete_prefix!('0000') if lb.size > 7
 
     return jl.vol, lb
   end

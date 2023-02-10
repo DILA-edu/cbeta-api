@@ -15,7 +15,7 @@
 ## 產生供下載用的 HTML 檔
 
 讀取 CBETA XML P5a, 每一卷都產生一個 HTML 檔
-先暫存在 data/html-for-download-tmp, 再移到 public/download/html
+先暫存在 data/html-for-download-tmp, 再移到 data/download/html
 
 執行全部 (假設發行日期為 2019-10) 約需 14分鐘
 
@@ -32,7 +32,7 @@
 
 整部佛典也包成一個 zip 檔。
 
-先暫存在 data/text-for-download-tmp, 再移到 public/download/text
+先暫存在 data/text-for-download-tmp, 再移到 data/download/text
 
 執行全部 (假設發行日期為 2020-01) 大約需時13分鐘
 
@@ -44,7 +44,7 @@
 
 全部 text 壓縮成一個 zip 檔
 
-    cd public/download
+    cd data/download
     ln -s text-for-asia-network cbeta-text
     zip -r -X temp.zip cbeta-text
     mv temp.zip cbeta-text.zip
@@ -65,7 +65,7 @@
 
     rake convert:docusky[T]
 
-以上程式會將輸出先暫存在 data/docusky-tmp, 再移到 public/download/docusky
+以上程式會將輸出先暫存在 data/docusky-tmp, 再移到 data/download/docusky
 
 ## Footnotes for download
 

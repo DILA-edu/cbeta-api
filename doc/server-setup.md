@@ -155,10 +155,10 @@ restart apache2
 ## 從舊主機複製資料
 
 $ screen
-$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbdata15/shared/data /var/www/cbapi1/shared/
-$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbdata15/shared/public/help /var/www/cbapi1/shared/public
-$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbdata15/shared/public/download /var/www/cbapi1/shared/public
-$ cd /var/www/cbapi1/shared/public/download
+$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbapi1/shared/data /var/www/cbapi2/shared/
+$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbapi1/shared/public/help /var/www/cbapi2/shared/public
+$ rsync -vaz ray@cbdata.dila.edu.tw:/var/www/cbapi1/shared/data/download /var/www/cbapi2/shared/public
+$ cd /var/www/cbapi2/shared/data/download
 $ rm cbeta-text
 $ ln -s text-for-asia-network cbeta-text
 

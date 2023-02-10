@@ -194,7 +194,10 @@ class JuansController < ApplicationController
     
     lh = CBETA.get_linehead(file, lb)
     r = Line.find_by linehead: lh
-    raise CbetaError.new(404), "行首資訊不存在: #{lh}" if r.nil?
+    if r.nil?
+      s = "行首資訊不存在: #{lh}, vol: #{@vol}, juan: #{@juan}, lb: #{lb}"
+      raise CbetaError.new(404), s
+    end
 
     { vol: @vol, work: @work_id, file: file, juan: @juan, lb: lb }
   end

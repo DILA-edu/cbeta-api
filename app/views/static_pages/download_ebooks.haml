@@ -35,7 +35,7 @@
   =link_to_url '/download/pdf/A/A1057.pdf'
 %p 全部下載：
 %ul
-  - folder = Rails.root.join('public/download')
+  - folder = Rails.root.join('data/download')
   - Dir["#{folder}/cbeta-pdf-*.zip"].sort.each do |f|
     - b = File.basename(f)
     %li= link_to_url "/download/#{b}"

@@ -176,45 +176,47 @@ class DiffToHTML
   # change-log-font.rb 改為 <span class="del">, <span class="ins">
   # 如果使用 ins, del 標記，在 ms word 開啟會出現「追蹤修訂」左邊線
   def html_header
-    %(<!DOCTYPE html>
-  <html lang="zh-TW">
-  <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <style type="text/css"> 
-    body { 
-      font-family: Helvetica, "Hanazono Mincho C Regular";
-    }
-    .hmc {
-      font-family: "Hanazono Mincho C Regular";
-    }
-    del { 
-      color: red;
-      text-decoration: line-through;
-    }
-    .del { 
-      color: red;
-      text-decoration: line-through;
-    }
-    ins { 
-      color: blue;
-      font-weight: bold;
-      text-decoration: none;
-      background-color: yellow;
-    }
-    .ins { 
-      color: blue;
-      font-weight: bold;
-      text-decoration: none;
-      background-color: yellow;
-    }
-    h2 { 
-      font-size: large;
-      font-weight: bold;
-    }
-  </style>
-  </head>
-  <body>
-  <h1>CBETA #{@v2} 變更記錄</h1>)
+    <<~HTML
+      <!DOCTYPE html>
+      <html lang="zh-TW">
+      <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <style type="text/css"> 
+        body { 
+          font-family: Helvetica, "Hanazono Mincho C Regular";
+        }
+        .hmc {
+          font-family: "Hanazono Mincho C Regular";
+        }
+        del { 
+          color: red;
+          text-decoration: line-through;
+        }
+        .del { 
+          color: red;
+          text-decoration: line-through;
+        }
+        ins { 
+          color: blue;
+          font-weight: bold;
+          text-decoration: none;
+          background-color: yellow;
+        }
+        .ins { 
+          color: blue;
+          font-weight: bold;
+          text-decoration: none;
+          background-color: yellow;
+        }
+        h2 { 
+          font-size: large;
+          font-weight: bold;
+        }
+      </style>
+      </head>
+      <body>
+      <h1>CBETA #{@v2} 變更記錄</h1>
+    HTML
   end
 
   def n2s(number)

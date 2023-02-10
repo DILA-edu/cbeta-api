@@ -9,7 +9,10 @@ class Kwic3Controller < ApplicationController
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
     @q = handle_zzs(params[:q])
-    @q = CbetaString.new.remove_puncs(@q)
+
+    # NEAR/7 語法，允許 數字
+    @q = CbetaString.new(allow_digit: true).remove_puncs(@q)
+
     @q.gsub!(/\\(['"\-\\])/, '\1') # unescape: \' 取代為 ', \" 取代為 "
     logger.info "#{__LINE__} kwic q: #{@q}"
     
