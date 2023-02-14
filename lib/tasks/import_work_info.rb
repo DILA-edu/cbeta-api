@@ -218,7 +218,7 @@ class ImportWorkInfo
   def insert_into_people
     inserts = []
     @people.each do |k, v|
-      inserts << "('#{k}', '#{k}')"
+      inserts << "('#{k}', '#{v}')"
     end
 
     puts "Insert #{inserts.size} records into people table:"

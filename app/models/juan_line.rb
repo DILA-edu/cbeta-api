@@ -46,6 +46,7 @@ class JuanLine < ActiveRecord::Base
   
   def self.get_juan_by_vol_work_lb(vol, work, lb)
     jl = JuanLine.where("vol=? AND work=? AND lb<=?", vol, work, lb).last
+    return nil if jl.nil?
     return jl.juan
   end
 end

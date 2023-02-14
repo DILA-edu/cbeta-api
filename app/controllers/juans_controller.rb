@@ -40,13 +40,17 @@ class JuansController < ApplicationController
     if params.key? :linehead
       result = goto_linehead params
     elsif params.key? :canon
+      if params.key?(:work)
+        w = Work.normalize_no(params[:work])
+        @work_id = params[:canon] + w
+      end  
       result = 
         if referer_cn? and filter_cn?(id: params[:canon])
           EMPTY_RESULT
-        elsif params.key? :work
-          goto_by_work params
         elsif params.key? :vol
           goto_by_vol params
+        elsif params.key? :work
+          goto_by_work params
         end
     end
     
@@ -57,9 +61,12 @@ class JuansController < ApplicationController
     elsif result.key?(:error)
       r = result
     elsif result.key?(:work)
-      w = Work.find_by n: result[:work]
-      abort "work id 在 work table 中不存在：#{result[:work]}" if w.nil?
-      result['title'] = w.title
+      w = Work.find_by n: result[:work]      
+      if w.nil?
+        logger.error "work id 在 work table 中不存在：#{result[:work]}"
+      else
+        result['title'] = w.title
+      end
       r = {
         num_found: 1,
         results: [result]
@@ -152,10 +159,12 @@ class JuansController < ApplicationController
     
     if opts.key? :page
       lb = lb_from_params opts
-      work, juan = JuanLine.find_by_vol_lb(@vol, lb)
+      w, juan = JuanLine.find_by_vol_lb(@vol, lb)
     else
-      work, juan, lb = JuanLine.find_by_vol(@vol)
+      w, juan, lb = JuanLine.find_by_vol(@vol)
     end
+
+    work = @work_id || w
     
     file = Work.first_file_in_vol(work, @vol)
     { vol: @vol, work: work, file: file, juan: juan, lb: lb }
@@ -165,8 +174,6 @@ class JuansController < ApplicationController
   def goto_by_work(params)
     canon = params[:canon]
     
-    w = Work.normalize_no(params[:work])
-    @work_id = canon + w
     work = Work.find_by n: @work_id
     if work.nil?
       return { 
@@ -248,6 +255,14 @@ class JuansController < ApplicationController
       end
     end
     logger.debug "juans_controller.rb, Line: #{__LINE__}, lb: #{lb}"
+
+    unless @vol.nil? or @work_id.nil?
+      juan = JuanLine.get_juan_by_vol_work_lb(@vol, @work_id, lb)
+      if juan.nil?
+        raise CbetaError.new(400), "冊號、典籍編號、行號 不符: vol: #{@vol}, work: #{@work_id}, lb: #{lb}" 
+      end
+    end
+
     lb
   end
 
