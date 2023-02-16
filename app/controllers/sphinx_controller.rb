@@ -387,7 +387,8 @@ class SphinxController < ApplicationController
       end
     end
 
-    unless @q.include? '"'
+    @q_orig = @q
+    unless @q.gsub(/\\"/, '').include? '"'
       @q = %("#{@q}")
     end
     @where = %{MATCH('#{@q}')} + @filter
@@ -433,6 +434,12 @@ class SphinxController < ApplicationController
       unless @q.include?('NEAR')
         kwic_by_juan(r)
       end
+    end
+
+    if r.key?(:results)
+      logger.info "results size: #{r[:results].size}"
+    else
+      logger.info "#{__LINE__} r 沒有 results"
     end
 
     r
@@ -885,7 +892,7 @@ class SphinxController < ApplicationController
     base = Rails.configuration.x.kwic.base
     se = KwicService.new(base)
     r[:results].each do |juan|
-      #logger.debug "=== work: #{juan[:work]}, juan: #{juan[:juan]} ==="
+      logger.info "kwic_by_juan, work: #{juan[:work]}, juan: #{juan[:juan]}"
       opts = {
         work: juan[:work],
         juan: juan[:juan].to_i,
@@ -924,8 +931,11 @@ class SphinxController < ApplicationController
     a = []
     num_found = 0
 
-    q = @q.gsub(/[!\-]"[^"]+"/, '') # 去除 not 之後的關鍵字
-    q.gsub!(/"/, '')
+    q = @q_orig
+    logger.info "#{__LINE__} q: #{q}"
+    q.gsub!(/[!\-]"[^"]+"/, '') # 去除 not 之後的關鍵字
+    q.gsub!(/\\(['"])/, '\1')
+    logger.info "#{__LINE__} q: #{q}"
     keys = q.split
 
     keys.each do |k|
@@ -1129,6 +1139,7 @@ class SphinxController < ApplicationController
 
     hits = results.to_a
     return hits if @mode == 'group'
+    logger.info "#{__LINE__} hits size: #{hits.size}"
     
     #add_work_info(hits)
     
@@ -1144,6 +1155,7 @@ class SphinxController < ApplicationController
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
+    logger.info "total_found: #{total_found}"
     
     if total_found == 0
       total_term_hits = 0
