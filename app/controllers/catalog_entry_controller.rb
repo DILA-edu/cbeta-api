@@ -28,7 +28,7 @@ class CatalogEntryController < ApplicationController
   
   def get_entries_by_parent(parent)
     results = []
-    CatalogEntry.where(parent: parent).order(:n).each do |ce|
+    CatalogEntry.where(parent: parent).order(:sort).each do |ce|
       d = { n: ce.n }
       target = nil
       if ce.node_type == 'work'

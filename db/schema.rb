@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_12_05_031807) do
+ActiveRecord::Schema.define(version: 2023_02_18_080626) do
 
   create_table "canons", force: :cascade do |t|
     t.string "id2"
@@ -31,7 +31,9 @@ ActiveRecord::Schema.define(version: 2022_12_05_031807) do
     t.string "work"
     t.string "file"
     t.string "lb"
+    t.integer "sort"
     t.index ["parent", "n"], name: "index_catalog_entries_on_parent_and_n"
+    t.index ["parent", "sort"], name: "index_catalog_entries_on_parent_and_sort"
   end
 
   create_table "categories", force: :cascade do |t|

@@ -231,6 +231,7 @@ class ImportCatalog
       $stderr.puts "找不到 #{fn}"
       return
     end
+    @log.puts "<p>import_file: #{fn}</p>\n"
     $stderr.puts "import #{fn}"
 
     basename = File.basename(fn, '.*')
@@ -275,10 +276,13 @@ div { margin-left: 1em; }
       n = c['id'] || serial_no(parent, i+1)
       get_category(parent, c['name']) if c.key? 'name'
       children_count = traverse(c, n)
+      @log.puts "<p>children_count: #{children_count}</p>\n"
       if c.key? 'name'
+        @log.puts "<p>name: #{c['name']}</p>\n"
         if c.key? 'catalog'
           data[:n] = c['catalog']
           data[:label] = c['name']
+          data[:sort] = i
           add_node(data)
           i += 1
           next
@@ -292,6 +296,7 @@ div { margin-left: 1em; }
         end
         data[:n] = n
         data[:label] = c['name']
+        data[:sort] = i
         add_node(data)        
         i += 1
       elsif c.key? 'work'
