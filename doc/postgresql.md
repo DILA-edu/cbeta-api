@@ -78,7 +78,12 @@ change to the postgres unix user
             password: MyPassword
             migrations_paths: db/analytics_migrate
 
-注意上面的 MyPassword 要取代為真正的密碼。
+注意:
+
+* 上面的 MyPassword 要取代為真正的密碼。
+* analytics database
+  * 正式版 production 用 cb_analytics
+  * 開發版 staging    用 analytics_dev
 
 ## disk usage
 

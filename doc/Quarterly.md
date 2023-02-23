@@ -92,6 +92,9 @@ CBETA XML 新一季定案後執行。
   * cbdata-sub.conf
   * cbdata-cn.conf (cbetaonline.cn 會呼叫 api.cbetaonline.cn)
 
+檢視 config/database.yml
+production analytics database 應為 cb_analytics
+
 編輯 shared/.asdf-vars
     RAILS_ENV=production
 
