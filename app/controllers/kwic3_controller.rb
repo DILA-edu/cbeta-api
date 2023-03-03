@@ -3,6 +3,7 @@ class Kwic3Controller < ApplicationController
   
   def init
     return unless params.key?(:q)
+    logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{params[:q]}"
 
     base = Rails.configuration.x.kwic.base
     @se = KwicService.new(base)
@@ -11,10 +12,11 @@ class Kwic3Controller < ApplicationController
     @q = handle_zzs(params[:q])
 
     # NEAR/7 語法，允許 數字
-    @q = CbetaString.new(allow_digit: true).remove_puncs(@q)
+    # 允許半形逗點，例： 法鼓,聖嚴
+    @q = CbetaString.new(allow_digit: true, allow_comma: true).remove_puncs(@q)
 
     @q.gsub!(/\\(['"\-\\])/, '\1') # unescape: \' 取代為 ', \" 取代為 "
-    logger.info "#{File.basename($0)}, line: #{__LINE__}, kwic q: #{@q}"
+    logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
     
     @opts = { referer_cn: referer_cn? }
     
