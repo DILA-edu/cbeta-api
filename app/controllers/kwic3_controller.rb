@@ -14,7 +14,7 @@ class Kwic3Controller < ApplicationController
     @q = CbetaString.new(allow_digit: true).remove_puncs(@q)
 
     @q.gsub!(/\\(['"\-\\])/, '\1') # unescape: \' 取代為 ', \" 取代為 "
-    logger.info "#{__LINE__} kwic q: #{@q}"
+    logger.info "#{File.basename($0)}, line: #{__LINE__}, kwic q: #{@q}"
     
     @opts = { referer_cn: referer_cn? }
     

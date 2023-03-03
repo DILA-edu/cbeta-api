@@ -32,6 +32,7 @@ class SphinxController < ApplicationController
     r = Rails.cache.fetch(key) do
       all_in_one_sub
     end
+    
     r[:cache_key] = key
     r[:time] = Time.now - t1
     
@@ -932,10 +933,11 @@ class SphinxController < ApplicationController
     num_found = 0
 
     q = @q_orig
-    logger.info "#{__LINE__} q: #{q}"
+    log "q: #{q}", __LINE__
     q.gsub!(/[!\-]"[^"]+"/, '') # 去除 not 之後的關鍵字
+    q.gsub!(/(?<!\\)"/, '') # 沒有 escape 的單引號、雙引號 去掉
     q.gsub!(/\\(['"])/, '\1')
-    logger.info "#{__LINE__} q: #{q}"
+    log "q: #{q}", __LINE__
     keys = q.split
 
     keys.each do |k|
@@ -1239,6 +1241,10 @@ class SphinxController < ApplicationController
     end
 
     return found, term_hits
+  end
+
+  def log(msg, line)
+    logger.info "#{File.basename(__FILE__)}, line: #{line}, #{msg}"
   end
 
 end

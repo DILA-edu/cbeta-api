@@ -53,6 +53,9 @@ class KwicService
     @cache = Rails.configuration.x.q
     @sa_files = {}
     @text_files = {}
+
+    fn = Rails.root.join('log', 'kwic_service.log')
+    @log = File.open(fn, 'a')
   end
   
   def abs_sa_path(sa_path, name)
@@ -65,6 +68,7 @@ class KwicService
 
   def search(query, args={})
     t1 = Time.now
+    @log.puts "[#{Time.now}] #{__LINE__}, search(), query: #{query}, work: #{args[:work]}, juan: #{args[:juan]}"
     @option = OPTION.merge args
     set_cache_base(@option)
 
@@ -103,6 +107,8 @@ class KwicService
     
     result[:time] = Time.now - t1
     result[:results] = hits
+    @log.puts "#{__LINE__}, num_found: #{result[:num_found]}"
+    @log.puts "#{__LINE__}, results size: #{result[:results].size}"
     result
   end
 
