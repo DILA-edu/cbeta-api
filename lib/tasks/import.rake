@@ -83,4 +83,11 @@ namespace :import do
     importer = ImportWorkInfo.new
     importer.import
   end
+
+  desc "匯入存取紀錄"
+  task :visits => :environment do
+    require "tasks/import_visits"
+    importer = ImportVisit.new
+    importer.import
+  end
 end
