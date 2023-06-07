@@ -1,6 +1,6 @@
 # CBETA API
 
-法鼓文理學院 使用 Ruby on Rails 開發的 [CBETA API 網站](https://cbdata.dila.edu.tw/v1.2) Source。
+法鼓文理學院 使用 Ruby on Rails 開發的 [CBETA API 網站](https://cbdata.dila.edu.tw/stable) Source。
 
 ## 開發環境 on mac
 

@@ -1,0 +1,99 @@
+module SectionSphinx
+  def run_section_sphinx
+    run_section "Sphinx" do
+      step_sphinx_create_folder
+      step_sphinx_config
+      step_sphinx_x2t
+      step_sphinx_t2x
+      step_sphinx_index
+      step_sphinx_vars
+    end
+  end
+
+  def step_sphinx_config
+    run_step 'sphinx configuration' do
+      v = @config[:v]
+      base = Rails.configuration.x.sphinx_base
+
+      %w[cbdata notes titles].each do |index|
+        fn = Rails.root.join("lib/tasks/quarterly/sphinx-template-#{index}.conf")
+        template = File.read(fn)
+        s = template % { v: v }
+        dest = File.join(base, "#{v}-#{index}.conf")
+        puts "write #{dest}"
+        File.write(dest, s)
+      end
+
+      Dir.chdir(base) do
+        command 'ruby merge.rb'
+      end
+      puts "可以手動清除 #{Rails.configuration.x.sphinx_base} 資料夾下的舊資料"
+    end
+  end
+
+  def step_sphinx_create_folder
+    run_step 'sphin 建資料夾' do
+      v = @config[:v]
+      Dir.chdir('/var/lib/sphinx') do
+        ["", "-notes", "-titles"].each do |s|
+          command "sudo mkdir data#{v}#{s}"
+          system "sudo chown -R sphinx:sphinx data#{v}#{s}"
+        end
+      end
+    end
+  end
+
+  def step_sphinx_index
+    if Rails.env.development?
+      run_step 'sphinx index' do
+        Dir.chdir('/Users/ray/Documents/Projects/CBETAOnline/sphinx') do
+          command "indexer --rotate cbeta"
+          command "indexer --rotate notes"
+          command "indexer --rotate titles"
+        end
+      end
+      return
+    end
+
+    run_step 'sphin index' do
+      %w[cbeta notes titles].each do |s|
+        command "sudo indexer --config /etc/sphinx/sphinx.conf --rotate #{s}#{@config[:v]}"
+      end
+
+      # 不改權限會有問題 (不知道如何設定 indexer 新建檔案的預設 owner)
+      command "sudo chown -R sphinx:sphinx /var/lib/sphinx"=
+      command 'sudo service sphinx restart'
+
+      puts '可手動清除舊版 Index: /var/lib/sphinx'
+      puts '注意 /var/lib/sphinx/data 不能刪。'
+    end
+  end
+
+  def step_shpinx_t2x
+    run_step '轉出 sphinx 所需的 xml' do
+      confirm <<~MSG
+      需要部類、時間資訊，要執行過：
+        rake import:category
+        rake import:time
+      MSG
+      command 'rake sphinx:t2x'
+      command 'rake sphinx:notes'
+      command 'rake sphinx:titles'
+    end
+  end
+
+  def step_sphinx_vars
+    run_step '匯入 異體字 (rake import:vars)' do
+      puts '資料來源是 https://github.com/DILA-edu/cbeta-metadata/blob/master/variants/variants.json'
+      confirm '這要在 Sphinx Index 建好之後才能執行'
+      command 'rake import:vars'
+    end
+  end
+
+  def step_sphinx_x2t
+    run_step '先把 XML P5a 轉為 text' do
+      confirm '如果欄位有變更，要修改： /etc/sphinxsearch/sphinx.conf'
+      command 'rake sphinx:x2t'
+    end
+  end
+end # end of module

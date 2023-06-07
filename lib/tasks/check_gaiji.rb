@@ -23,7 +23,7 @@ class CheckGaiji
     src = File.join(@xml_root, canon)
     Dir["#{src}/**/*.xml"].sort.each do |fn|
       basename = File.basename(fn)
-      $stderr.puts "check gaiji: #{basename}"
+      print "\rcheck gaiji: #{basename} "
       doc = File.open(fn) { |f| Nokogiri::XML(f) }
       doc.remove_namespaces!
       doc.search('g').each do |e|
@@ -38,6 +38,7 @@ class CheckGaiji
         end
       end
     end
+    puts
   end
 
   include CbetaP5aShare

@@ -1,12 +1,5 @@
-namespace :quarterly do
-  desc "每季執行"
-  task :run => :environment do |t, args|
-    require_relative 'quarterly'
-    Quarterly.new.run
-  end
-
-  task :view => :environment do |t, args|
-    require_relative 'quarterly'
-    Quarterly.new.view
-  end
+desc "每季執行"
+task :quarterly => :environment do |t, args|
+  require_relative 'quarterly/quarterly'
+  Quarterly.new.run
 end
