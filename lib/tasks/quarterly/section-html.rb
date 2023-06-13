@@ -1,17 +1,21 @@
 module SectionHTML
   def run_section_html
-    run_step 'convert xml to html (rake convert:x2h)' do
-      command "rake convert:x2h[#{@config[:publish]}]"
+    run_section "產生 HTML 供 Heaven 比對 (section-html.rb)" do
+      run_step 'convert xml to html (rake convert:x2h)' do
+        require_relative '../convert_x2h'
+        c = ConvertX2h.new
+        c.convert(@config[:publish])
+      end
+  
+      run_step '匯入佛寺志等 Layers' do
+        command "rake import:layers"
+      end
+  
+      run_step '打包 html 給 heaven' do
+        step_zip_html
+      end
     end
-
-    run_step '匯入佛寺志等 Layers' do
-      command "rake import:layers"
-    end
-
-    run_step '打包 html 給 heaven' do
-      step_zip_html
-    end
-  end # end of define_section_html
+  end
 
   def step_zip_html
     # 變更目前目錄再做壓縮，否則壓縮檔內會含路徑

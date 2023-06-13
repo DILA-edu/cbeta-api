@@ -6,7 +6,7 @@ module SectionConvert
       end
 
       run_step '產生供下載用的 HTML 檔 (rake convert:x2h4d)' do
-        command "rake convert:x2h4d[#{config[:publish]}]"
+        command "rake convert:x2h4d[#{@config[:publish]}]"
       end
       
       step_creators_list
@@ -17,7 +17,7 @@ module SectionConvert
         command 'rake convert:docusky'
       end
     end
-  end # end of define_section_convert(config)
+  end
 
   def step_creators_list
     run_step '含別名的作譯者清單 (rake create:creators)' do

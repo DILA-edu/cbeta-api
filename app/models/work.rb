@@ -15,7 +15,7 @@ class Work < ActiveRecord::Base
     
     if work.is_a? String
       w = Work.find_by n: work
-      return if w.nil?
+      raise "典籍編號 '#{work}' 在 Work model 裡找不到" if w.nil?
     else
       w = work
     end

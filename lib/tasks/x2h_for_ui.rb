@@ -63,6 +63,7 @@ class P5aToHTMLForUI
         arg = target.upcase
         convert_canon(arg)
       else
+        # 指定轉某部經，例： convert("Y34n0032")
         puts "注意：因為某些佛典單卷跨冊，轉檔必須以某部藏經為單位，例如參數 T 表示轉換整個大正藏。"
         @work_id = CBETA.get_work_id_from_file_basename(target)
         @canon = CBETA.get_canon_id_from_work_id(@work_id)
@@ -112,6 +113,7 @@ class P5aToHTMLForUI
     $stderr.puts 'convert canon: ' + c
     folder = File.join(@params[:xml_root], @canon)
     
+    puts "output folder: #{@out_folder}"
     FileUtils::rm_rf @out_folder
     FileUtils::mkdir_p @out_folder
     
@@ -140,6 +142,7 @@ class P5aToHTMLForUI
     text = parse_xml(xml_fn)
     
     folder = File.join(@out_folder, @work_id)
+    puts "\noutput folder: #{folder}"
     FileUtils.makedirs folder
     
     # 註標移到 lg-cell 裡面，不然以 table 呈現 lg 會有問題
@@ -973,8 +976,8 @@ class P5aToHTMLForUI
 
   def html_span(e, mode)
     s = traverse(e, mode)
-    return s if mode=='footnote'
-
+    return s unless e.key?('style') or e.key?('rend')
+    
     span = HtmlNode.new('span')
     span.content = s
 

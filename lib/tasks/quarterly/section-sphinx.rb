@@ -61,7 +61,7 @@ module SectionSphinx
       end
 
       # 不改權限會有問題 (不知道如何設定 indexer 新建檔案的預設 owner)
-      command "sudo chown -R sphinx:sphinx /var/lib/sphinx"=
+      command "sudo chown -R sphinx:sphinx /var/lib/sphinx"
       command 'sudo service sphinx restart'
 
       puts '可手動清除舊版 Index: /var/lib/sphinx'
@@ -69,7 +69,7 @@ module SectionSphinx
     end
   end
 
-  def step_shpinx_t2x
+  def step_sphinx_t2x
     run_step '轉出 sphinx 所需的 xml' do
       confirm <<~MSG
       需要部類、時間資訊，要執行過：

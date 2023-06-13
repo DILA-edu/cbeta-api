@@ -2,7 +2,7 @@ require 'chronic_duration'
 require_relative 'x2h_for_ui'
 
 class ConvertX2h    
-  def convert(publish, canon)
+  def convert(publish, canon=nil)
     t1 = Time.now
 
     tmpdir = Rails.root.join('data', 'html-tmp')
