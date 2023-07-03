@@ -199,7 +199,6 @@ class P5aToHTMLForUI
     ''
   end
 
-
   def e_byline(e, mode)
     return traverse(e, mode) if mode=='footnote'
     node = HtmlNode.new('p')
