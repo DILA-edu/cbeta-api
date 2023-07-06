@@ -167,7 +167,8 @@ class JuansController < ApplicationController
     work = @work_id || w
     
     file = Work.first_file_in_vol(work, @vol)
-    { vol: @vol, work: work, file: file, juan: juan, lb: lb }
+    linehead = get_linehead(work, file, lb)
+    { vol: @vol, work: work, file:, juan: juan, lb:, linehead: }
   end
   
   # goto 經卷結構
@@ -206,7 +207,7 @@ class JuansController < ApplicationController
       raise CbetaError.new(404), s
     end
 
-    { vol: @vol, work: @work_id, file: file, juan: @juan, lb: lb }
+    { vol: @vol, work: @work_id, file: , juan: @juan, lb: , linehead: lh}
   end
   
   def lb_from_params(params)

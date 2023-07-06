@@ -34,6 +34,16 @@ class ApplicationController < ActionController::Base
   def get_canon_from_work_id(id)
     id.sub(/^(GA|GB|[A-Z]).*$/, '\1')
   end
+
+  def get_linehead(work, file, lb)
+    if work == 'T0220'
+      file.sub(/[a-z]$/, '') + '_p' + lb
+    elsif work.match(/[a-zA-Z]$/)
+      file + 'p' + lb
+    else
+      file + '_p' + lb
+    end
+  end
   
   def goto_info(args={})
     logger.debug 'goto_info'
@@ -120,13 +130,7 @@ class ApplicationController < ActionController::Base
     logger.debug r
     if r[:juan].nil? and not r[:lb].nil?
       if linehead.nil?
-        if r[:work] == 'T0220'
-          linehead = r[:file].sub(/[a-z]$/, '') + '_p' + r[:lb]
-        elsif r[:work].match(/[a-zA-Z]$/)
-          linehead = r[:file] + 'p' + r[:lb]
-        else
-          linehead = r[:file] + '_p' + r[:lb]
-        end
+        linehead = get_linehead(r[:work], r[:file], r[:lb])
       end
       line = Line.find_by(linehead: linehead)
       if line.nil?
@@ -135,6 +139,7 @@ class ApplicationController < ActionController::Base
         }
       end
       r[:juan] = line.juan
+      r[:linehead] = linehead
     end
 
     if referer_cn? and filter_cn?(id: r[:work])
