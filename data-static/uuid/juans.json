@@ -86646,5 +86646,29 @@
   "TX0020_005": {
     "juan_uuid": "99aa52a3-024e-47a3-a3ff-f7f30f54ab0b",
     "content_uuid": "af270024-ca06-48e5-87af-d14b2cb0a70b"
+  },
+  "CC0001_001": {
+    "juan_uuid": "04470015-0156-4175-a5d3-61812000f0c3",
+    "content_uuid": "7ce3a436-71fb-452a-81fc-0fb165b47dc6"
+  },
+  "CC0001_002": {
+    "juan_uuid": "6abf549f-070c-428d-8da5-e7bcfbaece90",
+    "content_uuid": "c07996c0-2cd1-42d6-87eb-e6a33d8054f6"
+  },
+  "CC0001_003": {
+    "juan_uuid": "b507add0-c344-468c-b943-9fa768d02495",
+    "content_uuid": "dd87491c-35e2-49b1-9615-35920d40042a"
+  },
+  "CC0001_004": {
+    "juan_uuid": "284a2534-d196-4198-b4d7-30ac52c311c3",
+    "content_uuid": "9986238f-215f-4dbb-8a8b-e7e56fb9625e"
+  },
+  "CC0001_005": {
+    "juan_uuid": "74d66ba9-41a5-4ff1-b93f-4812ffd72214",
+    "content_uuid": "764738de-19aa-432b-8ca7-78117247fed0"
+  },
+  "CC0001_006": {
+    "juan_uuid": "5a29a960-b165-4eac-8069-6e652e716536",
+    "content_uuid": "0fdc8f5d-597f-454a-ada1-c2e6b88b6bf1"
   }
 }

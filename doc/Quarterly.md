@@ -11,12 +11,10 @@ CBETA XML 新一季定案後執行。
     * staging.rb
     * production.rb
   * environments
-    * 版本編號 採 semantic versioning： Major.Minor.Patch
-      * Major version 做了不相容的更改
-      * Minor version 做了一些可以向下兼容的功能性新增
-      * Patch version 做了一些向下兼容的問題修正或調整
-    * staging.rb: config.x.q
-    * production.rb: config.x.q
+    * application.rb
+      * config.x.v # 季號，用於 cache key
+      * config.x.ver
+      * config.x.q
 * lib/tasks/quarterly/config.rb
 * app/views/static_pages
   * home.haml 製作日期
@@ -24,7 +22,7 @@ CBETA XML 新一季定案後執行。
 
 ## 從 GitHub 更新資料
 
-在開發端執行 `bundle exec rake quarterly:run` 
+在開發端執行 `bundle exec rake quarterly` 
 只做最前面的 update from github
 
 ## Update cbeta-metadata on GitHub
@@ -50,9 +48,6 @@ CBETA XML 新一季定案後執行。
     export RAILS_ENV=staging
 
 編輯 lib/tasks/quarterly/config.rb
-
-    bundle exec rake quarterly:view # 查看 steps
-    bundle exec rake quarterly:run
 
 執行 rake quarterly 會自動執行以下工作。
 

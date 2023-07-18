@@ -61,7 +61,7 @@ end
 # bundle install 錯誤: could not be found in any of the sources listed in your Gemfile
 # 可以執行以下命令從 RubyGems 取得最新清單
 # bundle --full-index
-gem 'cbeta', '>= 2.7.15'
+gem 'cbeta', '>= 2.8.0'
 
 gem "haml-rails"
 gem 'time_diff'
@@ -85,7 +85,7 @@ gem 'bootstrap', '~> 4.0.0'
 gem 'rubyzip'
 gem 'colorize'
 gem 'diff-lcs'
-gem 'unihan2', '>= 0.2.0'
+gem 'unihan2', '>= 1.0.0'
 gem 'open3'
 
 # fix error: cannot load such file -- net/smtp

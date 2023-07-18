@@ -4,6 +4,8 @@
 
 以下相對目錄位於 <https://github.com/DILA-edu/cbeta-metadata>
 
+編輯 `/canons.csv`
+
 ### category
 
 2022 Q4 起改用 Authority.
@@ -14,17 +16,16 @@
 
 * 參考 CBReader 使用的部類目錄: <https://github.com/heavenchou/cbwork-bin/tree/master/cbreader2X>
   * bulei_nav.xhtml
-* 更新部類目錄：手動編輯 catalog/cbeta.xml
-* 更新冊別目錄：例如呂澂著作，編輯 catalog/vol-lc.xml
+* 更新 部類目錄： catalog/cbeta.xml
+* 更新 原書目錄： catalog/orig.xml
+  * 參考 CBReader 的 advance_nav.xhtml
 
 ### textref
 
 執行 textref/convert.rb
 
 * input
-  * titles/titles-by-canon
-  * creators/creators-by-canon
-  * time/year-by-canon
+  * DILA Authority: https://github.com/DILA-edu/Authority-Databases/tree/master/authority_catalog/json
 * output: textref/cbeta.csv
 
 ## TextRef
@@ -37,12 +38,15 @@ DocuSky 會讀 cbeta-metadata/textref 裡的目錄資料，
 
 ### lib/cbeta.rb
 
-  CANON = 'DA|GA|GB|LC|ZS|ZW|[A-Z]'
-  SORT_ORDER = %w(T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC)
+```ruby
+CANON = 'CC|DA|GA|GB|LC|ZS|ZW|[A-Z]'
+SORT_ORDER = %w(T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC CC)
+```
 
 ### lib/data/canons.csv
 
-新增該部藏經的版本略符等 metadata 資料。
+* 參考 cbeta-xml-p5a/canons.json
+* 新增該部藏經的版本略符等 metadata 資料。
 
 ## Create UUID
 
