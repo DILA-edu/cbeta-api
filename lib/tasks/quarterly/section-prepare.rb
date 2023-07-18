@@ -5,19 +5,19 @@ module SectionPrepare
         step_copy_data_folder
         step_copy_public
         step_import_juanline
-      else
-        run_step 'update_from_github (update-github.rb)' do
-          command "ruby update-github.rb #{@config[:git]}"
-        end
-  
-        run_step 'check new canon (check-new-canon.rb)' do
-          command "ruby check-new-canon.rb #{@config[:git]}"
-        end
-  
-        step_create_juanline
-        step_import_juanline  # import:layers 要用到，所以提早做
-        step_copy_help
-      end        
+      end
+
+      run_step 'update_from_github (update-github.rb)' do
+        command "ruby update-github.rb #{@config[:git]}"
+      end
+
+      run_step 'check new canon (check-new-canon.rb)' do
+        command "ruby check-new-canon.rb #{@config[:git]}"
+      end
+
+      step_create_juanline
+      step_import_juanline  # import:layers 要用到，所以提早做
+      step_copy_help
     end
   end
 
