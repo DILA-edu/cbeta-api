@@ -46,8 +46,8 @@ class ChangeLogCategory
         @head_text = line
         @head_punc = line
       elsif line=='</body></html>'
-        @f_text += line + "\n"
-        @f_punc += line + "\n"
+        @f_text << line + "\n"
+        @f_punc << line + "\n"
         return 'break'
       else
         #$dirty = handle_line_text(line)
@@ -57,13 +57,13 @@ class ChangeLogCategory
       end
     else
       if line.start_with? '<h1'
-        @f_text += "<h1>CBETA #{@quarter} 文字變更記錄</h1>\n"
-        @f_punc += "<h1>CBETA #{@quarter} 標點變更記錄</h1>\n"
+        @f_text << "<h1>CBETA #{@quarter} 文字變更記錄</h1>\n"
+        @f_punc << "<h1>CBETA #{@quarter} 標點變更記錄</h1>\n"
       elsif line.start_with? '<h2'
         @body = true
       else
-        @f_text += line + "\n"
-        @f_punc += line + "\n"
+        @f_text << line + "\n"
+        @f_punc << line + "\n"
       end
     end
   end
@@ -82,11 +82,11 @@ class ChangeLogCategory
     return false unless s.include?('<del>') or s.include?('<ins>')
     
     unless @head_text.nil?
-      @f_text += @head_text + "\n"
+      @f_text << @head_text + "\n"
       @head_text = nil
     end
     
-    @f_text += s + "\n"
+    @f_text << s + "\n"
     true
   end
 
@@ -107,20 +107,20 @@ class ChangeLogCategory
     return unless s.include?('<del>') or s.include?('<ins>')
 
     unless @head_punc.nil?
-      @f_punc += @head_punc + "\n"
+      @f_punc << @head_punc + "\n"
       @head_punc = nil
     end
     
-    @f_punc += s + "\n"
+    @f_punc << s + "\n"
   end
 
   def remove_puncs(s, tag)
     r = ''
     s2a(s).each do |c|
       if PUNCS.include? c
-        r += c if tag == 'ins'
+        r << c if tag == 'ins'
       else
-        r += "<#{tag}>#{c}</#{tag}>"
+        r << "<#{tag}>#{c}</#{tag}>"
       end
     end
     r.gsub!(/<\/#{tag}><#{tag}>/, '')
@@ -131,9 +131,9 @@ class ChangeLogCategory
     r = ''
     s2a(s).each do |c|
       if PUNCS.include? c
-        r += "<#{tag}>#{c}</#{tag}>"
+        r << "<#{tag}>#{c}</#{tag}>"
       else
-        r += c if tag == 'ins'
+        r << c if tag == 'ins'
       end
     end
     r.gsub(/<\/#{tag}><#{tag}>/, '')
