@@ -96,7 +96,8 @@ class P5aToHTMLForUI
     @note_star_count = Hash.new(0)
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
-    $stderr.print "\nx2h_for_ui #{@sutra_no}"
+    puts "\nx2h_for_ui #{@sutra_no}"
+    puts "read from #{xml_fn}"
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @updated_at = MyCbetaShare.get_update_date(xml_fn)
     @title = Work.get_info_by_id(@work_id)[:title]

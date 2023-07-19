@@ -4,7 +4,6 @@ module SectionPrepare
       if Rails.env.staging?
         step_copy_data_folder
         step_copy_public
-        step_import_juanline
       end
 
       run_step 'update_from_github (update-github.rb)' do
