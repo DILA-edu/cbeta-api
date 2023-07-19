@@ -23,7 +23,6 @@ module SectionConvert
     run_step '含別名的作譯者清單 (rake create:creators)' do
       puts '產生 data/all-creators-with-alias.json, 供匯出。'
       puts '要從 GitHub 更新 Authority-Databases (如果 Authority ID 有變動，Github 上的 Authority XML 也要請 Authority 管理人員更新)'
-      puts '要在 rake import:creators 之後執行，才能判斷別名是否出現在作譯者。'
       command 'rake create:creators'
     end
   end
