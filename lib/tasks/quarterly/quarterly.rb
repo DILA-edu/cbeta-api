@@ -13,6 +13,8 @@ class Quarterly
   def initialize
     @config = get_config
     puts "Environment: #{Rails.env}"
+    confirm("請先確認 Rails 環境 是否正確")
+
     @work_dir = Rails.root.join('lib', 'tasks', 'quarterly')
     @section_count = 0
     @step_count = 0

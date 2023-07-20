@@ -2,6 +2,7 @@ require 'net/http'
 require 'diff/lcs'
 require 'cbeta'
 require 'csv'
+require_relative 'changelog'
 
 # 前置作務： import:work_info
 class DiffToHTML
@@ -15,6 +16,7 @@ class DiffToHTML
   def initialize(config)
     @config = config
     @base = config[:change_log]
+    @new_punc_works = read_new_punc_works
   end
 
   def convert
@@ -67,6 +69,8 @@ class DiffToHTML
     @log.puts "</body></html>"
   end
 
+  private
+
   def add_canon(folder, canon)
     puts "add_canon: #{folder}, #{canon}"
     canon_folder = File.join(@base, folder, canon)
@@ -85,7 +89,7 @@ class DiffToHTML
     f = a.join('/')
     work_id = CBETA.get_work_id_from_file_basename(work)
     title = Work.find_by(n: work_id).title
-    @added += "<li>#{f}/#{work}《#{title}》卷#{juan}</li>\n"
+    @added << "<li>#{f}/#{work}《#{title}》卷#{juan}</li>\n"
   end
 
   def add_vol(rel_path)
@@ -104,25 +108,32 @@ class DiffToHTML
     f = a.join('/')
     work_id = CBETA.get_work_id_from_file_basename(work)
     title = Work.find_by(n: work_id).title 
-    @added += "<li>#{f}/#{work}《#{title}》</li>\n"
+    @added << "<li>#{f}/#{work}《#{title}》</li>\n"
   end
 
   def diff_chars(from, to)
-    @log.puts "<p>diff_chars</p>
-  <ul>
-  <li>#{from}</li>
-  <li>#{to}</li>"
+    @log.puts <<~HTML
+      <p>diff_chars</p>
+      <ul>
+        <li>#{from}</li>
+        <li>#{to}</li>
+    HTML
+
     if to.empty?
       r = ''
       from.split("\n").each do |s|
-        #r += s.sub(/^(.*?║)(.*)$/, "\\1<del>\\2</del><br>\n")
-        r += "<del>#{s}</del><br>\n"
+        unless @ignore and punc?(s)
+          r << "<del>#{s}</del><br>\n"
+        end
       end
     elsif from.empty?
       r = ''
       to.split("\n").each do |s|
-        #r += s.sub(/^(.*?║)(.*)$/, "\\1<del>\\2</del><br>\n")
-        r += "<ins>#{s}</ins><br>\n"
+        if @ignore and punc?(s)
+          r << s
+        else
+          r << "<ins>#{s}</ins><br>\n"
+        end
       end
     else
       r = diff_lcs(from, to)
@@ -139,14 +150,31 @@ class DiffToHTML
     diffs.each do |change|
       case change.action
       when '='
-        r += change.old_element
+        r << change.old_element
       when '!'    # replace
-        r += "<del>#{change.old_element}</del>"
-        r += "<ins>#{change.new_element}</ins>"
+        if @ignore
+          unless punc?(change.old_element)
+            r << "<del>#{change.old_element}</del>"
+          end
+          if punc?(change.new_element)
+            r << change.new_element
+          else
+            r << "<ins>#{change.new_element}</ins>"
+          end
+        else
+          r << "<del>#{change.old_element}</del>"
+          r << "<ins>#{change.new_element}</ins>"
+        end
       when '-'    # delete
-        r += "<del>#{change.old_element}</del>"
+        unless @ignore and punc?(change.old_element)
+          r << "<del>#{change.old_element}</del>"
+        end
       when '+'    # insert
-        r += "<ins>#{change.new_element}</ins>"
+        if @ignore and punc?(change.new_element)
+          r << change.new_element
+        else
+          r << "<ins>#{change.new_element}</ins>"
+        end
       end
     end
     r
@@ -158,12 +186,12 @@ class DiffToHTML
     r = ''
     while !a2.empty? or !a1.empty?
       if a2.first == a1.first
-        r += a2.shift
+        r << a2.shift
         a1.shift
       elsif !a2.empty? and PUNCS.include? a2.first
-        r += '<ins>%s</ins>' % a2.shift
+        r << '<ins>%s</ins>' % a2.shift
       elsif PUNCS.include? a1.first
-        r += '<del>%s</del>' % a1.shift
+        r << '<del>%s</del>' % a1.shift
       else
         abort "diff_puncs error"
       end
@@ -229,7 +257,7 @@ class DiffToHTML
     text.scan(/Only in (.*): (.*)/).each do |folder, fn|
       next if fn.start_with? '.'
       if folder.include? @v1
-        @removed += "<li>#{folder}/#{fn}</li>\n"
+        @removed << "<li>#{folder}/#{fn}</li>\n"
       else
         if fn.match(/^[A-Z]{1,2}$/) # 新增一整部藏經
           add_canon(folder, fn)
@@ -246,7 +274,7 @@ class DiffToHTML
     end
     
     text.scan(/diff -r \S+ \S+\n.*?(?=diff|\z)/m).each do |s|
-      r += parse_patch(s)
+      r << parse_patch(s)
     end
     r
   end
@@ -266,8 +294,9 @@ class DiffToHTML
     tokens = f1.split('/')
     basename = tokens[2]
     juan = tokens.last.sub(/^0*(\d+)\.txt$/, '\1')
-    work_id = CBETA.get_work_id_from_file_basename(basename)
-    title = Work.find_by(n: work_id).title
+    @work_id = CBETA.get_work_id_from_file_basename(basename)
+    @ignore = @new_punc_works.include?(@work_id)
+    title = Work.find_by(n: @work_id).title
 
     # 2019Q1 Y 重新分卷
     if @v2 == '2019Q1' and basename.start_with?('Y')
@@ -287,7 +316,7 @@ class DiffToHTML
     r = ''
     blocks.each do |s|
       a = s.split("\n")
-      r += parse_body(a)
+      r << parse_body(a)
     end
     r
   end
@@ -303,14 +332,14 @@ class DiffToHTML
       if line.start_with? '< '
         s = line[2..-1]
         if not s.include? '║' and not a1.empty?
-          a1[-1] += s
+          a1[-1] << s
         else
           a1 << s
         end
       elsif line.start_with? '> '
         s = line[2..-1]
         if not s.include? '║' and not a2.empty?
-          a2[-1] += s
+          a2[-1] << s
         else
           a2 << s
         end
@@ -338,31 +367,32 @@ class DiffToHTML
       linehead2 = s2.include?('║') ? s2.sub(/^(.*?)║.*$/, '\1') : nil
 
       if linehead1.nil? and not linehead2.nil?
-        r += diff_chars(s1, '') + "<br>\n"
+        r << diff_chars(s1, '') + "<br>\n"
         a1.shift
         next
       end
 
       if linehead1 == linehead2
         if same_text(s2, s1)
-          diff_html = diff_puncs(s1, s2)
+          unless @ignore
+            r << diff_puncs(s1, s2) + "<br>\n"
+          end
         else
-          diff_html = diff_chars(s1, s2)
+          r << diff_chars(s1, s2) + "<br>\n"
         end
-        r += diff_html + "<br>\n"
         a1.shift
         a2.shift
         next
       end
 
       if a2.size > 1 and a2[1].start_with?(linehead1)
-        r += diff_chars('', s2) + "<br>\n"
+        r << diff_chars('', s2) + "<br>\n"
         a2.shift
         next
       end
 
       unless (a2.empty? or linehead1.nil?)
-        r += diff_chars(s1, '') + "\n"
+        r << diff_chars(s1, '') + "\n"
         a1.shift
         next
       end
@@ -376,7 +406,23 @@ class DiffToHTML
     
       s = diff_chars(s1, s2)
       s.gsub("\n", "<br>")
-      r += s
+      r << s
+    end
+    r
+  end
+
+  # 除了標點之外 沒有其他文字
+  def punc?(text)
+    s = text.gsub("\n", '')
+    s = remove_puncs(s)
+    s.empty?
+  end
+
+  def read_new_punc_works
+    r = []
+    Changelog.each_new_punc_work(@config) do |line|
+      basename = line.split.first
+      r << CBETA.get_work_id_from_file_basename(basename)
     end
     r
   end
