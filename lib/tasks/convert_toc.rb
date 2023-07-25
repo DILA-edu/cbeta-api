@@ -28,8 +28,9 @@ class ConvertToc
   end
   
   def convert_canon(canon)
+    puts "convert_canon: #{canon}"
     @canon = canon
-    
+
     # 注意不能簡單排序
     # B15n0088 會排在 B15na014 前面，接不到 B16n0088
 
