@@ -99,7 +99,7 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
-    cbeta (2.8.0)
+    cbeta (2.8.1)
     chronic_duration (0.10.6)
       numerizer (~> 0.1.1)
     coffee-rails (5.0.0)
@@ -154,7 +154,7 @@ GEM
     method_source (1.0.0)
     mini_mime (1.1.2)
     minitest (5.18.1)
-    msgpack (1.7.1)
+    msgpack (1.7.2)
     mysql2 (0.5.5)
     net-imap (0.3.6)
       date
@@ -291,7 +291,7 @@ DEPENDENCIES
   capistrano-passenger
   capistrano-rails
   capybara (>= 2.15)
-  cbeta (>= 2.8.0)
+  cbeta (>= 2.8.1)
   chronic_duration
   coffee-rails (~> 5.0.0)
   colorize

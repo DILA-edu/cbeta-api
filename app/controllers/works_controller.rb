@@ -127,7 +127,7 @@ class WorksController < ApplicationController
   
   def search_by_vol_range
     c = params[:canon]
-    if %w[A C G GA GB L M P U].include? c # 冊號三碼
+    if CBETA::VOL3.include?(c) # 冊號三碼
       pattern = "%s%03d"
     else
       pattern = "%s%02d"
