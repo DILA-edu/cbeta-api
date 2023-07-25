@@ -29,39 +29,30 @@ class ConvertToc
   
   def convert_canon(canon)
     @canon = canon
+    
+    # 注意不能簡單排序
+    # B15n0088 會排在 B15na014 前面，接不到 B16n0088
+
     path = File.join(@xml_root, canon)
-    Dir.entries(path).sort.each do |f|
-      next if f.start_with? '.'
-      @vol = f
-      $stderr.puts "convert_toc #{@vol}"
-      p = File.join(path, f)
-      convert_vol(p)
+    works = works_in_canon(path)
+    works.each do |work, files|
+      init_work
+      files.each do |f|
+        @file = File.basename(f, '.*')
+        get_info_from_xml(f)
+      end
+      write_toc(work)
     end
-    @work = nil
-    check_work
   end
 
   private
 
-  def check_work
-    if @work != @previous_work
-      unless @previous_work.nil?
-        s = JSON.pretty_generate(@toc)
-        folder = File.join(@out_root, @previous_canon)
-        Dir.mkdir(folder) unless Dir.exist?(folder)
-        fn = @previous_work+'.json'
-        fn = File.join(folder, fn)
-        File.write(fn, s)
-      end
-      @toc = {
-        "mulu" => [],
-        "juan" => []
-      }
-      @toc_stack = [@toc['mulu']]
-
-      @previous_canon = @canon
-      @previous_work = @work
-    end
+  def init_work
+    @toc = {
+      "mulu" => [],
+      "juan" => []
+    }
+    @toc_stack = [@toc['mulu']]
   end
   
   def get_info_from_xml(xml_path)
@@ -139,22 +130,7 @@ class ConvertToc
     current << data
     @toc_stack << data
   end
-  
-  def convert_vol(path)
-    Dir.entries(path).sort.each do |f|
-      next if f.start_with? '.'
-      if f.match(/^.*?n(.*?)\.xml$/)
-        @work = @canon + $1
-        @file = "#{@vol}n#{$1}"
-        @work = 'T0220' if @work.start_with? 'T0220'
-        p = File.join(path, f)
-        convert_work(p)
-      else
-        abort "work id error: #{f}"
-      end
-    end
-  end
-  
+    
   def convert_work(xml_path)
     check_work
     get_info_from_xml(xml_path)    
@@ -166,6 +142,25 @@ class ConvertToc
     suffix.pop
     parent = @work + '.' + suffix.join('.')
     return parent, n
+  end
+
+  def works_in_canon(src)
+    r = Hash.new { |h, k| h[k] = Array.new }
+    Dir["#{src}/**/*.xml"].sort.each do |path|
+      file = File.basename(path, '.*')
+      work = CBETA.get_work_id_from_file_basename(file)
+      r[work] << path
+    end
+    r
+  end
+
+  def write_toc(work)
+    s = JSON.pretty_generate(@toc)
+    folder = File.join(@out_root, @canon)
+    Dir.mkdir(folder) unless Dir.exist?(folder)
+    fn = "#{work}.json"
+    fn = File.join(folder, fn)
+    File.write(fn, s)
   end
 
   include CbetaP5aShare
