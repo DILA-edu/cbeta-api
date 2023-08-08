@@ -19,6 +19,7 @@ class P5aToText
 
   # @param xml_root [String] 來源 CBETA XML P5a 路徑
   # @param output_root [String] 輸出 Text 路徑
+  # @option opts [Boolean] :inline_notes 是否含夾注，預設 true
   # @option opts [String] :encoding 輸出編碼，預設 'UTF-8'
   # @option opts [String] :gaiji 缺字處理方式，預設 'default'
   #   * 'PUA': 缺字一律使用 Unicode PUA
@@ -29,7 +30,8 @@ class P5aToText
     
     @settings = {
       encoding: 'UTF-8',
-      gaiji: 'default'
+      gaiji: 'default',
+      inline_notes: true
     }
     @settings.merge!(opts)
     
@@ -207,12 +209,13 @@ class P5aToText
   end
 
   def e_note(e)
-    # if e.has_attribute?('place')
-    #   if "inline inline2 interlinear".include?(e['place'])
-    #     r = traverse(e)
-    #     return "(#{r})"
-    #   end
-    # end
+    return '' unless @settings[:inline_notes]
+    if e.has_attribute?('place')
+      if "inline inline2 interlinear".include?(e['place'])
+        r = traverse(e)
+        return "(#{r})"
+      end
+    end
     ''
   end
 

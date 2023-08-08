@@ -91,4 +91,4 @@ change to the postgres unix user
 
     sudo su - postgres
     psql
-    postgres=# SELECT pg_database_size('cbdata13');
+    postgres=# SELECT pg_size_pretty(pg_database_size('cbdata3'));

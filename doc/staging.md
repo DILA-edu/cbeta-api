@@ -8,6 +8,10 @@
   * deploy
     * 修改 staging.rb 的 deploy_to
     * 修改 procution.org 的 deploy_to
+  * environments
+    * staging.rb
+      * GIT 資料夾
+
 * 修改 lib/tasks/quarterly/config.rb
 
 ## Deploy

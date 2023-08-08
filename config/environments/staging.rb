@@ -1,6 +1,6 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
-  GIT = '/home/ray/git-repos'
+  GIT = '/home/ray/git-repos-q4'
   config.x.git = GIT
   config.x.authority = File.join(GIT, 'Authority-Databases')
   config.cbeta_xml   = File.join(GIT, 'cbeta-xml-p5a')

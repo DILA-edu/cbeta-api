@@ -5,9 +5,6 @@ class Kwic3Controller < ApplicationController
     return unless params.key?(:q)
     logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{params[:q]}"
 
-    base = Rails.configuration.x.kwic.base
-    @se = KwicService.new(base)
-
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
     @q = handle_zzs(params[:q])
 
@@ -18,7 +15,10 @@ class Kwic3Controller < ApplicationController
     @q.gsub!(/\\(['"\-\\])/, '\1') # unescape: \' 取代為 ', \" 取代為 "
     logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
     
-    @opts = { referer_cn: referer_cn? }
+    @opts = { 
+      inline_note: true,
+      referer_cn: referer_cn?
+    }
     
     a = %w(sort negative_lookahead negative_lookbehind)
     a.each {|s| @opts[s.to_sym] = params[s] if params.key? s }
@@ -26,11 +26,15 @@ class Kwic3Controller < ApplicationController
     a = %w(around juan rows start word_count)
     a.each {|s| @opts[s.to_sym] = params[s].to_i if params.key? s }
     
-    @opts[:place]        = true  if params['place']         == '1'
-    @opts[:kwic_w_punc]  = false if params['kwic_w_punc']   == '0'
-    @opts[:kwic_wo_punc] = true  if params['kwic_wo_punc']  == '1'
-    @opts[:mark]         = true  if params['mark']          == '1'
-    @opts[:seg]          = true  if params['seg']           == '1'
+    @opts[:inline_note]  = false if params['note']         == '0'
+    @opts[:place]        = true  if params['place']        == '1'
+    @opts[:kwic_w_punc]  = false if params['kwic_w_punc']  == '0'
+    @opts[:kwic_wo_punc] = true  if params['kwic_wo_punc'] == '1'
+    @opts[:mark]         = true  if params['mark']         == '1'
+    @opts[:seg]          = true  if params['seg']          == '1'
+
+    base = Rails.configuration.x.kwic.base
+    @se = KwicService.new(base, @opts[:inline_note])
     
     # 檢查 佛典編號 是否存在
     if params.key?('work')

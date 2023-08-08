@@ -19,14 +19,14 @@ class SphinxT2X
     folder = Rails.root.join('data', 'cbeta-xml-for-sphinx')
     FileUtils.mkpath(folder)
     
-    fn = Rails.root.join(folder, 'without-puncs.xml')
+    fn = Rails.root.join(folder, 'text.xml')
     @f_wo = open_xml(fn)
     
-    src = Rails.root.join('data', 'cbeta-txt')
-    Dir.entries(src).sort.each do |f|
+    @src  = Rails.root.join('data', "cbeta-txt-with-notes-for-sphinx")
+    @src2 = Rails.root.join('data', "cbeta-txt-without-notes-for-sphinx")
+    Dir.entries(@src).sort.each do |f|
       next if f.start_with? '.'
-      path = File.join(src, f)
-      convert_canon(f, path)
+      convert_canon(f)
     end
     
     close_xml(@f_wo)
@@ -40,19 +40,19 @@ class SphinxT2X
     f.close
   end
 
-  def convert_canon(canon, folder)
-    $stderr.puts "sphinx t2x: #{folder}"
+  def convert_canon(canon)
+    puts "sphinx t2x: #{canon}"
     @canon = canon
     @canon_order = CBETA.get_sort_order_from_canon_id(canon)
+    folder = File.join(@src, canon)
     Dir.entries(folder).sort.each do |f|
       next if f.start_with? '.'
-      path = File.join(folder, f)
-      convert_vol(f, path)
+      convert_vol(f)
     end
   end
   
-  def convert_juan(text_file_path)
-    basename = File.basename(text_file_path, '.txt')
+  def convert_juan(rel_path)
+    basename = File.basename(rel_path, '.txt')
     @juan = strip_zero(basename)
     
     data = {
@@ -63,31 +63,36 @@ class SphinxT2X
   
     @id += 1
     
-    s = File.read(text_file_path)  
+    fn = File.join(@src, rel_path)
+    s = File.read(fn)  
+    data[:content] = @cbs.remove_puncs(s) # 要把標點去掉，才能找到跨標點的詞，例如「不也天中天」
 
-    # 要把標點去掉，才能找到跨標點的詞，例如「不也天中天」
-    data[:content] = @cbs.remove_puncs(s)
+    fn = File.join(@src2, rel_path)
+    s = File.read(fn)  
+    data[:content_without_notes] = @cbs.remove_puncs(s)
+
     write_xml(@f_wo, data)
   end
   
-  def convert_vol(vol, folder)
+  def convert_vol(vol)
     $stderr.puts "sphinx t2x #{vol}"
     @vol = vol
+    folder = File.join(@src, @canon, vol)
     Dir.entries(folder).sort.each do |f|
       next if f.start_with? '.'
-      path = File.join(folder, f)
       @xml_file = f
-      convert_work(path)
+      convert_work
     end
   end
 
-  def convert_work(folder)
+  def convert_work
     @work = @xml_file.sub(/^(#{CBETA::CANON})\d{2,3}n(.*)$/, '\1\2')
-
+    rel_path = File.join(@canon, @vol, @xml_file)
+    folder = File.join(@src, rel_path)
     Dir.entries(folder).sort.each do |f|
       next if f.start_with? '.'
-      path = File.join(folder, f)
-      convert_juan(path)
+      rel_path2 = File.join(rel_path, f)
+      convert_juan(rel_path2)
     end
   end
   

@@ -15,12 +15,12 @@ class KwicHtml2Text
     @work_base = Rails.configuration.x.kwic.temp
   end
 
-  def convert(canon, vol)
+  def convert(canon, vol, inline_note)
     # main
     t1 = Time.now
 
     puts "clear old data"
-    @builder = KwicBuilder.new
+    @builder = KwicBuilder.new(inline_note)
     @builder.clear_old_data
 
     target = File.join(canon.to_s, vol.to_s)
@@ -48,9 +48,7 @@ class KwicHtml2Text
     @size += s1.size
     
     s2 = s1.reverse
-    @builder.sa_units.each do |sa_unit|
-      write_text(sa_unit, s1, s2)
-    end
+    write_text(s1, s2)
     
     @max_offset = @builder.offset if @builder.offset > @max_offset
       
@@ -82,13 +80,13 @@ class KwicHtml2Text
     end
   end
 
-  def write_text(sa_unit, s1, s2)
-    fn = @builder.abs_sa_path(sa_unit, 'all.txt')
+  def write_text(s1, s2)
+    fn = @builder.abs_sa_path('all.txt')
     
     # 要用 UTF－32LE, C++ 才能以 binary 直接讀入 int array
     File.open(fn, 'a:UTF-32LE') { |f| f.write(s1) }
     
-    fn = @builder.abs_sa_path(sa_unit, 'all-b.txt')
+    fn = @builder.abs_sa_path('all-b.txt')
     if File.exist? fn
       # 反向排序，後面的檔案要放前面
       FileUtils.mv fn, 'temp.txt'

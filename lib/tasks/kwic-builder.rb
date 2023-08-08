@@ -5,29 +5,25 @@ require 'yaml'
 require_relative '../../app/services/suffix_info'
 
 class KwicBuilder
-  attr_accessor :juan, :offset, :relative_path, :text_with_punc, :canon, :vol, :work, :sa_units
+  attr_accessor :juan, :offset, :relative_path, :text_with_punc, :canon, :vol, :work
   
   PUNCS = "\n" + CbetaString::PUNCS
   
-  def initialize
+  # @param inline_note [Boolean] 是否含夾注
+  def initialize(inline_note)
+    @inline_note = inline_note
     @work_base = Rails.configuration.x.kwic.temp
-    @sa_base = File.join(@work_base, 'sa')
-    
-    if Rails.env == 'cn'
-      @sa_units = ['juan']
-    else
-      # 本來有 all, canon, category 等多種 index
-      # 2022-08 改成只限單卷
-      @sa_units = %w(juan)
-    end
 
+    folder = inline_note ? 'sa' : 'sa-without-notes'
+    @sa_base = File.join(@work_base, folder)
+    
     @html_base = Rails.configuration.x.kwic.html
     @juan_cross_vol = chk_juan_cross_vol(@html_base)
   end
   
-  def abs_sa_path(sa_unit, fn)
+  def abs_sa_path(fn)
     relative_path = File.join(@work, @juan)  
-    folder = File.join(@sa_base, sa_unit, relative_path)
+    folder = File.join(@sa_base, relative_path)
     FileUtils.mkdir_p folder
     File.join(folder, fn)
   end
@@ -65,10 +61,7 @@ class KwicBuilder
       @info << create_suffix_info.pack
     end
 
-    @sa_units.each { |sa_unit| 
-      write_info(sa_unit) 
-    }
-    
+    write_info
     r  
   end
     
@@ -145,9 +138,13 @@ class KwicBuilder
     when 'a'
       @lb = e['id']
     when 'inline'
-      s = traverse(e, 'inline')
-      @text_with_punc << s
-      @offset += s.size
+      if @inline_note
+        r = traverse(e, 'text')
+      else
+        s = traverse(e, 'inline')
+        @text_with_punc << s
+        @offset += s.size
+      end
     end
 
     r
@@ -176,15 +173,8 @@ class KwicBuilder
     r
   end    
   
-  def write_info(sa_unit)
-    # 單卷 info 資料檔，不另排序
-    if sa_unit == 'juan'
-      fn = 'info.dat'
-    else
-      fn = 'info-tmp.dat'
-    end
-
-    fn = abs_sa_path(sa_unit, fn)
+  def write_info
+    fn = abs_sa_path('info.dat')
     f = File.open(fn, 'ab')
     f.write(@info)
     f.close

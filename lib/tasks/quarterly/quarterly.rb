@@ -18,6 +18,9 @@ class Quarterly
     @work_dir = Rails.root.join('lib', 'tasks', 'quarterly')
     @section_count = 0
     @step_count = 0
+
+    v = "data#{@config[:v]}"
+    @sphinx_folders = ["#{v}-text", "#{v}-notes", "#{v}-titles"]
   end
 
   def run

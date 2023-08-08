@@ -129,7 +129,6 @@ class SphinxController < ApplicationController
       h['canon']    = facet_by_sphinx('canon')
     end
 
-    notes_inline_around(r)
     my_render r
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
@@ -392,7 +391,9 @@ class SphinxController < ApplicationController
     unless @q.gsub(/\\"/, '').include? '"'
       @q = %("#{@q}")
     end
-    @where = %{MATCH('#{@q}')} + @filter
+
+    text_field = @inline_note ? 'content' : 'content_without_notes'
+    @where = %{MATCH('@#{text_field} #{@q}')} + @filter
 
     # 因為 max_matches 參數如果太大，會影響效率
     # 所以先計算最多會有多少 documents 符合條件
@@ -686,6 +687,7 @@ class SphinxController < ApplicationController
     @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
     @around = params.key?(:around) ? params[:around].to_i : 10
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
+    @inline_note = params.key?(:note) ? params[:note]=='1' : true
 
     case action_name
     when 'notes'
@@ -754,7 +756,7 @@ class SphinxController < ApplicationController
     s = keys.join(' ')
 
     # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
-    @fields = "id, note_place, canon, category, vol, file, "\
+    @fields = "id, canon, category, vol, file, "\
       "work, title, juan, lb, n, content, prefix, suffix,"\
       "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
@@ -891,7 +893,7 @@ class SphinxController < ApplicationController
 
   def kwic_by_juan(r)
     base = Rails.configuration.x.kwic.base
-    se = KwicService.new(base)
+    se = KwicService.new(base, @inline_note)
     r[:results].each do |juan|
       logger.info "kwic_by_juan, work: #{juan[:work]}, juan: #{juan[:juan]}"
       opts = {
@@ -973,23 +975,6 @@ class SphinxController < ApplicationController
     raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{q}，原查詢字串：#{params[:q]}"
   end
 
-  def notes_inline_around(r)
-    r[:results].each do |h|
-      next unless h[:note_place] == 'inline'
-      hh = h[:highlight]
-      hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
-        hh = m[2]
-        s = h[:prefix] + '(' + m[1]
-        prefix = s[-@around..-1] || s
-        s = m[3] + ')' + h[:suffix]
-        suffix = s[0, @around]
-        h[:highlight] = "#{prefix}#{hh}#{suffix}"
-      end
-      h.delete(:prefix)
-      h.delete(:suffix)
-    end
-  end
-
   def read_dynasty_order
     @dynasty_order = {}
     fn = Rails.root.join('data-static', 'dynasty-order.csv')
@@ -1051,10 +1036,6 @@ class SphinxController < ApplicationController
     if params.key? :work_type
       t = params[:work_type]
       @filter << " AND work_type='#{t}'"
-    end
-
-    if params.key? :note_place
-      @filter << " AND note_place='%s'" % params[:note_place]
     end
   end
 

@@ -44,9 +44,13 @@ class KwicService
     referer_cn: false
   }
 
-  # param @base [String] suffix array base folder
-  def initialize(base)
-    @sa_base    = File.join(base, 'sa')   # suffix array folder
+  # @param base [String] suffix array base folder
+  # @param inline_note [Boolean] 是否含夾注
+  def initialize(base, inline_note)
+    # suffix array folder
+    @sa_base = inline_note ? 'sa' : 'sa-without-notes'
+    @sa_base    = File.join(base, @sa_base)
+    
     @txt_folder = File.join(base, 'text') # 含有標點的純文字檔
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
     @current_sa_path = nil

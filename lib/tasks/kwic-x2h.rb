@@ -8,7 +8,7 @@ require 'cbeta'
 # Convert CBETA XML P5a to simple HTML
 #
 # * HTML 中除了純文字之外，只有行號標記
-# * 每一卷、每個校勘版本都產生一個檔案
+# * 每一卷 產生一個檔案
 # 
 # CBETA XML P5a 可由此取得: https://github.com/cbeta-git/xml-p5a
 #

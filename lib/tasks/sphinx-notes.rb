@@ -53,7 +53,6 @@ class SphinxNotes
       \n--------------------
       原書校注數量：#{@stat[:foot]}
       CBETA校注數量：#{@stat[:add]}
-      夾注數量：#{@stat[:inline]}
       註解總數：#{@stat.values.sum}
     MSG
     puts "花費時間：" + ChronicDuration.output(Time.now - t1)
@@ -94,7 +93,6 @@ class SphinxNotes
     @notes_mod = {}
     @notes_orig = {}
     @notes_add = {}
-    @notes_inline = {}
     @offset = 0
     @sutra_no = File.basename(xml_fn, ".xml")
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
@@ -238,7 +236,6 @@ class SphinxNotes
       @notes_mod[@juan] = {}
       @notes_orig[@juan] = {}
       @notes_add[@juan] = []
-      @notes_inline[@juan] = []
       print " #{@juan}"
     end
     ''
@@ -275,21 +272,6 @@ class SphinxNotes
 
     if e.has_attribute?('resp')
       return '' if e['resp'].start_with? 'CBETA'
-    end
-
-    if e.has_attribute?('place')
-      if %w[inline inline2 interlinear].include?(e['place'])
-        offset = @offset
-        lb_start = @lb
-        s = traverse(e)
-        @notes_inline[@juan] << {
-          lb: lb_start,
-          offset: offset,
-          text: s
-        }
-        @offset += 2
-        return "(#{s})"
-      end
     end
 
     return traverse(e)
@@ -440,17 +422,12 @@ class SphinxNotes
   end
   
   def traverse(e, mode='text')
-    #pass = @pass.last
-    #pass = false if mode == 'note'
-    #@pass << pass
-    
     r = ''
     e.children.each { |c| 
       s = handle_node(c, mode)
       abort "handle_node return nil, element: #{c.name}" if s.nil?
       r += s
     }
-    #@pass.pop
     r
   end
 
@@ -476,13 +453,6 @@ class SphinxNotes
       end
     end
 
-    @notes_inline.each_pair do |juan, notes|
-      @stat[:inline] += notes.size
-      notes.each do |note|
-        write_sphinx_doc(juan, note, place: 'inline')
-      end
-    end
-
     write_footnotes_for_download(all_notes)
   end
 
@@ -501,11 +471,10 @@ class SphinxNotes
     end
   end
 
-  def write_sphinx_doc(juan, note, n: nil, place: 'foot')
+  def write_sphinx_doc(juan, note, n: nil)
     @sphinx_doc_id += 1
     xml = <<~XML
       <sphinx:document id="#{@sphinx_doc_id}">
-        <note_place>#{place}</note_place>
         <canon>#{@canon}</canon>
         <canon_order>#{@canon_order}</canon_order>
         <vol>#{@vol}</vol>

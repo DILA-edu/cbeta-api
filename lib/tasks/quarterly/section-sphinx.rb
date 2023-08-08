@@ -15,7 +15,7 @@ module SectionSphinx
       v = @config[:v]
       base = Rails.configuration.x.sphinx_base
 
-      %w[cbdata notes titles].each do |index|
+      %w[text notes titles].each do |index|
         fn = Rails.root.join("lib/tasks/quarterly/sphinx-template-#{index}.conf")
         template = File.read(fn)
         s = template % { v: v }
@@ -33,13 +33,19 @@ module SectionSphinx
 
   def step_sphinx_create_folder
     run_step 'sphin 建資料夾' do
-      v = @config[:v]
       Dir.chdir('/var/lib/sphinx') do
-        ["", "-notes", "-titles"].each do |s|
-          command "sudo mkdir data#{v}#{s}"
-          system "sudo chown -R sphinx:sphinx data#{v}#{s}"
+        @sphinx_folders.each do |s|
+          command "sudo mkdir #{s}"
         end
       end
+      change_sphinx_folder_owner
+    end
+  end
+
+  def change_sphinx_folder_owner
+    @sphinx_folders.each do |s|
+      path = File.join("/var/lib/sphinx", s)
+      system "sudo chown -R sphinx:sphinx #{path}"
     end
   end
 
@@ -61,7 +67,10 @@ module SectionSphinx
       end
 
       # 不改權限會有問題 (不知道如何設定 indexer 新建檔案的預設 owner)
-      command "sudo chown -R sphinx:sphinx /var/lib/sphinx"
+      change_sphinx_folder_owner
+    end
+
+    run_step 'sphin restart' do
       command 'sudo service sphinx restart'
 
       puts '可手動清除舊版 Index: /var/lib/sphinx'
