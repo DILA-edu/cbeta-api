@@ -8,9 +8,9 @@ class KwicSuffixArray
     compile_cpp
   end
 
-  def build
+  def build(rel_path)
     t1 = Time.now
-    source = File.join(Rails.configuration.x.kwic.temp, 'sa')
+    source = File.join(Rails.configuration.x.kwic.temp, rel_path)
     handle_folder(source)
     
     print "sa.rb 花費時間："

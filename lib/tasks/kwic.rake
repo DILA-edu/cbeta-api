@@ -13,18 +13,21 @@ namespace :kwic do
   task :h2t, [:canon, :vol] => :environment do |t, args|
     require_relative 'kwic-h2t'
     c = KwicHtml2Text.new
-    c.convert(args[:canon], args[:vol])
+    c.convert(args[:canon], args[:vol], true)
+    c.convert(args[:canon], args[:vol], false)
   end
 
   task :sa => :environment do
     require_relative 'kwic-sa'
-    KwicSuffixArray.new.build
+    KwicSuffixArray.new.build('sa')
+    KwicSuffixArray.new.build('sa-without-notes')
   end
 
-  task :sort_info => :environment do
-    require_relative 'kwic-sort-info'
-    KwicSortInfo.new.run
-  end
+  # 只有單卷 index, 不必 sort 了
+  # task :sort_info => :environment do
+  #   require_relative 'kwic-sort-info'
+  #   KwicSortInfo.new.run
+  # end
 
   task :test, [:env] => :environment do |t, args|
     require_relative 'kwic-test'

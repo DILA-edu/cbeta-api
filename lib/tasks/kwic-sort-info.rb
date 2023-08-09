@@ -1,3 +1,5 @@
+# 單卷 info 不排序，kwic index 改成只有單卷
+# 所以 這支程式停用了
 # 將 info-tmp.dat 依 suffix array 順序排序為 info.dat, info-b.dat
 
 require 'yaml'

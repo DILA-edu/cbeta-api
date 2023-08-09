@@ -128,7 +128,7 @@ class KwicService
     
     @total_found = 0
     @juan = "%03d" % @option[:juan]
-    sa_path = sa_rel_path('juan')
+    sa_path = sa_rel_path
     hits = []
     keywords.split(',').each do |q| # 可能有多個關鍵字
       start, found = search_sa_juan(sa_path, q)
@@ -497,6 +497,7 @@ class KwicService
     end
     
     begin
+      @info_path = fn
       @f_info = File.open(fn, 'rb')
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
@@ -907,22 +908,13 @@ class KwicService
     end
   end
 
-  # 本來有 canon, category, works 多種選項
-  # 後來改成只有單卷了
-  def sa_paths_by_option
-    [sa_rel_path('juan')]
-  end
-
-  # 本來有 canon, category, works 多種選項
-  # 後來改成只有單卷了
-  def sa_rel_path(sa_unit)
-    relative_path = File.join(@option[:work], "%03d" % @option[:juan])
-    File.join(sa_unit, relative_path)
+  def sa_rel_path
+    File.join(@option[:work], "%03d" % @option[:juan])
   end
 
   # 單卷範圍內 做 NEAR 搜尋
   def search_near_juan(query, args={})
-    sa_path = sa_rel_path('juan')
+    sa_path = sa_rel_path
     return nil unless open_files(sa_path)
 
     if query.match(/^"(\S+)" (NEAR\/(\d+) .*)$/)
@@ -1013,10 +1005,11 @@ class KwicService
 
   def search_sa_according_to_option(q)
     sa_results = []
-    sa_paths_by_option.each do |sa_path|
-      start, found = search_sa(sa_path, q)
-      sa_results << [sa_path, start, found] unless start.nil?
-    end
+
+    sa_path = sa_rel_path
+    start, found = search_sa(sa_path, q)
+    sa_results << [sa_path, start, found] unless start.nil?
+
     sa_results
   end
 
@@ -1068,6 +1061,12 @@ class KwicService
     i = offset
     @f_info.seek (i * SuffixInfo::SIZE)
     b = @f_info.read(SuffixInfo::SIZE)
+
+    if b.nil?
+      msg = "KwicService::suffix_info 讀取 suffix info 回傳 nil, info file path: #{@info_path}, offset: #{offset}"
+      raise CbetaError.new(500), msg
+    end
+
     r = SuffixInfo::unpack(b)
     r['lb'] = "%s%s%02d" % [r['page'], r['col'], r['line']]
     r.delete 'page'

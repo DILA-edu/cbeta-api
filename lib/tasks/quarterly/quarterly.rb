@@ -53,6 +53,7 @@ class Quarterly
       p2 = File.join(dest, f)
       puts "[#{Time.now}] copy folder #{p1} => #{p2}" if verbose
       if Dir.exist?(p1)
+        next if f.match?(/\d{4}-\d\d-\d\d-\d{6}$/)
         copy_folder(p1, p2, verbose: false)
       else
         if File.size(p1) > 100_000_000

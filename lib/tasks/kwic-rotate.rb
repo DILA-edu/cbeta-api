@@ -1,30 +1,18 @@
 require 'fileutils'
 require 'yaml'
+
 class KwicRotate
   WORK    = Rails.configuration.x.kwic.temp
   PRODUCT = Rails.configuration.x.kwic.base
 
   def run
     Dir.mkdir(PRODUCT) unless Dir.exist?(PRODUCT)
-    
-    src = File.join(PRODUCT, 'sa')
-    backup(src)
-    
-    delete_info_tmp(WORK)
-    
-    src = File.join(WORK, 'sa')
-    dest = File.join(PRODUCT, 'sa')
-    puts "move #{src} => #{dest}"
-    FileUtils.mv src, dest
-    
-    src = File.join(PRODUCT, 'text')
-    backup(src)
-    
-    src = File.join(WORK, 'text')
-    dest = File.join(PRODUCT, 'text')
-    puts "move #{src} => #{dest}"
-    FileUtils.mv src, dest
+    rotate('sa')
+    rotate('sa-without-notes')
+    rotate('text')
   end
+
+  private
 
   def backup(folder)
     return unless Dir.exist? folder
@@ -33,16 +21,31 @@ class KwicRotate
     FileUtils.mv folder, dest
   end
   
-  def delete_info_tmp(folder)
-    path = File.join(folder, 'info-tmp.dat')
-    if File.exist?(path)
-      puts "delete #{path}"
-      File.unlink(path)
-    end
+  # 只有單卷 index, 沒有 info-tmp 了
+  # def delete_info_tmp(folder)
+  #   path = File.join(folder, 'info-tmp.dat')
+  #   if File.exist?(path)
+  #     puts "delete #{path}"
+  #     File.unlink(path)
+  #   end
     
-    Dir.each_child(folder) do |f|
-      path = File.join(folder, f)
-      delete_info_tmp(path) if Dir.exist?(path)
+  #   Dir.each_child(folder) do |f|
+  #     path = File.join(folder, f)
+  #     delete_info_tmp(path) if Dir.exist?(path)
+  #   end
+  # end
+
+  def rotate(folder)
+    src = File.join(PRODUCT, folder)
+    if Rails.env.production?
+      backup(src) 
+    else
+      FileUtils.remove_dir(src, true)
     end
+        
+    src = File.join(WORK, folder)
+    dest = File.join(PRODUCT, folder)
+    puts "move #{src} => #{dest}"
+    FileUtils.mv src, dest    
   end
 end

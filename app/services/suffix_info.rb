@@ -11,6 +11,10 @@ class SuffixInfo
   PATTERN = "a5a7nNa4aC"
 
   def self.unpack(data)
+    if data .nil?
+      raise CbetaError.new(500), "SuffixInfo.unpack 參數不能是 nil"
+    end
+
     a = data.unpack PATTERN
     {
       'vol'    => a[0].strip,

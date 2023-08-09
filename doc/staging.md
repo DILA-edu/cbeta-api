@@ -58,4 +58,4 @@ server 端 編輯 ~/.bashrc
 
 執行批次處理
     screen
-    be rake quarterly:run
+    be rake quarterly

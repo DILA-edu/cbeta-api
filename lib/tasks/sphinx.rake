@@ -16,10 +16,10 @@ namespace :sphinx do
       dest = Rails.root.join('data', "cbeta-txt-#{dest}-for-sphinx")
       puts "dest: #{dest}"
       
-      if args[:arg1].nil?
+      if arg.nil?
         FileUtils.remove_dir(dest, force: true)
       else
-        target_folder = File.join(dest, args[:arg1])
+        target_folder = File.join(dest, arg)
         FileUtils.remove_dir(target_folder, force: true)
       end
       

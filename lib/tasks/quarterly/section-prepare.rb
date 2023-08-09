@@ -7,6 +7,7 @@ module SectionPrepare
       end
 
       run_step 'update_from_github (update-github.rb)' do
+        confirm "確認 git 路徑：#{@config[:git]}"
         command "ruby update-github.rb #{@config[:git]}"
       end
 
