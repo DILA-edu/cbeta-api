@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 module CBData
   class Application < Rails::Application
     config.x.v = '4' # 季號，用於 cache key
-    config.x.ver = '1.4.0'
+    config.x.ver = '2.0.0'
     config.x.q = '2023q4' # 季號
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'

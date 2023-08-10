@@ -47,6 +47,7 @@ class KwicHtml2Text
     s1 = @builder.read_html_file(rel_path)
     @size += s1.size
     
+    s1.downcase!
     s2 = s1.reverse
     write_text(s1, s2)
     
@@ -99,6 +100,5 @@ class KwicHtml2Text
       File.write(fn, s2, encoding: 'UTF-32LE')
     end
   end
-
 
 end

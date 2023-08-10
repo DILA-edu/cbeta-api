@@ -120,10 +120,11 @@ class KwicService
     @option = OPTION.merge args
     set_cache_base(@option)
     
+    q2 = query.downcase
     if @option[:sort] == 'b'
-      keywords = query.reverse
+      keywords = q2.reverse
     else
-      keywords = query
+      keywords = q2
     end
     
     @total_found = 0
@@ -918,7 +919,7 @@ class KwicService
     return nil unless open_files(sa_path)
 
     if query.match(/^"(\S+)" (NEAR\/(\d+) .*)$/)
-      q1 = $1
+      q1 = $1.downcase
       nears = $2
       start1, found1 = search_sa_after_open_files(q1)
       return [] if start1.nil?
@@ -929,7 +930,8 @@ class KwicService
         pos_group: pos1.map { |x| [x] }
       }
 
-      nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, q|
+      nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, s|
+        q = s.downcase
         start2, found2 = search_sa_after_open_files(q)
         pos2 = sort_by_pos(start2, found2)
         check_near(eligibles, near.to_i, q, pos2)
