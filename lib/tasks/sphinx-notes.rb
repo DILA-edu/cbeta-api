@@ -107,7 +107,7 @@ class SphinxNotes
   
   def convert_canon(c)
     @canon = c
-    $stderr.puts 'convert canon: ' + c
+    print "\nconvert canon: #{c}"
     @canon_order = CBETA.get_sort_order_from_canon_id(c)
 
     folder = File.join(@xml_root, @canon)
@@ -118,13 +118,11 @@ class SphinxNotes
   end
   
   def convert_sutra(xml_fn)
-    puts '-' * 10
-    puts "sphinx-notes.rb #{File.basename(xml_fn, '.*')}\n"
+    print "\nsphinx-notes.rb #{File.basename(xml_fn, '.*')}"
     t1 = Time.now
     before_parse_xml(xml_fn)
     @text = parse_xml(xml_fn)
     write_notes_for_sphinx
-    puts "\n花費時間：" + ChronicDuration.output(Time.now - t1)
   end
   
   def convert_vol(vol)
@@ -486,9 +484,9 @@ class SphinxNotes
 
     xml += "  <n>#{n}</n>\n" unless n.nil?
 
-    if place == 'inline'
-      xml += text_around_note(note)
-    end
+    # if place == 'inline'
+    #   xml += text_around_note(note)
+    # end
 
     s1 = note[:text].encode(xml: :text)
     xml += "  <content>#{s1}</content>\n"

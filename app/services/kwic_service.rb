@@ -202,6 +202,9 @@ class KwicService
     middle = (right - left) / 2 + left
     i = @f_sa[middle] # suffix offset
     s = @f_txt[i, q.size]
+
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, bsearch_juan, q: #{q}, s: #{s}"
+
     if s == q
       return middle
     elsif middle == left
@@ -482,6 +485,8 @@ class KwicService
   end
 
   def open_files(sa_path)
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, open_files, sa_path: #{sa_path}"
+
     return true if @current_sa_path == sa_path
     @current_sa_path = sa_path
     open_text(sa_path)
@@ -879,6 +884,8 @@ class KwicService
   end
       
   def result_hash(q, start, rows)
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, result_hash, q: #{q}, start: #{start}, rows: #{rows}"
+
     return [] if rows == 0
     return [] if start.nil?
     info_array = read_info_block(q, start, rows)
@@ -892,6 +899,8 @@ class KwicService
 
     read_text_for_info_array(info_array, q)
     add_place_info(info_array) if @option[:place] # 附上 地理資訊
+
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, result_hash, return info_array size: #{info_array.size}"
     info_array
   end
 
@@ -967,11 +976,15 @@ class KwicService
   end
 
   def search_sa_juan(sa_path, q)
-    return nil unless open_files(sa_path)
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_juan, q: #{q}"
+    status = open_files(sa_path)
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, open_files return: #{status}"
+    return nil unless status
     search_sa_after_open_files_juan(q)
   end
 
   def search_sa_after_open_files(q)
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_after_open_files, q: #{q}"
     t1 = Time.now
     i = bsearch(q, 0, @sa_last)
     return nil if i.nil?
@@ -989,6 +1002,7 @@ class KwicService
   end
   
   def search_sa_after_open_files_juan(q)
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_after_open_files_juan, q: #{q}"
     t1 = Time.now
     i = bsearch_juan(q, 0, @sa_last)
     return nil if i.nil?
@@ -1001,7 +1015,7 @@ class KwicService
   
     found = stop - start + 1
     @total_found += found
-    #debug "search_sa_after_open_files, q: #{q}, 花費時間: #{Time.now - t1}"
+    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_after_open_files_juan, 結果 start: #{start}, found: #{found}"
     return start, found
   end
 

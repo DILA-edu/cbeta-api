@@ -28,12 +28,16 @@ class SphinxController < ApplicationController
     end
 
     t1 = Time.now
-    key = "#{Rails.configuration.x.q}/#{params}-#{@referer_cn}"
-    r = Rails.cache.fetch(key) do
-      all_in_one_sub
+    if Rails.env.production?
+      key = "#{Rails.configuration.x.q}/#{params}-#{@referer_cn}"
+      r = Rails.cache.fetch(key) do
+        all_in_one_sub
+      end
+      r[:cache_key] = key
+    else
+      r = all_in_one_sub
     end
-    
-    r[:cache_key] = key
+
     r[:time] = Time.now - t1
     
     my_render r
@@ -106,6 +110,7 @@ class SphinxController < ApplicationController
   end
 
   def notes
+    log "action notes", __LINE__
     @mode = 'extend'
     remove_puncs_from_query
 
@@ -134,7 +139,7 @@ class SphinxController < ApplicationController
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
   ensure
-    @mysql_client.close
+    @mysql_client.close unless @mysql_client.nil?
   end
 
   def facet
@@ -246,7 +251,7 @@ class SphinxController < ApplicationController
     r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
     my_render(r)
   ensure
-    @mysql_client.close
+    @mysql_client.close unless @mysql_client.nil?
   end
 
   # 根據同義詞表，回傳各種可能字串及搜尋結果筆數
@@ -308,7 +313,7 @@ class SphinxController < ApplicationController
     r[:time] = Time.now - t1
     my_render r
   ensure
-    @mysql_client.close
+    @mysql_client.close unless @mysql_client.nil?
   end
 
   private
@@ -482,13 +487,23 @@ class SphinxController < ApplicationController
   # 因為 max_matches 參數如果太大，會影響效率
   # 所以先計算最多會有多少 documents 符合條件
   def estimate_max_matches
-    logger.debug "estimate_max_matches, index: #{@index}, where: #{@where}"
     cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
+    log "estimate_max_matches, cmd: #{cmd}", __LINE__
     r = @mysql_client.query(cmd)
     @max_matches = r.first['docs']
+    log "max_matches: #{@max_matchescmd}", __LINE__
 
     # max_matches must be from 1 to 100M
     @max_matches = 1 if @max_matches == 0
+  rescue => e
+    msg = <<~MSG 
+      #{__LINE__} estimate_max_matches 發生錯誤
+      Exception Class: #{ e.class.name }
+      Exception Message: #{ e.message }
+      cmd: #{cmd}
+      Exception Backtrace: #{ e.backtrace }
+    MSG
+    raise CbetaError.new(500), msg
   end
 
   def exclude_by_sphinx(r1)
@@ -943,7 +958,8 @@ class SphinxController < ApplicationController
     keys = q.split
 
     keys.each do |k|
-      h = se.search(k, opts)
+      k2 = k.downcase
+      h = se.search(k2, opts)
       num_found += h[:num_found]
       a += h[:results]
     end
@@ -1095,7 +1111,7 @@ class SphinxController < ApplicationController
   end
 
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)
-    logger.debug "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
+    log "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}", __LINE__
     t1 = Time.now
 
     if start >= @max_matches
@@ -1111,6 +1127,7 @@ class SphinxController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{facet}" unless facet.nil?
+    log("select: #{@select}", __LINE__)
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     rescue

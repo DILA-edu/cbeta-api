@@ -54,7 +54,7 @@ class Kwic3Controller < ApplicationController
     return unless juan_check_params
 
     t1 = Time.now
-    logger.debug "q: #{@q}"
+    logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
     if @q.match?(/ NEAR\/(\d+) /)
       logger.debug "search near"
       h = @se.search_near(@q, @opts)

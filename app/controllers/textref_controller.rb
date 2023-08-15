@@ -12,12 +12,15 @@ class TextrefController < ApplicationController
     csv_data = CSV.generate(headers: true) do |csv|
       csv << headers
       Work.where(alt: nil).order(:n).each do |w|
+        canon = Canon.find_by(id2: w.canon)
+        msg = "TextrefController::data, canon id '#{w.canon}' 在 Canon model 裡找不到"
+        raise CbetaError.new(500), msg if canon.nil?
         csv << [
           w.n, 
           w.title, 
           w.time_dynasty,
           w.creators,
-          Canon.find_by(id2: w.canon).name,
+          canon.name,
           'y', 'y', 'y', 'n'
         ]
       end
@@ -28,5 +31,7 @@ class TextrefController < ApplicationController
       filename: 'data.csv', # suggests a filename for the browser to use.
       type: :csv,  # specifies a "text/csv" HTTP content type
     )
+  rescue CbetaError => e
+    my_render_error(e.code, $!)
   end
 end

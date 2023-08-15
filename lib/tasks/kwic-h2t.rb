@@ -16,6 +16,7 @@ class KwicHtml2Text
   end
 
   def convert(canon, vol, inline_note)
+    puts "#{File.basename(__FILE__)}, line: #{__LINE__}, inline_note: #{inline_note}"
     # main
     t1 = Time.now
 

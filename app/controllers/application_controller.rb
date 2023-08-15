@@ -244,12 +244,12 @@ class ApplicationController < ActionController::Base
   end
   
   def log_action_end
-    logger.warn "end #{controller_name}##{action_name} #{@start_time}, spend_time: #{Time.now-@start_time}"
+    logger.info "end #{controller_name}##{action_name} #{@start_time}, spend_time: #{Time.now-@start_time}"
   end
 
   def log_action_start
     @start_time = Time.now
-    logger.warn "start #{controller_name}##{action_name} #{@start_time}"
-    logger.warn params.inspect
+    logger.info "start #{controller_name}##{action_name} #{@start_time}"
+    logger.info params.inspect
   end  
 end

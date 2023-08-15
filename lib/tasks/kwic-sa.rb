@@ -19,7 +19,7 @@ class KwicSuffixArray
 
   def call_cpp(path)
     t1 = Time.now
-    puts path
+    puts "#{File.basename(__FILE__)}, line: #{__LINE__}, call_cpp, path: #{path}"
     system "#{@task_base}/sa.out #{path}" # 呼叫 c++ 程式
   
     fn = File.join(path, 'sa.dat')
