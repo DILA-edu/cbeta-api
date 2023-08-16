@@ -203,8 +203,6 @@ class KwicService
     i = @f_sa[middle] # suffix offset
     s = @f_txt[i, q.size]
 
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, bsearch_juan, q: #{q}, s: #{s}"
-
     if s == q
       return middle
     elsif middle == left
@@ -459,14 +457,22 @@ class KwicService
 
   def cache_fetch_juan_text(vol, work, juan)
     canon = CBETA.get_canon_from_vol(vol)
-    # 換季要使用不同的 key
-    key = "#{@cache}/text-with-punc/#{canon}/#{work}/#{juan}"
-    Rails.cache.fetch(key) do
-      fn = "%03d.txt" % juan
-      fn = File.join(@txt_folder, canon, work, fn)
-      # 待確認：L1557, 卷34 跨冊 有沒有問題
-      File.binread(fn) 
+    if Rails.env.production?
+      # 換季要使用不同的 key
+      key = "#{@cache}/text-with-punc/#{canon}/#{work}/#{juan}"
+      Rails.cache.fetch(key) do
+        fetch_juan_text(canon, work, juan)
+      end
+    else
+      fetch_juan_text(canon, work, juan)
     end
+  end
+
+  def fetch_juan_text(canon, work, juan)
+    fn = "%03d.txt" % juan
+    fn = File.join(@txt_folder, canon, work, fn)
+    # 待確認：L1557, 卷34 跨冊 有沒有問題
+    File.binread(fn) 
   end
   
   def negative_pattern(s)
@@ -485,7 +491,7 @@ class KwicService
   end
 
   def open_files(sa_path)
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, open_files, sa_path: #{sa_path}"
+    log_info "open_files, sa_path: #{sa_path}", __LINE__
 
     return true if @current_sa_path == sa_path
     @current_sa_path = sa_path
@@ -504,6 +510,7 @@ class KwicService
     
     begin
       @info_path = fn
+      log_info "open file: #{fn}"
       @f_info = File.open(fn, 'rb')
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
@@ -518,9 +525,13 @@ class KwicService
     end
 
     if @option.key?(:juan)
-      k = "#{@cache}/sa/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
-      @f_sa = Rails.cache.fetch(k) do
-        File.read(fn, mode: "rb").unpack("V*")
+      if Rails.env.production?
+        k = "#{@cache}/sa/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
+        @f_sa = Rails.cache.fetch(k) do
+          open_sa_file(fn)
+        end
+      else
+        @f_sa = open_sa_file(fn)
       end
       return unless @f_sa.nil?
     end
@@ -531,11 +542,17 @@ class KwicService
     end
     
     begin
+      log_info "open file: #{fn}"
       @f_sa = File.open(fn, 'rb')
       @sa_files[fn] = @f_sa
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
     end
+  end
+
+  def open_sa_file(fn)
+    log_info "open_sa_file: #{fn}"
+    File.read(fn, mode: "rb").unpack("V*")
   end
 
   def open_text(sa_path)
@@ -546,11 +563,15 @@ class KwicService
     end
 
     if @option.key?(:juan)
-      k = "#{@cache}/text/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
-      @f_txt = Rails.cache.fetch(k) do
-        raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
-        File.read(fn, encoding: "UTF-32LE")
+      if Rails.env.production?
+        k = "#{@cache}/text/#{@option[:work]}/#{@option[:juan]}/#{@option[:sort]}"
+        @f_txt = Rails.cache.fetch(k) do
+          open_text_file(fn)
+        end
+      else
+        @f_txt = open_text_file
       end
+      
       unless @f_txt.nil?
         @sa_last = @f_txt.size - 1 # sa 最後一筆的 offset
         @size = @f_txt.size
@@ -580,6 +601,12 @@ class KwicService
     end
 
     true
+  end
+
+  def open_text_file(fn)
+    raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
+    log_info "open_text_file: #{fn}"
+    File.read(fn, encoding: "UTF-32LE")
   end
   
   def paginate(q, sa_results)
@@ -615,9 +642,10 @@ class KwicService
   end
 
   def paginate_by_location(q, sa_results)
+    log_info('paginate_by_location', __FILE__)
     hits = []
     sa_results.each do |sa_path, start, found|
-      hits += result_hash(q, start, found)
+      hits.concat(result_hash(q, start, found))
     end
     hits.sort_by! { |x| x['offset_in_text_with_punc'] }
     hits[@option[:start], @option[:rows]]
@@ -884,7 +912,7 @@ class KwicService
   end
       
   def result_hash(q, start, rows)
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, result_hash, q: #{q}, start: #{start}, rows: #{rows}"
+    log_info "result_hash, q: #{q}, start: #{start}, rows: #{rows}", __LINE__
 
     return [] if rows == 0
     return [] if start.nil?
@@ -900,7 +928,7 @@ class KwicService
     read_text_for_info_array(info_array, q)
     add_place_info(info_array) if @option[:place] # 附上 地理資訊
 
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, result_hash, return info_array size: #{info_array.size}"
+    log_info "result_hash, return info_array size: #{info_array.size}", __LINE__
     info_array
   end
 
@@ -976,15 +1004,15 @@ class KwicService
   end
 
   def search_sa_juan(sa_path, q)
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_juan, q: #{q}"
+    log_info "search_sa_juan, q: #{q}", __LINE__
     status = open_files(sa_path)
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, open_files return: #{status}"
+    log_info "open_files return: #{status}", __LINE__
     return nil unless status
     search_sa_after_open_files_juan(q)
   end
 
   def search_sa_after_open_files(q)
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_after_open_files, q: #{q}"
+    log_info "search_sa_after_open_files, q: #{q}", __LINE__
     t1 = Time.now
     i = bsearch(q, 0, @sa_last)
     return nil if i.nil?
@@ -1002,10 +1030,13 @@ class KwicService
   end
   
   def search_sa_after_open_files_juan(q)
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_after_open_files_juan, q: #{q}"
+    log_info "search_sa_after_open_files_juan, q: #{q}", __LINE__
     t1 = Time.now
     i = bsearch_juan(q, 0, @sa_last)
-    return nil if i.nil?
+    if i.nil?
+      log_info('bsearch_juan return nil', __LINE__)
+      return nil
+    end
   
     # 往前找符合的第一筆
     start = bsearch_start_juan(q, 0, i)
@@ -1015,7 +1046,7 @@ class KwicService
   
     found = stop - start + 1
     @total_found += found
-    Rails.logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, search_sa_after_open_files_juan, 結果 start: #{start}, found: #{found}"
+    log_info "search_sa_after_open_files_juan, 結果 start: #{start}, found: #{found}", __LINE__
     return start, found
   end
 
@@ -1089,6 +1120,13 @@ class KwicService
     r.delete 'col'
     r.delete 'line'
     r
+  end
+
+  def log_info(msg, line=nil)
+    r = File.basename(__FILE__)
+    r << ", line: #{line}" unless line.nil?
+    r << ", #{msg}"
+    Rails.logger.info r
   end
   
   include ApplicationHelper
