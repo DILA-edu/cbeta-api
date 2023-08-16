@@ -569,9 +569,9 @@ class KwicService
           open_text_file(fn)
         end
       else
-        @f_txt = open_text_file
+        @f_txt = open_text_file(fn)
       end
-      
+
       unless @f_txt.nil?
         @sa_last = @f_txt.size - 1 # sa 最後一筆的 offset
         @size = @f_txt.size
