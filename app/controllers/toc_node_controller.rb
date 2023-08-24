@@ -56,7 +56,8 @@ class TocNodeController < ApplicationController
   end
   
   def find_work(q)
-    works = Work.where("alt IS NULL and title LIKE ?", "%#{q}%").order(:sort_order)
+    works = Work.where.not(juan_list: nil) # CBETA 未收錄的不要
+    works = works.where("title LIKE ?", "%#{q}%").order(:sort_order)
     r = []
     works.each do |w|
       row = { type: 'work' }
