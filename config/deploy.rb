@@ -14,8 +14,7 @@ set :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
 # Default value for :log_level is :debug
 # set :log_level, :debug
 
-# .envrc: 使用 direnv 管理 環境變數
-append :linked_files, ".envrc", "config/master.key", "config/database.yml"
+append :linked_files, "config/master.key", "config/database.yml"
 append :linked_dirs, 'data', 'public/help', 'config/credentials'
 
 # Default value for default_env is {}

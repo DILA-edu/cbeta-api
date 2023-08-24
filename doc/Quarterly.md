@@ -46,7 +46,7 @@ CBETA XML 新一季定案後執行。
 
 ## Server 端執行 rake quarterly
 
-使用 direnv 管理 環境變數, 編輯 shared/.envrc
+使用 direnv 管理 環境變數, 編輯 /var/www/cbapi?/.envrc
     export RAILS_ENV=staging
 
 編輯 lib/tasks/quarterly/config.rb
@@ -92,7 +92,7 @@ CBETA XML 新一季定案後執行。
 檢視 config/database.yml
 production analytics database 應為 cb_analytics
 
-使用 direnv 管理 環境變數, 編輯 shared/.envrc
+使用 direnv 管理 環境變數, 編輯 /var/www/cbapi?/.envrc
     export RAILS_ENV=production
 
 ## 建立下一季開發環境
