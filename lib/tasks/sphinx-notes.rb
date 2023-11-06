@@ -204,7 +204,7 @@ class SphinxNotes
     if app.key?('n')
       n = app['n']
       if @notes_mod[@juan].key?(n)
-        @notes_mod[@juan][n][:text] += e_lem_cf(e)
+        @notes_mod[@juan][n][:text] << e_lem_cf(e)
       end
     end
 
@@ -251,7 +251,7 @@ class SphinxNotes
         n = @notes_add[@juan].size + 1
         n = "cb_note_#{n}"
         s = traverse(e, 'note')
-        s += e_note_add_cf(e)
+        s << e_note_add_cf(e)
         @notes_add[@juan] << { lb: @lb, text: s }
       when 'equivalent', 'rest' then return ''
       when 'orig'       then return e_note_orig(e)
@@ -424,7 +424,7 @@ class SphinxNotes
     e.children.each { |c| 
       s = handle_node(c, mode)
       abort "handle_node return nil, element: #{c.name}" if s.nil?
-      r += s
+      r << s
     }
     r
   end
@@ -482,20 +482,16 @@ class SphinxNotes
         <lb>#{note[:lb]}</lb>
     XML
 
-    xml += "  <n>#{n}</n>\n" unless n.nil?
-
-    # if place == 'inline'
-    #   xml += text_around_note(note)
-    # end
+    xml << "  <n>#{n}</n>\n" unless n.nil?
 
     s1 = note[:text].encode(xml: :text)
-    xml += "  <content>#{s1}</content>\n"
+    xml << "  <content>#{s1}</content>\n"
 
     @work_info.each_pair do |k,v|
-      xml += "  <#{k}>#{v}</#{k}>\n"
+      xml << "  <#{k}>#{v}</#{k}>\n"
     end
 
-    xml += "</sphinx:document>\n"
+    xml << "</sphinx:document>\n"
     @fo.puts xml
   end
 

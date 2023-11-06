@@ -101,6 +101,7 @@ class P5aToHTMLForUI
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @updated_at = MyCbetaShare.get_update_date(xml_fn)
     @title = Work.get_info_by_id(@work_id)[:title]
+    @pin_tag = nil # 品名 mulu 標記
   end
 
   def convert_all
@@ -184,7 +185,7 @@ class P5aToHTMLForUI
         note = @notes[id]
         note_text = traverse(note)
         n = id[/^nkr_note_orig_(.*)$/, 1]
-        @back[@juan] += "<span class='footnote' id='n#{n}'>#{note_text}</span>\n"
+        @back[@juan] << "<span class='footnote' id='n#{n}'>#{note_text}</span>\n"
         return "<a class='noteAnchor' href='#n#{n}'></a>"
       elsif id.start_with? 'fx'
         return "<span class='star'>[＊]</span>"
@@ -230,7 +231,7 @@ class P5aToHTMLForUI
 
     cell['class'] = 'bip-table-cell'
     if e.key?('rend')
-      cell['class'] += ' ' + e['rend']
+      cell['class'] << ' ' + e['rend']
     end
 
     cell['rowspan'] = e['rows'] if e.key? 'rows'
@@ -243,22 +244,6 @@ class P5aToHTMLForUI
   def e_corr(e, mode)
     return traverse(e, mode) if mode=='footnote'
     r = ''
-    #if e.parent.name == 'choice'
-    #  sic = e.parent.at_xpath('sic')
-    #  unless sic.nil?
-    #    n = @notes_dila[@juan].size + 1
-    #    r = "<a class='noteAnchor dila' href='#dila_note#{n}'></a>"
-    #
-    #    note = @orig
-    #    sic_text = traverse(sic, 'footnote')
-    #    if sic_text.empty?
-    #      note += MISSING
-    #    else
-    #      note += sic_text
-    #    end
-    #    @notes_dila[@juan] << "<span class='footnote dila' id='dila_note#{n}'>#{note}</span>"
-    #  end
-    #end
     r + "<span class='cbeta'>%s</span>" % traverse(e)
   end
 
@@ -267,10 +252,12 @@ class P5aToHTMLForUI
     @div_count += 1
     n = @div_count
     if e.has_attribute? 'type' or e.key? 'rend'
-      return e_div_node(e)
+      r = e_div_node(e)
+      @pin_tag = nil if e['type'] == 'pin'
     else
-      return traverse(e)
+      r = traverse(e)
     end
+    r
   end
 
   def e_div_node(e)
@@ -389,10 +376,10 @@ class P5aToHTMLForUI
     span.content = default
     
     unless @back[@juan].include?(href)
-      @back[@juan] += span.to_s + "\n"
+      @back[@juan] << span.to_s + "\n"
     end
     unless @back_orig[@juan].include?(href)
-      @back_orig[@juan] += span.to_s + "\n"
+      @back_orig[@juan] << span.to_s + "\n"
     end
     "<a class='gaijiAnchor' href='##{gid}'>#{default}</a>"
   end
@@ -447,7 +434,7 @@ class P5aToHTMLForUI
 
     a = e.xpath('ancestor::list')
     li.content = line_space(a.size * 2)
-    li.content += s
+    li.content << s
 
     li.to_s + "\n"
   end
@@ -534,9 +521,9 @@ class P5aToHTMLForUI
       
       if i == 0
         if indent.nil?
-          r += "<div class='lg-cell'>#{v}</div>\n"
+          r << "<div class='lg-cell'>#{v}</div>\n"
         else
-          r += "#{spaces}<div class='lg-cell' style='#{indent}'>#{v}</div>\n"
+          r << "#{spaces}<div class='lg-cell' style='#{indent}'>#{v}</div>\n"
         end
         next
       end
@@ -549,9 +536,9 @@ class P5aToHTMLForUI
         else
           s = ''
         end
-        r += "#{s}<div class='lg-cell' #{style}>#{v}</div>\n"
+        r << "#{s}<div class='lg-cell' #{style}>#{v}</div>\n"
       else
-        r += "<div class='lg-cell'>#{v}</div>\n"
+        r << "<div class='lg-cell'>#{v}</div>\n"
       end
     end
     r
@@ -581,16 +568,16 @@ class P5aToHTMLForUI
 
     node = HtmlNode.new('span')
     node['class'] = 'lb'
-    node['class'] += ' honorific' if e['type'] == 'honorific'
+    node['class'] << ' honorific' if e['type'] == 'honorific'
     node['id'] = line_head
     node['data-lr'] = @lb_r unless @lb_r.nil?
     node.content = line_head
-    r += node.to_s    
-    r += facsimile_anchor(e)
-    r += e_lb_p(e)
+    r << node.to_s    
+    r << facsimile_anchor(e)
+    r << e_lb_p(e)
 
     unless @next_line_buf.empty?
-      r += @next_line_buf
+      r << @next_line_buf
       @next_line_buf = ''
     end
 
@@ -618,7 +605,7 @@ class P5aToHTMLForUI
     if app.key?('n')
       n = app['n']
       if @notes_mod[@juan].key?(n)
-        @notes_mod[@juan][n] += ele_lem_cf(e)
+        @notes_mod[@juan][n] << ele_lem_cf(e)
       end
     end
 
@@ -653,17 +640,18 @@ class P5aToHTMLForUI
   def e_milestone(e)
     r = ''
     if e['unit'] == 'juan'
-      r += "</div>" * @open_divs.size  # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
+      r << "</div>" * @open_divs.size  # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
       @juan = e['n'].to_i
       @back[@juan] = @back[0]
       @back_orig[@juan] = @back_orig[0]
       @first_lb_in_juan = true
       ele_milestone_juan
-      r += "<juan #{@juan}>"
+      r << "<juan #{@juan}>"
+      r << @pin_tag unless @pin_tag.nil?
       @open_divs.each { |d|
-        r += "<div class='div-#{d['type']}'>"
+        r << "<div class='div-#{d['type']}'>"
       }
-      print " #{@juan}"
+      print "\r#{@juan}"
     end
     r
   end
@@ -673,7 +661,8 @@ class P5aToHTMLForUI
     r = ''
     if e['type'] == '品'
       @pass << false
-      r = "<mulu class='pin' s='%s'/>" % traverse(e, 'text')
+      @pin_tag = "<mulu class='pin' s='%s'/>" % traverse(e, 'text')
+      r = @pin_tag
       @pass.pop
     end
     r
@@ -700,12 +689,12 @@ class P5aToHTMLForUI
       node['style'] = e['style'] 
       unless mode=='footnote'
         e['style'].match(/text-indent:(\d+)em/) do |m|
-          node.content += line_space(m[1].to_i)
+          node.content << line_space(m[1].to_i)
         end
       end
     end
     
-    node.content += traverse(e)
+    node.content << traverse(e)
     node.to_s + "\n"
   end
 
@@ -782,7 +771,7 @@ class P5aToHTMLForUI
     when 0
       return r + '　'
     when 1
-      @next_line_buf += r + '　'
+      @next_line_buf << r + '　'
       return ''
     else
       return r
@@ -968,9 +957,9 @@ class P5aToHTMLForUI
   def html_back(juan_no)
     r = @back[juan_no]
     @notes_mod[juan_no].each_pair do |k,v|
-      r += "<div class='footnote' id='n#{k}'>#{v}</div>\n"
+      r << "<div class='footnote' id='n#{k}'>#{v}</div>\n"
     end
-    r += @notes_add[juan_no].join("\n")
+    r << @notes_add[juan_no].join("\n")
     r
   end
 
@@ -1020,11 +1009,11 @@ class P5aToHTMLForUI
       if rdg['wit'].include? @orig
         s = traverse(rdg, 'footnote')
         s = MISSING if s.empty?
-        r += @orig + s
+        r << @orig + s
       end
     }
     @pass.pop
-    r += '。' unless r.empty?
+    r << '。' unless r.empty?
     r
   end
 
@@ -1142,7 +1131,7 @@ class P5aToHTMLForUI
     r = ''
     e.children.each { |c| 
       s = handle_node(c, mode)
-      r += s
+      r << s
     }
     @pass.pop
     r

@@ -200,7 +200,7 @@ class ImportLayers
         r = g['norm_big5_char']
       end
     end
-    @cbeta_lines[@lb] += r
+    @cbeta_lines[@lb] << r
   end
 
   def e_lb(e)
@@ -234,7 +234,7 @@ class ImportLayers
     return '' if e.parent.name == 'app'
 
     s.gsub!(PUNCS, '')
-    @cbeta_lines[@lb] += s
+    @cbeta_lines[@lb] << s
   end
 
   def import_canon(parent_folder)
@@ -410,7 +410,7 @@ class ImportLayers
 
     if i < @layer_pos
       @html_pos = i
-      @line_text += text
+      @line_text << text
       return false
     end
 
@@ -431,7 +431,7 @@ class ImportLayers
 
     if i < @layer_pos
       @html_pos = i
-      @line_text += text
+      @line_text << text
       return false
     end
 
@@ -450,10 +450,10 @@ class ImportLayers
       puts @row.to_s
       abort
     end
-    @line_text += s
+    @line_text << s
     check_text(@line_text, @row)
-    s += @anchor
-    s += text[i..-1] if text.size > i
+    s << @anchor
+    s << text[i..-1] if text.size > i
     e.add_previous_sibling(s)
     e.remove
     true
@@ -491,7 +491,7 @@ class ImportLayers
       line.chomp!
       line.split(",").each do |t|
         if @vars.key?(t)
-          @vars[t] += ",#{line}"
+          @vars[t] << ",#{line}"
         else
           @vars[t] = line
         end

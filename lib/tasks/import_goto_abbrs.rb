@@ -21,7 +21,7 @@ class ImportGotoAbbrs
     end
     
     sql = %[INSERT INTO #{TABLE} ("abbr", "ref")]
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << ' VALUES ' + @inserts.join(", ")
     ActiveRecord::Base.connection.execute(sql)
   end
 

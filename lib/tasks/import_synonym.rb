@@ -19,8 +19,8 @@ class ImportSynonym
 
     $stderr.puts "execute SQL insert #{number_to_human(@inserts.size)} records"
     sql = 'INSERT INTO terms '
-    sql += '("term", "synonyms")'
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << '("term", "synonyms")'
+    sql << ' VALUES ' + @inserts.join(", ")
     $stderr.puts Benchmark.measure {
       ActiveRecord::Base.connection.execute(sql) 
     }

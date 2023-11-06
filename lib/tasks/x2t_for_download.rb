@@ -103,12 +103,14 @@ class P5aToTextForDownload
     
     n = @sutra_no.sub(/^[A-Z]\d{2,3}n0*([^0].*)$/, '\1')
     r = "#%s\n" % ('-' * 70)
-    r += "#【經文資訊】#{orig}第 #{v} 冊 No. #{n} #{@title}\n"
-    r += "#【版本記錄】發行日期：#{@params[:publish]}，最後更新：#{@updated_at}\n"
-    r += "#【編輯說明】本資料庫由中華電子佛典協會（CBETA）依#{orig}所編輯\n"
-    r += "#【原始資料】#{@contributors}\n"
-    r += "#【其他事項】本資料庫可自由免費流通，詳細內容請參閱【中華電子佛典協會資料庫版權宣告】\n"
-    r += "#%s\n\n" % ('-' * 70)
+    r << <<~TXT
+      #【經文資訊】#{orig}第 #{v} 冊 No. #{n} #{@title}
+      #【版本記錄】發行日期：#{@params[:publish]}，最後更新：#{@updated_at}
+      #【編輯說明】本資料庫由中華電子佛典協會（CBETA）依#{orig}所編輯
+      #【原始資料】#{@contributors}
+      #【其他事項】本資料庫可自由免費流通，詳細內容請參閱【中華電子佛典協會資料庫版權宣告】
+    TXT
+    r << "#%s\n\n" % ('-' * 70)
     r
   end
   
@@ -203,7 +205,7 @@ class P5aToTextForDownload
     if e['unit'] == 'juan'
       @juan = e['n'].to_i
       ele_milestone_juan
-      r += "<juan #{@juan}>"
+      r << "<juan #{@juan}>"
     end
     r
   end
@@ -222,7 +224,7 @@ class P5aToTextForDownload
       @lb_break << false
     end
     r = traverse(e) + "\n\n"
-    r += write_block_notes
+    r << write_block_notes
     @lb_break.pop
     r
   end
@@ -258,7 +260,7 @@ class P5aToTextForDownload
     when 0
       return r + '　'
     when 1
-      @next_line_buf += r + '　'
+      @next_line_buf << r + '　'
       return ''
     else
       return r
@@ -461,7 +463,7 @@ class P5aToTextForDownload
     r = ''
     e.children.each { |c| 
       s = handle_node(c)
-      r += s
+      r << s
     }
     r
   end

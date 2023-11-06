@@ -223,8 +223,8 @@ class ImportWorkInfo
 
     puts "Insert #{inserts.size} records into people table:"
     sql = 'INSERT INTO people '
-    sql += '("id2", "name")'
-    sql += ' VALUES ' + inserts.join(", ")
+    sql << '("id2", "name")'
+    sql << ' VALUES ' + inserts.join(", ")
     puts Benchmark.measure {
       ActiveRecord::Base.connection.execute(sql) 
     }

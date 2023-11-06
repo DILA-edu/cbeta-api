@@ -26,8 +26,8 @@ class ImportJuanLine
 
     $stderr.puts "#{__LINE__} execute SQL insert #{number_to_human(@inserts.size)} records"
     sql = 'INSERT INTO juan_lines '
-    sql += '("vol", "work", "juan", "lb", "lb_end", "uuid", "content_uuid")'
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << '("vol", "work", "juan", "lb", "lb_end", "uuid", "content_uuid")'
+    sql << ' VALUES ' + @inserts.join(", ")
     $stderr.puts Benchmark.measure {
       ActiveRecord::Base.connection.execute(sql) 
     }

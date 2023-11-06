@@ -19,7 +19,7 @@ class CheckP5a
 
     @g_errors.keys.sort.each do |k|
       s = @g_errors[k].to_a.join(',')
-      @errors += "#{k} 無缺字資料：#{s}\n"
+      @errors << "#{k} 無缺字資料：#{s}\n"
     end
     
     if @errors.empty?
@@ -73,7 +73,7 @@ class CheckP5a
   def error(msg)
     s = "#{@basename} #{msg}"
     puts s
-    @errors += s + "\n"
+    @errors << s + "\n"
   end
   
   def handle_canon(folder)
@@ -91,7 +91,7 @@ class CheckP5a
     
     s = File.read(fn)
     if s.include? "\u200B"
-      @errors += "#{@basename} 含有 U+200B Zero Width Space 字元\n"
+      @errors << "#{@basename} 含有 U+200B Zero Width Space 字元\n"
     end
     
     doc = Nokogiri::XML(s)
@@ -99,7 +99,7 @@ class CheckP5a
       doc.remove_namespaces!
       traverse(doc.root)
     else
-      @errors += "錯誤: #{@basename} not well-formed\n"
+      @errors << "錯誤: #{@basename} not well-formed\n"
     end
   end
 

@@ -46,7 +46,7 @@ class ImportLbMaps
     end
     
     sql = 'INSERT INTO lb_maps ("lb1", "lb2")'
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << ' VALUES ' + @inserts.join(", ")
     ActiveRecord::Base.connection.execute(sql)
   end
   

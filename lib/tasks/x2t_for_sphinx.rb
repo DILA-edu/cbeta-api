@@ -91,10 +91,10 @@ class P5aToText
     text.each_line do |line|
       line.chomp!
       if line.match(/^(.*)║(.*)$/)
-        r += $1
+        r << $1
         t = $2
-        r += "(%02d)" % i
-        r += "║#{app}"
+        r << "(%02d)" % i
+        r << "║#{app}"
         app = ''
         i = 0
         chars = t.chars
@@ -112,7 +112,7 @@ class P5aToText
             app = c + app
           end
         end
-        r += chars.join.gsub(/\t/, '') + "\n"
+        r << chars.join.gsub(/\t/, '') + "\n"
         i = app.size
       end
     end
@@ -185,7 +185,7 @@ class P5aToText
   
   def e_l(e)
     r = traverse(e)
-    r += "\n" unless @lg_type == 'abnormal'
+    r << "\n" unless @lg_type == 'abnormal'
     r
   end
 
@@ -193,7 +193,7 @@ class P5aToText
     return '' if e['type']=='old'
     r = ''
     unless @next_line_buf.empty?
-      r += @next_line_buf + "\n"
+      r << @next_line_buf + "\n"
       @next_line_buf = ''
     end
     r
@@ -203,7 +203,7 @@ class P5aToText
     r = ''
     if e['unit'] == 'juan'
       @juan = e['n'].to_i
-      r += "<juan #{@juan}>"
+      r << "<juan #{@juan}>"
     end
     r
   end
@@ -250,7 +250,7 @@ class P5aToText
     when 0
       return r + '　'
     when 1
-      @next_line_buf += r + '　'
+      @next_line_buf << r + '　'
       return ''
     else
       return r
@@ -419,7 +419,7 @@ class P5aToText
     e.children.each { |c| 
       s = handle_node(c)
       puts "handle_node return nil, node: " + c.to_s if s.nil?
-      r += s
+      r << s
     }
     r
   end

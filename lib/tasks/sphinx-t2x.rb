@@ -154,19 +154,21 @@ class SphinxT2X
   end
   
   def write_xml(f, data)
-    s = "<sphinx:document id='#{@id}'>\n"
-    s += "<canon>#{@canon}</canon>\n"
-    s += "<canon_order>#{@canon_order}</canon_order>\n"
-    s += "<xml_file>#{@xml_file}</xml_file>\n"
-    s += "<vol>#{@vol}</vol>\n"
-    s += "<work>#{@work}</work>\n"
-    s += "<juan>#{@juan}</juan>\n"
+    s = <<~XML
+      <sphinx:document id='#{@id}'>
+        <canon>#{@canon}</canon>
+        <canon_order>#{@canon_order}</canon_order>
+        <xml_file>#{@xml_file}</xml_file>
+        <vol>#{@vol}</vol>
+        <work>#{@work}</work>
+        <juan>#{@juan}</juan>
+    XML
     
     data.each_pair do |k,v|
-      s += "<#{k}>#{v}</#{k}>\n"
+      s << "<#{k}>#{v}</#{k}>\n"
     end
     
-    s += "</sphinx:document>\n"
+    s << "</sphinx:document>\n"
     f.puts s
   end
 end

@@ -157,7 +157,7 @@ class ImportCatalog
       data[:label] = "#{w.n}(=#{w.alt}) #{w.title}"
       
       unless work_id.match(/^(LC|TX|Y)/)
-        data[:label] += " (#{w.juan}卷)" unless w.juan.nil?
+        data[:label] << " (#{w.juan}卷)" unless w.juan.nil?
       end
       
       add_node data

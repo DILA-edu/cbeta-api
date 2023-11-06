@@ -16,7 +16,7 @@ class ImportVars
     read_variants
 
     sql = 'INSERT INTO variants ("k", "vars")'
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << ' VALUES ' + @inserts.join(", ")
     $stderr.puts Benchmark.measure {
       ActiveRecord::Base.connection.execute(sql) 
     }

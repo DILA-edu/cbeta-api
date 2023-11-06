@@ -99,7 +99,7 @@ module CbetaP5aShare
 
     n = @notes_add[@juan].size + 1
     s = traverse(e, 'footnote')
-    s += ele_note_add_cf(e)
+    s << ele_note_add_cf(e)
 
     if @format == 'html'
       n = "cb_note_#{n}"

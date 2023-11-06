@@ -18,8 +18,8 @@ class ImportGaiji
     
     $stderr.puts "執行 SQL insert 命令：#{number_to_human(@inserts.size)} records"
     sql = 'INSERT INTO gaijis '
-    sql += '("cb", "zzs")'
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << '("cb", "zzs")'
+    sql << ' VALUES ' + @inserts.join(", ")
     $stderr.puts Benchmark.measure {
       ActiveRecord::Base.connection.execute(sql) 
     }

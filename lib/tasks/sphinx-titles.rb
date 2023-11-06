@@ -57,10 +57,10 @@ class SphinxTitles
     s = "<sphinx:document id='#{@id}'>\n"
     
     data.each_pair do |k,v|
-      s += "<#{k}>#{v}</#{k}>\n"
+      s << "<#{k}>#{v}</#{k}>\n"
     end
     
-    s += "</sphinx:document>\n"
+    s << "</sphinx:document>\n"
     f.puts s
   end
 

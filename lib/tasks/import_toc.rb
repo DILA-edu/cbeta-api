@@ -19,8 +19,8 @@ class ImportToc
         
     puts "execute SQL insert #{number_to_human(@inserts.size)} records"
     sql = 'INSERT INTO toc_nodes '
-    sql += '("canon", "parent", "n", "label", "work", "file", "juan", "lb", "sort_order")'
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << '("canon", "parent", "n", "label", "work", "file", "juan", "lb", "sort_order")'
+    sql << ' VALUES ' + @inserts.join(", ")
     puts Benchmark.measure {
       ActiveRecord::Base.connection.execute(sql) 
     }

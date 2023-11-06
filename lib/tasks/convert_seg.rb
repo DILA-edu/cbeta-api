@@ -58,7 +58,7 @@ class ConvertSeg
     s = ''
     File.foreach(fn) do |line|
       next if line.start_with? '#'
-      s += line
+      s << line
     end
     File.write(fn, s)
   end

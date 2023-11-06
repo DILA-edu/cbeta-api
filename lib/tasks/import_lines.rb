@@ -66,7 +66,7 @@ class ImportLines
   
   def buf(s)
     @current_editions.last.each do |ed|
-      @line_buf[ed][:html] += s
+      @line_buf[ed][:html] << s
     end
   end  
     
@@ -117,13 +117,13 @@ class ImportLines
     @lb = e['n']
     r = ''
     if e.parent.name == 'lg'
-      r += '<br />'
+      r << '<br />'
     end
     
-    r += "\n<lb n='#{@lb}'/><j#{$juan}>"
+    r << "\n<lb n='#{@lb}'/><j#{$juan}>"
     
     unless @next_line_buf.empty?
-      r += @next_line_buf
+      r << @next_line_buf
       @next_line_buf = ''
     end
     r
@@ -220,7 +220,7 @@ class ImportLines
     when 0
       return r + '　'
     when 1
-      @next_line_buf += r + '　'
+      @next_line_buf << r + '　'
       return ''
     else
       return r
@@ -318,7 +318,7 @@ class ImportLines
     end
     
     sql = 'INSERT INTO lines ("linehead", "html", "notes", "juan")'
-    sql += ' VALUES ' + @inserts.join(", ")
+    sql << ' VALUES ' + @inserts.join(", ")
     ActiveRecord::Base.connection.execute(sql)
   end
   
@@ -365,7 +365,7 @@ class ImportLines
   def traverse(e)
     r = ''
     e.children.each { |c| 
-      r += handle_nodes(c)
+      r << handle_nodes(c)
     }
     r
   end
@@ -387,8 +387,8 @@ class ImportLines
         juan = $2
         line_html = $3
         linehead = @work_id
-        linehead += '_' if @work_id.match(/\d$/)
-        linehead += "p#{lb}"
+        linehead << '_' if @work_id.match(/\d$/)
+        linehead << "p#{lb}"
         notes = JSON.generate(@notes[lb]) if @notes.key? lb
         @inserts << "('#{linehead}', '#{line_html}', '#{notes}', #{juan})"
       }

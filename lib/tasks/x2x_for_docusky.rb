@@ -75,7 +75,7 @@ class P5aToDocusky
 
   def e_byline(e)
     r = '<Paragraph Type="byline">'
-    r += traverse(e)
+    r << traverse(e)
     r + "</Paragraph>\n"
   end
 
@@ -192,11 +192,11 @@ class P5aToDocusky
       # 每行偈頌放在一個 lg-row 裡面
       # T46n1937, p. 914a01, l 包雙行夾註跨行
       # T20n1092, 337c16, lb 在 l 中間，不結束 lg-row
-      r += "</div>\n"
+      r << "</div>\n"
       @lg_row_open = false
     end
     unless @next_line_buf.empty?
-      r += @next_line_buf
+      r << @next_line_buf
       @next_line_buf = ''
     end
     
@@ -215,7 +215,7 @@ class P5aToDocusky
       @lg_row_open = false
       node.content = traverse(e)
       if @lg_row_open
-        node.content += '</div>'
+        node.content << '</div>'
         @lg_row_open = false
       end
       r = "\n" + node.to_s
@@ -230,11 +230,11 @@ class P5aToDocusky
   def e_milestone(e)
     r = ''
     if e['unit'] == 'juan'
-      r += "</div>" * @open_divs.size  # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
+      r << "</div>" * @open_divs.size  # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
       @juan = e['n'].to_i
-      r += "<juan #{@juan}>"
+      r << "<juan #{@juan}>"
       @open_divs.each { |d|
-        r += %(<div Type="#{d['type']}">)
+        r << %(<div Type="#{d['type']}">)
       }
     end
     r
@@ -273,7 +273,7 @@ class P5aToDocusky
     else
       r = '<Paragraph>'
     end
-    r += traverse(e)
+    r << traverse(e)
     r + "</Paragraph>\n"
   end
   
@@ -317,7 +317,7 @@ class P5aToDocusky
     when 0
       return r + '　'
     when 1
-      @next_line_buf += r + '　'
+      @next_line_buf << r + '　'
       return ''
     else
       return r
@@ -517,11 +517,11 @@ class P5aToDocusky
       if rdg['wit'].include? @orig
         s = traverse(rdg, 'back')
         s = MISSING if s.empty?
-        r += @orig + s
+        r << @orig + s
       end
     }
     @pass.pop
-    r += '。' unless r.empty?
+    r << '。' unless r.empty?
     r
   end
   
@@ -660,7 +660,7 @@ class P5aToDocusky
     r = ''
     e.children.each { |c| 
       s = handle_node(c, mode)
-      r += s
+      r << s
     }
     r
   end  
@@ -669,17 +669,19 @@ class P5aToDocusky
     basename = "#{@work_id}_%03d" % juan_no
     
     s = %(<document filename="#{basename}">\n)
-    s += @work_metadata[@work_id] % basename
-    s += "<doc_content>\n"
-    s += %(<div Type="body">\n)
-    s += body
-    s += "</div>\n"
-    s += "</doc_content>\n"
-    s += @work_metadata2[@work_id]
-    s += "</document>\n"
+    s << @work_metadata[@work_id] % basename
+    s << <<~XML
+      <doc_content>
+        <div Type="body">
+          #{body}
+        </div>
+      </doc_content>
+    XML
+    s << @work_metadata2[@work_id]
+    s << "</document>\n"
     
     # 把本卷的 xml 累加到全經的 xml
-    @work_docs += s
+    @work_docs << s
     
     fn = basename + ".docusky.xml"
     output_path = File.join(@out_root, fn)
