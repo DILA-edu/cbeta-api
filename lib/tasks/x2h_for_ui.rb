@@ -101,7 +101,6 @@ class P5aToHTMLForUI
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @updated_at = MyCbetaShare.get_update_date(xml_fn)
     @title = Work.get_info_by_id(@work_id)[:title]
-    @pin_tag = nil # 品名 mulu 標記
   end
 
   def convert_all
@@ -253,7 +252,6 @@ class P5aToHTMLForUI
     n = @div_count
     if e.has_attribute? 'type' or e.key? 'rend'
       r = e_div_node(e)
-      @pin_tag = nil if e['type'] == 'pin'
     else
       r = traverse(e)
     end
@@ -647,9 +645,14 @@ class P5aToHTMLForUI
       @first_lb_in_juan = true
       ele_milestone_juan
       r << "<juan #{@juan}>"
-      r << @pin_tag unless @pin_tag.nil?
       @open_divs.each { |d|
         r << "<div class='div-#{d['type']}'>"
+        if d['type'] == 'pin'
+          mulu = d.at_xpath("mulu[@type='品']")
+          unless mulu.nil?
+            r << e_mulu_tag(mulu)
+          end
+        end
       }
       print "\r#{@juan}"
     end
@@ -660,11 +663,15 @@ class P5aToHTMLForUI
     return traverse(e, mode) if mode=='footnote'
     r = ''
     if e['type'] == '品'
-      @pass << false
-      @pin_tag = "<mulu class='pin' s='%s'/>" % traverse(e, 'text')
-      r = @pin_tag
-      @pass.pop
+      r = e_mulu_tag(e)
     end
+    r
+  end
+
+  def e_mulu_tag(e)
+    @pass << false
+    r = "<mulu class='pin' s='%s'/>" % traverse(e, 'text')
+    @pass.pop
     r
   end
     
