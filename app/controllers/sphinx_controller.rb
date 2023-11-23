@@ -286,7 +286,7 @@ class SphinxController < ApplicationController
     t1 = Time.now
     @index = Rails.application.config.x.sphinx_titles
     s = @q.chars.join(' ')
-    @where = %{MATCH('"#{s}"/2')} + @filter # /2 表示 至少要有2個字符合
+    @where = %{MATCH('"#{s}"/3')} + @filter # /3 表示 至少要有2個字符合
     @max_matches = MAX_MATCHES
     select = <<~SQL
       SELECT work, title FROM #{@index}
