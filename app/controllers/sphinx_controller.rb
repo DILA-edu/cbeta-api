@@ -285,11 +285,16 @@ class SphinxController < ApplicationController
 
     t1 = Time.now
     @index = Rails.application.config.x.sphinx_titles
-    @where = %{MATCH('#{@q}')} + @filter
+    s = @q.chars.join(' ')
+    @where = %{MATCH('"#{s}"/2')} + @filter # /2 表示 至少要有2個字符合
     @max_matches = MAX_MATCHES
-    select = "SELECT work, title FROM #{@index}"\
-      " WHERE #{@where} ORDER BY canon_order ASC"\
-      " LIMIT #{@start}, #{@rows} OPTION ranker=#{RANKER}, max_matches=#{@max_matches}"
+    select = <<~SQL
+      SELECT work, title FROM #{@index}
+       WHERE #{@where} 
+       LIMIT #{@start}, #{@rows} 
+       OPTION max_matches=#{@max_matches}
+    SQL
+    logger.info select
     @mysql_client = sphinx_mysql_connection
     results = @mysql_client.query(select, symbolize_keys: true)    
 
@@ -304,10 +309,16 @@ class SphinxController < ApplicationController
       h[:time_to] = w.time_to
     end
 
+    results = @mysql_client.query("SHOW META LIKE 'total_found%';")    
+    a = results.to_a
+    total_found = a[0]['Value'].to_i
+    logger.info "total_found: #{total_found}"
+
     r = {
       query_string: @q,
       time: 0,
-      num_found: hits.size,
+      #num_found: hits.size,
+      num_found: total_found
     }
     r[:results] = hits
     r[:time] = Time.now - t1
