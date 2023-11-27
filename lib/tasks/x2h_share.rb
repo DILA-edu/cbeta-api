@@ -122,36 +122,19 @@ module P5aToHtmlShare
     r + node.to_s
   end
 
-  def html_copyright(work, juan)
-    r = "<div id='cbeta-copyright'><p>\n"
-    
-    #orig = @cbeta.get_canon_nickname(@series)
-    
-    # 處理 卷跨冊
-    if work=='L1557' 
-      @title = '大方廣佛華嚴經疏鈔會本'
-      if @vol=='L131' and juan==17
-        v = '130-131'
-      elsif @vol=='L132' and juan==34
-        v = '131-132'
-      elsif @vol=='L133' and juan==51
-        v = '132-133'
-      end
-    elsif work=='X0714' and @vol=='X40'  and juan==3
-      @title = '四分律含注戒本疏行宗記'
-      v = '39-40'
-    else
-      v = @vol.sub(/^[A-Z]0*([^0].*)$/, '\1')
-    end
-    
-    n = @sutra_no.sub(/^[A-Z]\d{2,3}n0*([^0].*)$/, '\1')
-    r += "【經文資訊】《#{@canon_name}》第 #{v} 冊 No. #{n} #{@title}<br/>\n"
-    r += "【版本記錄】發行日期：#{@publish_date}，最後更新：#{@updated_at}<br/>\n"
-    r += "【編輯說明】本資料庫由中華電子佛典協會（CBETA）依《#{@canon_name}》所編輯<br/>\n"
-    
-    r += "【原始資料】#{@contributors}<br/>\n"
-    r += "【其他事項】詳細說明請參閱【<a href='http://www.cbeta.org/copyright.php' target='_blank'>中華電子佛典協會資料庫版權宣告</a>】\n"
-    r += "</p></div><!-- end of cbeta-copyright -->\n"  
+  def html_copyright(work, juan, publish)
+    args = {
+      canon: @series,
+      work: work,
+      vol: @vol,
+      juan: juan,
+      title: @title,
+      publish: publish,
+      updated_at: @updated_at,
+      contributors: @contributors,
+      format: :html
+    }
+    MyCbetaShare.cbeta_juan_declare(@cbeta, args)
   end
   
   def read_canon_name

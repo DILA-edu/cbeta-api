@@ -908,10 +908,7 @@ class P5aToHTMLForDownload
     @pass = [false]
 
     doc = open_xml(xml_fn)
-    
-    e = doc.xpath("//titleStmt/title")[0]
-    @title = traverse(e, 'txt')
-    @title = @title.split()[-1]
+    @title = get_title(doc)
     
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
@@ -970,7 +967,7 @@ class P5aToHTMLForDownload
       title: @title,
       body: body,
       back: back,
-      copyright: html_copyright(work, juan_no)
+      copyright: html_copyright(work, juan_no, @publish_date)
     }
     template_fn = Rails.root.join('lib', 'tasks', 'x2h_for_download.html')
     template = File.read(template_fn)

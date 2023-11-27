@@ -1169,7 +1169,7 @@ class P5aToHTMLForUI
         @html_buf = ''
       end
       back = @back_buf + back unless @back_buf.empty?
-      copyright = html_copyright(work, juan_no)
+      copyright = html_copyright(work, juan_no, @params[:publish])
       fn = File.join(folder, "#{juan}.html")
       write_juan_file(fn, body, back, copyright)
       

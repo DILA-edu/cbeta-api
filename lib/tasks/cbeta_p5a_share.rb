@@ -214,6 +214,12 @@ module CbetaP5aShare
     r
   end
 
+  def get_title(doc)
+    e = doc.at_xpath("//titleStmt/title")
+    r = traverse(e).split.last
+    r.sub(/\(第\d+卷-第\d+卷\)$/, '')
+  end
+
   def read_mod_notes(doc)
     doc.xpath("//note[@type='mod']").each do |e|
       n = e['n']

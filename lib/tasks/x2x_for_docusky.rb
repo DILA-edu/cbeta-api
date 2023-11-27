@@ -573,11 +573,7 @@ class P5aToDocusky
     @pass = [false]
 
     doc = open_xml(xml_fn)
-    
-    e = doc.at_xpath("//titleStmt/title")
-    @title = traverse(e, 'txt')
-    @title = @title.split()[-1]
-    @title.sub!(/^(.*)\(.*?\)$/, '\1')    
+    @title = get_title(doc)
     
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?

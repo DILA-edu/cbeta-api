@@ -60,7 +60,7 @@ class P5aToTextForDownload
     return convert_all if target.nil?
 
     arg = target.upcase
-    if arg.size == 1
+    if arg.size <= 2
       handle_collection(arg)
     else
       if arg.include? '..'
@@ -82,36 +82,18 @@ class P5aToTextForDownload
   end
 
   def copyright(work, juan)
-    orig = @cbeta.get_canon_nickname(@series)
-    
-    # 處理 卷跨冊
-    if work=='L1557' 
-      @title = '大方廣佛華嚴經疏鈔會本'
-      if @vol=='L131' and juan==17
-        v = '130-131'
-      elsif @vol=='L132' and juan==34
-        v = '131-132'
-      elsif @vol=='L133' and juan==51
-        v = '132-133'
-      end
-    elsif work=='X0714' and @vol=='X40'  and juan==3
-      @title = '四分律含注戒本疏行宗記'
-      v = '39-40'
-    else
-      v = @vol.sub(/^[A-Z]0*([^0].*)$/, '\1')
-    end
-    
-    n = @sutra_no.sub(/^[A-Z]\d{2,3}n0*([^0].*)$/, '\1')
-    r = "#%s\n" % ('-' * 70)
-    r << <<~TXT
-      #【經文資訊】#{orig}第 #{v} 冊 No. #{n} #{@title}
-      #【版本記錄】發行日期：#{@params[:publish]}，最後更新：#{@updated_at}
-      #【編輯說明】本資料庫由中華電子佛典協會（CBETA）依#{orig}所編輯
-      #【原始資料】#{@contributors}
-      #【其他事項】本資料庫可自由免費流通，詳細內容請參閱【中華電子佛典協會資料庫版權宣告】
-    TXT
-    r << "#%s\n\n" % ('-' * 70)
-    r
+    args = {
+      canon: @series,
+      work: work,
+      vol: @vol,
+      juan: juan,
+      title: @title,
+      publish: @params[:publish],
+      updated_at: @updated_at,
+      contributors: @contributors,
+      format: :text
+    }
+    MyCbetaShare.cbeta_juan_declare(@cbeta, args)
   end
   
   def e_caesura(e)
@@ -525,9 +507,7 @@ class P5aToTextForDownload
   end
 
   def write_work_yaml(doc)
-    e = doc.xpath("//titleStmt/title")[0]
-    @title = traverse(e)
-    @title = @title.split()[-1]
+    @title = get_title(doc)
     
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
