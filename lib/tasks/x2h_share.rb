@@ -122,9 +122,9 @@ module P5aToHtmlShare
     r + node.to_s
   end
 
-  def html_copyright(work, juan, publish)
+  def html_copyright(canon, work, juan, publish)
     args = {
-      canon: @series,
+      canon: canon,
       work: work,
       vol: @vol,
       juan: juan,

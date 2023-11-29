@@ -967,7 +967,7 @@ class P5aToHTMLForDownload
       title: @title,
       body: body,
       back: back,
-      copyright: html_copyright(work, juan_no, @publish_date)
+      copyright: html_copyright(@series, work, juan_no, @publish_date)
     }
     template_fn = Rails.root.join('lib', 'tasks', 'x2h_for_download.html')
     template = File.read(template_fn)
