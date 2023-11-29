@@ -14,8 +14,9 @@
 
 ### catalog
 
-* 參考 CBReader 使用的部類目錄: <https://github.com/heavenchou/cbwork-bin/tree/master/cbreader2X>
-  * bulei_nav.xhtml
+* 參考 CBReader 使用的部類目錄:
+  * <https://github.com/cbeta-git/CBReader2X/tree/master/Bookcase/CBETA?
+    * bulei_nav.xhtml
 * 更新 部類目錄： catalog/cbeta.xml
 * 更新 原書目錄： catalog/orig.xml
   * 參考 CBReader 的 advance_nav.xhtml

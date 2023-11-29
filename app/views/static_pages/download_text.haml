@@ -1,31 +1,38 @@
 %h1 下載 純文字 格式佛典
-
-%h2 一卷一檔
 %ul
-  %li 含校注： #{ link_to_url '/download/text-with-notes/T0001_001.txt.zip' }
-  %li 不含校注： #{ link_to_url '/download/text/T0001_001.txt.zip' }
+  %li= link_to('下載 全部', '#all')
+  %li= link_to('下載 單部佛典', '#work')
+  %li= link_to('下載 單卷', '#work')
+  %li= link_to('悉曇字', '#siddam')
+  %li= link_to('圖形', '#graphic')
+  %li= link_to('表格', '#table')
 
-%h2 一部佛典一個 zip 檔
+%h2#all 全部 CBETA 一個 zip 檔
+%ul
+  %li 含校注： #{ link_to_url '/download/cbeta-text-with-notes.zip' }
+  %li 不含校注： #{ link_to_url '/download/cbeta-text.zip' }
+
+%h2#work 一部佛典一個 zip 檔
 %ul
   %li 含校注： #{ link_to_url '/download/text-with-notes/T0001.txt.zip' }
   %li 不含校注： #{ link_to_url '/download/text/T0001.txt.zip' }
   %li 含目次，例如上述 zip 檔解壓縮後裡面有 T0001-toc.txt.
 
-%h2 全部 CBETA 一個 zip 檔
+%h2#juan 一卷一檔
 %ul
-  %li 含校注： #{ link_to_url '/download/cbeta-text-with-notes.zip' }
-  %li 不含校注： #{ link_to_url '/download/cbeta-text.zip' }
+  %li 含校注： #{ link_to_url '/download/text-with-notes/T0001_001.txt.zip' }
+  %li 不含校注： #{ link_to_url '/download/text/T0001_001.txt.zip' }
 
-%h2 悉曇字
+%h2#siddam 悉曇字
 
 %p 以羅馬轉寫呈現，例： #{ link_to_url '/download/text/T0864A.txt.zip' }
 
-%h2 圖形
+%h2#graphic 圖形
 
 %p 以【圖：T16p0845_01.gif】表示，圖檔也一起包含在 zip 檔裡。
 %p 例： #{ link_to_url '/download/text/T0719_001.txt.zip' }
 
-%h2 表格
+%h2#table 表格
 
 %p 逐列、逐欄 分行呈現，例： #{ link_to_url '/download/text/T2035_003.txt.zip' }
 %p ○四處十六會圖
