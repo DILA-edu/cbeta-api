@@ -386,8 +386,8 @@ class ImportLines
         lb = $1
         juan = $2
         line_html = $3
-        linehead = @work_id
-        linehead << '_' if @work_id.match(/\d$/)
+        linehead = @work_id.clone
+        linehead << '_' if @work_id.match?(/\d$/)
         linehead << "p#{lb}"
         notes = JSON.generate(@notes[lb]) if @notes.key? lb
         @inserts << "('#{linehead}', '#{line_html}', '#{notes}', #{juan})"
