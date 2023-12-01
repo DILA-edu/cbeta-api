@@ -16,7 +16,7 @@ class DiffToHTML
   def initialize(config)
     @config = config
     @base = config[:change_log]
-    @new_punc_works = read_new_punc_works
+    @ignore_list = Changelog.get_ignore_list(config)
   end
 
   def convert
@@ -293,9 +293,11 @@ class DiffToHTML
     
     tokens = f1.split('/')
     basename = tokens[2]
+    return '' if @ignore_list['ignore_all'].include?(basename)
+
+    @ignore = @ignore_list['ignore_puncs'].include?(basename)
     juan = tokens.last.sub(/^0*(\d+)\.txt$/, '\1')
     @work_id = CBETA.get_work_id_from_file_basename(basename)
-    @ignore = @new_punc_works.include?(@work_id)
     title = Work.find_by(n: @work_id).title
 
     # 2019Q1 Y 重新分卷
@@ -416,15 +418,6 @@ class DiffToHTML
     s = text.gsub("\n", '')
     s = remove_puncs(s)
     s.empty?
-  end
-
-  def read_new_punc_works
-    r = []
-    Changelog.each_new_punc_work(@config) do |line|
-      basename = line.split.first
-      r << CBETA.get_work_id_from_file_basename(basename)
-    end
-    r
   end
 
   def remove_puncs(s)

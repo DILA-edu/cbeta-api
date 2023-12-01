@@ -2,8 +2,8 @@ class CbetaString
   HALF_PUNCS = "()*.[]"
 
   # 全形標點 按內碼順序排列
-  FULL_PUNCS = '—…‧─│┬▆◎　、。〃〈〉《》「」『』【】〔〕〖〗︰！（）＊＋，－．／：；＜＝＞？［］～'
-
+  FULL_PUNCS = '—…‧─│┬▆△◎　、。〃〈〉《》「」『』【】〔〕〖〗︰！（）＊＋，－．／：；＜＝＞？［］～'
+  
   PUNCS = HALF_PUNCS + FULL_PUNCS
 
   def initialize(allow_digit: false, allow_space: true, allow_comma: false)

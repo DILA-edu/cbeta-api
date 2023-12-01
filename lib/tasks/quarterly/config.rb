@@ -27,7 +27,7 @@ module Config
       r[:ebook_convert] = '/usr/bin/ebook-convert'
     when 'development'
       r[:root]          = "/Users/ray/git-repos/cbeta-api"
-      r[:change_log]    = '/Users/ray/Documents/Projects/CBETA/ChangeLog'
+      r[:change_log]    = '/Users/ray/Documents/Projects/cbeta/changelog'
       r[:ebook_convert] = '/Applications/calibre.app/Contents/MacOS/ebook-convert'
     when 'cn'
       r[:root] = "/mnt/CBETAOnline/cbdata/shared"

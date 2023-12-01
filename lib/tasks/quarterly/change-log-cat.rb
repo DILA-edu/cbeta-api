@@ -1,5 +1,3 @@
-require_relative 'changelog'
-
 class ChangeLogCategory
 
   PUNCS = " " + CbetaString::PUNCS
@@ -64,7 +62,6 @@ class ChangeLogCategory
       if line.start_with? '<h1'
         @f_text << "<h1>CBETA #{@quarter} 文字變更記錄</h1>\n"
         @f_punc << "<h1>CBETA #{@quarter} 標點變更記錄</h1>\n"
-        @f_punc << read_new_punc_works
       elsif line.start_with? '<h2'
         @body = true
       else
@@ -118,21 +115,6 @@ class ChangeLogCategory
     end
     
     @f_punc << s + "\n"
-  end
-
-  def read_new_punc_works
-    r = ''
-    Changelog.each_new_punc_work(@config) do |line|
-      r << "<li>#{line}</li>\n"
-    end
-    return '' if r.empty?
-
-    <<~HTML
-      <h2>整部佛典新增新式標點</h2>
-      <ul>
-      #{r}
-      </ul>
-    HTML
   end
 
   def remove_puncs(s, tag)

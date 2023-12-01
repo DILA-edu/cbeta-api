@@ -1,10 +1,13 @@
 class Changelog
-  def self.each_new_punc_work(config)
-    fn = File.join(config[:change_log], "new-punc-works-#{config[:q2]}.txt")
-    return unless File.exist?(fn)
-
-    File.foreach(fn, chomp: true) do |line|
-      yield(line)
+  def self.get_ignore_list(config)
+    fn = File.join(config[:change_log], "#{config[:q2]}.yml")
+    unless File.exist?(fn)
+      return { 'ignore_all' => [], 'ignore_puncs' => [] }
     end
+
+    r = YAML.load_file(fn)
+    r['ignore_all']   ||= []
+    r['ignore_puncs'] ||= []
+    r
   end
 end

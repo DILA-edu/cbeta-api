@@ -3,7 +3,7 @@ require 'cbeta'
 require 'json'
 
 class Crf
-  PUNCS = ' .()[]-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—◎'
+  PUNCS = ' .()[]-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—◎△'
 
   def initialize(base)
     @base = base
