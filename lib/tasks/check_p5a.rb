@@ -3,7 +3,7 @@ require_relative 'cbeta_p5a_share'
 class CheckP5a
 
   def initialize
-    @gaijis = CBETA::Gaiji.new(Rails.application.config.cbeta_gaiji)
+    @gaijis = CBETA::Gaiji.new
   end
   
   def check

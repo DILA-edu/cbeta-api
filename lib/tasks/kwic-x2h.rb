@@ -29,7 +29,7 @@ class P5aToSimpleHTML
     @xml_root = xml_root
     @output_root = output_root
     @cbeta = CBETA.new
-    @gaijis = CBETA::Gaiji.new(gaiji_base)
+    @gaijis = CBETA::Gaiji.new
     @config = { multi_edition: false }
     @config.merge!(opts)
   end

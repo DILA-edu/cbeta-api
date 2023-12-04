@@ -41,7 +41,7 @@ class P5aToText
     @settings.merge!(opts)
     
     @cbeta = CBETA.new
-    @gaijis = CBETA::Gaiji.new(@settings[:gaiji_base])
+    @gaijis = CBETA::Gaiji.new
     @us = UnicodeService.new
   end
 
