@@ -124,7 +124,9 @@ module P5aToHtmlShare
 
   def html_copyright(canon, work, juan, publish)
     args = {
+      source_desc: @source_desc,
       canon: canon,
+      canon_name: @canon_name,
       work: work,
       vol: @vol,
       juan: juan,
@@ -134,18 +136,9 @@ module P5aToHtmlShare
       contributors: @contributors,
       format: :html
     }
-    MyCbetaShare.cbeta_juan_declare(@cbeta, args)
+    MyCbetaShare.cbeta_juan_declare(args)
   end
   
-  def read_canon_name
-    fn = File.join(Rails.application.config.cbeta_data, 'canons.csv')
-    r = {}
-    CSV.foreach(fn, headers: true) do |row|
-      r[row['id']] = row['name']
-    end
-    r
-  end
-
   def remove_text_indent_from_style(style)
     a = style.split(';')
     a.delete_if { |s| s.start_with?('text-indent:') }

@@ -214,6 +214,23 @@ module CbetaP5aShare
     r
   end
 
+  def get_source_desc(doc)
+    e = doc.at_xpath("//idno[@type='CBETA']")
+    abort "找不到 idno" if e.nil?
+    id = e.text.strip
+
+    case id
+    when 'CC.1.1'
+      '《比丘尼傳暨續比丘尼傳》（大千出版社，2006）'
+    when 'CC.2.2'
+      '《敦博本六祖壇經校釋》（萬卷樓，2006）'
+    else
+      e = doc.at_xpath("//sourceDesc/bibl/title[@level='s' and @lang='zh-Hant']")
+      abort "找不到來源說明" if e.nil?
+      traverse(e)
+    end
+  end
+
   def get_title(doc)
     e = doc.at_xpath("//titleStmt/title")
     r = traverse(e).split.last

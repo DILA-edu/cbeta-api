@@ -31,9 +31,9 @@ class P5aToHTMLForDownload
     @xml_root = xml_root
     @out_root = out_root
     @cbeta = CBETA.new
+    @my_cbeta_share = MyCbetaShare.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
-    @canon_names = read_canon_name
     @us = UnicodeService.new
 
     fn = Rails.root.join('log', 'x2h_for_download.log')
@@ -312,7 +312,7 @@ class P5aToHTMLForDownload
     return '' if e['type']=='old'
     
     # 卍續藏有 X 跟 R 兩種 lb, 只處理 X
-    return '' if e['ed'] != @series
+    return '' if e['ed'] != @canon
 
     @lb = e['n']
     
@@ -657,16 +657,16 @@ class P5aToHTMLForDownload
   end
 
   def handle_collection(c)
-    @series = c
-    @canon_name = @canon_names[c]
+    @canon = c
+    @canon_name = @my_cbeta_share.get_canon_name(c)
 
     $stderr.puts "x2h_for_download #{c}"
-    folder = File.join(@xml_root, @series)
+    folder = File.join(@xml_root, @canon)
     Dir.entries(folder).sort.each { |vol|
       next if ['.', '..', '.DS_Store'].include? vol
       handle_vol(vol)
     }
-    zip_by_work(@series)
+    zip_by_work(@canon)
   end
 
   def handle_node(e, mode)
@@ -740,7 +740,7 @@ class P5aToHTMLForDownload
       @sutra_no = "#{$1}n0220"
     end    
     
-    @out_folder = File.join(@out_root, @series, @work_id)
+    @out_folder = File.join(@out_root, @canon, @work_id)
     FileUtils::mkdir_p @out_folder
 
     text = parse_xml(xml_fn)
@@ -779,9 +779,9 @@ class P5aToHTMLForDownload
     abort "未處理底本" if @orig.nil?
 
     @vol = vol
-    @series = CBETA.get_canon_from_vol(vol)
+    @canon = CBETA.get_canon_from_vol(vol)
     
-    source = File.join(@xml_root, @series, vol)
+    source = File.join(@xml_root, @canon, vol)
     Dir[source+"/*"].sort.each { |f|
       handle_sutra(f)
     }
@@ -789,8 +789,8 @@ class P5aToHTMLForDownload
 
   def handle_vols(v1, v2)
     $stderr.puts "x2h_for_download #{v1}..#{v2}"
-    @series = CBETA.get_canon_from_vol(v1)
-    folder = File.join(@xml_root, @series)
+    @canon = CBETA.get_canon_from_vol(v1)
+    folder = File.join(@xml_root, @canon)
     Dir.foreach(folder) { |vol|
       next if vol < v1
       next if vol > v2
@@ -909,6 +909,7 @@ class P5aToHTMLForDownload
 
     doc = open_xml(xml_fn)
     @title = get_title(doc)
+    @source_desc = get_source_desc(doc)
     
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
@@ -967,7 +968,7 @@ class P5aToHTMLForDownload
       title: @title,
       body: body,
       back: back,
-      copyright: html_copyright(@series, work, juan_no, @publish_date)
+      copyright: html_copyright(@canon, work, juan_no, @publish_date)
     }
     template_fn = Rails.root.join('lib', 'tasks', 'x2h_for_download.html')
     template = File.read(template_fn)
@@ -979,7 +980,7 @@ class P5aToHTMLForDownload
   end
   
   def zip_by_work(canon)
-    folder = File.join(@out_root, @series)
+    folder = File.join(@out_root, @canon)
     Dir.entries(folder).each do |work|
       next if work.start_with? '.'
       juan_folder = File.join(folder, work)

@@ -1,10 +1,12 @@
+require_relative 'share'
+
 class CreateUuid
 
   def initialize
     @dest = Rails.root.join('data-static', 'uuid')
     FileUtils.makedirs @dest
     
-    @canon_names = read_canon_names
+    @my_cbeta_share = MyCbetaShare.new
   end
   
   def create
@@ -24,7 +26,7 @@ class CreateUuid
       r = JSON.parse(s)
     end
     
-    @canon_names.each_pair do |k,v|
+    @my_cbeta_share.canons.each_key do |k|
       next if r.key? k  # 已經產生過的，就維持舊的
       r[k] = SecureRandom.uuid
     end
@@ -92,14 +94,5 @@ class CreateUuid
     
     puts "write #{fn}"
     File.write(fn, s)
-  end
-  
-  def read_canon_names
-    fn = File.join(Rails.application.config.cbeta_data, 'canons.csv')
-    r = {}
-    CSV.foreach(fn, headers: true) do |row|
-      r[row['id']] = row['name']
-    end
-    r
-  end
+  end  
 end

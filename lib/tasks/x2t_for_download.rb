@@ -30,6 +30,7 @@ class P5aToTextForDownload
     @params = params
     @format = 'text'
     @cbeta = CBETA.new
+    @my_cbeta_share = MyCbetaShare.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
     @us = UnicodeService.new
@@ -83,7 +84,9 @@ class P5aToTextForDownload
 
   def copyright(work, juan)
     args = {
-      canon: @series,
+      source_desc: @source_desc,
+      canon: @canon,
+      canon_name: @canon_name,
       work: work,
       vol: @vol,
       juan: juan,
@@ -93,7 +96,7 @@ class P5aToTextForDownload
       contributors: @contributors,
       format: :text
     }
-    MyCbetaShare.cbeta_juan_declare(@cbeta, args)
+    MyCbetaShare.cbeta_juan_declare(args)
   end
   
   def e_caesura(e)
@@ -145,14 +148,14 @@ class P5aToTextForDownload
 
   def e_graphic(e)
     url = File.basename(e['url'])
-    src = File.join(Rails.configuration.x.figures, @series, url)
+    src = File.join(Rails.configuration.x.figures, @canon, url)
     
-    dest = File.join(@params[:out_root], @series, @work_id)
+    dest = File.join(@params[:out_root], @canon, @work_id)
     FileUtils.mkdir_p dest
     FileUtils.cp src, dest
     
     j = "#{@work_id}_%03d" % @juan
-    dest = File.join(@params[:out_root], @series, j)
+    dest = File.join(@params[:out_root], @canon, j)
     FileUtils.mkdir_p dest
     FileUtils.cp src, dest
     
@@ -280,14 +283,14 @@ class P5aToTextForDownload
   end
 
   def handle_collection(c)
-    @series = c
+    @canon = c
     $stderr.puts "x2t_for_download #{c}, notes: #{@params[:notes]}"
-    folder = File.join(@params[:xml_root], @series)
+    folder = File.join(@params[:xml_root], @canon)
     Dir.entries(folder).sort.each { |vol|
       next if ['.', '..', '.DS_Store'].include? vol
       handle_vol(vol)
     }
-    zip_by_work(@series)
+    zip_by_work(@canon)
   end
 
   def handle_node(e)
@@ -373,9 +376,9 @@ class P5aToTextForDownload
     abort "未處理底本" if @orig.nil?
 
     @vol = vol
-    @series = CBETA.get_canon_from_vol(vol)
+    @canon = CBETA.get_canon_from_vol(vol)
     
-    source = File.join(@params[:xml_root], @series, vol)
+    source = File.join(@params[:xml_root], @canon, vol)
     Dir[source+"/*"].each { |f|
       handle_sutra(f)
     }
@@ -384,8 +387,8 @@ class P5aToTextForDownload
 
   def handle_vols(v1, v2)
     puts "convert volumns: #{v1}..#{v2}"
-    @series = CBETA.get_canon_from_vol(v1)
-    folder = File.join(@params[:xml_root], @series)
+    @canon = CBETA.get_canon_from_vol(v1)
+    folder = File.join(@params[:xml_root], @canon)
     Dir.foreach(folder) { |vol|
       next if vol < v1
       next if vol > v2
@@ -463,20 +466,20 @@ class P5aToTextForDownload
     fn = "#{@work_id}_%03d.txt" % juan_no
     text = copyright(@work_id, juan_no) + body
     
-    dest = File.join(@params[:out_root], @series, @work_id)
+    dest = File.join(@params[:out_root], @canon, @work_id)
     FileUtils.mkdir_p dest
     dest = File.join(dest, fn)
     File.write(dest, text)
     
     if @params.key?(:out2)
-      dest = File.join(@params[:out2], @series, @work_id)
+      dest = File.join(@params[:out2], @canon, @work_id)
       FileUtils.mkdir_p dest
       dest = File.join(dest, fn)
       File.write(dest, text)
     end
     
     j = "#{@work_id}_%03d" % juan_no
-    dest = File.join(@params[:out_root], @series, j)
+    dest = File.join(@params[:out_root], @canon, j)
     FileUtils.mkdir_p dest
     dest = File.join(dest, fn)
     File.write(dest, text)
@@ -502,20 +505,19 @@ class P5aToTextForDownload
   def write_toc
     fn = "#{@work_id}-toc.txt"
     
-    dest = File.join(@params[:out_root], @series, @work_id, fn)
+    dest = File.join(@params[:out_root], @canon, @work_id, fn)
     File.write(dest, @toc)
   end
 
   def write_work_yaml(doc)
+    @canon_name = @my_cbeta_share.get_canon_name(@canon)
     @title = get_title(doc)
+    @source_desc = get_source_desc(doc)
     
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
     @contributors = e.text
 
-    e = doc.at_xpath("//sourceDesc/bibl/title[@level='s' and@lang='zh-Hant']")
-    abort "找不到 sourceDesc" if e.nil?
-    @canon_name = e.text
 
     e = doc.at_xpath("//editorialDecl/punctuation")
     abort "找不到 punctuation" if e.nil?
@@ -524,7 +526,7 @@ class P5aToTextForDownload
     h = {
       'id' => @work_id,
       'title' => @title,
-      'source' => @canon_name,
+      'source' => @source_desc,
       'publish_date' => @params[:publish],
       'last_modified' => Date.parse(@updated_at),
       'publisher' => '中華電子佛典協會（CBETA）',
@@ -536,13 +538,13 @@ class P5aToTextForDownload
     fn = "#{@work_id}.yaml"
     text = h.to_yaml
 
-    dest = File.join(@params[:out_root], @series, @work_id)
+    dest = File.join(@params[:out_root], @canon, @work_id)
     FileUtils.mkdir_p dest
     path = File.join(dest, fn)
     File.write(path, text)
 
     if @params.key?(:out2)
-      dest = File.join(@params[:out2], @series, @work_id)
+      dest = File.join(@params[:out2], @canon, @work_id)
       FileUtils.mkdir_p dest
       path = File.join(dest, fn)
       File.write(path, text)
@@ -550,7 +552,7 @@ class P5aToTextForDownload
   end
   
   def zip_by_work(canon)
-    canon_folder = File.join(@params[:out_root], @series)
+    canon_folder = File.join(@params[:out_root], @canon)
     Dir.entries(canon_folder).each do |f|
       next if f.start_with? '.'
       folder = File.join(canon_folder, f)

@@ -33,9 +33,9 @@ class P5aToHTMLForUI
     @format = 'html'
     @params = params
     @cbeta = CBETA.new
+    @my_cbeta_share = MyCbetaShare.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
-    @canon_names = read_canon_name
 
     fn = Rails.root.join('data-static', 'facsimile', 'JM.json')
     s = File.read(fn)
@@ -133,7 +133,7 @@ class P5aToHTMLForUI
     @orig = @cbeta.get_canon_symbol(c)
     abort "取得藏經略符發生錯誤，藏經 ID: #{c}" if @orig.nil?
 
-    @canon_name = @canon_names[c]
+    @canon_name = @my_cbeta_share.get_canon_name(c)
     @orig_short = @orig.sub(/^【(.*)】$/, '\1')
   end
   
@@ -1077,7 +1077,8 @@ class P5aToHTMLForUI
     @pass = [false]
 
     doc = open_xml(xml_fn)
-        
+    @source_desc = get_source_desc(doc)
+    
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
     @contributors = e.text
