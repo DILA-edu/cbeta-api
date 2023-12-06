@@ -2403,8 +2403,8 @@ lb,position,tag,type,key,name
 0515a03,4,person,end,A007808,聞龍
 0515a03,5,person,start,A007808,隱鱗父
 0515a03,7,person,end,A007808,隱鱗父
-0515a04,2,place,start,PL12309,玉几
-0515a04,3,place,end,PL12309,玉几
+0515a04,1,place,start,PL12309,玉几
+0515a04,2,place,end,PL12309,玉几
 0515a07,1,place,start,PL18775,匡廬
 0515a07,2,place,end,PL18775,匡廬
 0515a09,5,person,start,A000296,釋道世
