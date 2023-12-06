@@ -288,18 +288,22 @@ class SphinxController < ApplicationController
     s = @q.chars.join(' ')
     @where = %{MATCH('"#{s}"/3')} + @filter # /3 表示 至少要有2個字符合
     @max_matches = MAX_MATCHES
+
     select = <<~SQL
-      SELECT work, title FROM #{@index}
+      SELECT work, title
+       FROM #{@index}
        WHERE #{@where} 
        LIMIT #{@start}, #{@rows} 
        OPTION max_matches=#{@max_matches}
     SQL
+
     logger.info select
     @mysql_client = sphinx_mysql_connection
     results = @mysql_client.query(select, symbolize_keys: true)    
 
     hits = results.to_a
     hits.each do |h|
+      h[:highlight] = mark_title(h[:title], @q)
       w = Work.find_by(n: h[:work])
       h[:byline] = w.byline
       h[:juan] = w.juan
@@ -719,7 +723,6 @@ class SphinxController < ApplicationController
     when 'notes'
       init_notes
     when 'title'
-      init_title
     when 'variants'
       init_fields
       @index = 
@@ -788,14 +791,6 @@ class SphinxController < ApplicationController
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
   end
   
-  def init_title
-    @index = Rails.application.config.sphinx_index
-
-    @fields = "id, canon, category, vol, file, work, title, juan, lb, n, content, "\
-      "SNIPPET(content, '#{@q}', 'limit=0', "\
-      "'before_match=<mark>', 'after_match=</mark>') AS highlight"
-  end
-
   # 排序欄位最多只能有五個，否則會出現如下錯誤：
   # Mysql2::Error (index cbeta122: too many sort-by attributes; maximum count is 5)
   def init_order
@@ -834,6 +829,19 @@ class SphinxController < ApplicationController
       orders << order
     end
     @order = "ORDER BY " + orders.join(',')
+  end
+
+  def mark_title(title, query)
+    r = ''
+    title.each_char do |c|
+      if query.include?(c)
+        r << "<mark>#{c}</mark>"
+      else
+        r << c
+      end
+    end
+    r.gsub!('</mark><mark>', '')
+    r
   end
 
   def my_facet(juans)
