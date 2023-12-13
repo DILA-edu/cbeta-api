@@ -5,6 +5,12 @@ namespace :import do
     importer.import
   end
   
+  desc "匯入部類 ID"
+  task :category => :environment do
+    require "tasks/import_category"
+    ImportCategory.new.import
+  end
+
   desc "匯入部類目錄"
   task :catalog, [:arg1] => :environment do |t, args|
     require "tasks/import_catalog"

@@ -5,6 +5,10 @@ module SectionRDB
         command "rake import:canons"
       end
 
+      run_step '匯入 部類 ID (rake import:category)' do
+        command "rake import:category"
+      end
+
       run_step '作品內目次 匯入 TocNode 供搜尋 (rake import:toc)' do
         command 'rake import:toc'
       end
