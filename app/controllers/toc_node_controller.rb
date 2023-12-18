@@ -12,6 +12,12 @@ class TocNodeController < ApplicationController
 
     result = [] if result.nil?
 
+    result.each do |r|
+      if r.key?(:work) and r.key?(:file) and r.key?(:lb)
+        r[:linehead] = get_linehead(r[:work], r[:file], r[:lb])
+      end
+    end
+
     r = {
       num_found: result.size,
       time: Time.now - start,
