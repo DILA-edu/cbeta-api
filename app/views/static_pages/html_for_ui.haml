@@ -29,9 +29,10 @@
       %li=link_to '人名', '#person'
       %li=link_to '地名', '#place'
   %li
-    Attributes
+    =link_to 'Classes', '#classes'
     %ul
-      %li=link_to 'Classes', '#classes'
+      %li=link_to 'circle', '#class_circle'
+      %li=link_to 'pl-{size}', '#class_pl_size'
 
 =render partial: 'html-for-ui-juan'
 =render partial: 'html-for-ui-byline'
