@@ -446,7 +446,6 @@ class P5aToHTMLForUI
     return traverse(e, mode) if mode=='footnote'
 
     row = HtmlNode.new('div')
-    #row = Nokogiri::XML("<div></div>").root
     row['class'] = 'lg-row'
 
     content = traverse(e)
@@ -638,10 +637,20 @@ class P5aToHTMLForUI
   def e_milestone(e)
     r = ''
     if e['unit'] == 'juan'
-      r << "</div>" * @open_divs.size  # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
+      # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
+      r << "</div>" * @open_divs.size
+
       @juan = e['n'].to_i
-      @back[@juan] = @back[0]
-      @back_orig[@juan] = @back_orig[0]
+      if @back.key?(0)
+        @back[@juan] = @back[0]
+        @back.delete(0)
+        @back_orig[@juan] = @back_orig[0]
+        @back_orig.delete(0)
+      else
+        @back[@juan] = ''
+        @back_orig[@juan] = ''
+      end
+
       @first_lb_in_juan = true
       ele_milestone_juan
       r << "<juan #{@juan}>"
