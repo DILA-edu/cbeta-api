@@ -1,11 +1,12 @@
 module Config
-  Q1  = '2023Q3'  # 上一個季號
-  Q2  = '2023Q4'  # 目前季號，有時候會跳過一季
-  PUB = '2023-12' # 版權資訊 => 版本記錄 => 發行日期
+  CB  = Rails.configuration.cb
+  Q1  = CB.r_prev  # 上一個季號
+  Q2  = CB.r  # 目前季號，有時候會跳過一季
+  PUB = CB.pub # 版權資訊 => 版本記錄 => 發行日期
 
   def get_config
-    app1 = Q1.sub(/^\d+Q(\d)$/, 'cbapi\1') # 用於：從上一季複製資料
-    app2 = Q2.sub(/^\d+Q(\d)$/, 'cbapi\1')
+    app1 = Q1.sub(/^.*(\d)$/, 'cbapi\1') # 用於：從上一季複製資料
+    app2 = Q2.sub(/^.*(\d)$/, 'cbapi\1')
 
     r = {
       v:  Q2[-1].to_i, # 第幾季，用於 sphinx index 編號

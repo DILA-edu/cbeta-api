@@ -54,7 +54,7 @@ class KwicService
     @txt_folder = File.join(base, 'text') # 含有標點的純文字檔
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
     @current_sa_path = nil
-    @cache = Rails.configuration.x.q
+    @cache = Rails.configuration.cb.r
     @sa_files = {}
     @text_files = {}
 
@@ -1061,7 +1061,7 @@ class KwicService
   end
 
   def set_cache_base(args)
-    @cache = "#{Rails.configuration.x.q}-#{args[:referer_cn]}"
+    @cache = "#{Rails.configuration.cb.r}-#{args[:referer_cn]}"
   end
 
   def sort_by_pos(start, size)

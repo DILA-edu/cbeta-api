@@ -19,6 +19,11 @@ class CbetaString
     s << ' ' unless allow_space
 
     @regexp = /[#{s}]/
+    @regexp2 = /[#{s}]\z/
+  end
+
+  def end_with_puncs?(s)
+    s.match?(@regexp2)
   end
 
   def remove_puncs(s)

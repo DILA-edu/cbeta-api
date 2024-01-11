@@ -10,6 +10,7 @@
 # Ignore bundler config.
 /.bundle
 
+/config/cb.yml
 /config/database.yml
 /config/master.key
 /config/credentials/cn.key

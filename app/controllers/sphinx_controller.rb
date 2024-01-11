@@ -29,7 +29,7 @@ class SphinxController < ApplicationController
 
     t1 = Time.now
     if Rails.env.production?
-      key = "#{Rails.configuration.x.q}/#{params}-#{@referer_cn}"
+      key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
       r = Rails.cache.fetch(key) do
         all_in_one_sub
       end

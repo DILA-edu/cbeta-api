@@ -13,7 +13,7 @@ set :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
 # Default value for :log_level is :debug
 # set :log_level, :debug
 
-append :linked_files, "config/master.key", "config/database.yml"
+append :linked_files, "config/master.key", "config/database.yml", "config/cb.yml"
 append :linked_dirs, 'data', 'public/help', 'config/credentials'
 
 # Default value for default_env is {}

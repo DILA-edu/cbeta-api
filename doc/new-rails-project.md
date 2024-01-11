@@ -12,7 +12,6 @@
 
 * 修改 config/application.rb 裡的
   * module 名稱
-  * config.x.ver = '1.2.12'
 * 修改 config/deploy.rb
 
 可做可不做的

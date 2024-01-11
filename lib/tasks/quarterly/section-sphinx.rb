@@ -15,7 +15,7 @@ module SectionSphinx
       v = @config[:v]
       base = Rails.configuration.x.sphinx_base
 
-      %w[text notes titles].each do |index|
+      %w[text notes titles chunks].each do |index|
         fn = Rails.root.join("lib/tasks/quarterly/sphinx-template-#{index}.conf")
         template = File.read(fn)
         s = template % { v: v }
@@ -50,19 +50,21 @@ module SectionSphinx
   end
 
   def step_sphinx_index
+    indexes = %w[cbeta notes titles chunks]
+    
     if Rails.env.development?
       run_step 'sphinx index' do
         Dir.chdir('/Users/ray/Documents/Projects/CBETAOnline/sphinx') do
-          command "indexer --rotate cbeta"
-          command "indexer --rotate notes"
-          command "indexer --rotate titles"
+          indexes.each do |s|
+            command "indexer --rotate #{s}"
+          end
         end
       end
       return
     end
 
     run_step 'sphin index' do
-      %w[cbeta notes titles].each do |s|
+      indexes.each do |s|
         command "sudo indexer --config /etc/sphinx/sphinx.conf --rotate #{s}#{@config[:v]}"
       end
 
@@ -88,6 +90,7 @@ module SectionSphinx
       command 'rake sphinx:t2x'
       command 'rake sphinx:notes'
       command 'rake sphinx:titles'
+      command 'rake sphinx:chunks'
     end
   end
 

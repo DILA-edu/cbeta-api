@@ -9,6 +9,7 @@ require 'cbeta'
 require_relative 'cbeta_p5a_share'
 require_relative 'html-node'
 require_relative 'share'
+require_relative 'sphinx-share'
 
 # 產生 sphinx 所需的 xml 檔案
 class SphinxNotes
@@ -25,13 +26,14 @@ class SphinxNotes
     @cbeta = CBETA.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
+    @dynasty_labels = read_dynasty_labels
   end
 
   def convert(target=nil)
     t1 = Time.now
     @stat = Hash.new(0)
     @sphinx_doc_id = 0
-    fn = Rails.root.join('data', 'cbeta-xml-for-sphinx', 'notes.xml')
+    fn = Rails.root.join('data', 'sphinx-xml', 'notes.xml')
     @fo = File.open(fn, 'w')
     @fo.puts %(<?xml version="1.0" encoding="utf-8"?>)
     @fo.puts "<sphinx:docset>"
@@ -313,34 +315,7 @@ class SphinxNotes
       @offset += 1 unless mode == 'note'
     end
     r
-  end
-  
-  def get_info_from_work(work)
-    w = Work.find_by n: work
-    abort "在 works table 裡找不到 #{work}" if w.nil?
-    
-    data = { 
-      title: w.title,
-      category: w.category,
-      category_ids: w.category_ids
-    }
-    data[:dynasty]          = w.time_dynasty unless w.time_dynasty.nil?
-    data[:time_from]        = w.time_from    unless w.time_from.nil?
-    data[:time_to]          = w.time_to      unless w.time_to.nil?
-    data[:creators]         = w.creators         unless w.creators_with_id.nil?
-    data[:creators_with_id] = w.creators_with_id unless w.creators_with_id.nil?
-
-    return data if w.creators_with_id.nil?
-    
-    a = []
-    w.creators_with_id.split(';').each do |creator|
-      creator.match(/A(\d{6})/) do
-        a << $1.to_i.to_s
-      end
-    end
-    data[:creator_id] = a.join(',')
-    data
-  end
+  end  
 
   def handle_node(e, mode='text')
     return '' if e.comment?
@@ -522,4 +497,5 @@ class SphinxNotes
   end
 
   include CbetaP5aShare
+  include SphinxShare
 end

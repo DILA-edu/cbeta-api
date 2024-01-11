@@ -3,6 +3,7 @@
 ## Config
 
 * config
+  * cb.yml
   * 修改 deploy.rb
     * set application
   * deploy

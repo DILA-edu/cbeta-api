@@ -7,10 +7,7 @@ CBETA XML 新一季定案後執行。
 ## 編輯 config 參數
 
 * config
-  * application.rb
-    * config.x.v # 季號，用於 cache key
-    * config.x.ver
-    * config.x.q
+  * cb.yml
   * deploy
     * staging.rb
     * production.rb

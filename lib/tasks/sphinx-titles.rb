@@ -10,7 +10,7 @@ class SphinxTitles
   def run
     @id = 0
     
-    folder = Rails.root.join('data', 'cbeta-xml-for-sphinx')
+    folder = Rails.root.join('data', 'sphinx-xml')
     FileUtils.mkpath(folder)
     
     fn = Rails.root.join(folder, 'titles.xml')

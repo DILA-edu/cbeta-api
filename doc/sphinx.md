@@ -39,9 +39,9 @@ $ searchd
 
 設定使用哪一個 index, 編輯 config/environments/production.rb
 
-    config.sphinx_index = "cbeta#{config.x.v}"
-    config.x.sphinx_notes = "notes#{config.x.v}"
-    config.x.sphinx_titles = "titles#{config.x.v}"
+    config.sphinx_index = "cbeta#{config.cb.v}"
+    config.x.sphinx_notes = "notes#{config.cb.v}"
+    config.x.sphinx_titles = "titles#{config.cb.v}"
 
 ## MySQL Command Line
 

@@ -8,22 +8,35 @@ Bundler.require(*Rails.groups)
 
 module CBData
   class Application < Rails::Application
-    config.x.v = '4' # 季號，用於 cache key
-    config.x.ver = '2.2.1'
-    config.x.q = '2023q4' # 季號
+    # Initialize configuration defaults for originally generated Rails version.
+    config.load_defaults 6.0
+    config.cb = config_for(:cb)
+
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
     config.time_zone = 'Taipei'
 
-    # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 6.0
+    config.x.authority = File.join(config.cb.git, 'Authority-Databases')
+    config.cbeta_xml   = File.join(config.cb.git, 'cbeta-xml-p5a')
+    config.cbeta_data  = File.join(config.cb.git, 'cbeta-metadata')
+    config.cbeta_gaiji = File.join(config.cb.git, 'cbeta_gaiji')
+    config.x.figures   = File.join(config.cb.git, 'CBR2X-figures')
+    config.x.work_info = File.join(config.x.authority, 'authority_catalog', 'json')
+  
+    # 分詞相關
+    config.x.word_seg  = File.join(config.cb.git, 'word-seg')
+    config.x.seg_bin   = File.join(config.cb.git, 'word-seg', 'bin')
+    config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
 
-    # Configuration for the application, engines, and railties goes here.
-    #
-    # These settings can be overridden in specific environments using the files
-    # in config/environments, which are processed later.
-    #
-    # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("extras")
+    # KWIC 相關
+    config.x.kwic.base = Rails.root.join('data', 'kwic')
+    config.x.kwic.html = File.join(config.x.kwic.base, 'html')
+    config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
+
+    # Sphinx 相關
+    config.x.sphinx_base = '/etc/sphinx'
+    config.sphinx_index = "cbeta#{config.cb.v}"
+    config.x.sphinx_notes = "notes#{config.cb.v}"
+    config.x.sphinx_titles = "titles#{config.cb.v}"
   end
 end

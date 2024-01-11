@@ -40,6 +40,12 @@ namespace :sphinx do
     c.convert
   end
 
+  desc "轉出 xml for sphinx search chunks"
+  task :chunks => :environment do
+    require "tasks/sphinx-chunks"
+    SphinxChunks.new.convert
+  end
+
   desc "轉出 xml for sphinx search title"
   task :titles => :environment do
     require "tasks/sphinx-titles"

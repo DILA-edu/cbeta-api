@@ -5,6 +5,7 @@ require 'fileutils'
 require 'json'
 require 'set'
 require 'cbeta'
+require_relative 'shpinx-share'
 
 class SphinxT2X  
   def initialize
@@ -16,7 +17,7 @@ class SphinxT2X
   def convert
     @id = 0
     
-    folder = Rails.root.join('data', 'cbeta-xml-for-sphinx')
+    folder = Rails.root.join('data', 'sphinx-xml')
     FileUtils.mkpath(folder)
     
     fn = Rails.root.join(folder, 'text.xml')
@@ -95,42 +96,7 @@ class SphinxT2X
       convert_juan(rel_path2)
     end
   end
-  
-  def get_info_from_work(work, data)
-    w = Work.find_by n: work
-    abort "在 works table 裡找不到 #{work}" if w.nil?
     
-    data[:title]     = w.title
-    data[:byline]    = w.byline
-    data[:work_type] = w.work_type    unless w.work_type.nil?
-
-    unless w.time_dynasty.blank?
-      d = w.time_dynasty
-      data[:dynasty] = @dynasty_labels[d] || d
-    end
-
-    data[:time_from]        = w.time_from    unless w.time_from.nil?
-    data[:time_to]          = w.time_to      unless w.time_to.nil?
-    data[:creators]         = w.creators         unless w.creators_with_id.nil?
-    data[:creators_with_id] = w.creators_with_id unless w.creators_with_id.nil?
-
-    data[:category]     = w.category
-    data[:category_ids] = w.category_ids
-    data[:alt]          = w.juan_list unless w.alt.nil?
-    data[:juan_list]    = w.juan_list
-    data[:juan_start]   = w.juan_start
-    
-    return if w.creators_with_id.nil?
-    
-    a = []
-    w.creators_with_id.split(';').each do |creator|
-      creator.match(/A(\d{6})/) do
-        a << $1.to_i.to_s
-      end
-    end
-    data[:creator_id] = a.join(',')
-  end
-  
   def open_xml(fn)
     f = File.open(fn, 'w')
     f.puts %(<?xml version="1.0" encoding="utf-8"?>\n)
@@ -138,16 +104,6 @@ class SphinxT2X
     f
   end
 
-  def read_dynasty_labels
-    r = {}
-    fn = Rails.root.join('data-static', 'dynasty-order.csv')
-    CSV.foreach(fn, headers: true) do |row|
-      row['dynasty'].split('/').each do |d|
-        r[d] = row['dynasty']
-      end
-    end
-    r
-  end
 
   def strip_zero(s)
     s.sub(/^0*(\d*)$/, '\1')
@@ -171,4 +127,6 @@ class SphinxT2X
     s << "</sphinx:document>\n"
     f.puts s
   end
+
+  include SphinxShare
 end
