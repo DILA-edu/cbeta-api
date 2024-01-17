@@ -4,7 +4,7 @@ class ImportVars
   
   def initialize
     @folder = Rails.application.config.cbeta_data
-    @index = Rails.application.config.sphinx_index
+    @index = Rails.configuration.x.se.index_text
   end
   
   def import
@@ -52,7 +52,9 @@ class ImportVars
   end
 
   def read_variants
-    @mysql_client = sphinx_mysql_connection
+    @manticore = ManticoreService.new
+    @mysql_client = @manticore.open
+
     fn = File.join(@folder, 'variants', 'vars-for-cbdata.json')
     puts "read #{fn}"
     variants = JSON.parse(File.read(fn))
@@ -72,10 +74,6 @@ class ImportVars
       @inserts << "('#{k1}', '#{s}')"
     end
 
-    @mysql_client.close
-  end
-  
-  def sphinx_mysql_connection
-    Mysql2::Client.new(:host => 0, :port => 9306, encoding: 'utf8mb4')
-  end
+    @manticore.close
+  end  
 end

@@ -6,8 +6,8 @@ module SphinxShare
     raise "在 works table 裡找不到 #{work}" if w.nil?
 
     data[:title]     = w.title
-    data[:byline]    = w.byline
-    data[:work_type] = w.work_type    unless w.work_type.nil?
+    data[:byline]    = w.byline    unless exclude.include?(:byline)
+    data[:work_type] = w.work_type unless exclude.include?(:work_type) or w.work_type.nil?
 
     unless w.time_dynasty.blank?
       d = w.time_dynasty
@@ -21,7 +21,7 @@ module SphinxShare
 
     data[:category]     = w.category
     data[:category_ids] = w.category_ids
-    data[:alt]          = w.juan_list unless w.alt.nil?
+    data[:alt]          = w.juan_list  unless exclude.include?(:alt) or w.alt.nil?
     data[:juan_list]    = w.juan_list  unless exclude.include?(:juan_list)
     data[:juan_start]   = w.juan_start unless exclude.include?(:juan_start)
     

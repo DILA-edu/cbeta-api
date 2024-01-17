@@ -33,9 +33,9 @@ module SectionSphinx
 
   def step_sphinx_create_folder
     run_step 'sphin 建資料夾' do
-      Dir.chdir('/var/lib/sphinx') do
-        @sphinx_folders.each do |s|
-          command "sudo mkdir #{s}"
+      Dir.chdir(@data_dir) do
+        @indexes.each do |s|
+          command "sudo mkdir data#{@config[:v]}-#{s}"
         end
       end
       change_sphinx_folder_owner
@@ -43,8 +43,8 @@ module SectionSphinx
   end
 
   def change_sphinx_folder_owner
-    @sphinx_folders.each do |s|
-      path = File.join("/var/lib/sphinx", s)
+    @indexes.each do |s|
+      path = File.join(@data_dir, "data#{@config[:v]}-#{s}")
       system "sudo chown -R sphinx:sphinx #{path}"
     end
   end

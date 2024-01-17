@@ -1,5 +1,6 @@
 require 'csv'
 require 'set'
+require 'yaml'
 require_relative '../cbeta_p5a_share'
 
 include CbetaP5aShare
@@ -8,16 +9,13 @@ puts '--'
 print "check new canon..."
 $base = ARGV.first
 
-path = File.join($base, 'cbeta-metadata', 'canons.csv')
-canons = Set.new
-CSV.foreach(path, headers: true) do |row|
-  canons << row['id']
-end
+path = File.join($base, 'cbeta-metadata', 'canons.yml')
+canons = YAML.load_file(path)
 
 path = File.join($base, 'cbeta-xml-p5a')
 new_canon = []
 each_canon(path) do |c|
-  next if canons.include?(c)
+  next if canons.key?(c)
   new_canon << c
 end
 

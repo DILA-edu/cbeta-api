@@ -34,9 +34,9 @@ module CBData
     config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
 
     # Sphinx 相關
-    config.x.sphinx_base = '/etc/sphinx'
-    config.sphinx_index = "cbeta#{config.cb.v}"
-    config.x.sphinx_notes = "notes#{config.cb.v}"
-    config.x.sphinx_titles = "titles#{config.cb.v}"
+    config.x.se.index_text   = "text#{config.cb.v}"
+    config.x.se.index_notes  = "notes#{config.cb.v}"
+    config.x.se.index_titles = "titles#{config.cb.v}"
+    config.x.se.index_chunks = "chunks#{config.cb.v}"
   end
 end

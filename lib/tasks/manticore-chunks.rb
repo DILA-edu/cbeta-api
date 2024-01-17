@@ -1,4 +1,4 @@
-# 讀 CBETA XML，切塊，產生 xml 給 sphinx 做 index
+# 讀 CBETA XML，切塊，產生 xml 給 manticore 做 index
 
 require 'fileutils'
 require 'json'
@@ -7,13 +7,13 @@ require 'cbeta'
 require_relative 'cbeta_p5a_share'
 require_relative 'sphinx-share'
 
-class SphinxChunks
+class ManticoreChunks
   MAX = 100 # 區塊 最長 長度
   OVERLAP = 50 # 前後區塊 重疊 字數
   CB_PRIORITY = %w[uni_char norm_uni_char norm_big5_char PUA] # 缺字 呈現 優先序
 
   def initialize
-    f = Rails.root.join('log', 'sphinx-chunks.log')
+    f = Rails.root.join('log', 'manticore-chunks.log')
     @log = File.open(f, 'w')
 
     @xml_root = Rails.application.config.cbeta_xml
@@ -22,11 +22,9 @@ class SphinxChunks
   end
 
   def convert
-    puts Rails.configuration.cb.git
-    exit
     t1 = Time.now
     @count = 0
-    folder = Rails.root.join('data', 'sphinx-xml')
+    folder = Rails.root.join('data', 'manticore-xml')
     FileUtils.mkpath(folder)
     
     fn = Rails.root.join(folder, 'chunks.xml')
@@ -84,13 +82,15 @@ class SphinxChunks
   
   def convert_sutra(xml_fn)
     @basename = File.basename(xml_fn, '.*')
-    puts "sphinx-chunks.rb #{@basename}"
+    puts "manticore-chunks.rb #{@basename}"
     @first_juan = true
     @blocks = []
     @buf = []
     @work_id = CBETA.get_work_id_from_file_basename(@basename)
     
-    @work_info = get_info_from_work(@work_id, exclude: [:juan_list, :juan_start])
+    @work_info = get_info_from_work(@work_id, 
+      exclude: [:byline, :juan_list, :juan_start, :work_type]
+    )
     raise '@work_info is nil' if @work_info.nil?
 
     doc = File.open(xml_fn) { |f| Nokogiri::XML(f) }

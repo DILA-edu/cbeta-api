@@ -6,7 +6,8 @@ class Quarterly
   require_relative 'section-change-log'
   require_relative 'section-rdb'
   require_relative 'section-convert'
-  require_relative 'section-sphinx'
+  #require_relative 'section-sphinx'
+  require_relative 'section-manticore'
   require_relative 'section-kwic'
   require_relative 'section-download-ebooks'
 
@@ -15,12 +16,12 @@ class Quarterly
     puts "Environment: #{Rails.env}"
     confirm("請先確認 Rails 環境 是否正確")
 
+    @data_dir = '/var/lib/manticore'
     @work_dir = Rails.root.join('lib', 'tasks', 'quarterly')
     @section_count = 0
     @step_count = 0
 
-    v = "data#{@config[:v]}"
-    @sphinx_folders = ["#{v}-text", "#{v}-notes", "#{v}-titles"]
+    @indexes = %w[text notes titles chunks]
   end
 
   def run
@@ -32,7 +33,8 @@ class Quarterly
       run_section_html
       run_section_change_log
       run_section_convert
-      run_section_sphinx
+      #run_section_sphinx
+      run_section_manticore
       run_section_kwic
       run_section_download_ebooks
     end
@@ -74,7 +76,8 @@ class Quarterly
   include SectionChangeLog
   include SectionRDB
   include SectionConvert
-  include SectionSphinx
+  #include SectionSphinx
+  include SectionManticore
   include SectionKwic
   include SectionDownloadEbooks
 

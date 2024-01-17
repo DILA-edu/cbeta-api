@@ -4,7 +4,7 @@
 
 以下相對目錄位於 <https://github.com/DILA-edu/cbeta-metadata>
 
-編輯 `/canons.csv`
+編輯 `/canons.yml`
 
 ### category
 

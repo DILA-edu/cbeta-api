@@ -16,7 +16,7 @@ module Config
     }
     
     r[:quarter] = r[:q2].sub(/^(\d+)(Q\d)$/, '\1.\2')
-    r[:git] = Rails.configuration.x.git
+    r[:git] = Rails.configuration.cb.git
 
     puts "mode: #{Rails.env}"
     case Rails.env

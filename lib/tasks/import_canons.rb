@@ -6,12 +6,12 @@ class ImportCanons
   
   def import
     Canon.delete_all
-    fn = File.join(Rails.application.config.cbeta_data, 'canons.csv')
-    CSV.foreach(fn, headers: true) do |row|
-      id = row['id']
+    fn = File.join(Rails.application.config.cbeta_data, 'canons.yml')
+    canons = YAML.load_file(fn)
+    canons.each do |id, v|
       uuid = @canon_uuid[id]
       Canon.find_or_create_by(id2: id, uuid: uuid) do |c|
-        c.name = row['name']
+        c.name = v['short']
       end
     end
   end

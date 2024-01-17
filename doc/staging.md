@@ -9,9 +9,6 @@
   * deploy
     * 修改 staging.rb 的 deploy_to
     * 修改 procution.org 的 deploy_to
-  * environments
-    * staging.rb
-      * GIT 資料夾
 
 * 修改 lib/tasks/quarterly/config.rb
 
@@ -51,6 +48,12 @@ tables 建好後，再把 analytics 加回 database.yml。
    產生 vars-for-cbdata.json，
    這會合併 Unicode、教育部異體字典、CText、CBETA 等資料。
 3. 將 vars-for-cbdata.json 公開至 <https://github.com/DILA-edu/cbeta-metadata> 裡的 variants
+
+## environment
+
+編輯 /var/www/cbapix/.envrc
+
+    export RAILS_ENV=staging
 
 ## Runbook
 

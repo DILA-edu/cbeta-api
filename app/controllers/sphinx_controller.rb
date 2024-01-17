@@ -15,6 +15,7 @@ class SphinxController < ApplicationController
   MAX_MATCHES = 99_999
 
   before_action :init
+  after_action  :action_ending
   
   # 2019-11-01 決定不以「經」做 group, 因為不能以「經」的 term_hits 做排序
   def all_in_one
@@ -61,7 +62,6 @@ class SphinxController < ApplicationController
       return
     end
     
-    @mysql_client = sphinx_mysql_connection
     where = %{MATCH('"#{@q}"')} + @filter
     @max_matches = MAX_MATCHES
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
@@ -69,8 +69,6 @@ class SphinxController < ApplicationController
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
-  ensure
-    @mysql_client.close unless @mysql_client.nil?
   end
 
   def test
@@ -81,15 +79,12 @@ class SphinxController < ApplicationController
       return
     end
     
-    @mysql_client = sphinx_mysql_connection
     where = %{MATCH('#{@q}')} + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
-  ensure
-    @mysql_client.close
   end  
 
   def extended
@@ -101,12 +96,9 @@ class SphinxController < ApplicationController
       return
     end
     
-    @mysql_client = sphinx_mysql_connection
     where = "MATCH('#{@q}')" + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
-  ensure
-    @mysql_client.close
   end
 
   def notes
@@ -119,7 +111,6 @@ class SphinxController < ApplicationController
       return
     end
     
-    @mysql_client = sphinx_mysql_connection
     @where = "MATCH('#{@q}')" + @filter
     estimate_max_matches
     r = sphinx_search(@fields, @where, @start, @rows, order: @order)
@@ -148,7 +139,6 @@ class SphinxController < ApplicationController
 
     raise CbetaError.new(400), "缺少 q 參數" if @q.empty?
 
-    @mysql_client = sphinx_mysql_connection
     @where = %{MATCH('"#{@q}"')} + @filter
     
     if params.key? :facet_by
@@ -179,7 +169,6 @@ class SphinxController < ApplicationController
       return
     end
     
-    @mysql_client = sphinx_mysql_connection
     where = %{MATCH('#{@q}')} + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
@@ -198,7 +187,6 @@ class SphinxController < ApplicationController
   def variants
     logger.info "scope: #{params[:scope]}"
     t1 = Time.now
-    @mysql_client = sphinx_mysql_connection
     q_ary = get_query_variants(@q)
     
     if @q.include? '菩薩'
@@ -223,8 +211,6 @@ class SphinxController < ApplicationController
       results: results
     }
     my_render r
-  ensure
-    @mysql_client.close unless @mysql_client.nil?
   end
 
   # 以簡體字查詢
@@ -237,7 +223,6 @@ class SphinxController < ApplicationController
     cmd = 'opencc -c s2tw'
     @q, status = Open3.capture2(cmd, stdin_data: params[:q])
 
-    @mysql_client = sphinx_mysql_connection
     where = %{MATCH('"#{@q}"')} + @filter
     i = get_hit_count(where)
     
@@ -284,7 +269,7 @@ class SphinxController < ApplicationController
     end
 
     t1 = Time.now
-    @index = Rails.application.config.x.sphinx_titles
+    @index = Rails.configuration.x.se.index_titles
     s = @q.chars.join(' ')
     @where = %{MATCH('"#{s}"/3')} + @filter # /3 表示 至少要有2個字符合
     @max_matches = MAX_MATCHES
@@ -298,7 +283,6 @@ class SphinxController < ApplicationController
     SQL
 
     logger.info select
-    @mysql_client = sphinx_mysql_connection
     results = @mysql_client.query(select, symbolize_keys: true)    
 
     hits = results.to_a
@@ -332,6 +316,11 @@ class SphinxController < ApplicationController
   end
 
   private
+
+  def action_ending
+    return if @manticore.nil?
+    @manticore.close
+  end
   
   def add_work_info(rows)
     rows.each do |row|
@@ -386,7 +375,6 @@ class SphinxController < ApplicationController
   #         KwicSearvice::search_juan
   def all_in_one_sub
     @canon_name = {}
-    @mysql_client = sphinx_mysql_connection
     @exclude = nil
 
     # 1. Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到,
@@ -552,19 +540,19 @@ class SphinxController < ApplicationController
   def exist_in_cbeta(q)
     logger.info "exist_in_cbeta, q: #{q}"
     if params[:scope] == 'title'
-      index = Rails.configuration.x.sphinx_titles
+      index = Rails.configuration.x.se.index_titles
       r = exist_in_index(q, index)
       logger.info "exist_in_cbeta: #{r}"
       r
     end
 
-    r = exist_in_index(q, Rails.configuration.sphinx_index)
+    r = exist_in_index(q, Rails.configuration.x.se.index_text)
     return true if r
 
-    r = exist_in_index(q, Rails.configuration.x.sphinx_notes)
+    r = exist_in_index(q, Rails.configuration.x.se.index_notes)
     return true if r
 
-    r = exist_in_index(q, Rails.configuration.x.sphinx_titles)
+    r = exist_in_index(q, Rails.configuration.x.se.index_titles)
     return true if r
   end
   
@@ -587,6 +575,7 @@ class SphinxController < ApplicationController
     a.each do |s|
       r << s if exist_in_cbeta(s)
     end
+    logger.info "#{__LINE__} expand_vars_array result: %s" % r.inspect
     r
   end
   
@@ -727,17 +716,21 @@ class SphinxController < ApplicationController
       init_fields
       @index = 
         if params[:scope] == 'title'
-          Rails.configuration.x.sphinx_titles
+          Rails.configuration.x.se.index_titles
         else
-          Rails.application.config.sphinx_index
+          Rails.configuration.x.se.index_text
         end
     else
       init_fields
-      @index = Rails.application.config.sphinx_index
+      @index = Rails.configuration.x.se.index_text
+      logger.info "index: #{@index}"
     end
     
     init_order
     set_filter
+
+    @manticore = ManticoreService.new
+    @mysql_client = @manticore.open
   end
 
   def init_fields
@@ -1213,16 +1206,6 @@ class SphinxController < ApplicationController
     
     results = @mysql_client.query(select, symbolize_keys: true)
     results.to_a
-  end
-
-  def sphinx_mysql_connection
-    r = Mysql2::Client.new(:host => 0, :port => 9306, encoding: 'utf8mb4')
-    if r.nil?
-      msg = "sphinx_controller 開啟 MySQL connection 回傳 nil"
-      logger.fatal msg
-      raise CbetaError.new(500), msg
-    end
-    r
   end
 
   def sphinx_select(fields, opts={})

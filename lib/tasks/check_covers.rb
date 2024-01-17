@@ -4,7 +4,7 @@ class CheckCover
 
   def initialize
     @xml = Rails.application.config.cbeta_xml
-    @base = File.join(Rails.configuration.x.git, 'ebook-covers')
+    @base = File.join(Rails.configuration.cb.git, 'ebook-covers')
   end
   
   def check

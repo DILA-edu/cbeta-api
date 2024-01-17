@@ -2,15 +2,13 @@ require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
-  GIT = '/Users/ray/git-repos'
-  config.x.git       = GIT
-  config.cbeta_xml   = File.join(GIT, 'cbeta-xml-p5a')
-  config.cbeta_data  = File.join(GIT, 'cbeta-metadata')
-  config.cbeta_gaiji = File.join(GIT, 'cbeta_gaiji')
-  config.x.authority = File.join(GIT, 'Authority-Databases')
-  config.x.figures   = File.join(GIT, 'CBR2X-figures')
-  config.x.word_seg  = File.join(GIT, 'word-seg')
-  config.x.seg_bin   = File.join(GIT, 'word-seg', 'bin')
+  config.cbeta_xml   = File.join(config.cb.git, 'cbeta-xml-p5a')
+  config.cbeta_data  = File.join(config.cb.git, 'cbeta-metadata')
+  config.cbeta_gaiji = File.join(config.cb.git, 'cbeta_gaiji')
+  config.x.authority = File.join(config.cb.git, 'Authority-Databases')
+  config.x.figures   = File.join(config.cb.git, 'CBR2X-figures')
+  config.x.word_seg  = File.join(config.cb.git, 'word-seg')
+  config.x.seg_bin   = File.join(config.cb.git, 'word-seg', 'bin')
   config.x.seg_model = Rails.root.join('data', 'crf-model', 'all')
   config.x.work_info = File.join(config.x.authority, 'authority_catalog', 'json')
 
