@@ -13,6 +13,7 @@ class SearchController < ApplicationController
   RANKER = 'wordcount' # ranking by the keyword occurrences count.
   FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 佛典數量 5,617
   MAX_MATCHES = 99_999
+  SIMILAR_K = 1_000
 
   before_action :init
   after_action  :action_ending
@@ -69,6 +70,53 @@ class SearchController < ApplicationController
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
+  end
+
+  def similar
+    t1 = Time.now
+    if Rails.env.production?
+      key = "#{Rails.configuration.cb.r}/search/similar/#{params}-#{@referer_cn}"
+      r = Rails.cache.fetch(key) do
+        similar_sub
+      end
+      r[:cache_key] = key
+    else
+      r = similar_sub
+    end
+    r[:time] = Time.now - t1
+    my_render r
+  end
+
+  def similar_sub
+    @max_matches = params[:k] || SIMILAR_K
+    data = {
+      fields: 'work, title, juan, linehead, content',
+      where: %{MATCH('"#{@q}"/0.5')},
+      rows: @max_matches,
+      ranker: 'proximity_bm25'
+    }
+    r = manticore_search(data)
+
+    i = 0
+    while i < r[:results].size
+      node = r[:results][i]
+      text = CbetaString.new(allow_digit: true).remove_puncs(node[:content])
+      
+      # 去除完全符合的
+      if text.include?(@q)
+        r[:results].delete_at(i)
+        next
+      end
+
+      sw = SmithWaterman.new(@q, text)
+      sw.align!
+      node[:score] = sw.score
+      node[:highlight] = sw.alignment_inspect_b
+      i += 1
+    end
+
+    r[:results].sort_by! { |x| -x[:score] }
+    r
   end
 
   def test
@@ -709,8 +757,9 @@ class SearchController < ApplicationController
     @inline_note = params.key?(:note) ? params[:note]=='1' : true
 
     case action_name
-    when 'notes'
-      init_notes
+    when 'notes' then init_notes
+    when 'similar'
+      @index = Rails.configuration.x.se.index_chunks
     when 'title'
     when 'variants'
       init_fields
@@ -723,10 +772,11 @@ class SearchController < ApplicationController
     else
       init_fields
       @index = Rails.configuration.x.se.index_text
-      logger.info "index: #{@index}"
     end
+
+    logger.info "index: #{@index}"
     
-    init_order
+    init_order unless action_name == 'similar'
     set_filter
 
     @manticore = ManticoreService.new
@@ -1120,6 +1170,82 @@ class SearchController < ApplicationController
     end
 
     @filter += ' AND ' + and_conditions.join(' AND ')
+  end
+
+  def manticore_search(user_args={})
+    args = user_args.with_defaults(
+      start: 0, 
+      rows: @rows, 
+      ranker: RANKER,
+      order: ''
+    )
+    t1 = Time.now
+
+    if args[:start] >= @max_matches
+      raise CbetaError.new(400), "start 參數超出範圍: #{args[:start]}, max_matches: #{@max_matches}, where: #{args[:where]}"
+    end
+    
+    @select = %(
+      SELECT #{args[:fields]}
+      FROM #{@index} 
+      WHERE #{args[:where]} #{args[:order]} 
+      LIMIT #{args[:start]}, #{args[:rows]} 
+      OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
+    ).gsub(/\s+/, " ").strip
+    
+    @select += " FACET #{args[:facet]}" if args.key?(:facet)
+    log("select: #{@select}", __LINE__)
+    begin
+      results = @mysql_client.query(@select, symbolize_keys: true)
+    rescue
+      logger.fatal $!
+      logger.fatal "environment: #{Rails.env}"
+      logger.fatal "select: #{@select}"
+      raise
+    end
+
+    hits = results.to_a
+    return hits if @mode == 'group'
+    logger.info "#{__LINE__} hits size: #{hits.size}"
+    
+    #add_work_info(hits)
+    
+    if args.key?(:facet)
+      if @mysql_client.next_result
+        rows = @mysql_client.store_result
+        facet_result = rows.to_a
+        pp facet_result
+      end
+    end    
+    
+    results = @mysql_client.query("SHOW META LIKE 'total_found%';")
+    
+    a = results.to_a
+    total_found = a[0]['Value'].to_i
+    logger.info "total_found: #{total_found}"
+    
+    if total_found == 0
+      total_term_hits = 0
+    else
+      select2 = <<~SQL
+        SELECT sum(weight()) as sum FROM #{@index} 
+        WHERE #{args[:where]} OPTION ranker=#{args[:ranker]};
+      SQL
+      r = @mysql_client.query(select2)
+      total_term_hits = r.to_a[0]['sum']
+    end
+    
+    r = {
+      query_string: @q,
+      SQL: @select,
+      time: Time.now - t1,
+      num_found: total_found,
+      total_term_hits: total_term_hits,
+      cache_key: nil
+    }
+    r[:facet] = facet_result if args.key?(:facet)
+    r[:results] = hits
+    r
   end
 
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)

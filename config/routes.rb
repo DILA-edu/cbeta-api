@@ -47,6 +47,7 @@ Rails.application.routes.draw do
   match 'search/kwic',            to: 'kwic3#juan',        via: [:get, :post]
   match 'search/notes',           to: 'search#notes',      via: [:get, :post]
   match 'search/sc',              to: 'search#sc',         via: [:get, :post]
+  match 'search/similar',         to: 'search#similar',    via: [:get, :post]
   match 'search/synonym',         to: 'search#synonym',    via: [:get, :post]
   match 'search/title',           to: 'search#title',      via: [:get, :post]
   match 'search/variants',        to: 'search#variants',   via: [:get, :post]
@@ -91,6 +92,7 @@ Rails.application.routes.draw do
   get 'static_pages/search_kwic'
   get 'static_pages/search_notes'
   get 'static_pages/search_sc'
+  get 'static_pages/search_similar'
   get 'static_pages/search_synonym'
   get 'static_pages/search_title'
   get 'static_pages/search_vars'
