@@ -36,20 +36,31 @@ Rails.application.routes.draw do
   
   match 'lines', to: 'lines#index', via: [:get, :post]
   
-  get 'report/access'
+  get   'report/access'
   get   'report/daily',   to: 'report#daily',   as: :report_daily
   match 'report/url',     to: 'report#url',     as: :report_url,     via: [:get, :post]
   match 'report/referer', to: 'report#referer', as: :report_referer, via: [:get, :post]
 
-  match 'sphinx/all_in_one', via: [:get, :post]
-  match 'sphinx/facet/:facet_by', to: 'sphinx#facet', via: [:get, :post]
-  match 'sphinx/extended',  via: [:get, :post]
-  match 'sphinx/notes',     via: [:get, :post]
-  match 'sphinx/sc',        via: [:get, :post]
-  match 'sphinx/synonym',   via: [:get, :post]
-  match 'sphinx/title',     via: [:get, :post]
-  match 'sphinx/variants',  via: [:get, :post]
-  match 'sphinx', to: 'sphinx#index', via: [:get, :post]
+  match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
+  match 'search/extended',        to: 'search#extended',   via: [:get, :post]
+  match 'search/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
+  match 'search/kwic',            to: 'kwic3#juan',        via: [:get, :post]
+  match 'search/notes',           to: 'search#notes',      via: [:get, :post]
+  match 'search/sc',              to: 'search#sc',         via: [:get, :post]
+  match 'search/synonym',         to: 'search#synonym',    via: [:get, :post]
+  match 'search/title',           to: 'search#title',      via: [:get, :post]
+  match 'search/variants',        to: 'search#variants',   via: [:get, :post]
+  match 'search',                 to: 'search#index',      via: [:get, :post]
+
+  match 'sphinx/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
+  match 'sphinx/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
+  match 'sphinx/extended',        to: 'search#extended',   via: [:get, :post]
+  match 'sphinx/notes',           to: 'search#notes',      via: [:get, :post]
+  match 'sphinx/sc',              to: 'search#sc',         via: [:get, :post]
+  match 'sphinx/synonym',         to: 'search#synonym',    via: [:get, :post]
+  match 'sphinx/title',           to: 'search#title',      via: [:get, :post]
+  match 'sphinx/variants',        to: 'search#variants',   via: [:get, :post]
+  match 'sphinx',                 to: 'search#index',      via: [:get, :post]
 
   get 'static_pages/catalog'
   get 'static_pages/callback'
@@ -72,6 +83,19 @@ Rails.application.routes.draw do
   get 'static_pages/rise_shine'
   get 'static_pages/sc2tc'
   get 'static_pages/scope_selector'
+
+  get 'static_pages/search_all_in_one'
+  get 'static_pages/search_extended'
+  get 'static_pages/search_facet'
+  get 'static_pages/search_filter'
+  get 'static_pages/search_kwic'
+  get 'static_pages/search_notes'
+  get 'static_pages/search_sc'
+  get 'static_pages/search_synonym'
+  get 'static_pages/search_title'
+  get 'static_pages/search_vars'
+  get 'static_pages/search'
+
   get 'static_pages/sphinx_all_in_one'
   get 'static_pages/sphinx_extended'
   get 'static_pages/sphinx_facet'

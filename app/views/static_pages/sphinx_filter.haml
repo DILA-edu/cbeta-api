@@ -1,4 +1,9 @@
 %h1 限制搜尋範圍
+%p 
+  停用，請改用 
+  =link_to "Search/限制搜尋範圍", controller: 'static_pages', action: 'search_filter'
+  ，2025 年起停用此 endpoint。
+
 %h2 部類
 %p 例：#{link_to_url '/sphinx?q=法鼓&category=阿含部類'}
 %p category 參數值如果為 a,b+c,d 格式，表示 (a OR b) AND (c OR d)。

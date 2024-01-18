@@ -1,0 +1,37 @@
+%h1 擴充模式 全文檢索
+%p
+  例：#{link_to_url '/search/extended?q="法鼓"'}
+
+%p 請注意上面的雙引號不可省略。
+
+%p 以下範例均要做 URL encode, 例如：
+
+%pre "波羅蜜" | "波羅密"
+
+%p 要編碼為
+
+%pre %22波羅蜜%22%20%7C%20%22波羅密%22
+
+%h1 AND
+
+%p 多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
+
+%p 例：#{link_to_url '/search/extended?q="法鼓" "聖嚴"'}
+
+%h1 OR
+
+%pre "波羅蜜" | "波羅密"
+
+%p 例：#{link_to_url '/search/extended?q="波羅蜜" | "波羅密"'}
+
+%h1 NOT
+
+%p 例：#{link_to_url '/search/extended?q="迦葉" !"迦葉佛"'}
+
+%h1 NEAR 搜尋
+
+%p 
+  例：
+  =link_to_url '/search/all_in_one?q="法鼓" NEAR/7 "迦葉"'
+
+%p NEAR/ 後面的數字 表示兩個關鍵詞中間的距離

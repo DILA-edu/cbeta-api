@@ -1,11 +1,7 @@
 %h1 All in One
-%p 
-  停用，請改用 
-  =link_to "search/all_in_one", controller: 'static_pages', action: 'search_all_in_one'
-  ，2025 年起停用此 endpoint。
 
 %ul
-  %li 一併回傳 KWIC, 例：#{link_to_url '/sphinx/all_in_one?q=法鼓'}
+  %li 一併回傳 KWIC, 例：#{link_to_url '/search/all_in_one?q=法鼓'}
   %li 可選擇是否連同 facet 一起回傳。
   %li 分頁以卷為單位。
 
@@ -17,7 +13,7 @@
   %tr
     %td q
     %td
-      =render partial: 'sphinx-aio-q'
+      =render partial: 'search-aio-q'
   %tr
     %td note
     %td 是否含夾注： 0: 不含夾注。 1: 含夾注(預設值)。
@@ -25,7 +21,7 @@
     %td fields
     %td 
       指定要回傳哪些欄位，例：
-      =link_to_url '/sphinx/all_in_one?q=法鼓&fields=work,juan,term_hits'
+      =link_to_url '/search/all_in_one?q=法鼓&fields=work,juan,term_hits'
   %tr
     %td facet
     %td 
@@ -58,7 +54,7 @@
 
 %h2 不回傳 facet 範例：
 %pre
-  =render partial: 'sphinx-aio-return'
+  =render partial: 'search-aio-return'
 
 %h2 回傳 facet 範例：
 %pre

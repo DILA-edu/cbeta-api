@@ -9,7 +9,7 @@
 require 'csv'
 require 'open3'
 
-class SphinxController < ApplicationController
+class SearchController < ApplicationController
   RANKER = 'wordcount' # ranking by the keyword occurrences count.
   FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 佛典數量 5,617
   MAX_MATCHES = 99_999

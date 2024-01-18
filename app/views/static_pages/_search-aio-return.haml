@@ -1,0 +1,60 @@
+:preserve
+  {
+    "query_string": "法鼓",
+    "SQL": "SELECT id, juan, canon, vol, work, byline, weight() as term_hits FROM cbeta WHERE MATCH('\"法鼓\"') LIMIT 0, 20 OPTION ranker=wordcount,max_matches=1062",
+    "time": 0.272479,
+    "num_found": 1059,
+    "total_term_hits": 1492,
+    "results": [
+      {
+        "juan": 1,
+        "canon": "T",
+        "vol": "T09",
+        "work": "T0270",
+        "byline": "劉宋 求那跋陀羅譯",
+        "term_hits": 31,
+        "title": "大法鼓經",
+        "juan_list": "1,2",
+        "file": "T09n0270",
+        "juan_start": 1,
+        "kwics": {
+          "num_found": 31,
+          "results": [
+            {
+              "lb": "0292a22",
+              "kwic": "；法王祇洹林，擊於大&lt;mark>法鼓&lt;/mark>。」佛告迦葉：「汝今"
+            },
+            {
+              "lb": "0291c14",
+              "kwic": "世尊說大法鼓經、擊大&lt;mark>法鼓&lt;/mark>、吹大法䗍。」佛言："
+            },...
+          ]
+        }
+      },
+      {
+        "juan": 2,
+        "canon": "T",
+        "vol": "T09",
+        "work": "T0270",
+        "byline": "劉宋 求那跋陀羅譯",
+        "term_hits": 15,
+        "title": "大法鼓經",
+        "juan_list": "1,2",
+        "file": "T09n0270",
+        "juan_start": 1,
+        "kwics": {
+          "num_found": 15,
+          "results": [
+            {
+              "lb": "0298c21",
+              "kwic": "護持如今正法，當擊大&lt;mark>法鼓&lt;/mark>、吹大法䗍、設大法會"
+            },
+            {
+              "lb": "0299a10",
+              "kwic": "——於我滅後，當擊大&lt;mark>法鼓&lt;/mark>、吹大法䗍、設大法會"
+            },...
+          ]
+        }
+      },...
+    ]
+  }
