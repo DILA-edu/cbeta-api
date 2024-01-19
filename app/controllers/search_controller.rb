@@ -87,37 +87,6 @@ class SearchController < ApplicationController
     my_render r
   end
 
-  def similar_sub
-    @max_matches = params[:k] || SIMILAR_K
-    data = {
-      fields: 'work, title, juan, linehead, content',
-      where: %{MATCH('"#{@q}"/0.5')},
-      rows: @max_matches,
-      ranker: 'proximity_bm25'
-    }
-    r = manticore_search(data)
-
-    i = 0
-    while i < r[:results].size
-      node = r[:results][i]
-      text = CbetaString.new(allow_digit: true).remove_puncs(node[:content])
-      
-      # 去除完全符合的
-      if text.include?(@q)
-        r[:results].delete_at(i)
-        next
-      end
-
-      sw = SmithWaterman.new(@q, text)
-      sw.align!
-      node[:score] = sw.score
-      node[:highlight] = sw.alignment_inspect_b
-      i += 1
-    end
-
-    r[:results].sort_by! { |x| -x[:score] }
-    r
-  end
 
   def test
     remove_puncs_from_query
@@ -921,20 +890,23 @@ class SearchController < ApplicationController
     end
 
     unless dest.key?(k)
-      dest[k] = { canon: k, canon_name: name, hits: 0, docs: 0 }
+      dest[k] = { canon: k, canon_name: name, hits: 0 }
+      dest[k][:docs] = 0 unless action_name == 'similar'
     end
-    dest[k][:hits] += juan[:term_hits]
-    dest[k][:docs] += 1
+
+    dest[k][:hits] += (juan[:term_hits] || 1)
+    dest[k][:docs] += 1 unless action_name == 'similar'
   end
 
   # 部類可能有多值, 例如 T0310 的部類: "寶積部類,淨土宗部類"
   def my_facet_catetory(juan, dest)
     juan[:category].split(',').each do |c|
       unless dest.key?(c)
-        dest[c] = { category_name: c, hits: 0, docs: 0 }
+        dest[c] = { category_name: c, hits: 0 }
+        dest[k][:docs] = 0 unless action_name == 'similar'
       end
-      dest[c][:hits] += juan[:term_hits]
-      dest[c][:docs] += 1
+      dest[c][:hits] += (juan[:term_hits] || 1)
+      dest[c][:docs] += 1 unless action_name == 'similar'
     end
   end
 
@@ -943,29 +915,32 @@ class SearchController < ApplicationController
     juan[:creators_with_id].split(';').each do |c|
       name, id = c.scan(/^(.*)\((.*)\)$/).first
       unless dest.key?(id)
-        dest[id] = { creator_id: id, creator_name: name, hits: 0, docs: 0 }
+        dest[id] = { creator_id: id, creator_name: name, hits: 0 }
+        dest[k][:docs] = 0 unless action_name == 'similar'
       end
-      dest[id][:hits] += juan[:term_hits]
-      dest[id][:docs] += 1
+      dest[id][:hits] += (juan[:term_hits] || 1)
+      dest[id][:docs] += 1 unless action_name == 'similar'
     end
   end
 
   def my_facet_dynasty(juan, dest)
-    d = juan[:time_dynasty]
+    d = juan[:time_dynasty] || juan[:dynasty]
     unless dest.key?(d)
-      dest[d] = { dynasty: d, hits: 0, docs: 0 }
+      dest[d] = { dynasty: d, hits: 0 }
+      dest[k][:docs] = 0 unless action_name == 'similar'
     end
-    dest[d][:hits] += juan[:term_hits]
-    dest[d][:docs] += 1
+    dest[d][:hits] += (juan[:term_hits] || 1)
+    dest[d][:docs] += 1 unless action_name == 'similar'
   end
 
   def my_facet_work(juan, dest)
     k = juan[:work]
     unless dest.key?(k)
-      dest[k] = { work: k, title: juan[:title], hits: 0, docs: 0 }
+      dest[k] = { work: k, title: juan[:title], hits: 0 }
+      dest[k][:docs] = 0 unless action_name == 'similar'
     end
-    dest[k][:hits] += juan[:term_hits]
-    dest[k][:docs] += 1
+    dest[k][:hits] += (juan[:term_hits] || 1)
+    dest[k][:docs] += 1 unless action_name == 'similar'
   end
 
   def kwic_by_juan(r)
@@ -1246,6 +1221,90 @@ class SearchController < ApplicationController
     r[:facet] = facet_result if args.key?(:facet)
     r[:results] = hits
     r
+  end
+
+  def similar_sub
+    @canon_name = {}
+    @max_matches = params[:k] || SIMILAR_K
+    data = {
+      fields: 'id, canon, category, work, title, juan, creators_with_id, dynasty, linehead, content',
+      where: %{MATCH('"#{@q}"/0.5')} + @filter,
+      rows: @max_matches,
+      ranker: 'proximity_bm25'
+    }
+    where = %{MATCH('"#{@q}"')} + @filter
+
+    r = manticore_search(data)
+    hits = r[:results]
+
+    similar_smith_waterman(hits)
+    similar_rm_duplicate(hits)
+    hits.sort_by! { |x| -x[:score] }
+
+    r.delete(:total_term_hits)
+    r[:num_found] = hits.size
+
+    if params[:facet] == '1'
+      r[:facet] = my_facet(r[:results])
+    end
+    
+    r
+  end
+
+  def similar_smith_waterman(hits)
+    i = 0
+    while i < hits.size
+      node = hits[i]
+      text = CbetaString.new(allow_digit: true).remove_puncs(node[:content])
+      
+      # 去除完全符合的
+      if text.include?(@q)
+        hits.delete_at(i)
+        next
+      end
+
+      sw = SmithWaterman.new(@q, text)
+      sw.align!
+      node[:score] = sw.score
+      node[:highlight] = sw.alignment_inspect_b
+      i += 1
+    end
+  end
+
+  def similar_rm_duplicate(hits)
+    i = 0
+    nodes = {}
+    while i < hits.size
+      node = hits[i]
+      node2 = nil
+
+      if nodes.key?(node[:id]-1)
+        node2 = nodes[node[:id]-1]
+      end
+      
+      if node2.nil? and nodes.key?(node[:id]+1)
+        node2 = nodes[node[:id]+1]
+      end
+
+      if node2.nil?
+        i += 1
+        nodes[node[:id]] = node
+        next
+      end
+      
+      regx = /<mark>.*?<\/mark>/
+      mark1 = node[:highlight].match(regx).to_s
+      mark2 = node2[:highlight].match(regx).to_s
+
+      # 去除重複
+      if mark1 == mark2
+        hits.delete_at(i)
+        next
+      end
+
+      nodes[node[:id]] = node
+      i += 1
+    end
   end
 
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)

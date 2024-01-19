@@ -2,3 +2,38 @@
 
 %p 例：#{link_to_url '/search/similar?q=已得善提捨不證'}
 
+%h2 參數
+%table.table
+  %tr
+    %th 參數名稱
+    %th 說明
+  %tr
+    %td q
+    %td 要搜尋的字串。不含標點。建議長度在 6~50 字之間。
+  %tr
+    %td k
+    %td 第一階段使用 Manticore 模糊搜尋，取 top k 筆數。預設為 1,000.
+  %tr
+    %td 限制搜尋範圍
+    %td 
+      請參考：
+      =link_to nil, controller: 'static_pages', action: 'search_filter'
+  %tr
+    %td facet
+    %td 
+      %p 是否回傳 facet。
+      %p 預設為 0: 不回傳 facet。
+      %p 若設為 1 則會回傳五種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。
+
+%h2 回傳
+%table.table
+  %tr
+    %th 欄位名稱
+    %th 說明
+  %tr
+    %td highlight
+    %td
+      %ul
+        %li= "經 Smith-Waterman 演算法比對最長符合的字串以 <mark>...</mark> 標記。"
+        %li= "mark 內與 q 參數的差異以 <del>..</del> 標記。"
+        %li= "mark 標記以外，包含在 q 參數內的字元以 <em>..</em> 標記。"
