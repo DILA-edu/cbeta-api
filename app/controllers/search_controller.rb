@@ -30,15 +30,11 @@ class SearchController < ApplicationController
     end
 
     t1 = Time.now
-    if Rails.env.production?
-      key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
-      r = Rails.cache.fetch(key) do
-        all_in_one_sub
-      end
-      r[:cache_key] = key
-    else
-      r = all_in_one_sub
+    key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
+    r = Rails.cache.fetch(key) do
+      all_in_one_sub
     end
+    r[:cache_key] = key
 
     r[:time] = Time.now - t1
     
@@ -74,19 +70,14 @@ class SearchController < ApplicationController
 
   def similar
     t1 = Time.now
-    if Rails.env.production?
-      key = "#{Rails.configuration.cb.r}/search/similar/#{params}-#{@referer_cn}"
-      r = Rails.cache.fetch(key) do
-        similar_sub
-      end
-      r[:cache_key] = key
-    else
-      r = similar_sub
+    key = "#{Rails.configuration.cb.r}/search/similar/#{params}-#{@referer_cn}"
+    r = Rails.cache.fetch(key) do
+      similar_sub
     end
+    r[:cache_key] = key
     r[:time] = Time.now - t1
     my_render r
   end
-
 
   def test
     remove_puncs_from_query
@@ -202,31 +193,16 @@ class SearchController < ApplicationController
   #   * 大比丘三千威儀
   #   * 阿耨多羅三藐三菩提
   def variants
-    logger.info "scope: #{params[:scope]}"
     t1 = Time.now
-    q_ary = get_query_variants(@q)
-    
-    if @q.include? '菩薩'
-      q = @q.gsub('菩薩', '𦬇')
-      a = get_query_variants(q)
-      a.delete_if {|s| s.include? '菩薩' } # 去除重複
-      q_ary += a
+
+    key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
+    r = Rails.cache.fetch(key) do
+      variants_sub
     end
-    
-    results = []
-    q_ary.each do |q|
-      next if q == @q
-      where = %{MATCH('"#{q}"')} + @filter
-      i = get_hit_count(where)
-      results << { q: q, hits: i } unless i==0
-    end
-    
-    r = {
-      time: Time.now - t1,
-      num_found: results.size,
-      possibility: q_ary.size,
-      results: results
-    }
+
+    r[:cache_key] = key
+    r[:time] = Time.now - t1
+
     my_render r
   end
 
@@ -474,8 +450,8 @@ class SearchController < ApplicationController
     @mysql_client.close
   end
 
-
   def downsize_vars_array(vars)
+    logger.info "downsize_vars_array, vars: #{vars}"
     return vars if vars.size < 5
     vars2 = vars.clone
     r = []
@@ -490,8 +466,10 @@ class SearchController < ApplicationController
       if vars2.size == 1
         a << vars2.shift
       end
+      logger.info "downsize_vars_array, a: #{a}"
       r << expand_vars_array(a, true)
     end
+    logger.info "downsize_vars_array, r: #{r}"
     r
   end
   
@@ -681,10 +659,11 @@ class SearchController < ApplicationController
     vars = []
     q.each_char do |c|
       v = Variant.find_by(k: c)
-      vars << [c]
+      vars << Set[c]
       unless v.nil?
-        vars[-1] += v.vars.split(',')
+        vars[-1].merge(v.vars.split(','))
       end
+      vars[-1] = vars[-1].to_a
     end
     vars = downsize_vars_array(vars)
     return expand_vars_array(vars, true)
@@ -789,7 +768,7 @@ class SearchController < ApplicationController
   end
 
   def init_notes
-    @index = Rails.configuration.x.sphinx_notes
+    @index = Rails.configuration.x.se.index_notes
     q = @q.sub(/~\d+$/, '') # 拿掉 near ~ 後面的數字
     q.gsub!(/[\-!]".*?"/, '')
     keys = q.split(/["\-\| ]/)
@@ -1152,7 +1131,8 @@ class SearchController < ApplicationController
       start: 0, 
       rows: @rows, 
       ranker: RANKER,
-      order: ''
+      order: '',
+      count_hits: true
     )
     t1 = Time.now
 
@@ -1197,17 +1177,24 @@ class SearchController < ApplicationController
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
-    logger.info "total_found: #{total_found}"
+    logger.info "#{__LINE__} total_found: #{total_found}"
     
-    if total_found == 0
-      total_term_hits = 0
-    else
-      select2 = <<~SQL
-        SELECT sum(weight()) as sum FROM #{@index} 
-        WHERE #{args[:where]} OPTION ranker=#{args[:ranker]};
-      SQL
-      r = @mysql_client.query(select2)
-      total_term_hits = r.to_a[0]['sum']
+    total_term_hits = nil
+    if args[:count_hits]
+      if total_found == 0
+        total_term_hits = 0
+      else
+        # ranker 如果是 proximity_bm25, 執行以下動作會當機
+        select2 = <<~SQL
+          SELECT sum(weight()) as sum FROM #{@index} 
+          WHERE #{args[:where]} 
+          OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
+        SQL
+        logger.info "#{__LINE__} 計算 total_term_hits: #{select2}"
+        r = @mysql_client.query(select2)
+        total_term_hits = r.to_a[0]['sum']
+        logger.info "#{__LINE__} total_term_hits: #{total_term_hits}"
+      end
     end
     
     r = {
@@ -1215,29 +1202,33 @@ class SearchController < ApplicationController
       SQL: @select,
       time: Time.now - t1,
       num_found: total_found,
-      total_term_hits: total_term_hits,
       cache_key: nil
     }
+    r[:total_term_hits] = total_term_hits unless total_term_hits.nil?
     r[:facet] = facet_result if args.key?(:facet)
     r[:results] = hits
     r
   end
 
   def similar_sub
+    logger.info "similar_sub"
     @canon_name = {}
     @max_matches = params[:k] || SIMILAR_K
     data = {
       fields: 'id, canon, category, work, title, juan, creators_with_id, dynasty, linehead, content',
       where: %{MATCH('"#{@q}"/0.5')} + @filter,
       rows: @max_matches,
-      ranker: 'proximity_bm25'
+      ranker: 'proximity_bm25',
+      count_hits: false
     }
     where = %{MATCH('"#{@q}"')} + @filter
 
     r = manticore_search(data)
     hits = r[:results]
 
+    logger.info "begin similar_smith_waterman"
     similar_smith_waterman(hits)
+    logger.info "begin similar_rm_duplicate"
     similar_rm_duplicate(hits)
     hits.sort_by! { |x| -x[:score] }
 
@@ -1252,6 +1243,7 @@ class SearchController < ApplicationController
   end
 
   def similar_smith_waterman(hits)
+    logger.info "begin similar_smith_waterman, hits size: #{hits.size}"
     i = 0
     while i < hits.size
       node = hits[i]
@@ -1269,6 +1261,7 @@ class SearchController < ApplicationController
       node[:highlight] = sw.alignment_inspect_b
       i += 1
     end
+    logger.info "end similar_smith_waterman"
   end
 
   def similar_rm_duplicate(hits)
@@ -1430,6 +1423,40 @@ class SearchController < ApplicationController
 
   def log(msg, line)
     logger.info "#{File.basename(__FILE__)}, line: #{line}, #{msg}"
+  end
+
+  # 根據異體字表，回傳各種可能異體字串及搜尋結果筆數
+  # 效率測試：
+  #   * 無上正等正覺
+  #   * 大比丘三千威儀
+  #   * 阿耨多羅三藐三菩提
+  def variants_sub
+    logger.info "scope: #{params[:scope]}"
+    t1 = Time.now
+    q_ary = get_query_variants(@q)
+    
+    if @q.include? '菩薩'
+      q = @q.gsub('菩薩', '𦬇')
+      a = get_query_variants(q)
+      a.delete_if {|s| s.include? '菩薩' } # 去除重複
+      q_ary += a
+    end
+    
+    results = []
+    q_ary.each do |q|
+      next if q == @q
+      where = %{MATCH('"#{q}"')} + @filter
+      i = get_hit_count(where)
+      results << { q: q, hits: i } unless i==0
+    end
+    
+    {
+      time: Time.now - t1,
+      num_found: results.size,
+      cache_key: nil,
+      possibility: q_ary.size,
+      results: results
+    }
   end
 
 end
