@@ -17,6 +17,10 @@ class SearchController < ApplicationController
 
   before_action :init
   after_action  :action_ending
+
+  def initialize
+    logger.info "SearchController initialize"
+  end
   
   # 2019-11-01 決定不以「經」做 group, 因為不能以「經」的 term_hits 做排序
   def all_in_one
@@ -882,7 +886,7 @@ class SearchController < ApplicationController
     juan[:category].split(',').each do |c|
       unless dest.key?(c)
         dest[c] = { category_name: c, hits: 0 }
-        dest[k][:docs] = 0 unless action_name == 'similar'
+        dest[c][:docs] = 0 unless action_name == 'similar'
       end
       dest[c][:hits] += (juan[:term_hits] || 1)
       dest[c][:docs] += 1 unless action_name == 'similar'
@@ -895,7 +899,7 @@ class SearchController < ApplicationController
       name, id = c.scan(/^(.*)\((.*)\)$/).first
       unless dest.key?(id)
         dest[id] = { creator_id: id, creator_name: name, hits: 0 }
-        dest[k][:docs] = 0 unless action_name == 'similar'
+        dest[id][:docs] = 0 unless action_name == 'similar'
       end
       dest[id][:hits] += (juan[:term_hits] || 1)
       dest[id][:docs] += 1 unless action_name == 'similar'
@@ -906,7 +910,7 @@ class SearchController < ApplicationController
     d = juan[:time_dynasty] || juan[:dynasty]
     unless dest.key?(d)
       dest[d] = { dynasty: d, hits: 0 }
-      dest[k][:docs] = 0 unless action_name == 'similar'
+      dest[d][:docs] = 0 unless action_name == 'similar'
     end
     dest[d][:hits] += (juan[:term_hits] || 1)
     dest[d][:docs] += 1 unless action_name == 'similar'
@@ -1158,6 +1162,7 @@ class SearchController < ApplicationController
       logger.fatal "select: #{@select}"
       raise
     end
+    logger.info "#{__LINE__} mysql query 完成"
 
     hits = results.to_a
     return hits if @mode == 'group'
