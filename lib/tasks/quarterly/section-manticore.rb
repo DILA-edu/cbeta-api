@@ -21,12 +21,15 @@ module SectionManticore
   end
 
   def step_manticore_config
+    run_step 'manticore configuration' do
+      command "bundle exec rake manticore:conf"
+      puts "可以手動清除 #{base} 資料夾下的舊資料"
+    end
+
     confirm "手動編輯 /etc/manticoresearch/manticore.conf"
   end
 
-  def step_manticore_index
-    @indexes = %w[text notes titles chunks]
-    
+  def step_manticore_index    
     if Rails.env.development?
       run_step 'manticore index' do
         Dir.chdir('/Users/ray/Documents/Projects/CBETAOnline/manticore') do

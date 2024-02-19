@@ -21,7 +21,7 @@ class Quarterly
     @section_count = 0
     @step_count = 0
 
-    @indexes = %w[text notes titles chunks]
+    @indexes = Rails.configuration.se.indexes
   end
 
   def run

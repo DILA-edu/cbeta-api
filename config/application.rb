@@ -33,7 +33,9 @@ module CBData
     config.x.kwic.html = File.join(config.x.kwic.base, 'html')
     config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
 
-    # Sphinx 相關
+    # Search engine 相關
+    config.x.se.conf = "/etc/mancitoresearch"
+    config.x.se.indexes = %w[text notes titles chunks]
     config.x.se.index_text   = "text#{config.cb.v}"
     config.x.se.index_notes  = "notes#{config.cb.v}"
     config.x.se.index_titles = "titles#{config.cb.v}"
