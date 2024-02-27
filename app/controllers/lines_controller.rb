@@ -90,12 +90,14 @@ class LinesController < ApplicationController
   end  
   
   def get_next_lines(linehead, after, result)
-    lines = Line.where("linehead > ?", linehead).order(:linehead).first(after)
+    line = Line.find_by(linehead:)
+    lines = Line.where("ser_no > ?", line.ser_no).order(:ser_no).first(after)
     add_lines_to_result result, lines
   end
   
   def get_previous_lines(linehead, before, result)
-    lines = Line.where("linehead < ?", linehead).order(linehead: :desc).first(before)
+    line = Line.find_by(linehead:)
+    lines = Line.where("ser_no < ?", line.ser_no).order(ser_no: :desc).first(before)
     add_lines_to_result result, lines
   end
 end

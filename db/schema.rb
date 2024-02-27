@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2023_06_07_054230) do
+ActiveRecord::Schema.define(version: 2024_02_22_014726) do
 
   create_table "canons", force: :cascade do |t|
     t.string "id2"
@@ -81,7 +81,16 @@ ActiveRecord::Schema.define(version: 2023_06_07_054230) do
     t.text "html"
     t.text "notes"
     t.integer "juan"
+    t.string "work"
+    t.string "vol"
+    t.string "page"
+    t.string "col"
+    t.string "line"
+    t.integer "ser_no"
     t.index ["linehead"], name: "index_lines_on_edition_and_linehead"
+    t.index ["ser_no"], name: "index_lines_on_ser_no"
+    t.index ["vol", "page", "col", "line"], name: "index_lines_on_vol_and_page_and_col_and_line"
+    t.index ["work", "juan", "ser_no"], name: "index_lines_on_work_and_juan_and_ser_no"
   end
 
   create_table "people", force: :cascade do |t|

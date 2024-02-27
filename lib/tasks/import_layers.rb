@@ -265,7 +265,9 @@ class ImportLayers
       next if row['lb'].start_with? 'f'
 
       begin
-        work, juan = JuanLine.find_by_vol_lb(@vol, row['lb'])
+        line = Line.find_by_vol_lb(@vol, row['lb'])
+        work = line.work
+        juan = line.juan
       rescue => e
         puts '-' * 10
         puts e.message

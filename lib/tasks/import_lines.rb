@@ -25,6 +25,7 @@ class ImportLines
   def import(arg)
     start_time = Time.now
     $stderr.puts "import lines: #{arg}"
+    @ser_no = 0
 
     $stderr.puts "delete old data from table lines"
     if arg.nil?
@@ -33,13 +34,8 @@ class ImportLines
       Line.where("linehead LIKE '#{arg}%'").delete_all
     end    
     
-    if arg.nil?
-      import_all
-    elsif arg.size.between?(1,2)
-      import_canon(arg)
-    else
-      import_vol(arg)
-    end    
+    # 因為全部有個 序號，必須全部執行，不能只執行部分
+    import_all
     
     $stderr.puts "花費時間：" + Time.diff(start_time, Time.now)[:diff]
   end
@@ -91,7 +87,17 @@ class ImportLines
   def e_g(e)
     gid = e['ref'][1..-1]
     g = @gaijis[gid]
-    abort "Line:#{__LINE__} 無缺字資料:#{gid}" if g.nil?
+    
+    if g.nil?
+      case Rails.env
+      when 'production'
+        abort "Line:#{__LINE__} 無缺字資料:#{gid}" 
+      when 'staging'
+        puts "警告：#{__LINE__} 無缺字資料:#{gid}" 
+      else
+        return "[#{gid}]"
+      end
+    end
     
     if gid.start_with?('SD') or gid.start_with?('RJ')
       return g['symbol'] unless g['symbol'].blank?
@@ -299,10 +305,11 @@ class ImportLines
       next if v.start_with? '.'
       import_vol(v)
     end
+    puts
   end
     
   def import_vol(vol)
-    $stderr.puts "import_lines #{vol}"
+    print vol + ' '
     
     @canon = CBETA.get_canon_from_vol(vol)    
     @vol = vol
@@ -317,16 +324,15 @@ class ImportLines
       import_xml_file(p)
     end
     
-    sql = 'INSERT INTO lines ("linehead", "html", "notes", "juan")'
+    sql = 'INSERT INTO lines '\
+          '("linehead", "html", "notes", "juan", "work", "vol", "page", "col", "line", "ser_no")'
     sql << ' VALUES ' + @inserts.join(", ")
     ActiveRecord::Base.connection.execute(sql)
   end
   
   def import_xml_file(fn)
-    @work_id = File.basename(fn, ".xml")
-    if @work_id.match(/^(T\d\dn0220).*$/)
-      @work_id = $1
-    end
+    basename = File.basename(fn, ".xml")
+    @work_id = CBETA.get_work_id_from_file_basename(basename)
     doc = open_xml(fn)
     before_traverse_xml(doc)
     root = doc.root()
@@ -373,10 +379,9 @@ class ImportLines
   def html_to_inserts(html)
     if Rails.env.development?
       # 把內容留下來 debug 用
-      folder = File.join(Dir.home, 'temp', 'cbeta-lines')
+      folder = Rails.root.join('data', 'tmp', 'cbeta-lines')
       FileUtils.mkdir_p folder
       fn = File.join(folder, "#{@work_id}.htm")
-      $stderr.puts "write #{fn}"
       File.write(fn, html)
     end
     
@@ -386,11 +391,19 @@ class ImportLines
         lb = $1
         juan = $2
         line_html = $3
+        if lb.match(/^(.*)([a-z])(\d+)$/)
+          page = $1
+          col = $2
+          line = $3
+        else
+          abort "#{__LINE__}, lb: #{lb}"
+        end
         linehead = @work_id.clone
         linehead << '_' if @work_id.match?(/\d$/)
         linehead << "p#{lb}"
         notes = JSON.generate(@notes[lb]) if @notes.key? lb
-        @inserts << "('#{linehead}', '#{line_html}', '#{notes}', #{juan})"
+        @ser_no += 1
+        @inserts << "('#{linehead}', '#{line_html}', '#{notes}', #{juan}, '#{@work_id}', '#{@vol}', '#{page}', '#{col}', '#{line}', #{@ser_no})"
       }
     end
   end

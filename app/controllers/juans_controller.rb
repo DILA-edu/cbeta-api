@@ -148,27 +148,26 @@ class JuansController < ApplicationController
     }
     render json: r
   end
-  
+
   private
-  
+    
   # goto 書本結構
   def goto_by_vol(opts)
     canon = opts[:canon]
     @vol = opts[:vol]
     @vol = CBETA.normalize_vol(canon + @vol)
     
-    if opts.key? :page
-      lb = lb_from_params opts
-      w, juan = JuanLine.find_by_vol_lb(@vol, lb)
-    else
-      w, juan, lb = JuanLine.find_by_vol(@vol)
-    end
-
-    work = @work_id || w
+    line = Line.find_by_vol_params(opts)
+    work = @work_id || line.work
     
-    file = Work.first_file_in_vol(work, @vol)
-    linehead = get_linehead(work, file, lb)
-    { vol: @vol, work: work, file:, juan: juan, lb:, linehead: }
+    { 
+      vol: @vol, 
+      work: work, 
+      file: Work.first_file_in_vol(work, @vol),
+      juan: line.juan, 
+      lb: line.page + line.col + line.line,
+      linehead: line.linehead 
+    }
   end
   
   # goto 經卷結構
@@ -192,22 +191,29 @@ class JuansController < ApplicationController
     end
     
     if params.key? :page
-      lb = lb_from_params params
-      unless params.key? :juan
-        @juan = JuanLine.find_by_vol_lb(@vol, lb)[1]
+      unless params.key?(:vol)
+        params[:vol] = @vol.delete_prefix(canon).to_i.to_s
       end
+      line = Line.find_by_vol_params(params)
+      @juan = line.juan unless params.key?(:juan)
     else
-      @vol, lb = JuanLine.get_first_lb_by_work_juan(@work_id, @juan)
+      #@vol, lb = JuanLine.get_first_lb_by_work_juan(@work_id, @juan)
+      line = Line.find_by(work: @work_id, juan: @juan)
+      if line.nil?
+        s = "Line record 不存在: work: #{@work_id}, juan: #{@juan}"
+        raise CbetaError.new(404), s
+      end  
+      @vol = Line.vol
     end
     
-    lh = CBETA.get_linehead(file, lb)
-    r = Line.find_by linehead: lh
-    if r.nil?
-      s = "行首資訊不存在: #{lh}, vol: #{@vol}, juan: #{@juan}, lb: #{lb}"
-      raise CbetaError.new(404), s
-    end
-
-    { vol: @vol, work: @work_id, file: , juan: @juan, lb: , linehead: lh}
+    { 
+      vol: @vol, 
+      work: @work_id, 
+      file: , 
+      juan: @juan, 
+      lb: line.page + line.col + line.line, 
+      linehead: line.linehead
+    }
   end
   
   def lb_from_params(params)
