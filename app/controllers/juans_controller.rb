@@ -203,7 +203,7 @@ class JuansController < ApplicationController
         s = "Line record 不存在: work: #{@work_id}, juan: #{@juan}"
         raise CbetaError.new(404), s
       end  
-      @vol = Line.vol
+      @vol = line.vol
     end
     
     { 
