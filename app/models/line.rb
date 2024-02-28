@@ -30,7 +30,13 @@ class Line < ActiveRecord::Base
     data = { vol: CBETA.normalize_vol(canon + args[:vol]) }
     
     if args.key?(:page)
-      data[:page] = "%04d" % args[:page].to_i
+      if args[:page].match?(/^\d+$/)
+        data[:page] = "%04d" % args[:page].to_i
+      else
+        m = args[:page].match(/^([a-z])(\d+)$/)
+        raise CbetaError.new(404), "頁碼格式錯誤: #{args[:page]}" if m.nil?
+        data[:page] = "#{$1}%03d" % $2.to_i
+      end
       if args.key?(:col)
         data[:col] = args[:col]
         if args.key?(:line)
