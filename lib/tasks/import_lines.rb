@@ -331,8 +331,11 @@ class ImportLines
   end
   
   def import_xml_file(fn)
-    basename = File.basename(fn, ".xml")
-    @work_id = CBETA.get_work_id_from_file_basename(basename)
+    @basename = File.basename(fn, ".xml")
+    @work_id = CBETA.get_work_id_from_file_basename(@basename)
+    if @work_id == 'T0220'
+      @basename.sub!(/[a-z]$/, '')
+    end
     doc = open_xml(fn)
     before_traverse_xml(doc)
     root = doc.root()
@@ -398,7 +401,7 @@ class ImportLines
         else
           abort "#{__LINE__}, lb: #{lb}"
         end
-        linehead = @work_id.clone
+        linehead = @basename.clone
         linehead << '_' if @work_id.match?(/\d$/)
         linehead << "p#{lb}"
         notes = JSON.generate(@notes[lb]) if @notes.key? lb
