@@ -727,9 +727,12 @@ class P5aToHTMLForUI
 
   def e_ref(e)
     if e.key?('cRef')
-      return e_ref_pts(e) if e['cRef'].start_with? 'PTS'
+      if e['cRef'].start_with? 'PTS'
+        return e_ref_pts(e)
+      else
+        return e_ref_cbeta(e)
+      end
     end
-    return e_ref_taisho(e) if e['type'] == 'taisho'
     traverse(e)
   end
 
@@ -744,54 +747,17 @@ class P5aToHTMLForUI
     return node.to_s
   end
 
-  def e_ref_taisho(e)
+  def e_ref_cbeta(e)
     content = traverse(e)
 
     node = HtmlNode.new('a')
     node['class'] = 'cb'
+    node['data-t'] = e['cRef']
     node.content = content
 
-    case e['target']
-    when /^no:(.*)$/
-      e_ref_taisho_no(node, $1)
-    when /^vol:(\d+);page:p(\d+)([abc])$/
-      return e_ref_taisho_vol(node, $1, $2, $3)
-    end
-
-    content
+    node.to_s
   end
 
-  def e_ref_taisho_no(node, no)
-    a = no.delete_suffix(' others').split('.')
-    work_id = 'T' + Work.normalize_no(a.first)
-    if a.size == 1
-      node['href'] = work_id
-      return node.to_s
-    elsif a.size == 2
-      # no:99.782 指向 T0099 第 782 小經
-      toc = TocNode.find_by(work: work_id, kind: '經', mulu_n: a[1].to_i)
-      return Line.construct_linehead(work_id, toc.file, toc.lb)
-    elsif a.size == 3
-    else
-      abort "parse ref target 發生錯誤: no:#{no}"
-    end
-  end
-
-  def e_ref_taisho_vol(node, vol, page, col)
-    # CBETA 未收錄 大正藏 56~84冊
-    return node.content if (56..84).include?(vol.to_i)
-
-    args = { 
-      canon: 'T',
-      vol: vol,
-      page: page,
-      col: col
-    }
-
-    node['href'] = Line.get_linehead_by_vol(args)
-    return node.to_s
-  end
-  
   def e_reg(e)
     r = ''
     choice = e.at_xpath('ancestor::choice')
