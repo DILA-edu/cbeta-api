@@ -750,9 +750,9 @@ class P5aToHTMLForUI
   def e_ref_cbeta(e)
     content = traverse(e)
 
-    node = HtmlNode.new('a')
-    node['class'] = 'cb'
-    node['data-t'] = e['cRef']
+    node = HtmlNode.new('span')
+    node['class'] = 'cbeta-link'
+    node['data-linehead'] = e['cRef']
     node.content = content
 
     node.to_s
