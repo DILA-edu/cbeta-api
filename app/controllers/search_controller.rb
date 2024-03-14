@@ -137,6 +137,7 @@ class SearchController < ApplicationController
       h['canon']    = facet_by_sphinx('canon')
     end
 
+    notes_inline_around(r)
     my_render r
   rescue
     r = { num_found: 0, error: $!, sphinx_select: @select }
@@ -784,7 +785,7 @@ class SearchController < ApplicationController
     s = keys.join(' ')
 
     # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
-    @fields = "id, canon, category, vol, file, "\
+    @fields = "id, note_place, canon, category, vol, file, "\
       "work, title, juan, lb, n, content, prefix, suffix,"\
       "SNIPPET(content, '#{@q}', 'limit=0', "\
       "'before_match=<mark>', 'after_match=</mark>') AS highlight"
@@ -1217,6 +1218,23 @@ class SearchController < ApplicationController
     r[:facet] = facet_result if args.key?(:facet)
     r[:results] = hits
     r
+  end
+
+  def notes_inline_around(r)
+    r[:results].each do |h|
+      next unless h[:note_place] == 'inline'
+      hh = h[:highlight]
+      hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
+        hh = m[2]
+        s = h[:prefix] + '(' + m[1]
+        prefix = s[-@around..-1] || s
+        s = m[3] + ')' + h[:suffix]
+        suffix = s[0, @around]
+        h[:highlight] = "#{prefix}#{hh}#{suffix}"
+      end
+      h.delete(:prefix)
+      h.delete(:suffix)
+    end
   end
 
   def similar_sub

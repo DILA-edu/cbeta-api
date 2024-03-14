@@ -3,6 +3,23 @@ class UnicodeService
     @u2 = Unihan2.new
   end
 
+  def gaiji_unicode(g, normalize: True)
+    u = g['unicode']
+    unless u.blank?
+      return u if level2?(u)
+    end
+
+    return nil unless normalize
+
+    r = g['norm_unicode']
+    return r if level2?(r)
+
+    r = g['norm_big5_char']
+    return r unless r.blank?
+
+    nil
+  end
+
   def level1?(code)
     return false if code.nil?
     # Unicode 3.0 以內 在 mobile 可以正確顯示

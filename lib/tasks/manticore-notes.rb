@@ -180,23 +180,9 @@ class ManticoreNotes
       return g['romanized'] if g.key?('romanized')
       return CBETA.pua(gid)
     end
-   
-    if g.key?('unicode') and (not g['unicode'].empty?)
-      return g['uni_char'] # 直接採用 unicode
-    end
 
-    # 註解常有用字差異，不用通用字，否則會變成兩個版本的用字一樣
-    # 例：T02n0099, 181b08, 註：㝹【CB】，[少/免]【大】
-    if @gaiji_norm.last # 如果 沒有特別說 不能用 通用字
-      if g.key?('norm_uni_char') and (not g['norm_uni_char'].empty?)
-        return g['norm_uni_char']
-      end
-
-      c = g['norm_big5_char']
-      unless c.nil? or c.empty?
-        return c
-      end
-    end
+    u = @us.gaiji_unicode(g, normalize: @gaiji_norm.last)
+    return u unless u.nil?
 
     CBETA.pua(gid)
   end
@@ -252,8 +238,10 @@ class ManticoreNotes
     ''
   end
 
+  # 夾注裡可能有校注, 例： A091n1057_p0313a05
+  #   這種情況，校注仍然要建 index document，但是不影響夾注的文字
+  # 校注裡可能有夾注, 例： A097n1267_p0822b07
   def e_note(e, mode)
-    return '' if mode == 'note'
     return '' if e['rend'] == 'hide'
       
     n = e['n']
@@ -266,8 +254,11 @@ class ManticoreNotes
         s = traverse(e, 'note')
         s << e_note_add_cf(e)
         @notes_add[@juan] << { lb: @lb, text: s }
-      when 'equivalent', 'rest' then return ''
-      when 'orig'       then return e_note_orig(e)
+        return '' if mode == 'note'
+      when 'equivalent', 'rest'
+        return ''
+      when 'orig'
+        return e_note_orig(e)
       when 'mod'
         @notes_mod[@juan][n] = { 
           lb: @lb, 
@@ -283,7 +274,7 @@ class ManticoreNotes
 
     if e.key?('place')
       if "inline inline2 interlinear".include?(e['place'])
-        return e_note_inline(e)
+        return e_note_inline(e, mode)
       end
     end
 
@@ -308,8 +299,12 @@ class ManticoreNotes
     e_lem_cf(lem)
   end
 
-  def e_note_inline(e)
+  def e_note_inline(e, mode)
     s = traverse(e, 'note')
+
+    # 校注裡的夾注，不必建一個 index document
+    return "(#{s})" if mode == 'note'
+
     @notes_inline[@juan] << { lb: @lb, text: s }
     ''
   end
@@ -450,8 +445,8 @@ class ManticoreNotes
   def write_notes_inline
     @notes_inline.each do |juan, notes|
       @stat[:inline] += notes.size
-      notes.each_with_index do |note, i|
-        write_sphinx_doc(juan, note, n: "inline_note_#{i+1}")
+      notes.each do |note|
+        write_sphinx_doc(juan, note, place: 'inline')
       end
     end
   end
@@ -483,10 +478,11 @@ class ManticoreNotes
     end
   end
 
-  def write_sphinx_doc(juan, note, n: nil)
+  def write_sphinx_doc(juan, note, n: nil, place: 'foot')
     @sphinx_doc_id += 1
     xml = <<~XML
       <sphinx:document id="#{@sphinx_doc_id}">
+        <note_place>#{place}</note_place>
         <canon>#{@canon}</canon>
         <canon_order>#{@canon_order}</canon_order>
         <vol>#{@vol}</vol>
@@ -497,6 +493,10 @@ class ManticoreNotes
     XML
 
     xml << "  <n>#{n}</n>\n" unless n.nil?
+
+    if place == 'inline'
+      xml << text_around_note(note)
+    end
 
     s1 = note[:text].encode(xml: :text)
     xml << "  <content>#{s1}</content>\n"

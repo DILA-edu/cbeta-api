@@ -38,6 +38,7 @@ class P5aToText
     @cbeta = CBETA.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
+    @us = UnicodeService.new
   end
 
   # 將 CBETA XML P5a 轉為 Text
@@ -163,13 +164,9 @@ class P5aToText
       return (g['romanized']+' ') unless g['romanized'].blank?
       return g['pua']
     end
-    
-    return g['uni_char'] unless g['uni_char'].blank?
 
-    if @gaiji_norm.last
-      return g['norm_uni_char'] unless g['norm_uni_char'].blank?
-      return g['norm_big5_char'] unless g['norm_big5_char'].blank?
-    end
+    u = @us.gaiji_unicode(g, normalize: @gaiji_norm.last)
+    return u unless u.nil?
     
     # Unicode PUA
     [0xf0000 + gid[2..-1].to_i].pack 'U'

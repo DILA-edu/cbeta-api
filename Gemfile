@@ -61,7 +61,7 @@ end
 # bundle install 錯誤: could not be found in any of the sources listed in your Gemfile
 # 可以執行以下命令從 RubyGems 取得最新清單
 # bundle --full-index
-gem 'cbeta', '>= 3.1.2'
+gem 'cbeta', '>= 3.3.0'
 
 gem "haml-rails"
 gem 'time_diff'

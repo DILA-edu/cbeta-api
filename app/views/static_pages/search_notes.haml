@@ -1,4 +1,4 @@
-%h1 搜尋：校勘條目、註解
+%h1 搜尋：校勘條目、註解、夾注
 
 %h2 1 參數
 %table.table
@@ -8,6 +8,9 @@
   %tr
     %td q
     %td 要搜尋的字詞，於下詳述。
+  %tr
+    %td around
+    %td 夾注根據此參數決定回傳關鍵字週圍的字數，預設值為 10.
   %tr
     %td start
     %td 分頁回傳的起始 offset，預設為 0.
@@ -21,7 +24,7 @@
       %p 預設為 0: 不回傳 facet。
       %p 若設為 1 則會回傳四種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。
 
-%h2 2 q 參數
+%h3 1.1 q 參數
 .ml-4
   %p
     例：#{link_to_url '/search/notes?q="法鼓"'}
@@ -34,24 +37,27 @@
   %p 要編碼為
   %pre %22波羅蜜%22%20%7C%20%22波羅密%22
 
-  %h3 2.1 AND
+  %h4 1.1.1 AND
   %p 多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
   %p 例：#{link_to_url '/search/notes?q="法鼓" "印順"'}
 
-  %h3 2.2 OR
+  %h4 1.1.2 OR
   %p 例：#{link_to_url '/search/notes?q="波羅蜜"|"波羅密"'}
 
-  %h3 2.3 NOT
+  %h4 1.1.3 NOT
   %p 例：#{link_to_url '/search/notes?q="迦葉" !"迦葉佛"'}
 
-  %h3 2.4 NEAR
+  %h4 1.1.4 NEAR
   %p 例：#{link_to_url '/search/notes?q="阿含" NEAR/5 "迦葉"'}
   %p 上例表示「阿含」跟「迦葉」之間距離不超過5個字。
 
-%h2 3 限制搜尋範圍
+%h3 1.2 限制搜尋範圍
 %p 參考 #{link_to_url '/static_pages/search_filter'}
 
-%h2 4 回傳資料
+%h2 2 回傳資料
 .ml-4
-  %h3 4.1 排序
+  %h3 2.1 排序
   %p 預設依冊號、行號排序。
+  %h3 2.2 回傳欄位
+  %ul
+    %li note_place: 註解出現的位置，可能是 "foot" 或 "inline" 兩種類型。
