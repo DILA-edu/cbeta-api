@@ -220,14 +220,18 @@ class SearchController < ApplicationController
     cmd = 'opencc -c s2tw'
     @q, status = Open3.capture2(cmd, stdin_data: params[:q])
 
-    where = %{MATCH('"#{@q}"')} + @filter
-    i = get_hit_count(where)
-    
-    r = {
-      time: Time.now - t1,
-      q: @q,
-      hits: i
-    }
+    r = if @q == params[:q]
+        { q: @q, hits: 0}
+      else
+        where = %{MATCH('"#{@q}"')} + @filter
+        i = get_hit_count(where)
+        
+        r = {
+          time: Time.now - t1,
+          q: @q,
+          hits: i
+        }
+      end
     my_render r
   rescue CbetaError => e
     r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }

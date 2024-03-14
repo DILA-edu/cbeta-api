@@ -55,6 +55,7 @@ class ManticoreNotes
       \n--------------------
       原書校注數量：#{@stat[:foot]}
       CBETA校注數量：#{@stat[:add]}
+      夾注數量：#{@stat[:inline]}
       註解總數：#{@stat.values.sum}
     MSG
     puts "花費時間：" + ChronicDuration.output(Time.now - t1)
@@ -92,15 +93,16 @@ class ManticoreNotes
     @lg_row_open = false
     @mod_notes = Set.new
     @next_line_buf = ''
-    @notes_mod = {}
-    @notes_orig = {}
-    @notes_add = {}
+    @notes_mod    = {}
+    @notes_orig   = {}
+    @notes_add    = {}
+    @notes_inline = {}
     @offset = 0
-    @sutra_no = File.basename(xml_fn, ".xml")
-    @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
+
     @work_info = get_info_from_work(@work_id,
       exclude: [:alt, :byline, :juan_list, :juan_start, :work_type]
     )
+    true
   end
 
   def convert_all
@@ -122,7 +124,13 @@ class ManticoreNotes
   end
   
   def convert_sutra(xml_fn)
-    print "\nmanticore-notes.rb #{File.basename(xml_fn, '.*')}"
+    @sutra_no = File.basename(xml_fn, ".xml")
+    print "\nmanticore-notes.rb #{@sutra_no}"
+
+    @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
+    w = Work.find_by n: @work_id
+    return if w.nil?
+
     t1 = Time.now
     before_parse_xml(xml_fn)
     @text = parse_xml(xml_fn)
@@ -238,6 +246,7 @@ class ManticoreNotes
       @notes_mod[@juan] = {}
       @notes_orig[@juan] = {}
       @notes_add[@juan] = []
+      @notes_inline[@juan] = []
       print " #{@juan}"
     end
     ''
@@ -272,6 +281,12 @@ class ManticoreNotes
       end
     end
 
+    if e.key?('place')
+      if "inline inline2 interlinear".include?(e['place'])
+        return e_note_inline(e)
+      end
+    end
+
     if e.has_attribute?('resp')
       return '' if e['resp'].start_with? 'CBETA'
     end
@@ -291,6 +306,12 @@ class ManticoreNotes
     lem = app.at_xpath('lem')
     return '' if lem.nil?
     e_lem_cf(lem)
+  end
+
+  def e_note_inline(e)
+    s = traverse(e, 'note')
+    @notes_inline[@juan] << { lb: @lb, text: s }
+    ''
   end
   
   def e_note_orig(e)
@@ -408,16 +429,13 @@ class ManticoreNotes
 
   def write_notes_for_manticore
     all_notes = {}
-    @notes_mod.each_pair do |juan, notes|
-      @stat[:foot] += notes.size
-      all_notes[juan] = []
-      notes.each_pair do |n, note|
-        write_sphinx_doc(juan, note, n: "n#{n}")
-        note[:n] = n
-        all_notes[juan] << note
-      end
-    end
+    write_notes_mod(all_notes)
+    write_notes_add(all_notes)
+    write_notes_inline
+    write_footnotes_for_download(all_notes)
+  end
 
+  def write_notes_add(all_notes)
     @notes_add.each_pair do |juan, notes|
       @stat[:add] += notes.size
       all_notes[juan] = [] unless all_notes.key?(juan)
@@ -427,8 +445,27 @@ class ManticoreNotes
         all_notes[juan] << note
       end
     end
+  end
 
-    write_footnotes_for_download(all_notes)
+  def write_notes_inline
+    @notes_inline.each do |juan, notes|
+      @stat[:inline] += notes.size
+      notes.each_with_index do |note, i|
+        write_sphinx_doc(juan, note, n: "inline_note_#{i+1}")
+      end
+    end
+  end
+
+  def write_notes_mod(all_notes)
+    @notes_mod.each_pair do |juan, notes|
+      @stat[:foot] += notes.size
+      all_notes[juan] = []
+      notes.each_pair do |n, note|
+        write_sphinx_doc(juan, note, n: "n#{n}")
+        note[:n] = n
+        all_notes[juan] << note
+      end
+    end
   end
 
   def write_footnotes_for_download(all_notes)

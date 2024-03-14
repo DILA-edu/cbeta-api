@@ -4,6 +4,14 @@
 
 %p 例: #{link_to_url '/search/sc?q=四圣谛'}
 
+%p 如果繁簡相同，例如 q=上烏，則回傳：
+%pre
+  :preserve
+    {
+      "q": "上烏",
+      "hits": 0
+    }
+
 %p
   =link_to "限制搜尋範圍", controller: "static_pages", action: "search_filter"
   的參數也都可以使用。
