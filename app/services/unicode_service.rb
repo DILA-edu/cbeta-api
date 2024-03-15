@@ -5,14 +5,14 @@ class UnicodeService
 
   # 根據 unicode 版本，決定是否採用 unicode 字元 或 unicode 通用字
   def gaiji_unicode(g, normalize: True)
-    u = g['unicode']
+    u = g['uni_char']
     unless u.blank?
       return u if level2?(u)
     end
 
     return nil unless normalize
 
-    r = g['norm_unicode']
+    r = g['norm_uni_char']
     return r if level2?(r)
 
     r = g['norm_big5_char']

@@ -1,6 +1,10 @@
 %h1 搜尋：校勘條目、註解、夾注
 
-%h2 1 參數
+%ul
+  %li=link_to '1 參數', '#arguments'
+  %li=link_to '2 回傳資料', '#return'
+
+%h2#arguments 1 參數
 %table.table
   %tr
     %td 參數名稱
@@ -10,7 +14,7 @@
     %td 要搜尋的字詞，於下詳述。
   %tr
     %td around
-    %td 夾注根據此參數決定回傳關鍵字週圍的字數，預設值為 10.
+    %td 回傳 highlight 欄位關鍵字週圍的字數，預設值為 10.
   %tr
     %td start
     %td 分頁回傳的起始 offset，預設為 0.
@@ -54,10 +58,12 @@
 %h3 1.2 限制搜尋範圍
 %p 參考 #{link_to_url '/static_pages/search_filter'}
 
-%h2 2 回傳資料
+%h2#return 2 回傳資料
 .ml-4
   %h3 2.1 排序
   %p 預設依冊號、行號排序。
   %h3 2.2 回傳欄位
   %ul
     %li note_place: 註解出現的位置，可能是 "foot" 或 "inline" 兩種類型。
+    %li content: note 的內容
+    %li highlight: 關鍵字詞出現於 note 週圍的文字

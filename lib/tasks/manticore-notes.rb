@@ -358,11 +358,11 @@ class ManticoreNotes
     return handle_text(e, mode) if e.text?
     return '' if PASS.include?(e.name)
 
-    norm = true
-    if e['behaviour'] == "no-norm"
-      norm = false
+    norm_dirty = false
+    if e.key?('behaviour') and e['behaviour']=="no-norm"
+      @gaiji_norm.push false
+      norm_dirty = true
     end
-    @gaiji_norm.push norm
 
     puts e.name if e.name.include?('mulu')
     r = case e.name
@@ -377,7 +377,7 @@ class ManticoreNotes
     else traverse(e, mode)
     end
 
-    @gaiji_norm.pop
+    @gaiji_norm.pop if norm_dirty
     r
   end
   

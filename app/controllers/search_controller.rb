@@ -1222,15 +1222,16 @@ class SearchController < ApplicationController
 
   def notes_inline_around(r)
     r[:results].each do |h|
-      next unless h[:note_place] == 'inline'
-      hh = h[:highlight]
-      hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
-        hh = m[2]
-        s = h[:prefix] + '(' + m[1]
-        prefix = s[-@around..-1] || s
-        s = m[3] + ')' + h[:suffix]
-        suffix = s[0, @around]
-        h[:highlight] = "#{prefix}#{hh}#{suffix}"
+      if h[:note_place] == 'inline'
+        hh = h[:highlight]
+        hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
+          hh = m[2]
+          s = h[:prefix] + '(' + m[1]
+          prefix = s[-@around..-1] || s
+          s = m[3] + ')' + h[:suffix]
+          suffix = s[0, @around]
+          h[:highlight] = "#{prefix}#{hh}#{suffix}"
+        end
       end
       h.delete(:prefix)
       h.delete(:suffix)
