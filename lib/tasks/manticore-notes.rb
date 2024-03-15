@@ -24,6 +24,7 @@ class ManticoreNotes
   def initialize
     @xml_root = Rails.application.config.cbeta_xml
     @cbeta = CBETA.new
+    @us = UnicodeService.new
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
     @dynasty_labels = read_dynasty_labels
@@ -133,6 +134,7 @@ class ManticoreNotes
 
     t1 = Time.now
     before_parse_xml(xml_fn)
+    return if @work_info.nil?
     @text = parse_xml(xml_fn)
     write_notes_for_manticore
   end
@@ -154,7 +156,7 @@ class ManticoreNotes
   end
   
   def e_app(e, mode)
-    if mode=='note'
+    if mode=='footnote'
       lem = e.at('lem')
       return traverse(lem, mode)
     end
@@ -162,7 +164,7 @@ class ManticoreNotes
   end
 
   def e_g(e, mode)
-    @offset += 1 unless mode == 'note'
+    @offset += 1 unless mode == 'footnote'
 
     gid = e['ref'][1..-1]
     
@@ -214,7 +216,7 @@ class ManticoreNotes
     e.xpath('note').each do |c|
       next unless c.key?('type')
       next unless c['type'].match(/^cf\d+$/)
-      cfs << traverse(c, 'note')
+      cfs << traverse(c, 'footnote')
     end
 
     return '' if cfs.empty?
@@ -244,27 +246,17 @@ class ManticoreNotes
   def e_note(e, mode)
     return '' if e['rend'] == 'hide'
       
-    n = e['n']
     if e.has_attribute?('type')
       t = e['type']
       case t
       when 'add'
-        n = @notes_add[@juan].size + 1
-        n = "cb_note_#{n}"
-        s = traverse(e, 'note')
-        s << e_note_add_cf(e)
-        @notes_add[@juan] << { lb: @lb, text: s }
-        return '' if mode == 'note'
+        return e_note_add(e)
       when 'equivalent', 'rest'
         return ''
       when 'orig'
         return e_note_orig(e)
       when 'mod'
-        @notes_mod[@juan][n] = { 
-          lb: @lb, 
-          text: traverse(e, 'note')
-        }
-        return ""
+        return e_note_mod(e)
       when 'star'
         return ''
       else
@@ -282,7 +274,18 @@ class ManticoreNotes
       return '' if e['resp'].start_with? 'CBETA'
     end
 
-    return traverse(e)
+    puts "不明的 note, lb: #{@lb}"
+
+    return traverse(e, mode)
+  end
+
+  def e_note_add(e)
+    n = @notes_add[@juan].size + 1
+    n = "cb_note_#{n}"
+    s = traverse(e, 'footnote')
+    s << e_note_add_cf(e)
+    @notes_add[@juan] << { lb: @lb, text: s }
+    return ''
   end
 
   def e_note_add_cf(e)
@@ -300,19 +303,34 @@ class ManticoreNotes
   end
 
   def e_note_inline(e, mode)
-    s = traverse(e, 'note')
+    note = { lb: @lb, offset: @offset }
+    s = traverse(e, mode)
 
     # 校注裡的夾注，不必建一個 index document
-    return "(#{s})" if mode == 'note'
+    return "(#{s})" if mode == 'footnote'
 
-    @notes_inline[@juan] << { lb: @lb, text: s }
-    ''
+    note[:text] = s
+    @notes_inline[@juan] << note
+    @offset += 2
+    "(#{s})"
+  end
+
+  def e_note_mod(e)
+    s = traverse(e, 'footnote')
+    n = e['n']
+    @notes_mod[@juan][n] = { 
+      lb: @lb, 
+      text: s
+    }
+
+    ""
   end
   
   def e_note_orig(e)
     n = e['n']
     subtype = e['subtype']
-    s = traverse(e, 'note')
+    s = traverse(e, 'footnote')
+
     @notes_orig[@juan][n] = s
     @notes_mod[@juan][n] = { lb: @lb, text: s }
     
@@ -330,19 +348,14 @@ class ManticoreNotes
     r = traverse(e, mode)
     if r.empty?
       r = '▆'
-      @offset += 1 unless mode == 'note'
+      @offset += 1 unless mode == 'footnote'
     end
     r
   end  
 
   def handle_node(e, mode='text')
     return '' if e.comment?
-    
-    if e.text?
-      return e.text if mode =='note'
-      return handle_text(e, mode)
-    end
-
+    return handle_text(e, mode) if e.text?
     return '' if PASS.include?(e.name)
 
     norm = true
@@ -376,7 +389,9 @@ class ManticoreNotes
     # cbeta xml 文字之間會有多餘的換行
     s.gsub(/[\n\r]/, '')
 
-    @offset += s.size unless mode == 'note'
+    # 校注都不算 offset, 不管是否在夾注裡
+    # 夾注也要算 offset, 如果在校注裡 就不算
+    @offset += s.size unless mode == 'footnote'
     s
   end
 
@@ -520,16 +535,26 @@ class ManticoreNotes
     end
 
     s = @text[i, length]
+    if s.nil?
+      abort <<~MSG
+        \nError 行號: #{__LINE__}
+        text size: #{@text.size}
+        offset: #{i}
+        #{note.inspect}
+      MSG
+    end
     s = s.encode(xml: :text)
     r = "  <prefix>#{s}</prefix>\n"
 
     i = note[:offset] + note[:text].size + 2
     s = @text[i, AROUND]
     if s.nil?
-      puts "text size: #{@text.size}"
-      puts "offset: #{i}"
-      puts note.inspect
-      abort "#{__LINE__}"
+      abort <<~MSG
+        \nError 行號: #{__LINE__}
+        text size: #{@text.size}
+        offset: #{i}
+        #{note.inspect}
+      MSG
     end
     s = s.encode(xml: :text)
     r + "  <suffix>#{s}</suffix>\n"

@@ -3,7 +3,7 @@ module SphinxShare
     data = {} if data.nil?
 
     w = Work.find_by n: work
-    raise "在 works table 裡找不到 #{work}" if w.nil?
+    return nil if w.nil?
 
     data[:title]     = w.title
     data[:byline]    = w.byline    unless exclude.include?(:byline)

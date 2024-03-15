@@ -60,7 +60,8 @@ class ManticoreT2X
       title: '',
       byline: ''
     }
-    get_info_from_work(@work, data)
+    r = get_info_from_work(@work, data)
+    return if r.nil?
   
     @id += 1
     
@@ -103,7 +104,6 @@ class ManticoreT2X
     f.puts "<sphinx:docset>\n"
     f
   end
-
 
   def strip_zero(s)
     s.sub(/^0*(\d*)$/, '\1')

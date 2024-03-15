@@ -91,7 +91,7 @@ class ManticoreChunks
     @work_info = get_info_from_work(@work_id, 
       exclude: [:byline, :juan_list, :juan_start, :work_type]
     )
-    raise '@work_info is nil' if @work_info.nil?
+    return if @work_info.nil?
 
     doc = File.open(xml_fn) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!

@@ -3,6 +3,7 @@ class UnicodeService
     @u2 = Unihan2.new
   end
 
+  # 根據 unicode 版本，決定是否採用 unicode 字元 或 unicode 通用字
   def gaiji_unicode(g, normalize: True)
     u = g['unicode']
     unless u.blank?
