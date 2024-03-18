@@ -700,7 +700,7 @@ class SearchController < ApplicationController
       return false
     end
     
-    @q = handle_zzs(params[:q]) # 將 組字式 取代為 Unicode PUA
+    @q = Gaiji.replace_zzs_with_pua(params[:q]) # 將 組字式 取代為 Unicode PUA
     if @q.blank?
       render plain: 'q 參數不能是空的'
       return false

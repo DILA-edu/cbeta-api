@@ -6,7 +6,7 @@ class Kwic3Controller < ApplicationController
     logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{params[:q]}"
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
-    @q = handle_zzs(params[:q])
+    @q = Gaiji.replace_zzs_with_pua(params[:q])
 
     # NEAR/7 語法，允許 數字
     # 允許半形逗點，例： 法鼓,聖嚴

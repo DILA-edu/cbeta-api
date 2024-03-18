@@ -149,21 +149,6 @@ class ApplicationController < ActionController::Base
     r
   end
   
-  # 將 組字式 轉為 PUA
-  def handle_zzs(q)
-    return nil if q.nil?
-    return q unless q.include? '['
-    r = q.gsub(/\[[^\]]+\]/) do |s|
-      g = Gaiji.find_by zzs: s
-      if g.nil?
-        s
-      else
-        [0xf0000 + g.cb[2..-1].to_i].pack 'U'
-      end
-    end
-    r
-  end
-
   def record_visit
     # 去掉 sub domain
     path = request.path.sub(%r{^/(dev|stable|v1.2)/}, '/')

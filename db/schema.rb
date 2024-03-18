@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_02_22_014726) do
+ActiveRecord::Schema.define(version: 2024_03_18_074051) do
 
   create_table "canons", force: :cascade do |t|
     t.string "id2"
@@ -46,7 +46,9 @@ ActiveRecord::Schema.define(version: 2024_02_22_014726) do
   create_table "gaijis", force: :cascade do |t|
     t.string "cb"
     t.string "zzs"
+    t.string "pua"
     t.index ["cb"], name: "index_gaijis_on_cb"
+    t.index ["pua"], name: "index_gaijis_on_pua"
     t.index ["zzs"], name: "index_gaijis_on_zzs"
   end
 
