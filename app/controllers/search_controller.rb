@@ -1235,6 +1235,8 @@ class SearchController < ApplicationController
       end
       h.delete(:prefix)
       h.delete(:suffix)
+      h[:content] = Gaiji.replace_pua_with_zzs(h[:content])
+      h[:highlight] = Gaiji.replace_pua_with_zzs(h[:content])
     end
   end
 

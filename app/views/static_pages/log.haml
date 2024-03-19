@@ -3,14 +3,18 @@
 %h2 2024-03 Version 3.0.0
 %ul
   %li Search engine 改用 Manticore 6.2.12
-  %li endpoint /sphinx 改為 /search
+  %li endpoint /sphinx 改為 /search，舊網址預定 2025 起停用。
+  %li endpoint /kwic3/juan 改為 /search/kwic，舊網址預定 2025 起停用。
   %li 
-    /search/notes
+    ='/search/notes'
     %ul
       %li 含夾注
       %li around 參數決定回傳 highlight 欄位關鍵字前後字數
       %li 回傳 note_place 欄位
-  %li endpoint /kwic3/juan 改為 /search/kwic
+  %li
+    ='/search/variants 異體字查詢'
+    %ul
+      %li 如果「搜尋字串」中含「組字式」，會列出該缺字的：Unicode、Big5 通用字、Unicode 通用字。
   %li 
     文本 HTML 新增 CBETA 內部連結，詳見：
     =link_to_url '/static_pages/html_for_ui#links'
