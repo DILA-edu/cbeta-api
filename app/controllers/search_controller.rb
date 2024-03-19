@@ -1461,6 +1461,7 @@ class SearchController < ApplicationController
   def variants_sub
     logger.info "scope: #{params[:scope]}"
     t1 = Time.now
+    logger.info "variants_sub, q: #{@q}"
     q_ary = get_query_variants(@q)
     
     if @q.include? '菩薩'
