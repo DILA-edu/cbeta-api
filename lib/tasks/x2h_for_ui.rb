@@ -327,35 +327,48 @@ class P5aToHTMLForUI
       return "<span class='ranja' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
     end
    
-    default = ''
     span = HtmlNode.new('span')
-    if g.key?('unicode') and (not g['unicode'].empty?)
+    span['class'] = 'gaijiInfo'
+    span['id'] = gid
+
+    href = 'https://raw.githubusercontent.com/cbeta-org/gaiji-CB/master/%s/%s.gif'
+    href = href % [gid[2, 2], gid]
+    span['figure_url'] = href
+
+    default = ''
+    c = g['uni_char'].clone
+    unless c.blank?
       span['unicode'] = g['unicode']
-      if @us.level1?(g['unicode'])
-        return g['uni_char']
-      elsif @us.level2?(g['unicode'])
-        default = g['uni_char']
-      end
+      span['uni_char'] = c
+      return c if @us.level1?(c)
+      default = c if @us.level2?(c)
     end
 
-    nor = ''
     # 註解常有用字差異，不用通用字，否則會變成兩個版本的用字一樣
     # 例：T02n0099, 181b08, 註：㝹【CB】，[少/免]【大】
-    unless mode.include? 'footnote'
-      if @gaiji_norm.last # 如果 沒有特別說 不能用 通用字
-        if @us.level2?(g['norm_unicode'])
-          nor = g['norm_uni_char'].clone
-          default = nor.clone if default.empty?
-        end
+    # 不是註解 而且 「沒說 不能用 通用字」才用 通用字
+    use_norm = if not mode.include? 'footnote' and @gaiji_norm.last
+        true
+      else
+        false
+      end
 
-        c = g['norm_big5_char']
-        unless c.nil? or c.empty?
-          nor << ', ' unless nor==''
-          nor << c
-          default = c if default.empty?
-        end
+    nors = []
+    c = g['norm_uni_char'].clone
+    unless c.blank?
+      nors << c
+      if default.empty? and use_norm and @us.level2?(c)
+        default = c 
       end
     end
+
+    c = g['norm_big5_char'].clone
+    unless c.blank?
+      nors.prepend(c)
+      default = c if default.empty? and use_norm
+    end
+
+    span['norm'] = nors.join('；') unless nors.empty?
 
     zzs = g['composition']
     if default.empty?
@@ -363,14 +376,11 @@ class P5aToHTMLForUI
       default = zzs
     end
     
-    #href = 'http://www.cbeta.org/dict_word/gaiji-cb/%s/%s.gif' % [gid[2, 2], gid]
-    href = 'https://raw.githubusercontent.com/cbeta-org/gaiji-CB/master/%s/%s.gif'
-    href = href % [gid[2, 2], gid]
-    
-    span['id'] = gid
-    span['class'] = 'gaijiInfo'
-    span['figure_url'] = href
     span['zzs'] = zzs
+
+    s = g['moe_variant_id']
+    span['moe'] = s unless s.blank?
+
     span.content = default
     
     unless @back[@juan].include?(href)

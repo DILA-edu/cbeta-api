@@ -21,7 +21,6 @@
       <a class='gaijiAnchor' href='#CB00595'>麨</a>
 %p 上例中的 CB00595 是缺字碼，「麨」是它的通用字。
 
-
 %p 
   檔尾會以
   %code &lt;span class="gaijiInfo"> 
@@ -29,9 +28,55 @@
   .code
     %pre
       :escaped
-        <span id="CB00595" class="gaijiInfo" 
+        <span class="gaijiInfo" id="CB00595" 
           figure_url="https://raw.githubusercontent.com/cbeta-org/gaiji-CB/master/00/CB00595.gif" 
-          zzs="[麩-夫+少]">麨</span>
+          norm="麨" 
+          zzs="[麩-夫+少]" 
+          moe="c17920">麨</span>
+
+%p 上述 span 元素的屬性：
+%table.table
+  %tr
+    %td id
+    %td CBETA 缺字編號
+  %tr
+    %td uni_char
+    %td 
+      該缺字對應的 Unicode 字元
+      .code
+        %pre
+          :escaped
+            <span class="gaijiInfo" id="CB29787" 
+              figure_url="https://raw.githubusercontent.com/cbeta-org/gaiji-CB/master/29/CB29787.gif" 
+              unicode="2E4DC" uni_char="𮓜" norm="虎" zzs="[皮-(〡/又)+(王/巾)]" moe="a03604-035">𮓜</span>
+  %tr
+    %td unicode
+    %td 
+      該缺字對應的 Unicode 字元編碼
+      .code
+        %pre
+          :escaped
+            <span class="gaijiInfo" id="CB29787" 
+            figure_url="https://raw.githubusercontent.com/cbeta-org/gaiji-CB/master/29/CB29787.gif" 
+            unicode="2E4DC" uni_char="𮓜" norm="虎" zzs="[皮-(〡/又)+(王/巾)]" moe="a03604-035">𮓜</span>
+  %tr
+    %td norm
+    %td 
+      通用字，可能多值，例：
+      .code
+        %pre
+          :escaped
+            <span class="gaijiInfo" id="CB32591" 
+              figure_url="https://raw.githubusercontent.com/cbeta-org/gaiji-CB/master/32/CB32591.gif" 
+              norm="發；𰤑" zzs="[發-(弓*殳)+((〦/力)*ㄆ)]">發</span>
+  %tr
+    %td zzs
+    %td= link_to "組字式", 'https://cbeta.org/format/rare-rule.php'
+  %tr
+    %td moe
+    %td 
+      =link_to "教育部《異體字字典》", "https://dict.variants.moe.edu.tw/"
+      編號
 
 %p 
   完整的 CBETA 缺字資訊可以在這裡查到：
