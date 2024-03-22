@@ -100,7 +100,10 @@ class P5aToHTMLForUI
     puts "read from #{xml_fn}"
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @updated_at = MyCbetaShare.get_update_date(xml_fn)
-    @title = Work.get_info_by_id(@work_id)[:title]
+
+    info = Work.get_info_by_id(@work_id)
+    return false if info.nil?
+    @title = info[:title]
   end
 
   def convert_all
@@ -138,7 +141,7 @@ class P5aToHTMLForUI
   end
   
   def convert_sutra(xml_fn)
-    before_parse_xml(xml_fn)
+    return unless before_parse_xml(xml_fn)
 
     text = parse_xml(xml_fn)
     
@@ -752,7 +755,7 @@ class P5aToHTMLForUI
     node['style'] = e['style'] if e.key? 'style'
     node['class'] = 'hint'
     node['data-text'] = e['cRef']
-    n = t.split('.').last
+    n = e['cRef'].split('.').last
     node['data-label'] = "P.#{n}"
     return node.to_s
   end
