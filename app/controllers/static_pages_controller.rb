@@ -40,7 +40,18 @@ class StaticPagesController < ApplicationController
   
   def scope_selector
   end
-  
+
+  def search_similar
+    @examples = [
+      '已得善提捨不證', 
+      '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。', 
+      '諸惡莫作，眾善奉行，自淨其意，是諸佛教', 
+      '斷愛欲，轉諸結，慢無間等，究竟苦邊',
+      '若人欲了知，三世一切佛，應觀法界性，一切唯心造',
+      '是日已過，命亦隨減，如少水魚，斯有何樂'
+    ]
+  end
+
   def work
   end
 end

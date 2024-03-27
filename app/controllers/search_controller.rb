@@ -13,7 +13,8 @@ class SearchController < ApplicationController
   RANKER = 'wordcount' # ranking by the keyword occurrences count.
   FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 佛典數量 5,617
   MAX_MATCHES = 99_999
-  SIMILAR_K = 1_000
+  SIMILAR_K = 500
+  SCORE_MIN = 16
 
   before_action :init
   after_action  :action_ending
@@ -75,9 +76,15 @@ class SearchController < ApplicationController
   def similar
     t1 = Time.now
     key = "#{Rails.configuration.cb.r}/search/similar/#{params}-#{@referer_cn}"
-    r = Rails.cache.fetch(key) do
-      similar_sub
-    end
+
+    r = if @use_cache
+          Rails.cache.fetch(key) do
+            similar_sub
+          end
+        else
+          similar_sub
+        end
+
     r[:cache_key] = key
     r[:time] = Time.now - t1
     my_render r
@@ -707,11 +714,13 @@ class SearchController < ApplicationController
     end
     
     @mode = 'normal'
+    @use_cache = params.key?(:cache) ? (params[:cache]=='1') : true
     @start  = params.key?(:start)  ? params[:start].to_i  : 0
     @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
     @around = params.key?(:around) ? params[:around].to_i : 10
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
     @inline_note = params.key?(:note) ? params[:note]=='1' : true
+    @score_min = params.key?(:score_min) ? params[:score_min].to_i : SCORE_MIN
 
     case action_name
     when 'notes' then init_notes
@@ -1137,7 +1146,6 @@ class SearchController < ApplicationController
 
   def manticore_search(user_args={})
     args = user_args.with_defaults(
-      start: 0, 
       rows: @rows, 
       ranker: RANKER,
       order: '',
@@ -1145,15 +1153,11 @@ class SearchController < ApplicationController
     )
     t1 = Time.now
 
-    if args[:start] >= @max_matches
-      raise CbetaError.new(400), "start 參數超出範圍: #{args[:start]}, max_matches: #{@max_matches}, where: #{args[:where]}"
-    end
-    
     @select = %(
       SELECT #{args[:fields]}
       FROM #{@index} 
       WHERE #{args[:where]} #{args[:order]} 
-      LIMIT #{args[:start]}, #{args[:rows]} 
+      LIMIT #{args[:rows]} 
       OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
     ).gsub(/\s+/, " ").strip
     
@@ -1242,6 +1246,7 @@ class SearchController < ApplicationController
 
   def similar_sub
     logger.info "similar_sub"
+    remove_puncs_from_query
     @canon_name = {}
     @max_matches = params[:k] || SIMILAR_K
     data = {
@@ -1274,10 +1279,12 @@ class SearchController < ApplicationController
 
   def similar_smith_waterman(hits)
     logger.info "begin similar_smith_waterman, hits size: #{hits.size}"
+
+    cs = CbetaString.new(allow_digit: true, allow_space: false)
     i = 0
     while i < hits.size
       node = hits[i]
-      text = CbetaString.new(allow_digit: true).remove_puncs(node[:content])
+      text = cs.remove_puncs(node[:content])
       
       # 去除完全符合的
       if text.include?(@q)
@@ -1287,6 +1294,11 @@ class SearchController < ApplicationController
 
       sw = SmithWaterman.new(@q, text)
       sw.align!
+      if sw.score < @score_min
+        hits.delete_at(i)
+        next
+      end
+
       node[:score] = sw.score
       node[:highlight] = sw.alignment_inspect_b
       i += 1
