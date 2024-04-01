@@ -417,7 +417,7 @@ class SearchController < ApplicationController
     estimate_max_matches
 
     if @order.empty?
-      @order = 'ORDER BY canon_order ASC'
+      @order = 'ORDER BY canon_order ASC, work ASC, juan ASC'
     end
 
     r = sphinx_search(@fields, @where, @start, @rows, order: @order)
