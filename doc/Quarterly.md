@@ -33,6 +33,10 @@ CBETA XML 新一季定案後執行。
 
 如果有新增的佛典，參考 new-canon.md
 
+## update cbeta gem
+
+* 缺字資料要更新
+
 ## UUID
 
 視需要產生 UUID, 參考 uuid.md
