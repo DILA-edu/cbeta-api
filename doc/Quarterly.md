@@ -42,7 +42,7 @@ CBETA XML 新一季定案後執行。
 使用 direnv 管理 環境變數, 編輯 /var/www/cbapi?/.envrc
     export RAILS_ENV=staging
 
-編輯 lib/tasks/quarterly/config.rb
+編輯 config/cb.yml
 
 執行 rake quarterly 會自動執行以下工作。
 
