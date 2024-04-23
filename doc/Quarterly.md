@@ -11,10 +11,6 @@ CBETA XML 新一季定案後執行。
   * deploy
     * staging.rb
     * production.rb
-  * environments
-    * production.rb
-    * staging.rb
-* lib/tasks/quarterly/config.rb
 * app/views/static_pages
   * home.haml 製作日期
   * log.haml

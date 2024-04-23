@@ -21,7 +21,7 @@ class Quarterly
     @section_count = 0
     @step_count = 0
 
-    @indexes = Rails.configuration.se.indexes
+    @indexes = Rails.configuration.x.se.indexes
   end
 
   def run
