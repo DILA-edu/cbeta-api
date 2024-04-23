@@ -12,12 +12,12 @@ class Line < ActiveRecord::Base
   def self.find_by_vol_lb(vol, lb)
     page = lb[0, 4]
     col = lb[4]
-    line = [-2..-1]
+    line_no = lb[-2..-1]
 
-    line = Line.find_by(vol: vol, page:, col:, line:)
+    line = Line.find_by(vol: vol, page:, col:, line: line_no)
 
     if line.nil?
-      s = "Line record 不存在: vol: #{vol}, lb: #{lb}"
+      s = "Line record 不存在: vol: #{vol}, lb: #{lb}, page: #{page}, col: #{col}, line: #{line_no}"
       raise CbetaError.new(404), s
     end
 

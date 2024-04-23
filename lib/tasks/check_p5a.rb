@@ -71,7 +71,7 @@ class CheckP5a
   end
 
   def error(msg)
-    s = "#{@basename} #{msg}"
+    s = "#{@basename}, #{msg}"
     puts s
     @errors << s + "\n"
   end
