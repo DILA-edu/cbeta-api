@@ -59,6 +59,8 @@ CBETA XML 新一季定案後執行。
 
 ## change log
 
+根據 CBETA 給的「忽略清單」編輯： `/home/ray/cbeta-change-log/2024R1.yml`
+
 ## EPUB 給 heaven 轉 PDF, MOBI
 
 2022-07 起，EPUB 也改由 heaven 產生。

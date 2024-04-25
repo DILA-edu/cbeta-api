@@ -31,7 +31,7 @@ class UnicodeService
 
   def level2?(code)
     return false if code.nil?
-    # Unicode 10 以內 在 desktop 有字型可以顯示
+    # Unicode 10 以內 在 desktop 有字型可以顯示 (預設可能沒有，需要安裝字型)
     @u2.ver(code) <= 10
   end
 end

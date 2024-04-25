@@ -23,6 +23,7 @@ module SectionManticore
   def step_manticore_config
     run_step 'manticore configuration' do
       command "bundle exec rake manticore:conf"
+      base = Rails.configuration.x.se.conf
       puts "可以手動清除 #{base} 資料夾下的舊資料"
     end
 
