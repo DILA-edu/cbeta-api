@@ -2,7 +2,7 @@ class DownloadEbooks
   BASE = "https://archive.cbeta.org/download"
   
   def initialize
-    @q = Rails.configuration.cb.r
+    @q = Rails.configuration.cb.r.downcase
   end
 
   def run(type=nil)
