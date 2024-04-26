@@ -18,7 +18,7 @@ module SectionChangeLog
       end
 
       run_step '由 diff.txt 製作 HTML 版 Change Log' do
-        confirm "先將整部忽略差異的清單列在例如： /home/ray/cbeta-change-log/2023Q4.yml"
+        confirm "先將整部忽略差異的清單列在例如： /home/ray/cbeta-change-log/#{@config[:q2]}.yml"
         require_relative 'diff-to-html'
         DiffToHTML.new(@config).convert
       end

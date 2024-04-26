@@ -99,6 +99,11 @@ class ChangeLogCategory
     # 整行新增或刪除
     return if line.match(/^<(del|ins)>[^<]+║.*<\/\1><br>$/)
 
+    # 整行刪除
+    s = line.sub(/^.+?║(.*)<br>$/, '\1')
+    s.gsub!(/<del>[^<]*<\/del>/, '')
+    return if s.empty?
+
     s = line.gsub(/<del>(.*?)<\/del>/) do
       remove_texts($1, 'del')
     end
@@ -107,6 +112,7 @@ class ChangeLogCategory
       remove_texts($1, 'ins')
     end
     
+    # 如果 移除 文字差異 之後，就沒有其他差異了
     return unless s.include?('<del>') or s.include?('<ins>')
 
     unless @head_punc.nil?
@@ -114,7 +120,7 @@ class ChangeLogCategory
       @head_punc = nil
     end
     
-    @f_punc << s + "\n"
+    @f_punc << line + "\n"
   end
 
   def remove_puncs(s, tag)
