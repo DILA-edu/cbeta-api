@@ -63,7 +63,7 @@ class KwicService
   
   def abs_sa_path(sa_path, name)
     if sa_path.nil?
-      Rails.logger.fatal "傳入 abs_sa_path 的 sa_path 參數是 nil, 程式：#{__FILE__}, 行號：#{__LINE__}"
+      @logger.fatal "傳入 abs_sa_path 的 sa_path 參數是 nil, 程式：#{__FILE__}, 行號：#{__LINE__}"
       return nil
     end
     File.join(@sa_base, sa_path, name)
@@ -182,6 +182,13 @@ class KwicService
     middle = (right - left) / 2 + left
     i = sa(middle) # suffix offset
     s = read_str(i, q.size)
+
+    if s.nil?
+      msg = "kwic_service.rb##{__LINE__}, bsearch 讀檔回傳 nil, q: #{q}, i: #{i}"
+      @logger.fatal msg
+      raise CbetaError.new(500), msg
+    end
+
     if s == q
       return middle
     elsif middle == left
