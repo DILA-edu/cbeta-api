@@ -64,7 +64,7 @@ class SearchController < ApplicationController
       return
     end
     
-    where = %{MATCH('"#{@q}"')} + @filter
+    where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
     @max_matches = MAX_MATCHES
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
@@ -98,7 +98,7 @@ class SearchController < ApplicationController
       return
     end
     
-    where = %{MATCH('#{@q}')} + @filter
+    where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
   rescue
@@ -115,7 +115,7 @@ class SearchController < ApplicationController
       return
     end
     
-    where = "MATCH('#{@q}')" + @filter
+    where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
   end
@@ -159,7 +159,7 @@ class SearchController < ApplicationController
 
     raise CbetaError.new(400), "缺少 q 參數" if @q.empty?
 
-    @where = %{MATCH('"#{@q}"')} + @filter
+    @where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
     
     if params.key? :facet_by
       r = facet_by_sphinx(params[:facet_by])
@@ -189,7 +189,7 @@ class SearchController < ApplicationController
       return
     end
     
-    where = %{MATCH('#{@q}')} + @filter
+    where = "MATCH('@#{@text_field} #{@q}')" + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
   rescue
@@ -231,7 +231,7 @@ class SearchController < ApplicationController
     r = if @q == params[:q]
         { q: @q, hits: 0}
       else
-        where = %{MATCH('"#{@q}"')} + @filter
+        where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
         i = get_hit_count(where)
         
         r = {
@@ -409,8 +409,7 @@ class SearchController < ApplicationController
       @q = %("#{@q}")
     end
 
-    text_field = @inline_note ? 'content' : 'content_without_notes'
-    @where = %{MATCH('@#{text_field} #{@q}')} + @filter
+    @where = %{MATCH('@#{@text_field} #{@q}')} + @filter
 
     # 因為 max_matches 參數如果太大，會影響效率
     # 所以先計算最多會有多少 documents 符合條件
@@ -721,6 +720,7 @@ class SearchController < ApplicationController
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
     @inline_note = params.key?(:note) ? params[:note]=='1' : true
     @score_min = params.key?(:score_min) ? params[:score_min].to_i : SCORE_MIN
+    @text_field = @inline_note ? 'content' : 'content_without_notes'
 
     case action_name
     when 'notes' then init_notes
@@ -1412,7 +1412,8 @@ class SearchController < ApplicationController
 
   def sphinx_search_simple(q)
     logger.debug "begin sphinx_search_simple, q: #{q}"
-    where = %{MATCH('"#{q}"')} + @filter
+
+    where = %{MATCH('@#{@text_field} "#{q}"')} + @filter
     fields = 'weight() as term_hits, work, juan'
 
     select = %(
@@ -1488,7 +1489,8 @@ class SearchController < ApplicationController
     results = []
     q_ary.each do |q|
       next if q == @q
-      where = %{MATCH('"#{q}"')} + @filter
+      where = %{MATCH('@content "#{q}"')} + @filter
+  
       i = get_hit_count(where)
       results << { q: q, hits: i } unless i==0
     end
