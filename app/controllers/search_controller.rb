@@ -1489,7 +1489,14 @@ class SearchController < ApplicationController
     results = []
     q_ary.each do |q|
       next if q == @q
-      where = %{MATCH('@content "#{q}"')} + @filter
+
+      where = if params[:scope] == 'title'
+                %{MATCH('"#{q}"')}
+              else
+                %{MATCH('@content "#{q}"')}
+              end
+
+      where << @filter
   
       i = get_hit_count(where)
       results << { q: q, hits: i } unless i==0
