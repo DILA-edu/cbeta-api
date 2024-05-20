@@ -79,7 +79,7 @@ class ApplicationController < ActionController::Base
     # CBETA 引用格式，例：
     #   * CBETA, T01, no. 1, p. 67, a13
     #   * CBETA 2019.Q2, T01, no. 1, p. 1a6
-    elsif lh.match(/^CBETA(?: \d+\.Q\d)?, *((?:#{CBETA::CANON})\d{2,3}), *no\. *(.*?), *p\. *([a-z]?\d+), *([a-z])(\d+)(\-.*)?$/)
+    elsif lh.match(/^CBETA(?: \d+\.[QR]\d)?, *((?:#{CBETA::CANON})\d{2,3}), *no\. *(.*?), *p\. *([a-z]?\d+), *([a-z])(\d+)(\-.*)?$/)
       r = goto_info vol: $1, work: $2, page: $3, col: $4, line: $5
 
     # CBETA 2017 新引用格式，例：
@@ -87,7 +87,7 @@ class ApplicationController < ActionController::Base
     #   CBETA, T30, no. 1579, p. 279a7-b23
     #   CBETA, T30, no. 1579, p. 279a7-23
     #   CBETA, T30, no. 1579, p. 279a7
-    elsif lh.match(/^CBETA(?: \d+\.Q\d)?, ?((?:#{CBETA::CANON})\d+), ?no\. ?([A-Za-z]?\d+[A-Za-z]?), ?pp?\. *([a-z]?\d+)([a-z])(\d+)/)
+    elsif lh.match(/^CBETA(?: \d+\.[QR]\d)?, ?((?:#{CBETA::CANON})\d+), ?no\. ?([A-Za-z]?\d+[A-Za-z]?), ?pp?\. *([a-z]?\d+)([a-z])(\d+)/)
       r = goto_info vol: $1, work: $2, page: $3, col: $4, line: $5
       logger.debug "Line: #{__LINE__}"
       logger.debug r
