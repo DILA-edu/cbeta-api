@@ -41,6 +41,8 @@ class Quarterly
   end
 
   def copy_folder(src, dest, exclude=[], verbose: true)
+    return if File.symlink?(src)
+
     puts "[#{Time.now}] copy folder #{src} => #{dest}" if verbose
     if Dir.exist?(dest)
       print "remove old folder #{dest}..."
@@ -51,8 +53,11 @@ class Quarterly
     Dir.entries(src).sort.each do |f|
       next if f.start_with?('.')
       next if exclude.include?(f)
+      
       p1 = File.join(src, f)
       p2 = File.join(dest, f)
+      next if File.symlink?(p1)
+
       puts "[#{Time.now}] copy folder #{p1} => #{p2}" if verbose
       if Dir.exist?(p1)
         next if f.match?(/\d{4}-\d\d-\d\d-\d{6}$/)

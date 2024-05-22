@@ -47,6 +47,8 @@ class KwicService
   # @param base [String] suffix array base folder
   # @param inline_note [Boolean] 是否含夾注
   def initialize(base, inline_note)
+    @inline_note = inline_note
+
     # suffix array folder
     @sa_base = inline_note ? 'sa' : 'sa-without-notes'
     @sa_base    = File.join(base, @sa_base)
@@ -54,7 +56,7 @@ class KwicService
     @txt_folder = File.join(base, 'text') # 含有標點的純文字檔
     @encoding_converter = Encoding::Converter.new("UTF-32LE", "UTF-8")
     @current_sa_path = nil
-    @cache = Rails.configuration.cb.r
+    @cache = "#{Rails.configuration.cb.r}-#{inline_note}"
     @sa_files = {}
     @text_files = {}
 
@@ -1067,7 +1069,7 @@ class KwicService
   end
 
   def set_cache_base(args)
-    @cache = "#{Rails.configuration.cb.r}-#{args[:referer_cn]}"
+    @cache = "#{Rails.configuration.cb.r}-#{args[:referer_cn]}-#{@inline_note}"
   end
 
   def sort_by_pos(start, size)
