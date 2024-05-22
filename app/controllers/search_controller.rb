@@ -1280,11 +1280,10 @@ class SearchController < ApplicationController
   def similar_smith_waterman(hits)
     logger.info "begin similar_smith_waterman, hits size: #{hits.size}"
 
-    cs = CbetaString.new(allow_digit: true, allow_space: false)
     i = 0
     while i < hits.size
       node = hits[i]
-      text = cs.remove_puncs(node[:content])
+      text = node[:content]
       
       # 去除完全符合的
       if text.include?(@q)

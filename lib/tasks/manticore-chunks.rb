@@ -19,6 +19,7 @@ class ManticoreChunks
     @xml_root = Rails.application.config.cbeta_xml
     @cb_gaiji = CBETA::Gaiji.new
     @dynasty_labels = read_dynasty_labels
+    @cs = CbetaString.new(allow_digit: true, allow_space: false)
   end
 
   def convert
@@ -43,7 +44,7 @@ class ManticoreChunks
     end
   
     block = @blocks[-1]
-    block[:text] << text
+    block[:text] << @cs.remove_puncs(text)
   
     if block[:text].size == OVERLAP
       @blocks << { lb: @lb, text: '' }
@@ -118,7 +119,6 @@ class ManticoreChunks
       abort "\n#{id} 在缺字資料庫 找不到"
     end
     add_text(char)
-    add_text(' ') if id.start_with?('SD')
   end
   
   def e_lb(e)
@@ -153,19 +153,12 @@ class ManticoreChunks
     
     return if e.key?('place') and e['place'] == 'foot'
   
-    add_text('(')
     traverse(e)
-    add_text(')')
   end
   
   def handle_element(e)
     case e.name
     when 'docNumber', 'mulu', 'rdg'
-    when 'caesura'
-      add_text(' ')
-    when 'byline', 'cell', 'div', 'head', 'item', 'juan', 'l', 'p', 'row'
-      traverse(e)
-      add_text(' ')
     when 'foreign'
       return if e['place'] == 'foot'
       traverse(e)
@@ -176,7 +169,6 @@ class ManticoreChunks
     when 't'
       return if e['place'] == 'foot'
       traverse(e)
-      add_text(' ') unless e.parent['type'] == 'app'
     else
       traverse(e)
     end

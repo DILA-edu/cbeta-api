@@ -3,6 +3,8 @@
 ## Config
 
 * config
+  * application.rb
+    * config.cb.ver
   * cb.yml
   * deploy
     * 修改 staging.rb
