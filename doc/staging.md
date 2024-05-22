@@ -4,11 +4,10 @@
 
 * config
   * cb.yml
-  * 修改 deploy.rb
-    * set application
   * deploy
-    * 修改 staging.rb 的 deploy_to
-    * 修改 procution.org 的 deploy_to
+    * 修改 staging.rb
+      * set :application
+      * deploy_to
 
 * 修改 lib/tasks/quarterly/config.rb
 
