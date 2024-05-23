@@ -6,6 +6,11 @@ namespace :manticore do
     puts cmd
     r = system(cmd)
     puts "exit code: #{r}"
+
+    cmd = "sudo chown -R systemd-coredump:systemd-coredump /var/lib/manticore/r#{v}-#{s}"
+    puts cmd
+    r = system(cmd)
+    puts "exit code: #{r}"
     
     cmd = "docker exec -it manticore gosu manticore indexer #{s}#{v} --rotate"
     puts cmd
