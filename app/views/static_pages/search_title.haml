@@ -3,3 +3,10 @@
 %p 例：#{link_to_url '/search/title?q=觀無量壽經'}
 
 %p 模糊搜尋，至少符合3個字。
+
+%h2 參數
+%table.table
+  %tr
+    %td 參數名稱
+    %td 說明
+  =render partial: 'search-arg-paginate'

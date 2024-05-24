@@ -15,12 +15,7 @@
   %tr
     %td around
     %td 回傳 highlight 欄位關鍵字週圍的字數，預設值為 10.
-  %tr
-    %td start
-    %td 分頁回傳的起始 offset，預設為 0.
-  %tr
-    %td rows
-    %td 一次回傳幾筆，預設為 20.
+  =render partial: 'search-arg-paginate'
   %tr
     %td facet
     %td 
