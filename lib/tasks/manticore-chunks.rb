@@ -142,7 +142,7 @@ class ManticoreChunks
       write_chunks
     end
     @juan = e['n'].to_i
-    @chunk_n = 0
+    @position_in_juan = 'start'
   end
   
   def e_note(e)
@@ -198,10 +198,12 @@ class ManticoreChunks
     end
   end
 
-  def write_chunk(lb, text)
+  def write_chunk(lb, text, pos=nil)
     if text.size > MAX
       abort "size 大於 #{MAX}, text: #{text}" 
     end
+
+    @pos = pos unless pos.nil?
   
     @count += 1
     xml = <<~XML
@@ -211,6 +213,7 @@ class ManticoreChunks
         <file>#{@basename}</file>
         <work>#{@work_id}</work>
         <juan>#{@juan}</juan>
+        <position_in_juan>#{@pos}</position_in_juan>
         <lb>#{lb}</lb>
         <linehead>#{CBETA.get_linehead(@basename, lb)}</linehead>
         <content>#{text}</content>
@@ -222,7 +225,7 @@ class ManticoreChunks
 
     xml << "</sphinx:document>\n"
     @fo.puts xml
-    @chunk_n += 1
+    @pos = 'middle'
   end
 
   def write_chunks
@@ -240,7 +243,7 @@ class ManticoreChunks
       end
   
       if @blocks.empty?
-        write_chunk(b1[:lb], b1[:text])
+        write_chunk(b1[:lb], b1[:text], 'end')
       else
         b2 = @blocks.shift
         write_chunk(b1[:lb], b1[:text] + b2[:text])

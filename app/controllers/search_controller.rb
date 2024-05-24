@@ -18,6 +18,7 @@ class SearchController < ApplicationController
 
   before_action :init
   after_action  :action_ending
+  rescue_from Exception, with: :error_handler
 
   def initialize
     logger.info "SearchController initialize"
@@ -44,16 +45,6 @@ class SearchController < ApplicationController
     r[:time] = Time.now - t1
     
     my_render r
-  rescue CbetaError => e
-    my_render_error(e.code, $!)
-  rescue Exception => e
-    e.backtrace.each { |s| logger.debug s }
-    r = { 
-      num_found: 0,
-      params: params,
-      error: e.message + "\n" + e.backtrace.join("\n")
-    }
-    my_render r
   end
 
   def index
@@ -68,13 +59,11 @@ class SearchController < ApplicationController
     @max_matches = MAX_MATCHES
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
     my_render r
-  rescue
-    r = { num_found: 0, error: $!, sphinx_select: @select }
-    my_render r
   end
 
   def similar
     t1 = Time.now
+
     key = "#{Rails.configuration.cb.r}/search/similar/#{params}-#{@referer_cn}"
 
     r = if @use_cache
@@ -100,9 +89,6 @@ class SearchController < ApplicationController
     
     where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    my_render r
-  rescue
-    r = { num_found: 0, error: $!, sphinx_select: @select }
     my_render r
   end  
 
@@ -146,9 +132,6 @@ class SearchController < ApplicationController
 
     notes_inline_around(r)
     my_render r
-  rescue
-    r = { num_found: 0, error: $!, sphinx_select: @select }
-    my_render r
   ensure
     @mysql_client.close unless @mysql_client.nil?
   end
@@ -173,10 +156,6 @@ class SearchController < ApplicationController
     end
             
     my_render r
-  rescue CbetaError => e
-    r = empty_result
-    r[:error] = { code: e.code, message: $!, backtrace: e.backtrace }
-    my_render(r)
   ensure
     @mysql_client.close unless @mysql_client.nil?
   end
@@ -191,9 +170,6 @@ class SearchController < ApplicationController
     
     where = "MATCH('@#{@text_field} #{@q}')" + @filter
     r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    my_render r
-  rescue
-    r = { num_found: 0, error: $! }
     my_render r
   ensure
     @mysql_client.close
@@ -241,9 +217,6 @@ class SearchController < ApplicationController
         }
       end
     my_render r
-  rescue CbetaError => e
-    r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
-    my_render(r)
   ensure
     @mysql_client.close unless @mysql_client.nil?
   end
@@ -509,14 +482,7 @@ class SearchController < ApplicationController
     # max_matches must be from 1 to 100M
     @max_matches = 1 if @max_matches == 0
   rescue => e
-    msg = <<~MSG 
-      #{__LINE__} estimate_max_matches 發生錯誤
-      Exception Class: #{ e.class.name }
-      Exception Message: #{ e.message }
-      cmd: #{cmd}
-      Exception Backtrace: #{ e.backtrace }
-    MSG
-    raise CbetaError.new(500), msg
+    raise CbetaError.new(500), "estimate_max_matches 發生錯誤, cmd: #{cmd}"
   end
 
   def exclude_by_sphinx(r1)
@@ -726,6 +692,9 @@ class SearchController < ApplicationController
     when 'notes' then init_notes
     when 'similar'
       @index = Rails.configuration.x.se.index_chunks
+      @gain  = params.key?(:gain)  ? params[:gain].to_i : 2
+      @penalty  = params.key?(:penalty)  ? params[:penalty].to_i : -1
+      raise CbetaError.new(400), 'penalty 參數 必須 <= 0' if @penalty > 0
     when 'title'
     when 'variants'
       init_fields
@@ -1165,11 +1134,6 @@ class SearchController < ApplicationController
     log("select: #{@select}", __LINE__)
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
-    rescue
-      logger.fatal $!
-      logger.fatal "environment: #{Rails.env}"
-      logger.fatal "select: #{@select}"
-      raise
     end
     logger.info "#{__LINE__} mysql query 完成"
 
@@ -1278,7 +1242,7 @@ class SearchController < ApplicationController
   end
 
   def similar_smith_waterman(hits)
-    logger.info "begin similar_smith_waterman, hits size: #{hits.size}"
+    logger.info "begin similar_smith_waterman, hits size: #{hits.size}, gain: #{@gain}, penalty: #{@penalty}"
 
     i = 0
     while i < hits.size
@@ -1291,7 +1255,7 @@ class SearchController < ApplicationController
         next
       end
 
-      sw = SmithWaterman.new(@q, text)
+      sw = SmithWaterman.new(@q, text, gain: @gain, penalty: @penalty)
       sw.align!
       if sw.score < @score_min
         hits.delete_at(i)
@@ -1300,7 +1264,16 @@ class SearchController < ApplicationController
 
       node[:score] = sw.score
       node[:highlight] = sw.alignment_inspect_b
-      i += 1
+
+      # 只要 match 到的區域，由區塊內第一字開始，或是延續到最後一字，就砍掉。
+      # 卷首 或 卷尾 除外
+      if node[:highlight].start_with?('<mark>') and node[:position_in_juan] != 'start'
+        hits.delete_at(i)
+      elsif node[:highlight].end_with?('</mark>') and node[:position_in_juan] != 'end'
+        hits.delete_at(i)
+      else
+        i += 1
+      end
     end
     logger.info "end similar_smith_waterman"
   end
@@ -1510,4 +1483,17 @@ class SearchController < ApplicationController
     }
   end
 
+  def error_handler(e)
+    logger.fatal $!
+    logger.fatal "environment: #{Rails.env}"
+    logger.fatal "select: #{@select}"
+    logger.fatal e.backtrace.join("\n")
+
+    r = empty_result
+    r[:select] = @select unless @select.nil?
+    r[:code] = e.code
+    r[:error] = e.message
+    r[:backtrace] = e.backtrace
+    my_render r
+  end
 end

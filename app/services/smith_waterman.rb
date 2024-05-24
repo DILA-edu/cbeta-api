@@ -2,12 +2,6 @@
 require_relative 'matrix'
 
 class SmithWaterman
-
-  SCORE_INSERT =  -1
-  SCORE_DELETE =  -1
-  SCORE_MISS   = -1
-  SCORE_MATCH  =  2
-
   attr_reader :str_a, :str_b, :str_a_arr, :str_b_arr, :m, :n, :mat, :config, :alignment, :score
 
   def initialize(stra, strb, opts = {})
@@ -21,7 +15,13 @@ class SmithWaterman
     @n      = str_b.length + 1
     @mat    = Matrix.new(m, n)
     
-    @config = opts
+    @config = opts.with_defaults(gain: 2, penalty: -1)
+    raise 'SmithWaterman penalty 必須 <= 0' if @config[:penalty] > 0
+
+    @score_insert = @config[:penalty]
+    @score_delete = @config[:penalty]
+    @score_miss   = @config[:penalty]
+    @score_match  = @config[:gain]
   end
 
   def align!
@@ -150,13 +150,13 @@ class SmithWaterman
   end
   
   def assign_cell(i, j)
-    score = (str_a_arr[i-1] == str_b_arr[j-1]) ? SCORE_MATCH : SCORE_MISS      
+    score = (str_a_arr[i-1] == str_b_arr[j-1]) ? @score_match : @score_miss
 
     value = [
       0,
       mat[i-1, j-1] + score,
-      mat[i-1, j] + SCORE_DELETE,
-      mat[i, j-1] + SCORE_INSERT      
+      mat[i-1, j] + @score_delete,
+      mat[i, j-1] + @score_insert
     ].max
     
     if (value >= @score)

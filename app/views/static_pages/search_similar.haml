@@ -9,29 +9,44 @@
 %table.table
   %tr
     %th 參數名稱
+    %th
     %th 說明
   %tr
     %td q
+    %th 必要
     %td 要搜尋的字串。不含標點。建議長度在 6~50 字之間。
   %tr
     %td k
+    %td 選項
     %td 第一階段使用 Manticore 模糊搜尋，取 top k 筆數。預設為 500.
   %tr
+    %td gain
+    %td 選項
+    %td Smith-Waterman 演算法執行時，match 時的加分，預設為 2.
+  %tr
+    %td penalty
+    %td 選項
+    %td Smith-Waterman 演算法執行時，miss、insertion、deletion 的減分，必須為負數，預設為 -1.
+  %tr
     %td score_min
+    %td 選項
     %td Smith-Waterman Score 最小值，預設為 16.
   %tr
     %td 限制搜尋範圍
+    %td 選項
     %td 
       請參考：
       =link_to nil, controller: 'static_pages', action: 'search_filter'
   %tr
     %td facet
+    %td 選項
     %td 
       %p 是否回傳 facet。
       %p 預設為 0: 不回傳 facet。
       %p 若設為 1 則會回傳五種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。
   %tr
     %td cache
+    %td 選項
     %td 指定是否使用 cache. 1: 使用 cache; 0: 不使用 cache. 預設值為 1.
 
 %h2 回傳
