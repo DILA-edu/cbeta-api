@@ -27,7 +27,7 @@ class ManticoreTitles
       @id += 1
       data = {
         work: w.n,
-        title: w.title,
+        content: w.title,
         canon: w.canon,
         canon_order: CBETA.get_sort_order_from_canon_id(w.canon)
       }

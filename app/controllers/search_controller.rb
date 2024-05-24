@@ -257,7 +257,7 @@ class SearchController < ApplicationController
     @max_matches = MAX_MATCHES
 
     select = <<~SQL
-      SELECT work, title
+      SELECT work, content
        FROM #{@index}
        WHERE #{@where} 
        LIMIT #{@start}, #{@rows} 
@@ -269,7 +269,7 @@ class SearchController < ApplicationController
 
     hits = results.to_a
     hits.each do |h|
-      h[:highlight] = mark_title(h[:title], @q)
+      h[:highlight] = mark_title(h[:content], @q)
       w = Work.find_by(n: h[:work])
       h[:byline] = w.byline
       h[:juan] = w.juan
@@ -287,7 +287,6 @@ class SearchController < ApplicationController
     r = {
       query_string: @q,
       time: 0,
-      #num_found: hits.size,
       num_found: total_found
     }
     r[:results] = hits
@@ -1462,12 +1461,7 @@ class SearchController < ApplicationController
     q_ary.each do |q|
       next if q == @q
 
-      where = if params[:scope] == 'title'
-                %{MATCH('"#{q}"')}
-              else
-                %{MATCH('@content "#{q}"')}
-              end
-
+      where = %{MATCH('@content "#{q}"')}
       where << @filter
   
       i = get_hit_count(where)

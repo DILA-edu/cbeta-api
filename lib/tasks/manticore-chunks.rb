@@ -142,7 +142,7 @@ class ManticoreChunks
       write_chunks
     end
     @juan = e['n'].to_i
-    @position_in_juan = 'start'
+    @pos = 'start'
   end
   
   def e_note(e)
