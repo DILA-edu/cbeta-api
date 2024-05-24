@@ -28,12 +28,7 @@
       %p 是否回傳 facet。
       %p 預設為 0: 不回傳 facet。
       %p 若設為 1 則會回傳四種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。
-  %tr
-    %td rows
-    %td 每頁回傳卷數，預設為 20。
-  %tr
-    %td start
-    %td 每頁起始位置，預設為 0。
+  =render partial: 'search-arg-paginate'
   %tr
     %td around
     %td kwic 前後字數，預設為 10。

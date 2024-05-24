@@ -15,18 +15,13 @@
         查詢 URL: #{link_to_url '/search?q=[幻-ㄠ%2B糸]'}
       %p 
         單引號需 escape 例：
-        =link_to_url %q(/search?q=samantato \'nantanāvāptiśāsani)
+        =link_to_url "/search?q=samantato \\%27nantanāvāptiśāsani"
   %tr
     %td fields
     %td 
       指定要回傳哪些欄位，例：
       =link_to_url '/search?q=法鼓&fields=work,juan,term_hits'
-  %tr
-    %td start
-    %td 分頁回傳的起始 offset，預設為 0.
-  %tr
-    %td rows
-    %td 一次回傳幾筆，預設為 20.
+  =render partial: 'search-arg-paginate'
   %tr
     %td order
     %td
