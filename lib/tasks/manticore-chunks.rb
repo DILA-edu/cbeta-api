@@ -242,12 +242,15 @@ class ManticoreChunks
         b1 = b2
       end
   
-      if @blocks.empty?
-        write_chunk(b1[:lb], b1[:text], 'end')
-      else
-        b2 = @blocks.shift
-        write_chunk(b1[:lb], b1[:text] + b2[:text])
-      end    
+      s = if @blocks.empty?
+            b1[:text]
+          else
+            b2 = @blocks.shift
+            b1[:text] + b2[:text]
+          end
+
+      pos = @blocks.empty? ? 'end' : nil
+      write_chunk(b1[:lb], s, pos)
     end
   
     @blocks = []

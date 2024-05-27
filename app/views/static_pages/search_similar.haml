@@ -22,11 +22,11 @@
   %tr
     %td gain
     %td 選項
-    %td Smith-Waterman 演算法執行時，match 時的加分，預設為 2.
+    %td Smith-Waterman 演算法執行時，match 時的加分，必須 >= 0，預設為 2.
   %tr
     %td penalty
     %td 選項
-    %td Smith-Waterman 演算法執行時，miss、insertion、deletion 的減分，必須為負數，預設為 -1.
+    %td Smith-Waterman 演算法執行時，miss、insertion、deletion 的減分，必須 <= 0，預設為 -1.
   %tr
     %td score_min
     %td 選項

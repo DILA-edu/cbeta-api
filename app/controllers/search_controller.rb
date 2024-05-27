@@ -693,6 +693,7 @@ class SearchController < ApplicationController
       @index = Rails.configuration.x.se.index_chunks
       @gain  = params.key?(:gain)  ? params[:gain].to_i : 2
       @penalty  = params.key?(:penalty)  ? params[:penalty].to_i : -1
+      raise CbetaError.new(400), 'gain 參數 必須 >= 0' if @gain < 0
       raise CbetaError.new(400), 'penalty 參數 必須 <= 0' if @penalty > 0
     when 'title'
     when 'variants'
