@@ -1244,10 +1244,12 @@ class SearchController < ApplicationController
   def similar_smith_waterman(hits)
     logger.info "begin similar_smith_waterman, hits size: #{hits.size}, gain: #{@gain}, penalty: #{@penalty}"
 
+    cs = CbetaString.new(allow_digit: true, allow_space: false)
     i = 0
     while i < hits.size
       node = hits[i]
-      text = node[:content]
+      text = cs.remove_puncs(node[:content])
+      #text = node[:content]
       
       # 去除完全符合的
       if text.include?(@q)
@@ -1448,6 +1450,7 @@ class SearchController < ApplicationController
   def variants_sub
     logger.info "scope: #{params[:scope]}"
     t1 = Time.now
+    remove_puncs_from_query
     logger.info "variants_sub, q: #{@q}"
     q_ary = get_query_variants(@q)
     
