@@ -9,21 +9,26 @@
 %table.table
   %tr
     %td 參數名稱
+    %td
     %td 說明
   %tr
     %td q
+    %td 必須
     %td
       =render partial: 'search-aio-q'
   %tr
     %td note
+    %td 選項
     %td 是否含夾注： 0: 不含夾注。 1: 含夾注(預設值)。
   %tr
     %td fields
+    %td 選項
     %td 
       指定要回傳哪些欄位，例：
       =link_to_url '/search/all_in_one?q=法鼓&fields=work,juan,term_hits'
   %tr
     %td facet
+    %td 選項
     %td 
       %p 是否回傳 facet。
       %p 預設為 0: 不回傳 facet。
@@ -31,9 +36,11 @@
   =render partial: 'search-arg-paginate'
   %tr
     %td around
+    %td 選項
     %td kwic 前後字數，預設為 10。
   %tr
     %td order
+    %td 選項
     %td
       %p 排序，可用欄位：
       %ul
@@ -46,6 +53,7 @@
       %ul
         %li 指定升冪排序：order=time_from+
         %li 指定降冪排序：order=time_from-
+  =render partial: 'arg-cache'
 
 %h2 不回傳 facet 範例：
 %pre

@@ -237,4 +237,8 @@ class ApplicationController < ActionController::Base
     logger.info "start #{controller_name}##{action_name} #{@start_time}"
     logger.info params.inspect
   end  
+
+  def log_info(msg)
+    logger.info "#{caller_locations.first}\n#{msg}"
+  end
 end

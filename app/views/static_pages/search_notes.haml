@@ -8,16 +8,20 @@
 %table.table
   %tr
     %td 參數名稱
+    %td
     %td 說明
   %tr
     %td q
+    %td 必須
     %td 要搜尋的字詞，於下詳述。
   %tr
     %td around
+    %td 選項
     %td 回傳 highlight 欄位關鍵字週圍的字數，預設值為 10.
   =render partial: 'search-arg-paginate'
   %tr
     %td facet
+    %td 選項
     %td 
       %p 是否回傳 facet。
       %p 預設為 0: 不回傳 facet。

@@ -743,9 +743,14 @@ class P5aToHTMLForUI
       if e['cRef'].start_with? 'PTS'
         return e_ref_pts(e)
       else
-        return e_ref_cbeta(e)
+        return link_cbeta_linehead(e['cRef'], traverse(e))
       end
     end
+
+    if e.key?('target')
+      return e_ref_target(e)
+    end
+
     traverse(e)
   end
 
@@ -760,15 +765,36 @@ class P5aToHTMLForUI
     return node.to_s
   end
 
-  def e_ref_cbeta(e)
-    content = traverse(e)
-
+  def link_cbeta_linehead(linehead, content)
     node = HtmlNode.new('span')
     node['class'] = 'cbeta-link'
-    node['data-linehead'] = e['cRef']
+    node['data-linehead'] = linehead
     node.content = content
-
     node.to_s
+  end
+
+  def e_ref_target(e)
+    content = traverse(e)
+    target = e['target']
+
+    # 例 T42n1828_p0311a06
+    # <ref target="../T30/T30n1579.xml#xpath2(//0279a03)">
+    regexp = /\A
+      \.\.\/([A-Z]{1,2}\d{2,3})\/
+      (\1n.{4})\.xml\#xpath2
+      \(
+        \/\/(\d{4}[a-z]\d\d)
+      \)
+    \z/x
+
+    md = target.match(regexp)
+    return content if md.nil?
+
+    basename = $2
+    lb = $3
+    linehead = CBETA.get_linehead(basename, lb)
+
+    link_cbeta_linehead(linehead, content)
   end
 
   def e_reg(e)

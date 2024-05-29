@@ -5,9 +5,11 @@
 %table.table
   %tr
     %td 參數名稱
+    %td
     %td 說明
   %tr
     %td q
+    %td 必須
     %td
       要搜尋的字詞，可以包含組字式。
       %p 例如 《新集藏經音義隨函錄(第13卷-第30卷)》卷17：「[幻-ㄠ+糸]術」(CBETA, K35, no. 1257, p. 189b6), 組字式 escape 之後：[幻-ㄠ%2B糸]
@@ -18,12 +20,14 @@
         =link_to_url "/search?q=samantato \\%27nantanāvāptiśāsani"
   %tr
     %td fields
+    %td 選項
     %td 
       指定要回傳哪些欄位，例：
       =link_to_url '/search?q=法鼓&fields=work,juan,term_hits'
   =render partial: 'search-arg-paginate'
   %tr
     %td order
+    %td 選項
     %td
       %p 排序，例如按照文獻成立的年代排序：#{link_to_url '/search?q=法鼓&order=year'}
       %p 也可以指定多個排序欄位，例如先以年代排序、再以經號排序：

@@ -21,7 +21,7 @@ class SearchController < ApplicationController
   rescue_from Exception, with: :error_handler
 
   def initialize
-    logger.info "SearchController initialize"
+    log_info "SearchController initialize"
   end
   
   # 2019-11-01 決定不以「經」做 group, 因為不能以「經」的 term_hits 做排序
@@ -36,12 +36,16 @@ class SearchController < ApplicationController
     end
 
     t1 = Time.now
-    key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
-    r = Rails.cache.fetch(key) do
-      all_in_one_sub
-    end
-    r[:cache_key] = key
-
+    r = if @use_cache
+          key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
+          Rails.cache.fetch(key) do
+            all_in_one_sub
+          end
+        else
+          all_in_one_sub
+        end
+    
+    r[:cache_key] = key unless key.nil?
     r[:time] = Time.now - t1
     
     my_render r
@@ -183,12 +187,16 @@ class SearchController < ApplicationController
   def variants
     t1 = Time.now
 
-    key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
-    r = Rails.cache.fetch(key) do
-      variants_sub
-    end
+    r = if @use_cache
+          key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
+          Rails.cache.fetch(key) do
+            variants_sub
+          end
+        else
+          variants_sub
+        end
 
-    r[:cache_key] = key
+    r[:cache_key] = key unless key.nil?
     r[:time] = Time.now - t1
 
     my_render r
@@ -264,7 +272,7 @@ class SearchController < ApplicationController
        OPTION max_matches=#{@max_matches}
     SQL
 
-    logger.info select
+    log_info select
     results = @mysql_client.query(select, symbolize_keys: true)    
 
     hits = results.to_a
@@ -282,7 +290,7 @@ class SearchController < ApplicationController
     results = @mysql_client.query("SHOW META LIKE 'total_found%';")    
     a = results.to_a
     total_found = a[0]['Value'].to_i
-    logger.info "total_found: #{total_found}"
+    log_info "total_found: #{total_found}"
 
     r = {
       query_string: @q,
@@ -427,9 +435,9 @@ class SearchController < ApplicationController
     end
 
     if r.key?(:results)
-      logger.info "results size: #{r[:results].size}"
+      log_info "results size: #{r[:results].size}"
     else
-      logger.info "#{__LINE__} r 沒有 results"
+      log_info "#{__LINE__} r 沒有 results"
     end
 
     r
@@ -438,7 +446,7 @@ class SearchController < ApplicationController
   end
 
   def downsize_vars_array(vars)
-    logger.info "downsize_vars_array, vars: #{vars}"
+    log_info "downsize_vars_array, vars: #{vars}"
     return vars if vars.size < 5
     vars2 = vars.clone
     r = []
@@ -453,10 +461,10 @@ class SearchController < ApplicationController
       if vars2.size == 1
         a << vars2.shift
       end
-      logger.info "downsize_vars_array, a: #{a}"
+      log_info "downsize_vars_array, a: #{a}"
       r << expand_vars_array(a, true)
     end
-    logger.info "downsize_vars_array, r: #{r}"
+    log_info "downsize_vars_array, r: #{r}"
     r
   end
   
@@ -513,11 +521,11 @@ class SearchController < ApplicationController
   end
   
   def exist_in_cbeta(q)
-    logger.info "exist_in_cbeta, q: #{q}"
+    log_info "exist_in_cbeta, q: #{q}"
     if params[:scope] == 'title'
       index = Rails.configuration.x.se.index_titles
       r = exist_in_index(q, index)
-      logger.info "exist_in_cbeta: #{r}"
+      log_info "exist_in_cbeta: #{r}"
       r
     end
 
@@ -538,7 +546,7 @@ class SearchController < ApplicationController
   end
 
   def expand_vars_array(vars, chk_exist)
-    logger.info "expand_vars_array, vars: #{vars}, chk_exist: #{chk_exist}"
+    log_info "expand_vars_array, vars: #{vars}, chk_exist: #{chk_exist}"
     t1 = Time.now
     #vars = downsize_vars_array(vars) if vars.size > 4
     args = vars[1..-1]
@@ -550,7 +558,7 @@ class SearchController < ApplicationController
     a.each do |s|
       r << s if exist_in_cbeta(s)
     end
-    logger.info "#{__LINE__} expand_vars_array result: %s" % r.inspect
+    log_info "#{__LINE__} expand_vars_array result: %s" % r.inspect
     r
   end
   
@@ -634,7 +642,7 @@ class SearchController < ApplicationController
   end
   
   def get_query_variants(q)
-    logger.info "get_query_variants, q: #{q}"
+    log_info "get_query_variants, q: #{q}"
     remove_puncs_from_query
     vars = []
     q.each_char do |c|
@@ -709,7 +717,7 @@ class SearchController < ApplicationController
       @index = Rails.configuration.x.se.index_text
     end
 
-    logger.info "index: #{@index}"
+    log_info "index: #{@index}"
     
     init_order unless action_name == 'similar'
     set_filter
@@ -913,7 +921,7 @@ class SearchController < ApplicationController
     base = Rails.configuration.x.kwic.base
     se = KwicService.new(base, @inline_note)
     r[:results].each do |juan|
-      logger.info "kwic_by_juan, work: #{juan[:work]}, juan: #{juan[:juan]}"
+      log_info "kwic_by_juan, work: #{juan[:work]}, juan: #{juan[:juan]}"
       opts = {
         work: juan[:work],
         juan: juan[:juan].to_i,
@@ -1135,11 +1143,11 @@ class SearchController < ApplicationController
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     end
-    logger.info "#{__LINE__} mysql query 完成"
+    log_info "#{__LINE__} mysql query 完成"
 
     hits = results.to_a
     return hits if @mode == 'group'
-    logger.info "#{__LINE__} hits size: #{hits.size}"
+    log_info "#{__LINE__} hits size: #{hits.size}"
     
     #add_work_info(hits)
     
@@ -1155,7 +1163,7 @@ class SearchController < ApplicationController
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
-    logger.info "#{__LINE__} total_found: #{total_found}"
+    log_info "#{__LINE__} total_found: #{total_found}"
     
     total_term_hits = nil
     if args[:count_hits]
@@ -1168,10 +1176,10 @@ class SearchController < ApplicationController
           WHERE #{args[:where]} 
           OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
         SQL
-        logger.info "#{__LINE__} 計算 total_term_hits: #{select2}"
+        log_info "#{__LINE__} 計算 total_term_hits: #{select2}"
         r = @mysql_client.query(select2)
         total_term_hits = r.to_a[0]['sum']
-        logger.info "#{__LINE__} total_term_hits: #{total_term_hits}"
+        log_info "#{__LINE__} total_term_hits: #{total_term_hits}"
       end
     end
     
@@ -1209,7 +1217,7 @@ class SearchController < ApplicationController
   end
 
   def similar_sub
-    logger.info "similar_sub"
+    log_info "similar_sub"
     remove_puncs_from_query
     @canon_name = {}
     @max_matches = params[:k] || SIMILAR_K
@@ -1225,9 +1233,9 @@ class SearchController < ApplicationController
     r = manticore_search(data)
     hits = r[:results]
 
-    logger.info "begin similar_smith_waterman"
+    log_info "begin similar_smith_waterman"
     similar_smith_waterman(hits)
-    logger.info "begin similar_rm_duplicate"
+    log_info "begin similar_rm_duplicate"
     similar_rm_duplicate(hits)
     hits.sort_by! { |x| -x[:score] }
 
@@ -1242,7 +1250,7 @@ class SearchController < ApplicationController
   end
 
   def similar_smith_waterman(hits)
-    logger.info "begin similar_smith_waterman, hits size: #{hits.size}, gain: #{@gain}, penalty: #{@penalty}"
+    log_info "begin similar_smith_waterman, hits size: #{hits.size}, gain: #{@gain}, penalty: #{@penalty}"
 
     cs = CbetaString.new(allow_digit: true, allow_space: false)
     i = 0
@@ -1277,7 +1285,7 @@ class SearchController < ApplicationController
         i += 1
       end
     end
-    logger.info "end similar_smith_waterman"
+    log_info "end similar_smith_waterman"
   end
 
   def similar_rm_duplicate(hits)
@@ -1345,7 +1353,7 @@ class SearchController < ApplicationController
 
     hits = results.to_a
     return hits if @mode == 'group'
-    logger.info "#{__LINE__} hits size: #{hits.size}"
+    log_info "#{__LINE__} hits size: #{hits.size}"
     
     #add_work_info(hits)
     
@@ -1361,7 +1369,7 @@ class SearchController < ApplicationController
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
-    logger.info "total_found: #{total_found}"
+    log_info "total_found: #{total_found}"
     
     if total_found == 0
       total_term_hits = 0
@@ -1439,7 +1447,7 @@ class SearchController < ApplicationController
   end
 
   def log(msg, line)
-    logger.info "#{File.basename(__FILE__)}, line: #{line}, #{msg}"
+    log_info "#{File.basename(__FILE__)}, line: #{line}, #{msg}"
   end
 
   # 根據異體字表，回傳各種可能異體字串及搜尋結果筆數
@@ -1448,10 +1456,10 @@ class SearchController < ApplicationController
   #   * 大比丘三千威儀
   #   * 阿耨多羅三藐三菩提
   def variants_sub
-    logger.info "scope: #{params[:scope]}"
+    log_info "scope: #{params[:scope]}"
     t1 = Time.now
     remove_puncs_from_query
-    logger.info "variants_sub, q: #{@q}"
+    log_info "variants_sub, q: #{@q}"
     q_ary = get_query_variants(@q)
     
     if @q.include? '菩薩'
