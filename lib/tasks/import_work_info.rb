@@ -164,9 +164,6 @@ class ImportWorkInfo
         
     juans = doc.xpath("//milestone[@unit='juan']")
     r[:juan_start] = juans.first['n'].to_i
-    
-    extent = doc.at_xpath("//extent").text
-    r[:juan] = extent.delete_suffix('卷').to_i
 
     # 卷 milestone 可能跳號，要逐一列舉
     juan_list = []
