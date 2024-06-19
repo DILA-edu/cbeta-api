@@ -90,7 +90,7 @@ class ManticoreChunks
     @work_id = CBETA.get_work_id_from_file_basename(@basename)
     
     @work_info = get_info_from_work(@work_id, 
-      exclude: [:byline, :juan_list, :juan_start, :work_type]
+      exclude: [:alt, :byline, :juan_list, :juan_start, :work_type]
     )
     return if @work_info.nil?
 
