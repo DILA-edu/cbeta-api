@@ -11,7 +11,7 @@ module CBData
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 6.0
     config.cb = config_for(:cb)
-    config.cb.ver = '3.1.4'
+    config.cb.ver = '3.1.5'
 
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
