@@ -777,6 +777,25 @@ class P5aToHTMLForUI
     content = traverse(e)
     target = e['target']
 
+    r = e_ref_target_xpath(target, content)
+    return r unless r.nil?
+
+    return content unless target.start_with?('#')
+
+    # T49n2035, <ref target="#list4">天台智者禪師○</ref>
+    id = target.delete_prefix('#')
+    node = e.xpath("//*[@id='#{id}']")
+    if node.nil?
+      puts "ref target #{target} 不存在"
+      return content
+    end
+
+    lb = node.at_xpath("preceding::lb[1]")
+    linehead = CBETA.get_linehead(@sutra_no, lb['n'])
+    link_cbeta_linehead(linehead, content)
+  end
+
+  def e_ref_target_xpath(target, content)
     # 例 T42n1828_p0311a06
     # <ref target="../T30/T30n1579.xml#xpath2(//0279a03)">
     regexp = /\A
@@ -788,7 +807,7 @@ class P5aToHTMLForUI
     \z/x
 
     md = target.match(regexp)
-    return content if md.nil?
+    return nil if md.nil?
 
     basename = $2
     lb = $3
