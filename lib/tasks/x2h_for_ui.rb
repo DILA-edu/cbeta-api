@@ -138,6 +138,7 @@ class P5aToHTMLForUI
 
     @canon_name = @my_cbeta_share.get_canon_name(c)
     @orig_short = @orig.sub(/^【(.*)】$/, '\1')
+    read_t2k if c == 'T'
   end
   
   def convert_sutra(xml_fn)
@@ -950,6 +951,12 @@ class P5aToHTMLForUI
         r = %(<a class="facsimile" data-ref="#{ed}v#{v}p#{n}"></a>)
         @first_lb_in_juan = false
       end
+      if ed=='T'
+        ref = @t2k.dig(@vol, @lb)
+        unless ref.nil?
+          r << %(<a class="facsimile" data-s="dongguk" data-ref="#{ref}"></a>)
+        end
+      end
     end
     r
   end
@@ -1185,6 +1192,29 @@ class P5aToHTMLForUI
   def progress(msg)
     $stderr.puts Time.now.strftime("%Y-%m-%d %H:%M:%S")
     $stderr.puts msg
+  end
+
+  def read_t2k
+    @t2k = Hash.new { |hash, key| hash[key] = Hash.new }
+    old_k = nil
+    Dir.glob("#{Rails.configuration.x.t2k}/*.txt") do |f|
+      puts "read #{f}"
+      File.foreach(f) do |line|
+        lh_t, lh_k = line.split('║')
+        next if lh_k.blank?
+
+        # K0987V30P0006a18L
+        lh_k = lh_k.split(';').first[0, 14]
+        next if lh_k == old_k
+
+        t_vol = lh_t[0, 3]
+        t_lb  = lh_t[-7..-1]
+        
+        ref = lh_k.sub(/(K\d{4})V(\d\d)P(\d{4})([a-z])/, '\1.\2.\3.\4')
+        @t2k[t_vol][t_lb] = ref
+        old_k = lh_k
+      end
+    end
   end
 
   def span_t(content)
