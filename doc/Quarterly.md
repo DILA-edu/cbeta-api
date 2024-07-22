@@ -7,7 +7,7 @@ CBETA XML 新一季定案後執行。
 ## 編輯 config 參數
 
 * config
-  * cb.yml
+  * cb.yml (server 端)
   * deploy
     * staging.rb
     * production.rb
@@ -24,22 +24,24 @@ CBETA XML 新一季定案後執行。
 
 ### 異體字
 
-參考 variants.md 更新 cbeta-metadata 裡的異體字資料
+參考 [variants.md](variants.md) 更新 cbeta-metadata 裡的異體字資料
 
 ### 新增佛典
 
 執行以下命令檢查：
     rake check:metadata
 
-如果有新增的佛典，參考 new-canon.md
+如果有新增的佛典，參考 [new-canon.md](new-canon.md)
 
 ## update cbeta gem
 
 * 缺字資料要更新
+  * cbeta_gaiji.json
+  * cbeta_sanskrit.json
 
 ## UUID
 
-視需要產生 UUID, 參考 uuid.md
+視需要產生 UUID, 參考 [uuid.md](uuid.md)
 
 ## Server 端執行 rake quarterly
 

@@ -45,4 +45,4 @@ SORT_ORDER = %w(T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC CC)
 
 ## Create UUID
 
-參考 uuid.md
+參考 [uuid.md](uuid.md)
