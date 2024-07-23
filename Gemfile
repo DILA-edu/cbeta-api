@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.3.4'
+ruby '3.1.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 6.1.7.8'
@@ -61,11 +61,11 @@ end
 # bundle install 錯誤: could not be found in any of the sources listed in your Gemfile
 # 可以執行以下命令從 RubyGems 取得最新清單
 # bundle --full-index
-gem 'cbeta', '>= 3.4.4'
+gem 'cbeta', '>= 3.4.5'
 
 gem "haml-rails"
 gem 'time_diff'
-gem 'zhongwen_tools'
+#gem 'zhongwen_tools'
 gem 'chronic_duration'
 gem 'mysql2'
 

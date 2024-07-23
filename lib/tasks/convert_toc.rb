@@ -1,7 +1,6 @@
 require 'json'
 require 'nokogiri'
-require 'zhongwen_tools'
-require 'zhongwen_tools/core_ext/integer'
+require 'int_to_zht'
 require_relative 'cbeta_p5a_share'
 
 class ConvertToc
@@ -96,10 +95,10 @@ class ConvertToc
       if e.key? 'n'
         s = e['n']
         if s.match(/^\d+$/)
-          s = '第' + s.to_i.to_zht
+          s = '第' + IntToZht.convert(s.to_i)
         end
       else
-        s = '第' + @juan.to_zht
+        s = '第' + IntToZht.convert(@juan)
       end
     end
     data[:title] = s
@@ -135,6 +134,23 @@ class ConvertToc
   def convert_work(xml_path)
     check_work
     get_info_from_xml(xml_path)    
+  end
+
+  def int_to_zht(number)
+    chinese_numerals = {
+      0 => "零", 1 => "一", 2 => "二", 3 => "三", 4 => "四", 5 => "五",
+      6 => "六", 7 => "七", 8 => "八", 9 => "九", 10 => "十"
+    }
+    
+    if number < 10
+      return chinese_numerals[number]
+    elsif number < 20
+      return "十" + (number == 10 ? "" : chinese_numerals[number % 10])
+    else
+      tens = number / 10
+      units = number % 10
+      return chinese_numerals[tens] + "十" + (units == 0 ? "" : chinese_numerals[units])
+    end
   end
   
   def toc_n(stack)
