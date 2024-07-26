@@ -30,7 +30,7 @@ module SectionHTML
       將 zip 檔提供給 heaven:
         #{src}
         =>
-        GoogleDrive/共用雲端硬碟/CBETA-API/out/html.zip
+        GoogleDrive/共用雲端硬碟/CBETA-季更新/html.zip
       因為 heaven 可能發現問題再修改 XML，
       所以等 heaven 比對完再進行後面的步驟。
     MSG
