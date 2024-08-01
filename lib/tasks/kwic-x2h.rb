@@ -337,6 +337,11 @@ class P5aToSimpleHTML
   def handle_collection(c)
     @series = c
     puts 'handle_collection ' + c
+
+    dest = File.join(@output_root, @series)
+    puts "清除舊資料: #{dest}"
+    FileUtils.remove_dir(dest, true)
+
     folder = File.join(@xml_root, @series)
     Dir.entries(folder).sort.each { |vol|
       next if vol.start_with? '.'

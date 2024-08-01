@@ -1,5 +1,5 @@
 namespace :kwic do
-  task build: %w[x2h h2t sa sort_info]
+  task build: %w[x2h h2t sa]
 
   task :x2h, [:canon] => :environment do |t, args|
     require_relative 'kwic-x2h'

@@ -499,7 +499,7 @@ class KwicService
   end
 
   def open_files(sa_path)
-    log_info "open_files, sa_path: #{sa_path}", __LINE__
+    log_info "open_files, sa_path: #{sa_path}"
 
     return true if @current_sa_path == sa_path
     @current_sa_path = sa_path
@@ -650,7 +650,7 @@ class KwicService
   end
 
   def paginate_by_location(q, sa_results)
-    log_info('paginate_by_location', __FILE__)
+    log_info 'paginate_by_location'
     hits = []
     sa_results.each do |sa_path, start, found|
       hits.concat(result_hash(q, start, found))
@@ -920,7 +920,7 @@ class KwicService
   end
       
   def result_hash(q, start, rows)
-    log_info "result_hash, q: #{q}, start: #{start}, rows: #{rows}", __LINE__
+    log_info "result_hash, q: #{q}, start: #{start}, rows: #{rows}"
 
     return [] if rows == 0
     return [] if start.nil?
@@ -936,7 +936,7 @@ class KwicService
     read_text_for_info_array(info_array, q)
     add_place_info(info_array) if @option[:place] # 附上 地理資訊
 
-    log_info "result_hash, return info_array size: #{info_array.size}", __LINE__
+    log_info "result_hash, return info_array size: #{info_array.size}"
     info_array
   end
 
@@ -1012,15 +1012,15 @@ class KwicService
   end
 
   def search_sa_juan(sa_path, q)
-    log_info "search_sa_juan, q: #{q}", __LINE__
+    log_info "search_sa_juan, q: #{q}"
     status = open_files(sa_path)
-    log_info "open_files return: #{status}", __LINE__
+    log_info "open_files return: #{status}, f_txt size: #{@f_txt.size}"
     return nil unless status
     search_sa_after_open_files_juan(q)
   end
 
   def search_sa_after_open_files(q)
-    log_info "search_sa_after_open_files, q: #{q}", __LINE__
+    log_info "search_sa_after_open_files, q: #{q}"
     t1 = Time.now
     i = bsearch(q, 0, @sa_last)
     return nil if i.nil?
@@ -1038,11 +1038,11 @@ class KwicService
   end
   
   def search_sa_after_open_files_juan(q)
-    log_info "search_sa_after_open_files_juan, q: #{q}", __LINE__
+    log_info "search_sa_after_open_files_juan, q: #{q}"
     t1 = Time.now
     i = bsearch_juan(q, 0, @sa_last)
     if i.nil?
-      log_info('bsearch_juan return nil', __LINE__)
+      log_info 'bsearch_juan return nil'
       return nil
     end
   
@@ -1054,7 +1054,7 @@ class KwicService
   
     found = stop - start + 1
     @total_found += found
-    log_info "search_sa_after_open_files_juan, 結果 start: #{start}, found: #{found}", __LINE__
+    log_info "search_sa_after_open_files_juan, 結果 start: #{start}, found: #{found}"
     return start, found
   end
 
@@ -1130,10 +1130,11 @@ class KwicService
     r
   end
 
-  def log_info(msg, line=nil)
-    r = File.basename(__FILE__)
-    r << ", line: #{line}" unless line.nil?
-    r << ", #{msg}"
+  def log_info(msg)
+    return if Rails.env.production?
+    location = caller_locations.first
+    file = File.basename(location.path)
+    r = "#{file}:#{location.lineno}, #{msg}"
     Rails.logger.info r
   end
   
