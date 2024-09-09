@@ -134,7 +134,7 @@ class SearchController < ApplicationController
       h['canon']    = facet_by_sphinx('canon')
     end
 
-    notes_inline_around(r)
+    notes_highlight(r)
     my_render r
   ensure
     @mysql_client.close unless @mysql_client.nil?
@@ -770,11 +770,8 @@ class SearchController < ApplicationController
     keys.delete('')
     s = keys.join(' ')
 
-    # http://sphinxsearch.com/docs/current/api-func-buildexcerpts.html
     @fields = "id, note_place, canon, category, vol, file, "\
-      "work, title, juan, lb, n, content, prefix, suffix,"\
-      "SNIPPET(content, '#{@q}', 'limit=0', "\
-      "'before_match=<mark>', 'after_match=</mark>') AS highlight"
+      "work, title, juan, lb, n, content, content_w_puncs, prefix, suffix"
   end
   
   # 排序欄位最多只能有五個，否則會出現如下錯誤：
@@ -1196,24 +1193,43 @@ class SearchController < ApplicationController
     r
   end
 
-  def notes_inline_around(r)
+  def notes_highlight(r)
+    q1 = params[:q].sub(/\A"(.*)"\z/, '\1') # 未去標點的 Query String
+
+    # 允許標點差異的 regular expression
+    q2 = @q.sub(/\A"(.*)"\z/, '\1')
+    s = q2.chars.join("[【】，〔－〕＊。]*")
+    log_info "notes_highlight, exp: #{s}"
+    exp = Regexp.new(s)
+
     r[:results].each do |h|
-      if h[:note_place] == 'inline'
-        hh = h[:highlight]
-        hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
-          hh = m[2]
-          s = h[:prefix] + '(' + m[1]
-          prefix = s[-@around..-1] || s
-          s = m[3] + ')' + h[:suffix]
-          suffix = s[0, @around]
-          h[:highlight] = "#{prefix}#{hh}#{suffix}"
-        end
+      h[:highlight] = h[:content_w_puncs].gsub(q1, "<mark>#{q1}</mark>")
+      unless h[:highlight].include?('<mark>')
+        h[:highlight] = h[:content_w_puncs].gsub(exp, '<mark>\0</mark>')
       end
+
+      notes_inline_around(h) if h[:note_place] == 'inline'
+      
+      h.delete(:content_w_puncs)
       h.delete(:prefix)
       h.delete(:suffix)
       h[:content] = Gaiji.replace_pua_with_zzs(h[:content])
-      h[:highlight] = Gaiji.replace_pua_with_zzs(h[:content])
+      h[:highlight] = Gaiji.replace_pua_with_zzs(h[:highlight])
     end
+  end
+
+  def notes_inline_around(h)
+    log_info "notes_inline_around, highlight: #{h[:highlight]}"
+    hh = h[:highlight]
+    hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
+      hh = m[2]
+      s = h[:prefix] + '(' + m[1]
+      prefix = s[-@around..-1] || s
+      s = m[3] + ')' + h[:suffix]
+      suffix = s[0, @around]
+      h[:highlight] = "#{prefix}#{hh}#{suffix}"
+    end
+    h.delete(:n)
   end
 
   def similar_sub

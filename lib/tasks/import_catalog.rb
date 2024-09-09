@@ -178,7 +178,7 @@ class ImportCatalog
     tokens.each do |token|
       if token.include? '..'
         w1, w2 = token.split('..')
-        Work.where(n: w1..w2).sort.each do |w|
+        Work.where(n: w1..w2).order(:n).each do |w|
           add_work(parent, start+i, w.n, work_object: w)
           i += 1
         end

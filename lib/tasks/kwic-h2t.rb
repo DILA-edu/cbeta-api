@@ -35,7 +35,7 @@ class KwicHtml2Text
     @size = 0
     @max_offset = 0
     read_text_from_folder(Rails.configuration.x.kwic.html, target)
-    puts "size: " + n2c(@size)
+    puts "convert, size: " + n2c(@size)
 
     puts "max offset: " + n2c(@max_offset)
 
@@ -46,6 +46,7 @@ class KwicHtml2Text
 
   def read_file(base, rel_path)
     s1 = @builder.read_html_file(rel_path)
+    puts "read_file, size: #{s1.size}"
     @size += s1.size
     
     s1.downcase!
@@ -56,7 +57,9 @@ class KwicHtml2Text
       
     folder = File.join(@work_base, 'text', @builder.canon, @builder.work)
     FileUtils.mkdir_p folder
+
     fn = File.join(folder, "#{@builder.juan}.txt")
+    puts "read_file, write #{fn}"
     # 有「卷跨冊」的例外情況，所以要用 append mode
     File.open(fn, 'a:UTF-32LE') { |f| f.write(@builder.text_with_punc) }
   end

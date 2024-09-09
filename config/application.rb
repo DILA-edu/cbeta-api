@@ -11,7 +11,7 @@ module CBData
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 6.0
     config.cb = config_for(:cb)
-    config.cb.ver = '3.1.5'
+    config.cb.ver = '3.3.2'
 
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
@@ -22,6 +22,7 @@ module CBData
     config.cbeta_data  = File.join(config.cb.git, 'cbeta-metadata')
     config.cbeta_gaiji = File.join(config.cb.git, 'cbeta_gaiji')
     config.x.figures   = File.join(config.cb.git, 'CBR2X-figures')
+    config.x.t2k       = File.join(config.cb.git, 'cbwork-common-T2K', 'TK_head')
     config.x.work_info = File.join(config.x.authority, 'authority_catalog', 'json')
   
     # 分詞相關

@@ -28,6 +28,7 @@ class ManticoreNotes
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
     @dynasty_labels = read_dynasty_labels
+    @cbs = CbetaString.new
   end
 
   def convert(target=nil)
@@ -388,7 +389,7 @@ class ManticoreNotes
 
     # cbeta xml 文字之間會有多餘的換行
     s.gsub(/[\n\r]/, '')
-
+    
     # 校注都不算 offset, 不管是否在夾注裡
     # 夾注也要算 offset, 如果在校注裡 就不算
     @offset += s.size unless mode == 'footnote'
@@ -513,8 +514,13 @@ class ManticoreNotes
       xml << text_around_note(note)
     end
 
-    s1 = note[:text].encode(xml: :text)
-    xml << "  <content>#{s1}</content>\n"
+    # 去標點
+    s = @cbs.remove_puncs(note[:text]).encode(xml: :text)
+    xml << "  <content>#{s}</content>\n"
+
+    # 含標點
+    s = note[:text].encode(xml: :text)
+    xml << "  <content_w_puncs>#{s}</content_w_puncs>\n"
 
     @work_info.each_pair do |k,v|
       xml << "  <#{k}>#{v}</#{k}>\n"
