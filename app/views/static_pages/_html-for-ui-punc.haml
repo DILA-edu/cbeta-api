@@ -9,27 +9,35 @@
   %li 新式標點
   %li 原書標點
   %li AI 標點
+
+%h3 CBETA
 %p 這會在 body 下的第一層 div 中記錄，data-punc="CBETA" 表示這是由 CBETA 製作的新式標點，例如 T0001_001
 .code
   %pre
     :escaped
       <div id='body' data-punc="CBETA">
 
+%h3 DILA
 %p data-punc="DILA" 表示這是由 法鼓文理學院 製作的新式標點，例 GA0008_001:
 .code
   %pre
     :escaped
       <div id="body" data-punc="DILA">
 
-%p data-punc="AI" 表示使用「北京龍泉寺人工智能標點引擎」製作的新式標點初稿，例如 JB098_001:
+%h3 AI
+%p 
+  data-punc="AI" 表示使用
+  = surround '「', '」' do
+    =link_to '古籍酷 自动标点', 'https://gj.cool/about?tab=punct#punctuation'
+  製作的新式標點初稿，例如 X0008_001:
 .code
   %pre
     :escaped
       <div id='body' data-punc="AI">
 
+%h3 orig
 %p data-punc="orig" 表示是原書的標點，例 A1057_001：
 .code
   %pre
     :escaped
       <div id='body' data-punc="orig">
-
