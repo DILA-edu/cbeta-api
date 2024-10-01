@@ -40,6 +40,7 @@ Rails.application.routes.draw do
   get   'report/daily',   to: 'report#daily',   as: :report_daily
   match 'report/url',     to: 'report#url',     as: :report_url,     via: [:get, :post]
   match 'report/referer', to: 'report#referer', as: :report_referer, via: [:get, :post]
+  match   'report/total',   to: 'report#total', via: [:get, :post]
 
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
