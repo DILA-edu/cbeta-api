@@ -17,8 +17,6 @@ class ImportWorkInfo
     @log = File.open(fn, 'w')
     
     @work_uuid = read_uuid
-    @total_cjk_chars = 0
-    @total_en_words = 0
     @max_cjk_chars = 0
     @works_dynasty = Hash.new { |h, k| h[k] = [] }
     @works_no_dynasty = []
@@ -28,6 +26,8 @@ class ImportWorkInfo
   end
   
   def import
+    @stat = {}
+
     XmlFile.delete_all
     Place.delete_all
     Person.delete_all
@@ -39,19 +39,19 @@ class ImportWorkInfo
     dynasty_write_count
     dynasty_write_works    
     
-    puts "total_cjk_chars: %s" % number_with_delimiter(@total_cjk_chars)
-    puts "total_en_words: %s" % number_with_delimiter(@total_en_words)
+    total = {}
+    [:works, :juans, :cjk_chars, :en_words].each do |k|
+      total[k] = @stat.values.sum { |x| x[k] }
+    end
+
+    puts "total_cjk_chars: %s" % number_with_delimiter(total[:cjk_chars])
+    puts "total_en_words: %s" % number_with_delimiter(total[:en_words])
     puts "單部佛典最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
 
-    stat = {
-      total_works:     @total_works,
-      total_juans:     @total_juans,
-      total_cjk_chars: @total_cjk_chars,
-      total_en_words:  @total_en_words
-    }
+    r = { total:, by_canon: @stat }
     fn = Rails.root.join('data', 'stat-all.json')
     puts "write #{fn}"
-    File.write(fn, JSON.pretty_generate(stat))
+    File.write(fn, JSON.pretty_generate(r))
   end
   
   private
@@ -208,21 +208,30 @@ class ImportWorkInfo
     end
   end
 
+  def init_stat_canon(canon)
+    return if @stat.key?(canon)
+    @stat[canon] = {
+      works: 0,
+      juans: 0,
+      cjk_chars: 0,
+      en_words: 0
+    }
+  end
+
   def import_from_authority
-    @total_works = 0
-    @total_juans = 0
     @people = {}
 
     each_canon(@xml_root) do |c|
       @canon = c
+      init_stat_canon(c)
       fn = File.join(@work_info_dir, "#{c}.json")
       puts "update from #{fn}"
       works_info = JSON.load_file(fn, symbolize_names: true)
       works_info.each do |k, v|
         w = Work.find_or_create_by(n: k)
         if v[:type]=="textbody" and not v.key?(:alt)
-          @total_works += 1
-          @total_juans += v[:juans]
+          @stat[@canon][:works] += 1
+          @stat[@canon][:juans] += v[:juans]
         end
         update_work_from_authority(w, v)
       end
@@ -337,8 +346,8 @@ class ImportWorkInfo
     end
 
     @done << @work
-    @total_cjk_chars += data[:cjk_chars]
-    @total_en_words += data[:en_words]
+    @stat[@canon][:cjk_chars] += data[:cjk_chars]
+    @stat[@canon][:en_words]  += data[:en_words]
     @max_cjk_chars = data[:cjk_chars] if data[:cjk_chars] > @max_cjk_chars
   end
 
