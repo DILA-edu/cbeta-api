@@ -1,0 +1,27 @@
+%h1 統計報表
+%h2 全集成 統計數字
+
+%p= link_to_url '/report/total'
+
+%p CBETA 收錄內容可分為兩大類：
+%ul
+  %li textbody (本文)
+  %li non-textbody (非本文)： 例如 ZWa001 (緣起)、ZWa002 (卷首語)、ZWa003 (目錄)
+
+%p 回傳資料
+%ul
+  %li
+    total (全部)
+    %ul
+      %li works_all (典籍部數，含 non-textbody)
+      %li works_main (典籍部數，不含 non-textbody)
+      %li juans_all (典籍卷數，含 non-textbody)
+      %li juans_main (典籍卷數，不含 non-textbody)
+      %li cjk_chars_all (CJK 字元數，含 non-textbody)
+      %li cjk_chars_main (CJK 字元數，不含 non-textbody)
+      %li en_words_all (英文、梵巴轉寫 word 數量，含 non-textbody)
+      %li en_words_main (英文、梵巴轉寫 word 數量，不含 non-textbody)
+  %li 
+    by_canon (分藏別)
+    %ul
+      %li 欄位同上
