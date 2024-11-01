@@ -22,6 +22,9 @@ class ManticoreNotes
   private_constant :PASS, :MISSING
 
   def initialize
+    fn = Rails.root.join('log', 'manticore-notes.log')
+    @log = File.open(fn, 'w')
+
     @xml_root = Rails.application.config.cbeta_xml
     @cbeta = CBETA.new
     @us = UnicodeService.new
@@ -275,7 +278,7 @@ class ManticoreNotes
       return '' if e['resp'].start_with? 'CBETA'
     end
 
-    puts "不明的 note, lb: #{@lb}"
+    log "不明的 note, lb: #{@lb}"
 
     return traverse(e, mode)
   end
@@ -564,6 +567,12 @@ class ManticoreNotes
     end
     s = s.encode(xml: :text)
     r + "  <suffix>#{s}</suffix>\n"
+  end
+
+  def log(msg)
+    location = caller_locations.first
+    file = File.basename(location.path)
+    @log.puts "#{file}:#{location.lineno}, #{msg}"
   end
 
   include CbetaP5aShare
