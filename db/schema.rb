@@ -10,8 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_03_18_074051) do
-
+ActiveRecord::Schema[7.1].define(version: 2024_11_12_055713) do
   create_table "canons", force: :cascade do |t|
     t.string "id2"
     t.string "name"
