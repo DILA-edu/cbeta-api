@@ -1,5 +1,5 @@
 # config valid only for current version of Capistrano
-lock '3.19.1'
+lock '3.19.2'
 
 set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
