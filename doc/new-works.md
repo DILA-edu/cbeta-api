@@ -4,7 +4,7 @@
 
 以下相對目錄位於 <https://github.com/DILA-edu/cbeta-metadata>
 
-編輯 `/canons.yml`
+如果有增修「藏經 ID」，要編輯 `/canons.yml`。
 
 ### catalog
 

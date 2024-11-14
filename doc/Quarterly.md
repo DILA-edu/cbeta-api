@@ -31,7 +31,7 @@ CBETA XML 新一季定案後執行。
 執行以下命令檢查：
     rake check:metadata
 
-如果有新增的佛典，參考 [new-canon.md](new-canon.md)
+如果有新增的佛典，參考 [new-works.md](new-works.md)
 
 ## update cbeta gem
 
