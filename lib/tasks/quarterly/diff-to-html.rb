@@ -293,9 +293,9 @@ class DiffToHTML
     
     tokens = f1.split('/')
     basename = tokens[2]
-    return '' if @ignore_list['ignore_all'].include?(basename)
+    return '' if @ignore_list[:ignore_all].include?(basename)
 
-    @ignore = @ignore_list['ignore_puncs'].include?(basename)
+    @ignore = @ignore_list[:ignore_puncs].include?(basename)
     juan = tokens.last.sub(/^0*(\d+)\.txt$/, '\1')
     @work_id = CBETA.get_work_id_from_file_basename(basename)
     title = Work.find_by(n: @work_id).title
