@@ -33,7 +33,7 @@ CBETA XML 新一季定案後執行。
 
 如果有新增的佛典，參考 [new-works.md](new-works.md)
 
-## update cbeta gem
+## gem update cbeta
 
 * 缺字資料要更新
   * cbeta_gaiji.json
