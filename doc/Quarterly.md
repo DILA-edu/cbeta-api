@@ -61,7 +61,13 @@ CBETA XML 新一季定案後執行。
 
 ## change log
 
-根據 CBETA 給的「忽略清單」編輯： `/home/ray/cbeta-change-log/2024R1.yml`
+根據 CBETA 給的「忽略清單」編輯：
+
+* `/home/ray/cbeta-change-log/`
+  * 2024R3-ignore-puncs.txt
+  * 2024R3-ignore-all.txt
+
+如果檔案不存在，就表示 沒有要忽略的。
 
 ## EPUB 給 heaven 轉 PDF, MOBI
 
