@@ -374,7 +374,7 @@ class P5aToHTMLForDownload
       @notes_orig[@juan] = {}
       
       # 如果是 卷 跨 冊，下半部編號繼續編
-      unless juan_cross_vol(@vol, @work_id, @juan)==2
+      unless CBETA.juan_across_vol(@vol, @work_id, @juan)==2
         @notes_add[@juan] = []
       end
 
@@ -630,32 +630,6 @@ class P5aToHTMLForDownload
     ele_unclear(e)
   end
 
-  # 卷跨冊
-  def juan_cross_vol(vol, work, juan=nil)
-    case work
-    when 'L1557'
-      case vol
-      when 'L130'
-        return 1 if juan == 17 # 上半卷
-      when 'L131'
-        return 2 if juan.nil? or juan == 17 # 下半卷
-        return 1 if juan == 34
-      when 'L132'
-        return 2 if juan.nil? or juan == 34
-        return 1 if juan == 51
-      when 'L133'
-        return 2 if juan.nil? or juan == 51
-      end
-    when 'X0714'
-      case vol
-      when 'X39'
-        return 1 if juan == 3
-      when 'X40'
-        return 2 if juan.nil? or juan == 3
-      end
-    end
-  end
-
   def handle_collection(c)
     @canon = c
     @canon_name = @my_cbeta_share.get_canon_name(c)
@@ -733,7 +707,7 @@ class P5aToHTMLForDownload
     @pre = [false]
     @sutra_no = File.basename(xml_fn, ".xml")
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
-    @notes_add = {} unless juan_cross_vol(@vol, @work_id) == 2
+    @notes_add = {} unless CBETA.juan_across_vol(@vol, @work_id) == 2
     @updated_at = MyCbetaShare.get_update_date(xml_fn)
     
     if @sutra_no.match(/^(T05|T06|T07)n0220/)
@@ -803,7 +777,7 @@ class P5aToHTMLForDownload
     @notes_mod[juan_no].each_pair do |k,v|
       r << "<span class='footnote' id='n#{k}'><a href='#note_anchor_#{k}'>[#{k}]</a> #{v}</span>\n"
     end
-    unless juan_cross_vol(@vol, @work_id, juan_no) == 1
+    unless CBETA.juan_across_vol(@vol, @work_id, juan_no) == 1
       r << @notes_add[juan_no].join("\n") 
     end
     r
@@ -944,7 +918,7 @@ class P5aToHTMLForDownload
     back = html_back(juan_no)
 
     # 如果是卷跨冊的上半部
-    if juan_cross_vol(@vol, @work_id, juan_no) == 1
+    if CBETA.juan_across_vol(@vol, @work_id, juan_no) == 1
       @html_buf = body
       @back_buf = back
       return

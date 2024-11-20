@@ -38,6 +38,11 @@ CANON = 'CC|DA|GA|GB|LC|ZS|ZW|[A-Z]'
 SORT_ORDER = %w(T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC CC)
 ```
 
+如果新增典籍有「卷跨冊」的情況，修改以下兩個 method:
+
+* work_juan_vol_range
+* juan_across_vol
+
 ### lib/data/canons.csv
 
 * 參考 cbeta-xml-p5a/canons.json

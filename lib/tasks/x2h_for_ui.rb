@@ -1281,10 +1281,7 @@ class P5aToHTMLForUI
     back = html_back(juan_no)
           
     # 如果是卷跨冊的上半部
-    if (work=='L1557' and @vol=='L130' and juan_no==17) or
-       (work=='L1557' and @vol=='L131' and juan_no==34) or
-       (work=='L1557' and @vol=='L132' and juan_no==51) or
-       (work=='X0714' and @vol=='X39' and juan_no==3)
+    if CBETA.juan_across_vol(@vol, work, juan_no) == 1
        @html_buf = html
        @back_buf = back
     else    
