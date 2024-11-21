@@ -1,6 +1,9 @@
 class Changelog
-  def self.get_ignore_list(config)
+  def initialize(config)
     @config = config
+  end
+
+  def get_ignore_list
     {
       ignore_all:   read_file('ignore-all'),
       ignore_puncs: read_file('ignore-puncs')
@@ -10,7 +13,7 @@ class Changelog
   private
 
   def read_file(type)
-    fn = File.join(@config[:change_log], "#{config[:q2]}-#{type}.txt")
+    fn = File.join(@config[:change_log], "#{@config[:q2]}-#{type}.txt")
     unless File.exist?(fn)
       puts "忽略清單不存在: #{fn}".red
       return []

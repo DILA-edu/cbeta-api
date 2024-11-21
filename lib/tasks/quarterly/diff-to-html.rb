@@ -16,7 +16,7 @@ class DiffToHTML
   def initialize(config)
     @config = config
     @base = config[:change_log]
-    @ignore_list = Changelog.get_ignore_list(config)
+    @ignore_list = Changelog.new(config).get_ignore_list
   end
 
   def convert
