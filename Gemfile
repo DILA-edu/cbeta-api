@@ -87,6 +87,7 @@ gem 'colorize'
 gem 'diff-lcs'
 gem 'unihan2', '>= 1.0.0'
 gem 'open3'
+gem 'faraday'
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false
