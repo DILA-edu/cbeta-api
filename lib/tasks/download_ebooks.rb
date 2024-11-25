@@ -78,11 +78,11 @@ class DownloadEbooks
   def download_pdf
     remote_paths = @remote_files['pdf']
     basenames = []
-    remote_paths.each do |remote_path|
+    remote_paths.each_with_index do |remote_path, i|
       download("#{BASE}/#{remote_path}")
       fn = File.basename(remote_path)
-      File.rename(fn, "cbeta-pdf-#{@q}-#{i}.zip")
-      exec("unzip cbeta-pdf-#{@q}-#{i}.zip")
+      File.rename(fn, "cbeta-pdf-#{@q}-#{i+1}.zip")
+      exec("unzip cbeta-pdf-#{@q}-#{i+1}.zip")
       basenames << File.basename(fn, '.*')
     end
 
