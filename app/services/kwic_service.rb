@@ -140,7 +140,7 @@ class KwicService
     hits.sort_by! { |x| x['offset_in_text_with_punc'] }
   
     { 
-      num_found: @total_found,
+      num_found: hits.size,
       results: hits
     }
   end
@@ -440,9 +440,14 @@ class KwicService
   def exclude_prefix(info_array, q, prefix)
     q2 = prefix + q
     start, found = search_sa_after_open_files(q2)
+    @logger.info "exclude_prefix, q2: #{q2}, found: #{found}, start: #{start}"
     return if start.nil?
 
-    #sa_array = sa_block(start, found)
+    @logger.info "info_array size: #{info_array.size}"
+    info_array.each do |x|
+      i = x[:sa_offset]
+      @logger.info "#{i} => #{sa(i)}"
+    end
 
     len = prefix.size
     a = []
@@ -450,17 +455,27 @@ class KwicService
       a << (sa(start+i) + len)
     end
 
-    info_array.delete_if { |x| a.include?(x[:sa_offset]) }
+    @logger.info "prefix array: #{a.inspect}"
+
+    info_array.delete_if { |x| a.include?(sa(x[:sa_offset])) }
+    @logger.info "info_array size: #{info_array.size}"
   end
 
   def exclude_suffix(info_array, q, suffix)
     q2 = q + suffix
     start, found = search_sa_after_open_files(q2)
+    @logger.info "exclude_suffix, q2: #{q2}, found: #{found}, start: #{start}"
     return if start.nil?
 
-    sa_array = sa_block(start, found)
+    @logger.info "info_array size: #{info_array.size}"
+    info_array.each do |x|
+      i = x[:sa_offset]
+      @logger.info "#{i} => #{sa(i)}"
+    end
 
-    info_array.delete_if { |x| sa_array.include?(x[:sa_offset]) }
+    range = (start...start+found)
+
+    info_array.delete_if { |x| range.include?(x[:sa_offset]) }
   end
 
   def cache_fetch_juan_text(vol, work, juan)
@@ -936,7 +951,7 @@ class KwicService
     read_text_for_info_array(info_array, q)
     add_place_info(info_array) if @option[:place] # 附上 地理資訊
 
-    log_info "result_hash, return info_array size: #{info_array.size}"
+    log_info "q: #{q}, result_hash, return info_array size: #{info_array.size}"
     info_array
   end
 
