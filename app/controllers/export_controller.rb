@@ -1,4 +1,10 @@
 class ExportController < ApplicationController
+  before_action :init
+
+  def init
+    @use_cache = params.key?(:cache) ? (params[:cache]=='1') : true
+  end
+
   def all_creators
     fn = Rails.root.join('data', 'all-creators.json')
 
@@ -142,6 +148,22 @@ class ExportController < ApplicationController
   
   def scope_selector_by_vol
     @canons = CBETA::Canon.new
+    r = if @use_cache
+      key = "#{Rails.configuration.cb.r}/export/scope/vol/#{@referer_cn}"
+      Rails.cache.fetch(key) do
+        scope_selector_by_vol_sub
+      end
+    else
+      scope_selector_by_vol_sub
+    end
+
+    my_render(r)
+  end
+  
+  private
+  
+  def scope_selector_by_vol_sub
+    @canons = CBETA::Canon.new
     children = []
     r = [
       {
@@ -150,14 +172,14 @@ class ExportController < ApplicationController
         children: children
       }
     ]
+
     CBETA::SORT_ORDER.each do |canon|
       selector_add_canon(canon, children)
     end
-    my_render(r)
+
+    r
   end
-  
-  private
-  
+
   def add_catalog_entries(id, dest)
     CatalogEntry.where(parent: id).order(:n).each do |ce|
       if ce.node_type == 'work'
@@ -167,19 +189,20 @@ class ExportController < ApplicationController
         unless info[:byline].blank?
           title += "【#{info[:byline]}】"
         end
-        d = { 
+        dest << { 
           title: title,
           key: ce.work
         }
-      else
+      elsif ce.node_type != 'html'
         children = []
-        d = { 
-          title: ce.label,
-          children: children
-        }
         add_catalog_entries(ce.n, children)
+        unless children.empty?
+          dest << { 
+            title: ce.label,
+            children: children
+          }
+        end
       end
-      dest << d
     end
   end
   

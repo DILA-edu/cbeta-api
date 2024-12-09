@@ -1,6 +1,5 @@
 require 'json'
 require 'nokogiri'
-require 'int_to_zht'
 require_relative 'cbeta_p5a_share'
 
 class ConvertToc

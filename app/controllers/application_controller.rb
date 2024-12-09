@@ -7,8 +7,7 @@ class ApplicationController < ActionController::Base
   # For APIs, you may want to use :null_session instead.
   
   # 因為回傳 json 要有 callback
-  #protect_from_forgery with: :exception
-  protect_from_forgery only: :create
+  skip_before_action :verify_authenticity_token # 整個 Controller 關閉檢查
 
   EMPTY_RESULT = { num_found: 0, results: [] }
   

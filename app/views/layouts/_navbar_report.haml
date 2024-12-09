@@ -2,6 +2,8 @@
   %a#navbarDropdown.nav-link.dropdown-toggle{"aria-expanded" => "false", "aria-haspopup" => "true", "data-toggle" => "dropdown", :href => "#", :role => "button"}
     統計報表 
   .dropdown-menu{"aria-labelledby" => "navbarDropdown"}
+    %a.dropdown-item{ href: url_for(controller: 'report', action: 'index')}
+      全集成統計數字
     %a.dropdown-item{ href: url_for(controller: 'report', action: 'daily')}
       日統計表
     %a.dropdown-item{ href: url_for(controller: 'report', action: 'url')}

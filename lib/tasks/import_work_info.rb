@@ -3,7 +3,7 @@ require_relative 'cbeta_p5a_share'
 
 class ImportWorkInfo
   def initialize
-    @work_info_dir = Rails.configuration.x.work_info    
+    @work_info_dir = Rails.configuration.x.work_info
     @xml_root      = Rails.configuration.cbeta_xml
     
     @category_name2id = {}
@@ -17,8 +17,6 @@ class ImportWorkInfo
     @log = File.open(fn, 'w')
     
     @work_uuid = read_uuid
-    @total_cjk_chars = 0
-    @total_en_words = 0
     @max_cjk_chars = 0
     @works_dynasty = Hash.new { |h, k| h[k] = [] }
     @works_no_dynasty = []
@@ -28,6 +26,9 @@ class ImportWorkInfo
   end
   
   def import
+    @stat = {}
+    @work_type = {}
+
     XmlFile.delete_all
     Place.delete_all
     Person.delete_all
@@ -37,11 +38,21 @@ class ImportWorkInfo
 
     dynasty_combine_and_sort
     dynasty_write_count
-    dynasty_write_works    
+    dynasty_write_works
     
-    puts "total_cjk_chars: %s" % number_with_delimiter(@total_cjk_chars)
-    puts "total_en_words: %s" % number_with_delimiter(@total_en_words)
+    total = {}
+    @stat['T'].each_key do |k|
+      total[k] = @stat.values.sum { |x| x[k] }
+    end
+
+    puts "total_cjk_chars: %s" % number_with_delimiter(total[:cjk_chars_all])
+    puts "total_en_words: %s" % number_with_delimiter(total[:en_words_all])
     puts "單部佛典最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
+
+    r = { total:, by_canon: @stat }
+    fn = Rails.root.join('data', 'stat-all.json')
+    puts "write #{fn}"
+    File.write(fn, JSON.pretty_generate(r))
   end
   
   private
@@ -195,16 +206,40 @@ class ImportWorkInfo
     end
   end
 
+  def init_stat_canon(canon)
+    return if @stat.key?(canon)
+    @stat[canon] = {
+      works_all: 0,
+      works_main: 0,
+      juans_all: 0,
+      juans_main: 0,
+      cjk_chars_all: 0,
+      cjk_chars_main: 0,
+      en_words_all: 0,
+      en_words_main: 0
+    }
+  end
+
   def import_from_authority
     @people = {}
 
     each_canon(@xml_root) do |c|
       @canon = c
+      init_stat_canon(c)
       fn = File.join(@work_info_dir, "#{c}.json")
       puts "update from #{fn}"
       works_info = JSON.load_file(fn, symbolize_names: true)
       works_info.each do |k, v|
+        @work_type[k.to_s] = v[:type]
         w = Work.find_or_create_by(n: k)
+        if not v.key?(:alt)
+          if v[:type]=="textbody"
+            @stat[@canon][:works_main] += 1
+            @stat[@canon][:juans_main] += v[:juans]
+          end
+          @stat[@canon][:works_all] += 1
+          @stat[@canon][:juans_all] += v[:juans]
+        end
         update_work_from_authority(w, v)
       end
     end
@@ -318,8 +353,14 @@ class ImportWorkInfo
     end
 
     @done << @work
-    @total_cjk_chars += data[:cjk_chars]
-    @total_en_words += data[:en_words]
+
+    @stat[@canon][:cjk_chars_all] += data[:cjk_chars]
+    @stat[@canon][:en_words_all]  += data[:en_words]
+    if @work_type[@work] == 'textbody'
+      @stat[@canon][:cjk_chars_main] += data[:cjk_chars]
+      @stat[@canon][:en_words_main]  += data[:en_words]
+    end
+
     @max_cjk_chars = data[:cjk_chars] if data[:cjk_chars] > @max_cjk_chars
   end
 

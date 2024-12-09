@@ -15,27 +15,19 @@ class MyCbetaShare
           "<div id='cbeta-copyright'><p>\n"
         end
 
-    # 處理 卷跨冊
-    case args[:work]
-    when 'L1557' 
-      case args[:vol]
-      when 'L131'
-        v = '130-131' if args[:juan] == 17
-      when 'L132'
-        v = '131-132' if args[:juan] == 34
-      when 'L133'
-        v = '132-133' if args[:juan] == 51
-      end
-    when 'X0714'
-      v = '39-40' if args[:vol] == 'X40' and args[:juan] == 3
-    end
-
     c = args[:canon]
     c_name = args[:canon_name]
     source = "「#{args[:source_desc]}」"
-    v ||= args[:vol].sub(/^#{c}0*(.*)$/, '\1')    
     n = args[:work].sub(/^#{c}0*([^0].*)$/, '\1')
     prefix = args[:format] == :text ? '#' : ''
+
+    # 處理 卷跨冊
+    v = CBETA.work_juan_vol_range(args[:work], args[:juan])
+    if v.nil?
+      v = args[:vol].sub(/^#{c}0*(.*)$/, '\1')    
+    else
+      v = "#{v.first}-#{v.last}"
+    end
 
     lines = []
     lines << "#{prefix}【經文資訊】#{c_name} 第 #{v} 冊 No. #{n} #{args[:title]}"

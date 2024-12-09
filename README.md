@@ -4,7 +4,7 @@
 
 ## 開發環境 on mac
 
-參考 doc/dev-mac.md
+參考 [doc/dev-mac.md](doc/dev-mac.md)
 
 ## 新主機 環境架設
 

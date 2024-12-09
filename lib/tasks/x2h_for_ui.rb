@@ -917,14 +917,19 @@ class P5aToHTMLForUI
   end
 
   def facsimile_anchor(e)
-    r = ''
     ed = e['ed']
+    r = ''
+    node = HtmlNode.new('a')
+    node['class'] = 'facsimile'
+    node['data-canon'] = ed
+
     case ed
     when 'D'
       v = @vol[1..-1]
       if @first_lb_in_juan or @lb.end_with?('a01')
         n = @lb[0, 4]
-        r = %(<a class="facsimile" data-ref="Dv#{v}p#{n}"></a>)
+        node['data-ref'] = "Dv#{v}p#{n}"
+        r = node.to_s
         @first_lb_in_juan = false
       end
     when 'GA', 'GB'
@@ -932,7 +937,8 @@ class P5aToHTMLForUI
       if v != '000'
         if @first_lb_in_juan or @lb.end_with?('a01')
           n = @lb[0, 4]
-          r = %(<a class="facsimile" data-ref="#{e['ed']}v#{v}p#{n}"></a>)
+          node['data-ref'] = "#{ed}v#{v}p#{n}"
+          r = node.to_s
           @first_lb_in_juan = false
         end
       end
@@ -941,21 +947,26 @@ class P5aToHTMLForUI
       unless h.nil?
         if h.key? @lb
           @j_facs_juans << "#{@work_id}_#{@juan}"
-          r = %(<a class="facsimile" data-ref="#{h[@lb]}"></a>)
+          node['data-canon'] = 'JM'
+          node['data-ref'] = h[@lb]
+          r = node.to_s
         end
       end
-    when 'D', 'T'
+    when 'T'
       v = @vol[1..-1]
       if @first_lb_in_juan or @lb.end_with?('a01')
         n = @lb[0, 4]
-        r = %(<a class="facsimile" data-ref="#{ed}v#{v}p#{n}"></a>)
+        node['data-ref'] = "#{ed}v#{v}p#{n}"
+        r = node.to_s
         @first_lb_in_juan = false
       end
-      if ed=='T'
-        ref = @t2k.dig(@vol, @lb)
-        unless ref.nil?
-          r << %(<a class="facsimile" data-s="dongguk" data-ref="#{ref}"></a>)
-        end
+
+      ref = @t2k.dig(@vol, @lb)
+      unless ref.nil?
+        node['data-canon'] = 'K'
+        node['data-s'] = 'dongguk'
+        node['data-ref'] = ref
+        r << node.to_s
       end
     end
     r
@@ -1270,10 +1281,7 @@ class P5aToHTMLForUI
     back = html_back(juan_no)
           
     # 如果是卷跨冊的上半部
-    if (work=='L1557' and @vol=='L130' and juan_no==17) or
-       (work=='L1557' and @vol=='L131' and juan_no==34) or
-       (work=='L1557' and @vol=='L132' and juan_no==51) or
-       (work=='X0714' and @vol=='X39' and juan_no==3)
+    if CBETA.juan_across_vol(@vol, work, juan_no) == 1
        @html_buf = html
        @back_buf = back
     else    

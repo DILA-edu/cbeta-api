@@ -4,7 +4,7 @@
 
 以下相對目錄位於 <https://github.com/DILA-edu/cbeta-metadata>
 
-編輯 `/canons.yml`
+如果有增修「藏經 ID」，要編輯 `/canons.yml`。
 
 ### catalog
 
@@ -37,6 +37,11 @@ DocuSky 會讀 cbeta-metadata/textref 裡的目錄資料，
 CANON = 'CC|DA|GA|GB|LC|ZS|ZW|[A-Z]'
 SORT_ORDER = %w(T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC CC)
 ```
+
+如果新增典籍有「卷跨冊」的情況，修改以下兩個 method:
+
+* work_juan_vol_range
+* juan_across_vol
 
 ### lib/data/canons.csv
 

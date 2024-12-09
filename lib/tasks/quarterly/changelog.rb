@@ -1,14 +1,28 @@
 class Changelog
-  def self.get_ignore_list(config)
-    fn = File.join(config[:change_log], "#{config[:q2]}.yml")
+  def initialize(config)
+    @config = config
+  end
+
+  def get_ignore_list
+    {
+      ignore_all:   read_file('ignore-all'),
+      ignore_puncs: read_file('ignore-puncs')
+    }
+  end
+
+  private
+
+  def read_file(type)
+    fn = File.join(@config[:change_log], "#{@config[:q2]}-#{type}.txt")
     unless File.exist?(fn)
       puts "忽略清單不存在: #{fn}".red
-      return { 'ignore_all' => [], 'ignore_puncs' => [] }
+      return []
     end
 
-    r = YAML.load_file(fn)
-    r['ignore_all']   ||= []
-    r['ignore_puncs'] ||= []
+    r = []
+    File.foreach(fn) do |line|
+      r << line.split.first
+    end
     r
   end
 end

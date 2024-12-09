@@ -3,6 +3,9 @@ class DownloadEbooks
   
   def initialize
     @q = Rails.configuration.cb.r.downcase
+
+    conn = Faraday.new(BASE) { |f| f.response :json }
+    @remote_files = conn.get('ebooks.json').body
   end
 
   def run(type=nil)
@@ -46,15 +49,19 @@ class DownloadEbooks
       go = false if c == 's'
     end
 
+    remote_path = @remote_files[type]
+    remote_fn = File.basename(remote_path)
+    remote_bn = File.basename(remote_fn, '.*')
+
     if go
-      download("#{BASE}/#{type}/cbeta_#{type}_#{@q}.zip") 
-      File.rename("cbeta_#{type}_#{@q}.zip", dest)
+      download("#{BASE}/#{remote_path}")
+      File.rename(remote_fn, dest)
     end
     
     fn = "cbeta-#{type}-#{@q}.zip"
     if exec("unzip #{fn} -d tmp")
       exec("rm -rf #{type}")
-      d = "tmp/cbeta_#{type}_#{@q}"
+      d = "tmp/#{remote_bn}"
       if Dir.exist?(d)
         exec("mv #{d} #{type}")
         exec("rm -rf tmp")
@@ -69,18 +76,22 @@ class DownloadEbooks
   end
 
   def download_pdf
-    (1..3).each do |i|
-      download("#{BASE}/pdf_a4/cbeta_pdf_#{i}_#{@q}.zip")
-      File.rename("cbeta_pdf_#{i}_#{@q}.zip", "cbeta-pdf-#{@q}-#{i}.zip")
-      exec("unzip cbeta-pdf-#{@q}-#{i}.zip")
+    remote_paths = @remote_files['pdf']
+    basenames = []
+    remote_paths.each_with_index do |remote_path, i|
+      download("#{BASE}/#{remote_path}")
+      fn = File.basename(remote_path)
+      File.rename(fn, "cbeta-pdf-#{@q}-#{i+1}.zip")
+      exec("unzip cbeta-pdf-#{@q}-#{i+1}.zip")
+      basenames << File.basename(fn, '.*')
     end
 
     exec("rm -rf pdf")
-    exec("mv cbeta_pdf_1_#{@q} pdf")
-    exec("mv cbeta_pdf_2_#{@q}/* pdf")
-    exec("mv cbeta_pdf_3_#{@q}/* pdf")
-    exec("rm -r cbeta_pdf_2_#{@q}")
-    exec("rm -r cbeta_pdf_3_#{@q}")
+    exec("mkdir pdf")
+    basenames.each do |f|
+      exec("mv #{f}/* pdf")
+      exec("rm -r #{f}")
+    end
   end
 
   def exec(cmd)

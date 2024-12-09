@@ -19,7 +19,7 @@ class CheckP5a
 
     @g_errors.keys.sort.each do |k|
       s = @g_errors[k].to_a.join(',')
-      @errors << "#{k} 無缺字資料：#{s}\n"
+      @errors << "#{k} 無缺字資料，出現於：#{s}\n"
     end
     
     if @errors.empty?
@@ -32,7 +32,14 @@ class CheckP5a
   end
   
   private
-  
+
+  def chk_text(node)
+    return if node.text.strip.empty?
+    if node.parent.name == 'div'
+      error "文字直接出現在 div 下, lb: #{@lb}, text: #{node.text.inspect}"
+    end
+  end
+
   def e_g(e)
     gid = e['ref'][1..-1]
     unless @gaijis.key? gid
@@ -104,8 +111,6 @@ class CheckP5a
   end
 
   def handle_node(e)
-    return if e.comment?
-    return if e.text?
     case e.name
     when 'g'       then e_g(e)
     when 'graphic' then e_graphic(e)
@@ -126,7 +131,11 @@ class CheckP5a
 
   def traverse(e)
     e.children.each { |c| 
-      handle_node(c)
+      if c.text?
+        chk_text(c)
+      elsif e.element?
+        handle_node(c)
+      end
     }
   end
   

@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.1.2'
+ruby '3.3.4'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.1.7.8'
+gem 'rails', '~> 7.1.5'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3', '~> 1.4'
 # Use Puma as the app server
@@ -61,7 +61,7 @@ end
 # bundle install 錯誤: could not be found in any of the sources listed in your Gemfile
 # 可以執行以下命令從 RubyGems 取得最新清單
 # bundle --full-index
-gem 'cbeta', '>= 3.4.5'
+gem 'cbeta', '>= 3.5.2'
 
 gem "haml-rails"
 gem 'time_diff'
@@ -87,6 +87,7 @@ gem 'colorize'
 gem 'diff-lcs'
 gem 'unihan2', '>= 1.0.0'
 gem 'open3'
+gem 'faraday'
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false
