@@ -933,7 +933,7 @@ class SearchController < ApplicationController
         raise CbetaError.new(500), "kwic_boolean 回傳 nil" 
       end
 
-      juan[:kwics][:results].sort_by! { |x| x['lb'] }
+      juan[:kwics][:results].sort_by! { |x| x['vol'] + x['lb'] }
       juan[:term_hits] = juan[:kwics][:num_found]
     end
     r[:results].delete_if { |x| x[:kwics][:results].empty? }

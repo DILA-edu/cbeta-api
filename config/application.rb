@@ -25,7 +25,7 @@ module CbData
     # config.eager_load_paths << Rails.root.join("extras")
     
     config.cb = config_for(:cb)
-    config.cb.ver = '3.4.8'
+    config.cb.ver = '3.4.9'
 
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
