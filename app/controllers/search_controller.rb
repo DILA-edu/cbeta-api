@@ -973,7 +973,7 @@ class SearchController < ApplicationController
     end
 
     a.each do |h|
-      h.delete('vol')
+      # 卷可能跨冊號，必須保留冊號
       h.delete('work')
       h.delete('juan')
     end
