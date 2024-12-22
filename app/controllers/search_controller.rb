@@ -438,9 +438,11 @@ class SearchController < ApplicationController
       log_info "results size: #{r[:results].size}"
       # 回傳 行首資訊
       r[:results].each do |juan|
-        juan[:kwics][:results].each do |kwic|
-          file_basename = CBETA.get_xml_file_from_vol_and_work(kwic['vol'], juan[:work])
-          kwic[:linehead] = CBETA.get_linehead(file_basename, kwic['lb'])
+        if juan.key?(:kwics)
+          juan[:kwics][:results].each do |kwic|
+            file_basename = CBETA.get_xml_file_from_vol_and_work(kwic['vol'], juan[:work])
+            kwic[:linehead] = CBETA.get_linehead(file_basename, kwic['lb'])
+          end
         end
       end
     else
