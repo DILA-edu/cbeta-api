@@ -2,16 +2,9 @@
 
 ## Config
 
-* config
-  * application.rb
-    * config.cb.ver
-  * cb.yml
-  * deploy
-    * 修改 staging.rb
-      * set :application
-      * deploy_to
-
-* 修改 lib/tasks/quarterly/config.rb
+* config/deploy/staging.rb
+  * set :application
+  * deploy_to
 
 ## Deploy
 
@@ -20,6 +13,7 @@
 * /var/www/cbapi?/shared/config
   * database.yml
   * cb.yml
+    * ver 版本號
 
 cap staging deploy
 
