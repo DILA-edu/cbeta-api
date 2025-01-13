@@ -182,7 +182,17 @@ class ImportWorkInfo
       juan_list << j['n']
     end
     r[:juan_list_array] = juan_list
-    
+
+    node = doc.at_xpath('//punctuation')
+    if node and node.text == '新式標點'
+      @new_punc_works[:all] << @work
+      @new_punc_works[:cbeta] << @work if node['resp'] == 'CBETA'
+      juan_list.each do |j|
+        @new_punc_juans[:all] << "#{@work}-#{j.to_i}"
+        @new_punc_juans[:cbeta] << "#{@work}-#{j.to_i}" if node['resp'] == 'CBETA'
+      end
+    end
+
     r[:cjk_chars], r[:en_words] = count_chars(doc)
     r
   end
@@ -201,8 +211,14 @@ class ImportWorkInfo
     @done = Set.new
     each_canon(@xml_root) do |c|
       @canon = c
+      @new_punc_works = { all: Set.new, cbeta: Set.new }
+      @new_punc_juans = { all: Set.new, cbeta: Set.new }  
       p = File.join(@xml_root, c)
       import_canon_from_xml(p)
+      @stat[@canon]["新標卷數"] = @new_punc_juans[:all].size
+      @stat[@canon]["新標部數"] = @new_punc_works[:all].size
+      @stat[@canon]["CBETA_新標卷數"] = @new_punc_juans[:cbeta].size
+      @stat[@canon]["CBETA_新標部數"] = @new_punc_works[:cbeta].size
     end
   end
 
