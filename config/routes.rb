@@ -32,8 +32,6 @@ Rails.application.routes.draw do
   match 'juans/goto', via: [:get, :post]
   match 'juans', to: 'juans#index', via: [:get, :post]
 
-  match 'kwic3/juan', to: 'kwic3#juan', via: [:get, :post]
-  
   match 'lines', to: 'lines#index', via: [:get, :post]
   
   match 'report', to: 'report#index', as: :reports, via: [:get, :post]
@@ -55,16 +53,6 @@ Rails.application.routes.draw do
   match 'search/variants',        to: 'search#variants',   via: [:get, :post]
   match 'search',                 to: 'search#index',      via: [:get, :post]
 
-  match 'sphinx/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
-  match 'sphinx/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
-  match 'sphinx/extended',        to: 'search#extended',   via: [:get, :post]
-  match 'sphinx/notes',           to: 'search#notes',      via: [:get, :post]
-  match 'sphinx/sc',              to: 'search#sc',         via: [:get, :post]
-  match 'sphinx/synonym',         to: 'search#synonym',    via: [:get, :post]
-  match 'sphinx/title',           to: 'search#title',      via: [:get, :post]
-  match 'sphinx/variants',        to: 'search#variants',   via: [:get, :post]
-  match 'sphinx',                 to: 'search#index',      via: [:get, :post]
-
   get 'static_pages/catalog'
   get 'static_pages/callback'
   get 'static_pages/category'
@@ -78,8 +66,6 @@ Rails.application.routes.draw do
   get 'static_pages/get_html'
   get 'static_pages/goto'
   get 'static_pages/html_for_ui'
-  get 'static_pages/kwic3_juan'
-  get 'static_pages/kwic3'
   get 'static_pages/line'
   get 'static_pages/log'
   get 'static_pages/log_old'
