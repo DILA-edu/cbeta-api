@@ -1,4 +1,5 @@
 class WorksController < ApplicationController
+  include TocNodeHelper
   include WorksHelper
 
   def index
@@ -40,7 +41,19 @@ class WorksController < ApplicationController
       }
     end
     my_render(r)
-  end  
+  end
+
+  def toc
+    start = Time.now
+    toc = get_toc_by_work_id(params[:work])
+    result = toc.nil? ? [] : [toc]
+    r = {
+      num_found: result.size,
+      time: Time.now - start,
+      results: result
+    }
+    my_render(r)
+  end
   
   def word_count
     r = CSV.generate(headers: true) do |csv|

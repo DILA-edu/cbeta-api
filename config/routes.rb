@@ -124,6 +124,7 @@ Rails.application.routes.draw do
   match 'word_seg2', to: 'word_seg#run', via: [:get, :post]
   match 'word_seg', to: 'word_seg#index', via: [:get, :post]
 
+  match 'works/toc', via: [:get, :post]
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works/word_count', via: [:get, :post]
   match 'works', to: 'works#index', via: [:get, :post]

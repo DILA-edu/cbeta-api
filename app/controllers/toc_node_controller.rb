@@ -3,13 +3,7 @@ class TocNodeController < ApplicationController
 
   def index
     start = Time.now
-    if params.key? :work
-      toc = get_toc_by_work_id(params[:work])
-      result = toc.nil? ? [] : [toc]
-    else
-      result = search_by_query_term
-    end
-
+    result = search_by_query_term
     result = [] if result.nil?
 
     result.each do |r|
