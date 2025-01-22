@@ -1,0 +1,21 @@
+get:
+  summary: Get the list of all collections
+  tags: [rise_shine]
+  responses:
+    '200':
+      description: List of Collections
+      content: 
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                uuid:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                  example: A 金藏
+                resourceCount:
+                  type: integer

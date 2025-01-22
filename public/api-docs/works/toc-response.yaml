@@ -1,0 +1,40 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found
+    example: 1
+  results:
+    type: array
+    description: 佛典內目次。
+    items:
+      type: object
+      properties:
+        mulu:
+          type: array
+          description: 目次
+          items:
+            $ref: "toc-node.yaml"
+        juan:
+          type: array
+          description: 卷(篇章)目錄
+          items:
+            type: object
+            properties:
+              file:
+                type: string  
+              juan:
+                type: integer
+              lb:
+                type: string
+              title:
+                type: string
+          example:
+            - file: T01n0001
+              juan: 1
+              lb: "0001b08"
+              title: 第一
+            - file: T01n0001
+              juan: 2
+              lb: "0011a04"
+              title: 第二

@@ -1,0 +1,5 @@
+schema:
+  canon_id: 
+    type: string
+    enum: [A, B, C, CC, D, F, G, GA, GB, I, J, K, L, LC, M, N, P, S, T, TX, U, X, Y, ZS, ZW]
+  

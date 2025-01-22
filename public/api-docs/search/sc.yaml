@@ -1,0 +1,34 @@
+get:
+  summary: 以簡體字搜尋 CBETA
+  tags: [search]
+  description: 使用 OpenCC 將簡體轉為繁體，再做搜尋，並回傳筆數。
+  parameters:
+    - name: q
+      in: query
+      required: true
+      description: 要轉換的字詞。
+      schema:
+        type: string
+      examples:
+        ex1:
+          value: 四圣谛
+          summary: 四圣谛 會先轉為 四聖諦
+        ex2:
+          value: 上烏
+          summary: "繁簡相同，回傳 hits: 0"
+  responses:
+    '200':
+      description: 轉換後的繁體中文，以及 CBETA 中出現的筆數。
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              q:
+                type: string
+                description: 轉換後的繁體中文
+                example: 四聖諦
+              hits:
+                type: integer
+                description: CBETA 中出現的筆數
+                example: 2860

@@ -1,0 +1,24 @@
+get:
+  summary: Full Text Search
+  tags: [search]
+  parameters:
+    - in: query
+      name: q
+      required: true
+      description: |
+        要搜尋的字詞，可以包含組字式。
+
+        例如 《新集藏經音義隨函錄(第13卷-第30卷)》卷17：「[幻-ㄠ+糸]術」(CBETA, K35, no. 1257, p. 189b6), 組字式 escape 之後：`[幻-ㄠ%2B糸]`
+
+        查詢 URL: `q=[幻-ㄠ%2B糸]`
+      example: 法鼓
+      schema:
+        type: string
+    - $ref: parameters.yaml#/fields
+  responses:
+    '200':
+      description: search results.
+      content:
+        application/json:
+          schema: 
+            $ref: response.yaml

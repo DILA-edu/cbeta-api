@@ -1,0 +1,16 @@
+- work:
+  name: work
+  in: query
+  required: false
+  description: 佛典編號
+  example: T0001
+  schema:
+    type: string
+- q:
+  name: q
+  in: query
+  required: false
+  description: 要查詢的字串
+  example: 阿含
+  schema:
+    type: string

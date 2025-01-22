@@ -1,0 +1,34 @@
+get:
+  summary: 語意搜尋 (experimental)
+  tags: [search]
+  parameters:
+    - in: query
+      name: q
+      required: true
+      description: Query string.
+      schema:
+        type: string
+      example: 如何修行能得解脫？
+    - in: query
+      name: model
+      default: gpt-4o-mini
+    - in: query
+      name: api_key
+      required: true
+    - in: query
+      name: llm
+      description: |-
+        是否由 LLM 提供 理由、摘要、相關問題。<br>
+        0: No; 1: Yes.
+      schema:
+        type: integer
+        enum: [0, 1]
+        default: 0
+  responses:
+    '200':
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              $ref: semantic-response.yaml

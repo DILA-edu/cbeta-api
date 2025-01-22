@@ -1,0 +1,27 @@
+get:
+  summary: 全部典籍列表
+  tags: [export]
+  responses:
+    '200':
+      description: list of all works
+      content:
+        application/json:
+          schema: 
+            type: array
+            items:
+              type: object
+              properties:
+                work:
+                  type: string
+                  description: 佛典編號
+                  example: T0001
+                title:
+                  type: string
+                  description: 佛典標題（經名）
+                  example: 長阿含經
+                juans:
+                  type: array
+                  description: 卷號列表
+                  items:
+                    type: string
+                  example: ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22"]

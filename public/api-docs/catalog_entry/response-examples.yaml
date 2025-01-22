@@ -1,0 +1,24 @@
+node_type_alt:
+  summary: 如果 node_type 為 'alt' 表示 CBETA 未收錄此經全文，而是對應到其他藏經的全文。
+  value:
+    num_found: 42
+    label: J01
+    results:
+      - n: "orig-J.001.001"
+        label: "JA001(=T0293) 大方廣佛華嚴經 (40卷)"
+        node_type: alt
+juan_range:
+  summary: 目錄節點所指向的可能是某部佛典的部份卷數，例如： q=CBETA.003.001
+  value:
+    num_found: 2
+    label: 01 上品般若(大般若經第1會) T05-06
+    results:
+      - n: CBETA.003.001.001
+        work: T0220
+        label: T0220 大般若波羅蜜多經(第1卷-第200卷)
+        category: 般若部類
+        creators: 玄奘
+        juan_start: 1
+        juan_end: 200
+        file: T05n0220a
+        node_type: work

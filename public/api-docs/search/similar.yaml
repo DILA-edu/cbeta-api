@@ -1,0 +1,18 @@
+get:
+  summary: 相似搜尋
+  tags: [search]
+  parameters:
+    $ref: similar-parameters.yaml
+  responses:
+    '200':
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              highlight:
+                type: string
+                description: |-
+                  * 經 Smith-Waterman 演算法比對最長符合的字串以 `<mark>...</mark>` 標記。
+                  * mark 內與 q 參數的差異以 `<del>..</del>` 標記。
+                  * mark 標記以外，包含在 q 參數內的字元以 `<em>..</em>` 標記。

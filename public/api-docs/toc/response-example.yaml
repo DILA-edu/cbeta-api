@@ -1,0 +1,68 @@
+num_found: 4
+time: 0.303533972
+results:
+  - type: catalog
+    n: Cat-T.001.001
+    label: T01 阿含部上 (T0001-98)
+  - type: catalog
+    n: Vol-Y.031.001
+    label: Y0030 雜阿含經論會編（中）
+    work: Y0030
+    uuid: 6a74e369-0285-4426-87f8-67a69caffedd
+    category: 新編部類
+    orig_category: ""
+    vol: Y30..Y32
+    title: 雜阿含經論會編
+    juan: 7
+    juan_list: 1,2,3,4,5,6,7
+    zh_chars: 664663
+    en_words: 159
+    file: Y30n0030
+    juan_start: 1
+    byline: 民國 釋印順著
+    creators: 釋印順
+    creators_with_id: 釋印順(A023393)
+    time_dynasty: 民國
+    time_from: 1981
+    time_to: 1981
+  - type: work
+    work: T0001
+    uuid: f84c8d22-ce0c-470c-8e94-20059f4d89c2
+    category: 阿含部類
+    orig_category: 阿含部
+    vol: T01
+    title: 長阿含經
+    juan: 22
+    juan_list: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
+    zh_chars: 198439
+    en_words: 0
+    file: T01n0001
+    juan_start: 1
+    byline: 後秦 佛陀耶舍共竺佛念譯
+    creators: 佛陀耶舍,竺佛念
+    creators_with_id: 佛陀耶舍(A000439);竺佛念(A000435)
+    time_dynasty: 後秦
+    time_from: 412
+    time_to: 413
+  - type: toc
+    label: 雜阿含經
+    label_path: 後集一門/諸經引證節略/雜阿含經
+    work: T2024
+    lb: 1107b21
+    uuid: bc4ea5a3-6e46-46a2-8e88-761a2b42f3d7
+    category: 禪宗部類
+    orig_category: 諸宗部
+    vol: T48
+    title: 禪關策進
+    juan: 1
+    juan_list: "1"
+    zh_chars: 14806
+    en_words: 0
+    file: T48n2024
+    juan_start: 1
+    byline: 明 袾宏輯
+    creators: 袾宏
+    creators_with_id: 袾宏(A001394)
+    time_dynasty: 明
+    time_from: 1600
+    time_to: 1600

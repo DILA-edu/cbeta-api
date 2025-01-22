@@ -1,0 +1,22 @@
+get:
+  summary: 佛典相關資訊
+  tags: [work]
+  description: |
+    例：
+      * 取得某部佛典的資訊, 取得 T0001 的資訊： /works?work=T0001
+      * 指定冊數起迄： /works?canon=T&vol_start=1&vol_end=2
+      * 指定經號起迄： /works?canon=T&work_start=1&work_end=2
+      * 指定 嘉興藏 經號起迄： /works?canon=J&work_start=A1&work_end=A2
+      * 以作譯者 ID 搜尋： /works?creator_id=A000439
+      * 搜尋唐朝成立的佛典： /works?dynasty=唐
+      * 搜尋多個朝代： /works?dynasty=符秦,前秦
+      * 搜尋成立年代在公元 600年至700年之間的佛典： /works?time_start=600&time_end=700
+  parameters:
+    $ref: parameters.yaml
+  responses:
+    '200':
+      description: Works Information
+      content:
+        application/json:
+          schema: 
+            $ref: response.yaml

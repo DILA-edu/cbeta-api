@@ -1,0 +1,147 @@
+all_in_one_q:
+  in: query
+  name: q
+  required: true
+  description: |
+    要搜尋的關鍵字。（標點符號會被去除，包括半形小括號）
+
+    也可使用 Extended 語法 。
+
+    關鍵字詞中若含：單引號、雙引號、半形減號，需 escape.
+  examples:
+    and:
+      value: '"法鼓" "迦葉"'
+      summary: AND
+    or:
+      value: '"法鼓" | "迦葉"'
+      summary: OR
+    not:
+      value: '"迦葉" !"迦葉佛"'
+      summary: NOT
+    near:
+      value: '"法鼓" NEAR/7 "迦葉"'
+      summary: NEAR (NEAR/ 後面的數字 表示兩個關鍵詞中間的距離)
+    near2:
+      value: '"老子" NEAR/7 "道" NEAR/3 "經"'
+      summary: NEAR 多個詞
+    exclude_prefix:
+      value: '"直心" -"正直心"'
+      summary: Exclude 排除前搭配
+    exclude_suffix:
+      value: '"舍利" -"舍利弗"'
+      summary: Exclude 排除後搭配
+    escape_single_quote:
+      value: '"samantato" "\%27nantanāvāptiśāsani"'
+      summary: Escape single quote. 例如搜尋 samantato AND 'nantanāvāptiśāsani
+    escape_double_quote:
+      value: '"Your" "\"mang\-kun\""'
+      summary: Escape double quote. 例如搜尋 Your AND "mang-kun"
+  schema:
+    type: string
+extended_q:
+  name: q
+  in: query
+  required: true
+  schema:
+    type: string
+  description: |
+    # Extended Query Syntax
+
+    例： `q="法鼓"`
+          
+    請注意上面的雙引號不可省略。
+    
+    以下範例均要做 URL encode, 例如： `"波羅蜜" | "波羅密"`
+    要編碼為 `%22波羅蜜%22%20%7C%20%22波羅密%22`
+
+    ## AND
+    
+    多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
+    
+    例： `q="法鼓" "聖嚴"`
+    
+    ## OR 運算元
+    
+    "波羅蜜" | "波羅密"
+    例： `q="波羅蜜" | "波羅密"`
+    
+    ## NOT 運算元
+    
+    例： `q="迦葉" -"迦葉佛"`
+    
+    ## 鄰近搜尋運算元
+    
+    例： `q="弟子 第一"~5`
+    
+    上例表示「弟子」跟「第一」之間距離不超過5個字。
+note:
+  in: query
+  name: note
+  description: "是否含夾注。 0: 不含夾注。 1: 含夾注(預設值)。"
+  schema:
+    type: string
+fields:
+  in: query
+  name: fields
+  required: false
+  description: 指定要回傳哪些欄位
+  schema:
+    type: string
+    example: "work,juan,term_hits"
+puncs:
+  in: query
+  name: puncs
+  required: false
+  description: 是否包含標點。預設為 0：不包含標點。若設為 1 則包含標點。
+  example: 1
+  schema:
+    type: integer
+start:
+  in: query
+  name: start
+  required: false
+  description: 分頁回傳的起始 offset.
+  example: 0
+  schema:
+    type: integer
+    default: 0
+rows:
+  in: query
+  name: rows
+  required: false
+  description: 一次回傳幾筆.
+  example: 20
+  schema:
+    type: integer
+    default: 20
+order:
+  in: query
+  name: order
+  required: false
+  description: |
+    排序，例如按照文獻成立的年代排序： `q=法鼓&order=year`
+
+    也可以指定多個排序欄位，例如先以年代排序、再以經號排序：
+    
+    `q=法鼓&order=time_from,time_to,work`
+    
+    但是排序欄位最多五個，而且如果指定了 time_from 或 time_to 會各佔兩個欄位，因為必須以 has_time_from 或 has_time_to 先排序。
+    
+    每一個排序欄位都可以指定使用升冪排序或降冪排序：
+    
+      * 指定升冪排序：order=time_from+
+      * 指定降冪排序：order=time_from-
+
+    可用做排序的欄位：
+    
+      * canon: 藏經 ID，依照 CBETA 制定的檢索順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB
+      * category: 部類
+      * juan: 卷號
+      * vol: 冊號，例如：T01
+      * work: 佛典編號，例如：T0001
+      * time_from: 佛典成立的起始年代
+      * time_to: 佛典成立的結束年代
+      * term_hits: 該卷中關鍵字出現的筆數
+  example: year
+  schema:
+    type: string

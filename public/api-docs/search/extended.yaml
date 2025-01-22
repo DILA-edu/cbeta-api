@@ -1,0 +1,13 @@
+get:
+  summary: Search with Extended Query Syntax
+  tags: [search]
+  description: 全文檢索 (擴充模式)
+  parameters:
+    - $ref: parameters.yaml#/extended_q
+  responses:
+    '200':
+      description: search results.
+      content:
+        application/json:
+          schema: 
+            $ref: response.yaml

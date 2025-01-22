@@ -1,0 +1,13 @@
+get:
+  summary: Search Titles
+  tags: [search]
+  description: 搜尋佛典標題（經名）
+  parameters:
+    - $ref: parameters.yaml#/extended_q
+  responses:
+    '200':
+      description: search results.
+      content:
+        application/json:
+          schema: 
+            $ref: title-response.yaml

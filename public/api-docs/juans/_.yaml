@@ -1,0 +1,12 @@
+get:
+  summary: 佛典的某一卷
+  tags: [juan]
+  parameters:
+    $ref: parameters.yaml
+  responses:
+    '200':
+      description: 某一卷的文本內容 in HTML format.
+      content:
+        application/json:
+          schema: 
+            $ref: response.yaml

@@ -1,0 +1,36 @@
+get:
+  summary: Faceted Search by Creator ID
+  tags: [search]
+  description: 根據作譯者 ID。
+  parameters:
+    - name: q
+      in: query
+      required: true
+      description: 要搜尋的字詞。
+      example: 法鼓
+      schema:
+        type: string
+  responses:
+    '200':
+      description: search result
+      content:
+        application/json:
+          schema: 
+            type: array
+            items:
+              type: object
+              properties:
+                creator_id:
+                  type: string
+                  example: A001519
+                docs:
+                  type: integer
+                  description: number fo matched documents (卷/篇章)
+                  example: 382
+                hits:
+                  type: integer
+                  description: number fo keyword occurences
+                  example: 569
+                creator_name:
+                  type: string
+                  example: 道宣

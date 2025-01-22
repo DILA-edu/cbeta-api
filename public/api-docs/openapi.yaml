@@ -1,0 +1,138 @@
+openapi: 3.1.0
+info:
+  title: CBETA API
+  description: |-
+    API to access CBETA Chinese Buddhist Texts Resources.<br>
+    各種 API 用於取得 CBETA 電子佛典的各種資源。
+  version: '3.5.0'
+
+servers:
+  - url: http://cbdata.dila.edu.tw/stable
+    description: Stable
+  - url: http://cbdata.dila.edu.tw/dev
+    description: Development
+  - url: http://api.cbetaonline.cn/
+    description: Mirror server
+
+paths:
+  /api/collections:
+    $ref: api/collections.yaml
+  /api/collections/{uuid}/resources:
+    $ref: api/collections_x_resources.yaml
+  /api/resources/{uuid}/sections:
+    $ref: api/resources_x_sections.yaml
+  /api/sections/{uuid}:
+    $ref: api/sections_x.yaml
+  /api/sections/{uuid}/content_units:
+    $ref: api/sections_x_content_units.yaml
+  /catalog_entry:
+    $ref: 'catalog_entry/_.yaml'
+  /chinese_tools/sc2tc:
+    $ref: chinese_tools/sc2tc.yaml
+  /download/cbeta-epub-{release}.zip:
+    $ref: download/epub-all.yaml
+  /download/cbeta-mobi-{release}.zip:
+    $ref: download/mobi-all.yaml
+  /download/cbeta-pdf-{release}-{part}.zip:
+    $ref: download/pdf-all.yaml
+  /download/docusky/{filename}.docusky.xml:
+    $ref: download/docusky.yaml
+  /download/epub/{canon}/{work}.epub:
+    $ref: download/epub.yaml
+  /download/footnotes/{canon}/{work}/{juan}.csv:
+    $ref: download/footnotes.yaml
+  /download/html/{work_juan}.html:
+    $ref: download/html_work_juan.yaml
+  /download/html/{work}.html.zip:
+    $ref: download/html_work.yaml
+  /download/mobi/{canon}/{work}.mobi:
+    $ref: download/mobi.yaml
+  /download/pdf/{canon}/{work}.pdf:
+    $ref: download/pdf.yaml
+  /download/text/{work_juan}.txt.zip:
+    $ref: download/text.yaml
+  /export/all_creators:
+    $ref: export/all-creators.yaml
+  /export/all_creators2:
+    $ref: export/all_creators2.yaml
+  /export/all_works:
+    $ref: export/all_works.yaml
+  /export/check_list:
+    $ref: export/check_list.yaml
+  /export/creator_strokes:
+    $ref: export/creator_strokes.yaml
+  /export/creator_strokes_works:
+    $ref: export/creator_strokes_works.yaml
+  /export/dynasty:
+    $ref: export/dynasty.yaml
+  /export/dynasty_works:
+    $ref: export/dynasty_works.yaml
+  /export/scope_selector_by_category:
+    $ref: export/scope_selector_by_category.yaml
+  /export/scope_selector_by_vol:
+    $ref: export/scope_selector_by_vol.yaml
+  /juans:
+    $ref: juans/_.yaml
+  /juans/goto:
+    $ref: juans/goto.yaml
+  /lines:
+    $ref: lines/_.yaml
+  /search:
+    $ref: search/_.yaml
+  /search_all_in_one:
+    $ref: search/all_in_one.yaml
+  /search/extended:
+    $ref: search/extended.yaml
+  /search/facet/canon:
+    $ref: search/facet_canon.yaml
+  /search/facet/category:
+    $ref: search/facet_category.yaml
+  /search/facet/creator:
+    $ref: search/facet_creator.yaml
+  /search/facet/dynasty:
+    $ref: search/facet_dynasty.yaml
+  /search/facet/work:
+    $ref: search/facet_work.yaml
+  /search/facet:
+    $ref: search/facet.yaml
+  /search/footnotes:
+    $ref: search/footnotes.yaml
+  /search/title:
+    $ref: search/title.yaml
+  /search/sc:
+    $ref: search/sc.yaml
+  /search/synonym:
+    $ref: search/synonym.yaml
+  /search/variants:
+    $ref: search/variants.yaml
+  /search/kwic:
+    $ref: search/kwic.yaml
+  /search/similar:
+    $ref: search/similar.yaml
+  /search/semantic:
+    $ref: search/semantic.yaml
+  /toc:
+    $ref: 'toc/_.yaml'
+  /word_seg:
+    $ref: 'word_seg/_.yaml'
+  /works:
+    $ref: 'works/_.yaml'
+  /works/toc:
+    $ref: 'works/toc.yaml'
+
+tags:
+  - name: catalog
+  - name: work
+  - name: toc
+  - name: juan
+  - name: line
+  - name: search
+    description: Full Text Search
+  - name: download
+  - name: export
+  - name: tool
+  - name: rise_shine
+    description: RISE SHINE API
+    externalDocs:
+      description: SHINE API
+      url: https://rise.mpiwg-berlin.mpg.de/pages/doc_for_resource_providers

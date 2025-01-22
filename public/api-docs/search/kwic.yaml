@@ -1,0 +1,18 @@
+get:
+  summary: 單卷 KeyWord In Context
+  tags: [search]
+  description: |-
+    搜尋，並傳回前後文。只限單卷。
+
+    夾注不列入搜尋範圍，以達成「跨夾注檢索」的目的。例如「差(音雌)別」，搜尋「差別」會找到。
+
+    回傳前後文(kwic 欄位)會含夾注，15字以上會節略，例如：「法無諍三昧法門上卷(云如⋯中略6618字⋯解脫)按從初𤼵心至成佛道一身」。
+  parameters:
+    $ref: kwic-parameters.yaml
+  responses:
+    '200':
+      description: search result.
+      content:
+        application/json:
+          schema: 
+            $ref: kwic-response.yaml

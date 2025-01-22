@@ -1,0 +1,38 @@
+get:
+  summary: Faceted Search by Work
+  tags: [search]
+  description: 根據佛典。
+  parameters:
+    - name: q
+      in: query
+      required: true
+      description: 要搜尋的字詞。
+      example: 法鼓
+      schema:
+        type: string
+  responses:
+    '200':
+      description: search result
+      content:
+        application/json:
+          schema: 
+            type: array
+            items:
+              type: object
+              properties:
+                work:
+                  type: string
+                  description: 佛典編號 (經號)
+                  example: B0088
+                docs:
+                  type: integer
+                  description: number fo matched documents (卷/篇章)
+                  example: 382
+                hits:
+                  type: integer
+                  description: number fo keyword occurences
+                  example: 569
+                title:
+                  type: string
+                  description: 佛典標題 (經名)
+                  example: 古今圖書集成選輯（上）

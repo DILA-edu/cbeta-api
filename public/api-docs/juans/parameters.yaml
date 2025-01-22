@@ -1,0 +1,36 @@
+- in: query
+  name: work
+  required: true
+  description: 佛典編號
+  schema:
+    type: string
+    example: T0001
+- in: query
+  name: juan
+  required: true
+  description: 卷號
+  schema:
+    type: integer
+    example: 1
+- in: query
+  name: work_info
+  required: false
+  description: |
+    是否一併回傳「佛典資訊」
+
+    * 預設為 0: 不回傳
+    * 若設為 1: 回傳
+  schema:
+    type: integer
+    example: 1
+- in: query
+  name: toc
+  required: false
+  description: |
+    是否一併回傳目次
+
+    * 預設為 0: 不回傳
+    * 若設為 1: 回傳
+  schema:
+    type: integer
+    example: 1

@@ -1,0 +1,27 @@
+get:
+  summary: Get the list of all sections (卷) for a resource (work)
+  tags: [rise_shine]
+  parameters:
+    - name: uuid
+      in: path
+      required: true
+      description: The UUID of the Resource you wish to access
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: list of sections (卷)
+      content: 
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                uuid:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                  example: T0001 長阿含經 第1卷

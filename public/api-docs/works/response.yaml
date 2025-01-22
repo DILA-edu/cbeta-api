@@ -1,0 +1,106 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found
+  results:
+    type: array
+    description: list of work
+    items:
+      type: object
+      properties:
+        work:
+          type: string
+          description: 佛典編號
+          example: T1501
+        uuid:
+          type: string
+          description: 佛典之 UUID
+          example: 310699e8-2abd-4430-8403-d33b2777d5ca
+        category:
+          type: string
+          description: 佛典所屬 CBETA 部類
+          example: 律部類
+        orig_category:
+          type: string
+          description: 底本分部，例如 大正藏 的 阿含部、本緣部 等。
+          example: 律部
+        vol:
+          type: string
+          description: volume number (冊號)
+          example: T24
+        title:
+          type: string
+          description: 佛典標題 (經名)
+          example: 菩薩戒本
+        juan:
+          type: integer
+          description: 佛典卷數
+          example: 1
+        juan_list:
+          type: string
+          description: 佛典下卷號清單（卷號不一定會連續）
+          example: "1"
+        cjk_chars:
+          type: integer
+          description: 佛典 中、日、韓文 字數
+          example: 7748
+        en_words:
+          type: integer
+          description: 佛典 英文 word 數量
+          example: 4
+        file:
+          type: string
+          description: 佛典之 CBETA XML 主檔名
+          example: T24n1501
+        juan_start:
+          type: integer
+          description: 佛典之起始卷號（不一定是第一卷）
+          example: 1
+        byline:
+          type: string
+          description: 佛典之作譯者行
+          example: 彌勒菩薩說 唐 玄奘譯
+        creators:
+          type: string
+          description: 作者、譯者或其他貢獻者姓名列表
+          example: 彌勒菩薩,玄奘
+        creators_with_id:
+          type: string
+          description: 作者、譯者 (含 DILA Authority 人名 ID)
+          example: 彌勒菩薩(A001428);玄奘(A000294)
+        time_dynasty:
+          type: string
+          description: 佛典成立時間：朝代
+          example: 唐
+        time_from:
+          type: integer
+          description: 佛典成立時間：起始西元年
+          example: 649
+        time_to:
+          type: integer
+          description: 佛典成立時間：結束西元年
+          example: 649
+        places:
+          type: array
+          description: 作品成立地點，多值。
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              id:
+                type: string
+              latitude:
+                type: double
+              longitude:
+                type: double
+          example:
+            - name: 翠微寺
+              id: PL000000042513
+              latitude: 33.839563
+              longitude: 108.928138
+            - name: 大慈恩寺
+              id: PL000000042410
+              latitude: 34.219161
+              longitude: 108.959356

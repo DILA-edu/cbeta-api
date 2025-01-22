@@ -1,0 +1,29 @@
+get:
+  summary: 近義詞 (near synonym) 建議
+  tags: [search]
+  parameters:
+    - name: q
+      in: query
+      required: true
+      description: 要搜尋的字詞。
+      example: 文殊師利
+      schema:
+        type: string
+  responses:
+    '200':
+      description: search results.
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              num_found:
+                type: integer
+                description: number of suggestions
+                example: 3
+              results:
+                type: array
+                description: list of suggestions
+                items:
+                  type: string
+                example: ["滿殊尸利", "曼殊室利", "妙德", "妙首", "妙吉祥", "文殊", "妙吉祥菩薩", "妙音", "曼殊"]

@@ -1,0 +1,18 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found
+    example: 1
+  uuid:
+    type: string
+    description: Juan's UUID
+  content:
+    type: string
+    description: Juan content's UUID
+  results:
+    type: array
+    description: list of result
+    items:
+      type: string
+      description: Juan's content in HTML format. 參考： [HTML for UI 格式說明](https://cbdata.dila.edu.tw/stable/static_pages/html_for_ui)。

@@ -1,0 +1,45 @@
+type: object
+properties:
+  title:
+    type: string
+    description: 目次節點 標題
+    example: 2 遊行經
+  file:
+    type: string
+    description: 目次節點 所在 xml 檔 主檔名。
+    example: T01n0001
+  juan:
+    type: integer
+    description: 目次節點 所在卷號。
+    example: 2
+  lb:
+    type: string
+    description: 目次節點 所在 頁、欄、行。
+    example: 0011a07
+  type:
+    type: string
+    description: 例如 T0001 目次節點「2 遊行經」，回傳 type 為「經」。
+    example: 經
+  n:
+    type: integer
+    description: 例如 T0001 目次節點「2 遊行經」，回傳 n 為 2.
+    example: 2
+  isFolder:
+    type: boolean
+    description: 預設值為 false，若為 true，表示有 children.
+    example: true
+  children:
+    type: array
+    items:
+      $ref: ""
+    example:
+      - title: "1"
+        file: T01n0001
+        juan: 2
+        lb: "0011a07"
+        n: 1
+      - title: "2"
+        file: T01n0001
+        juan: 3
+        lb: "0016b14"
+        n: 2

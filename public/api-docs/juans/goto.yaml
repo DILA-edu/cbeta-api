@@ -1,0 +1,14 @@
+get:
+  summary: Goto
+  tags: [juan]
+  externalDocs: 
+    url: 'https://github.com/DILA-edu/cbeta-api/blob/main/openapi/juans/goto.md'
+  parameters:
+    $ref: goto-parameters.yaml
+  responses:
+    '200':
+      description: 回傳 Goto 所需相關資訊.
+      content:
+        application/json:
+          schema: 
+            $ref: goto-response.yaml

@@ -1,0 +1,18 @@
+get:
+  summary: 朝代列表
+  tags: [export]
+  responses:
+    '200':
+      description: 全部朝代列表，及其起始年、結束年、佛典數。
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              num_found:
+                type: integer
+                description: number of dynasties
+              results:
+                type: string
+                description: CSV
+                example: "朝代,起始年,結束年,佛典數\n東漢,25,220,80"

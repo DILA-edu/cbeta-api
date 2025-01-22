@@ -1,0 +1,18 @@
+get:
+  summary: 下載某一卷 HTML (適合直接閱讀用)
+  tags: [download]
+  parameters:
+    - name: work_juan
+      in: path
+      description: 佛典編號（經號） + 卷號（三碼）
+      required: true
+      schema:
+        type: string
+      example: A1057_001
+  responses:
+    '200':
+      description: HTML File
+      content:
+        text/html:
+          schema: 
+            type: string

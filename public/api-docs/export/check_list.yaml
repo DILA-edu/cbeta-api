@@ -1,0 +1,18 @@
+get:
+  summary: 嘉興藏檢查表
+  tags: [export]
+  parameters:
+    - name: canon
+      in: query
+      description: 藏經 ID
+      required: true
+      schema:
+        type: string
+      example: J
+  responses:
+    '200':
+      description: 嘉興藏 佛典、卷 列表
+      content:
+        text/csv:
+          schema: 
+            type: string

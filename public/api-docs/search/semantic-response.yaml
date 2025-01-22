@@ -1,0 +1,32 @@
+chunks:
+  type: array
+  minItems: 30
+  maxItems: 30
+  items:
+    type: object
+    properties:
+      chunk_id:
+        type: string
+        example: d2_20
+      work: 
+        type: string
+        example: T25n1505
+      linehead:
+        type: string
+        example: T25n1505_p0003c29
+      text: (highlight)
+        type: string
+        example: 答：彼世間、出世間解脫，得是行必定解脫。是輩中間聖諦可得。如人度空野地，見園宅菓樹花實，彼意必定為不復飢餓、為近城郭。如思因緣為曠野地，婬怒癡為勞，善知識將導思惟，疾行陰界處，無常無我苦所有觀。若欲是有忍(三忍)。增思惟不動，如夢中見樂、見其形像。苦時相見是想增，世間最好法。世尊想如是，是禪。行其中間覺見喜，見聖諦。時婆素跋陀(秦言今賢，人名也，得無著道)三法解脫度。初說㗫未都(盡也，天竺品題皆在品後也)。
+      reason:
+        type: string
+        description: AI 給出 符合的理由
+summary:
+  type: string
+  description: AI 根據 chunks 做出摘要。
+related_questions:
+  description: AI 根據 Query string 提供相關問題。
+  type: array
+  minItems: 5
+  maxItems: 5
+  items:
+    type: string

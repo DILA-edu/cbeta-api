@@ -1,0 +1,19 @@
+get:
+  summary: text lines
+  tags: [line]
+  description: |
+    使用範例：
+    
+      * 取得某行文字 /lines?linehead=T01n0001_p0001a04
+      * 取得某行，以及前2行，後3行： /lines?linehead=T01n0001_p0001a09&before=2&after=3
+      * 取得某段行號起迄範圍內文字： /lines?linehead_start=T01n0001_p0001a04&linehead_end=T01n0001_p0001a05
+      * 跨卷也沒問題： /lines?linehead_start=T01n0001_p0011a01&linehead_end=T01n0001_p0011a06
+  parameters:
+    $ref: parameters.yaml
+  responses:
+    '200':
+      description: text lines.
+      content:
+        application/json:
+          schema: 
+            $ref: response.yaml

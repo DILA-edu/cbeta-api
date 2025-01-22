@@ -1,0 +1,24 @@
+get:
+  summary: 目次 (Table of content)
+  tags: [work]
+  description: |
+    取得某部佛典內的目次、卷(篇章)目錄
+
+    例如取得 T0001 的目次: works/toc?work=T0001
+  parameters:
+    - work:
+      name: work
+      in: query
+      required: false
+      description: 佛典編號
+      example: T0001
+      schema:
+        type: string
+  responses:
+    '200':
+      description: |
+        佛典內目次。
+      content:
+        application/json:
+          schema: 
+            $ref: 'toc-response.yaml'

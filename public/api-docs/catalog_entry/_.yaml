@@ -1,0 +1,14 @@
+get:
+  summary: Returns a catalog entry information, including its children.
+  tags: [catalog]
+  parameters:
+    - $ref: 'parameters.yaml'
+  responses:
+    '200':
+      description: A Catalog Entry Object
+      content:
+        application/json:
+          schema: 
+            $ref: response.yaml
+          # examples:
+          #   $ref: 'response-examples.yaml'

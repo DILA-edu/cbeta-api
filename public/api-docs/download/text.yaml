@@ -1,0 +1,41 @@
+get:
+  summary: 下載 某部或某卷 純文字版 ZIP 檔
+  tags: [download]
+  description: |
+    ## 悉曇字
+    
+    以羅馬轉寫呈現，例： /download/text/T0864A.txt.zip
+
+    ## 圖形
+    
+    以【圖：T16p0845_01.gif】表示，圖檔也一起包含在 zip 檔裡。
+    
+    例： /download/text/T0719_001.txt.zip
+    
+    ## 表格
+    
+    逐列、逐欄 分行呈現，例： /download/text/T2035_003.txt.zip
+    
+    ○四處十六會圖
+  parameters:
+    - name: work_juan
+      in: path
+      description: 佛典編號（經號） 或 佛典編號（經號）+ 卷號（三碼）
+      required: true
+      schema:
+        type: string
+      examples:
+        work:
+          value: T0001
+          summary: 指定 佛典編號，取得某部佛典
+        work_juan:
+          value: T0001_001
+          summary: 指定 佛典編號+卷號 取得某一卷
+  responses:
+    '200':
+      description: ZIP File
+      content:
+        application/zip:
+          schema: 
+            type: string
+            format: binary

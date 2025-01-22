@@ -1,0 +1,24 @@
+get: 
+  summary: 下載 Docusky XML 格式佛典
+  tags: [download]
+  parameters:
+    - name: filename
+      in: path
+      description: 佛典編號（經號） 或 佛典編號（經號）+ 卷號（三碼）
+      required: true
+      schema:
+        type: string
+      examples:
+        juan:
+          summary: 單卷
+          value: A0157_001
+        work:
+          summary: 整部佛典
+          value: A0157
+  responses:
+    '200':
+      description: XML File
+      content:
+        text/xml:
+          schema: 
+            type: string

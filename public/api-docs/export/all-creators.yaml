@@ -1,0 +1,23 @@
+get:
+  summary: 全部作譯者列表
+  tags: [export]
+  responses:
+    '200':
+      description: list of creators
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              num_found:
+                type: integer
+                description: number of creators
+              results:
+                type: array
+                description: list of creators
+                items:
+                  type: array
+                  description: 第一個元素是作譯者 ID，第二個元素是作譯者名稱。
+                  items:
+                    type: string
+                  example: ["A000001", "金總持"]

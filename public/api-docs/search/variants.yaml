@@ -1,0 +1,22 @@
+get:
+  summary: 異體字建議
+  tags: [search]
+  description: |-
+    # 資料來源
+    * 感謝 [國家教育研究院](https://www.naer.edu.tw/) 授權 [法鼓文理學院](http://www.dila.edu.tw/) 使用 [《教育部異體字字典》](https://dict.variants.moe.edu.tw/variants)
+    * 開放資料： <https://github.com/DILA-edu/cbeta-metadata/tree/master/variants>
+  parameters:
+    - name: q
+      in: query
+      required: true
+      description: 要搜尋的字詞。
+      example: 著衣持鉢
+      schema:
+        type: string
+  responses:
+    '200':
+      description: search results.
+      content:
+        application/json:
+          schema: 
+            $ref: variants-response.yaml

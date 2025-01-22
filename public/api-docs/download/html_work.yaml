@@ -1,0 +1,20 @@
+get:
+  summary: 下載 HTML 格式佛典，壓縮為 ZIP 檔。
+  tags: [download]
+  description:  解壓縮之後有多個 HTML 檔，適合直接閱讀用。
+  parameters:
+    - name: work
+      in: path
+      description: 佛典編號（經號）
+      required: true
+      schema:
+        type: string
+      example: A0157
+  responses:
+    '200':
+      description: ZIP File
+      content:
+        application/zip:
+          schema: 
+            type: string
+            format: binary

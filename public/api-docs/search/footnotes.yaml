@@ -1,0 +1,23 @@
+get:
+  summary: Search Footnotes
+  tags: [search]
+  parameters:
+    - $ref: parameters.yaml#/extended_q
+    - $ref: parameters.yaml#/start
+    - $ref: parameters.yaml#/rows
+    - $ref: parameters-filter.yaml#/category
+    - $ref: parameters-filter.yaml#/canon
+    - $ref: parameters-filter.yaml#/work
+    - $ref: parameters-filter.yaml#/works
+    - $ref: parameters-filter.yaml#/creator
+    - $ref: parameters-filter.yaml#/dynasty
+    - $ref: parameters-filter.yaml#/time
+    - $ref: parameters-filter.yaml#/work_type
+    - $ref: parameters-option.yaml#/facet
+  responses:
+    '200':
+      description: search results.
+      content:
+        application/json:
+          schema: 
+            $ref: footnotes-response.yaml

@@ -1,0 +1,26 @@
+get:
+  summary: 下載 MOBI 格式
+  tags: [download]
+  parameters:
+    - name: canon
+      in: path
+      description: 藏經 ID
+      required: true
+      schema:
+        type: string
+      example: A
+    - name: work
+      in: path
+      description: 佛典編號（經號）
+      required: true
+      schema:
+        type: string
+      example: A0157
+  responses:
+    '200':
+      description: MOBI File
+      content:
+        application/x-mobipocket-ebook:
+          schema: 
+            type: string
+            format: binary

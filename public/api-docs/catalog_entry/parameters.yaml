@@ -1,0 +1,19 @@
+name: q
+in: query
+required: false
+schema:
+  type: string
+description: Catalog Entry ID
+examples: 
+  root:
+    value: root
+    summary: get various CBETA catalogs (根目錄, 取得 CBETA 各種目錄)
+  category:
+    value: CBETA
+    summary: CBETA Catalog by Categories (CBETA 部類目錄)
+  orig:
+    value: orig
+    summary: Catalog in Source Collection (原書目錄)
+  taisho:
+    value: orig-T
+    summary: 《大正藏》原書目錄。其他各藏，依此類推在 "orig-" 之後加上藏經 ID。

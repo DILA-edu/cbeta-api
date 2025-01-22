@@ -1,0 +1,30 @@
+get:
+  summary: Get the list of all content units for a section (卷)
+  tags: [rise_shine]
+  parameters:
+    - name: uuid
+      in: path
+      required: true
+      description: The UUID of the Section you wish to access
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: list of sections (卷)
+      content: 
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                uuid:
+                  type: string
+                  format: uuid
+                title:
+                  type: string
+                  example: T0001 長阿含經 第1卷
+                contents:
+                  type: string
+                  description: 該卷文字內容

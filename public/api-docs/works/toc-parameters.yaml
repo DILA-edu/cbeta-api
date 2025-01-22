@@ -1,0 +1,8 @@
+- work:
+  name: work
+  in: query
+  required: false
+  description: 佛典編號
+  example: T0001
+  schema:
+    type: string

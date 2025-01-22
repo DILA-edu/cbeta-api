@@ -1,0 +1,21 @@
+- in: query
+  name: work
+  required: true
+  description: 佛典編號，限制搜尋範圍在某部佛典之中。
+  example: X0600
+  schema:
+    type: string
+- in: query
+  name: juan
+  required: true
+  description: 卷號
+  example: 11
+  schema:
+    type: integer
+- in: query
+  name: q
+  required: true
+  description: 要搜尋的關鍵字，多個關鍵字以半形逗點區隔。
+  example: 法鼓,聖嚴
+  schema:
+    type: string

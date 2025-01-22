@@ -1,0 +1,28 @@
+post:
+  summary: DILA 佛典自動分詞 測試版
+  tags: [tool]
+  description: |
+    * 使用 CRF++ 自動分詞
+    * 不支援咒語。
+    * 使用半形斜線做為分詞區隔符號。
+  requestBody:
+    required: true
+    content:
+      application/x-www-form-urlencoded:
+        schema:
+          type: object
+          properties:
+            t:
+              type: string
+          required:
+            - t
+          example:
+            t: "當觀色無常。如是觀者，則為正觀。正觀者，則生厭離；厭離者，喜貪盡；喜貪盡者，說心解脫。"
+  responses:
+      '200':
+        description: 分詞後結果
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: /當/觀/色/無常/。/如是/觀/者/，/則/為/正觀/。/正觀/者/，/則/生/厭離/；/厭離/者/，/喜/貪/盡/；/喜/貪/盡/者/，/說/心解脫/。/

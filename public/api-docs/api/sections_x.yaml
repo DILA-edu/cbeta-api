@@ -1,0 +1,35 @@
+get:
+  summary: Get one section's (卷) information
+  tags: [rise_shine]
+  parameters:
+    - name: uuid
+      in: path
+      required: true
+      description: The UUID of the Section you wish to access
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: list of sections (卷)
+      content: 
+        application/json:
+          schema:
+            type: object
+            properties:
+              uuid:
+                type: string
+                format: uuid
+              title:
+                type: string
+                example: T0001 長阿含經 第1卷
+              parentUuid:
+                type: string
+                format: uuid
+              uri:
+                type: string
+                description: the original uri from which the section can be fetched
+                example: "http://cbdata.dila.edu.tw/v1.2/download/text-for-asia-network/T/T0001/T0001_001.txt"
+              contentUnitCount:
+                type: integer
+                example: 1

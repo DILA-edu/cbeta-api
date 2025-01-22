@@ -1,0 +1,40 @@
+get:
+  summary: Faceted Search
+  tags: [search]
+  description: 一次回傳五種 faceted search 結果： canon, category, dynasty, creator, work
+  parameters:
+    - name: q
+      in: query
+      required: true
+      description: 要搜尋的字詞。
+      example: 法鼓
+      schema:
+        type: string
+  responses:
+    '200':
+      description: search result
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              canon:
+                type: array
+                items:
+                  type: object
+              category:
+                type: array
+                items:
+                  type: object
+              creator:
+                type: array
+                items:
+                  type: object
+              dynasty:
+                type: array
+                items:
+                  type: object
+              work:
+                type: array
+                items:
+                  type: object

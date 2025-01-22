@@ -1,0 +1,36 @@
+get:
+  summary: Faceted Search by Category (CBETA 部類)
+  tags: [search]
+  description: "note: 一部佛典可能屬於多個部類。"
+  parameters:
+    - name: q
+      in: query
+      required: true
+      description: 要搜尋的字詞。
+      example: 法鼓
+      schema:
+        type: string
+  responses:
+    '200':
+      description: search result
+      content:
+        application/json:
+          schema: 
+            type: array
+            items:
+              type: object
+              properties:
+                category_id:
+                  type: integer
+                  example: 17
+                docs:
+                  type: integer
+                  description: number fo matched documents (卷/篇章)
+                  example: 382
+                hits:
+                  type: integer
+                  description: number fo keyword occurences
+                  example: 569
+                category_name:
+                  type: string
+                  example: 禪宗部類

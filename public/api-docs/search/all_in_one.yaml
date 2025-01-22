@@ -1,0 +1,32 @@
+get:
+  summary: Full Text Search
+  tags: [search]
+  description: |
+    全文檢索並一次回傳 CBETA Online 前端所需的各種資料：
+
+      * 一併回傳 KWIC (Keyword in Context)
+      * 可選擇是否連同 facet 一起回傳。
+      * 分頁以卷為單位。
+  parameters:
+    - $ref: parameters.yaml#/all_in_one_q
+    - $ref: parameters.yaml#/note
+    - $ref: parameters-filter.yaml#/category
+    - $ref: parameters-filter.yaml#/canon
+    - $ref: parameters-filter.yaml#/work
+    - $ref: parameters-filter.yaml#/works
+    - $ref: parameters-filter.yaml#/creator
+    - $ref: parameters-filter.yaml#/dynasty
+    - $ref: parameters-filter.yaml#/time
+    - $ref: parameters-filter.yaml#/work_type
+    - $ref: parameters-option.yaml#/facet
+    - $ref: parameters.yaml#/puncs
+    - $ref: parameters.yaml#/start
+    - $ref: parameters.yaml#/rows
+    - $ref: parameters.yaml#/order
+  responses:
+    '200':
+      description: search results.
+      content:
+        application/json:
+          schema: 
+            $ref: response.yaml

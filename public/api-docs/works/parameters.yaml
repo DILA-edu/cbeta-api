@@ -1,0 +1,88 @@
+- name: canon
+  in: query
+  required: false
+  description: 藏經 ID
+  schema: 
+    $ref: '../common/resources.yaml#/schema/canon_id'
+- name: vol_start
+  in: query
+  required: false
+  description: 起始冊號, 搭配 vol_end 使用。
+  example: 1
+  schema:
+    type: integer
+- name: vol_end
+  in: query
+  required: false
+  description: 結束冊號，搭配 vol_start 使用。
+  example: 2
+  schema:
+    type: integer
+- name: work_start
+  in: query
+  required: false
+  description: 起始佛典編號，搭配 work_end 使用。
+  example: 1
+  schema:
+    type: string
+- name: work_end
+  in: query
+  required: false
+  description: 結束佛典編號，搭配 work_end 使用。
+  example: 2
+  schema:
+    type: string
+- name: creator_id
+  in: query
+  required: false
+  description: 作譯者 Authority ID
+  example: A000439
+  schema:
+    type: string
+- name: creator
+  in: query
+  required: false
+  description: 以字串搜尋作譯者符合的佛典。不論是否已確認 ID，全部搜尋。
+  example: 竺
+  schema:
+    type: string
+- name: creator_name
+  in: query
+  required: false
+  description: 以字串搜尋作譯者符合的佛典。只搜尋尚未確認 ID 的資料。
+  example: 竺
+  schema:
+    type: string
+- name: dynasty
+  in: query
+  required: false
+  description: 搜尋朝代符合的佛典。多個朝代以半形逗點區隔。
+  examples: 
+    one_dynasty:
+      value: 唐
+    multiple_dynasties:
+      value: 符秦,前秦
+  schema:
+    type: string
+- name: time_start
+  in: query
+  required: false
+  description: 起始 公元年，搭配 time_end 使用。
+  example: 600
+  schema:
+    type: integer
+- name: time_end
+  in: query
+  required: false
+  description: 結束 公元年，搭配 time_start 使用。
+  example: 700
+  schema:
+    type: integer
+- name: work
+  in: query
+  required: false
+  description: 指定「佛典編號」取得某部佛典的資訊。
+  example: T0001
+  schema:
+    type: string
+    

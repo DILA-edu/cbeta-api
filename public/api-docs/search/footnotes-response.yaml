@@ -1,0 +1,64 @@
+type: object
+properties:
+  num_found:
+    type: integer
+    description: number of found notes (符合的校註筆數)
+    example: 38
+  total_term_hits:
+    type: integer
+    description: number of keyword matched occurences
+    example: 46
+  results:
+    type: array
+    description: list of notes
+    items:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: document id in search engine
+          example: 1018417
+        canon:
+          type: string
+          description: 藏經 ID
+          example: Y
+        category:
+          type: string
+          description: CBETA 部類
+          example: 新編部類
+        vol:
+          type: string
+          description: 冊號
+          example: Y16
+        file:
+          type: string
+          description: CBETA XML檔 主檔名
+          example: Y16n0016
+        work:
+          type: string
+          description: 佛典編號（經號）
+          example: Y0016
+        title:
+          type: string
+          description: Work's Title
+          example: 以佛法研究佛法
+        juan:
+          type: integer
+          description: 卷號
+          example: 7
+        lb:
+          type: string
+          description: 校註所在行號
+          example: 0220a06
+        n:
+          type: string
+          description: 校註編號
+          example: cb_note_8
+        content:
+          type: string
+          description: 校註內容
+          example: 大法鼓經【CB】，法鼓【印順】
+        highlight:
+          type: string
+          description: 校註內容（出現 keyword 的地方以 mark 標記)
+          example: 大<mark>法鼓</mark>經【CB】，<mark>法鼓</mark>【印順】

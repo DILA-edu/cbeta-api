@@ -1,0 +1,24 @@
+get:
+  summary: 範圍選擇清單-依部類
+  tags: [export]
+  description: 供前端做「範圍選擇」樹狀目錄使用。
+  responses:
+    '200':
+      description: Tree
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              title:
+                type: string
+                description: Title of Tree Root Node
+                example: '選擇全部'
+              key:
+                type: string
+                description: Key of Tree Node
+              children:
+                type: array
+                items:
+                  type: object
+                  description: Tree Node

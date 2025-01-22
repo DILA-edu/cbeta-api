@@ -1,0 +1,32 @@
+get:
+  summary: 下載某一卷文本中的校註
+  tags: [download]
+  parameters:
+    - name: canon
+      in: path
+      description: 藏經 ID
+      required: true
+      schema:
+        type: string
+      example: T
+    - name: work
+      in: path
+      description: 佛典編號（經號）
+      required: true
+      schema:
+        type: string
+      example: T0001
+    - name: juan
+      in: path
+      description: 卷號（三碼）
+      required: true
+      schema:
+        type: string
+      example: 001
+  responses:
+    '200':
+      description: csv file of footnotes
+      content:
+        text/csv:
+          schema: 
+            type: string
