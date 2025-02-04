@@ -36,7 +36,7 @@ class CheckP5a
   def chk_text(node)
     return if node.text.strip.empty?
     if node.parent.name == 'div'
-      error "文字直接出現在 div 下, lb: #{@lb}, text: #{node.text.inspect}"
+      error "lb: #{@lb}, text: #{node.text.inspect}", type: "[E02] 文字直接出現在 div 下"
     end
   end
 
@@ -61,7 +61,14 @@ class CheckP5a
     unless e['n'].match(/^[a-z\d]\d{3}[a-z]\d+$/)
       error "lb format error: #{e['n']}"
     end
+
     @lb = e['n']
+    ed_lb = "#{e['ed']}#{@lb}"
+    if @lbs.include? ed_lb
+      error "lb: #{@lb}, ed: #{e['ed']}", type: "[E01] 行號重複"
+    else
+      @lbs << ed_lb
+    end
   end
   
   def e_lem(e)
@@ -77,8 +84,10 @@ class CheckP5a
     end
   end
 
-  def error(msg)
-    s = "#{@basename}, #{msg}"
+  def error(msg, type: nil)
+    s = ''
+    s << "#{type}: " unless type.nil?
+    s << "#{@basename}, #{msg}"
     puts s
     @errors << s + "\n"
   end
@@ -104,6 +113,7 @@ class CheckP5a
     doc = Nokogiri::XML(s)
     if doc.errors.empty?
       doc.remove_namespaces!
+      @lbs = Set.new
       traverse(doc.root)
     else
       @errors << "錯誤: #{@basename} not well-formed\n"

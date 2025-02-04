@@ -219,16 +219,10 @@ module CbetaP5aShare
     abort "找不到 idno" if e.nil?
     id = e.text.strip
 
-    case id
-    when 'CC.1.1'
-      '《比丘尼傳暨續比丘尼傳》（大千出版社，2006）'
-    when 'CC.2.2'
-      '《敦博本六祖壇經校釋》（萬卷樓，2006）'
-    else
-      e = doc.at_xpath("//sourceDesc/bibl/title[@level='s' and @lang='zh-Hant']")
-      abort "找不到來源說明" if e.nil?
-      traverse(e)
-    end
+    e = doc.at_xpath("//sourceDesc/bibl/title[@level='s' and @lang='zh-Hant']")
+    e = doc.at_xpath("//sourceDesc/bibl") if e.nil?
+    abort "找不到來源說明" if e.nil?
+    traverse(e)
   end
 
   def get_title(doc)

@@ -8,8 +8,11 @@ Rswag::Ui.configure do |c|
   # (under openapi_root) as JSON or YAML endpoints, then the list below should
   # correspond to the relative paths for those endpoints.
 
-  if Rails.env.production?
-    c.swagger_endpoint '/cbss/api-docs/openapi.yaml', 'CBETA API Docs'
+  case Rails.env
+  when 'production'
+    c.swagger_endpoint '/stable/api-docs/openapi.yaml', 'CBETA API Docs'
+  when 'staging'
+    c.swagger_endpoint '/dev/api-docs/openapi.yaml', 'CBETA API Docs'
   else
     c.swagger_endpoint '/api-docs/openapi.yaml', 'CBETA API Docs'
   end
