@@ -11,6 +11,8 @@ class ImportSynonym
 
     read_synonyms
     arrange_synonyms
+    moe_variant_words # 教育部 異形詞
+
     @inserts = []
     @synonyms.each_pair do |term, synonyms|
       s = synonyms.to_a.join("\t")
@@ -31,17 +33,29 @@ class ImportSynonym
   def arrange_synonyms
     @synonyms = {}
     @groups.each_pair do |gid, terms|
-      term = terms.first
-      terms[1..-1].each do |t|
-        book_synonym(term, t)
-        book_synonym(t, term)
-      end
+      book_synonym_array(terms)
     end
   end
 
   def book_synonym(t1, t2)
     @synonyms[t1] = Set.new unless @synonyms.key?(t1)
     @synonyms[t1] << t2
+  end
+  
+  # 兩兩之間 建立 近義詞 關係
+  def book_synonym_array(terms)
+    terms.permutation(2) do |t1, t2|
+      book_synonym(t1, t2)
+    end
+  end
+
+  # 匯入 教育部 異形詞
+  def moe_variant_words
+    fn = Rails.root.join('data', 'moe-variant-words.csv')
+    CSV.foreach(fn, headers: true) do |row|
+      a = row['詞組'].split('／')
+      book_synonym_array(a)
+    end
   end
 
   def read_synonyms

@@ -3,7 +3,7 @@ get:
   tags: [search]
   description: |-
     # 資料來源
-    * 感謝 [國家教育研究院](https://www.naer.edu.tw/) 授權 [法鼓文理學院](http://www.dila.edu.tw/) 使用 [《教育部異體字字典》](https://dict.variants.moe.edu.tw/variants)
+    * 感謝 [國家教育研究院](https://www.naer.edu.tw/) 授權 [法鼓文理學院](http://www.dila.edu.tw/) 使用 教育部[《異體字字典》](https://dict.variants.moe.edu.tw/variants)、《異形詞辨析手冊》。
     * 開放資料： <https://github.com/DILA-edu/cbeta-metadata/tree/master/variants>
   parameters:
     - name: q
