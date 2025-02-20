@@ -51,6 +51,7 @@ Rails.application.routes.draw do
   match 'search/similar',         to: 'search#similar',    via: [:get, :post]
   match 'search/synonym',         to: 'search#synonym',    via: [:get, :post]
   match 'search/title',           to: 'search#title',      via: [:get, :post]
+  match 'search/toc',             to: 'toc_node#index',    via: [:get, :post]
   match 'search/variants',        to: 'search#variants',   via: [:get, :post]
   match 'search',                 to: 'search#index',      via: [:get, :post]
 
@@ -84,6 +85,7 @@ Rails.application.routes.draw do
   get 'static_pages/search_similar'
   get 'static_pages/search_synonym'
   get 'static_pages/search_title'
+  get 'static_pages/search_toc'
   get 'static_pages/search_vars'
   get 'static_pages/search'
 
@@ -98,7 +100,6 @@ Rails.application.routes.draw do
   get 'static_pages/sphinx_vars'
   get 'static_pages/sphinx'
   get 'static_pages/time'
-  get 'static_pages/toc_search'
   get 'static_pages/toc'
   get 'static_pages/word_count'
   get 'static_pages/word_seg'

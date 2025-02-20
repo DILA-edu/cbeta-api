@@ -1,53 +1,61 @@
-- in: query
+canon:
+  in: query
   name: canon
   required: false
   description: 藏經 ID
   example: T
   schema:
     type: string
-- in: query
+work:
+  in: query
   name: work
   required: false
   description: 佛典編號
   example: 1
   schema:
     type: string
-- in: query
+juan:
+  in: query
   name: juan
   required: false
   description: 卷號
   example: 1
   schema:
     type: integer
-- in: query
+vol:
+  in: query
   name: vol
   required: false
   description: 冊號
   example: 1
   schema:
     type: integer
-- in: query
+page:
+  in: query
   name: page
   required: false
   description: 頁碼
   example: 1
   schema:
     type: integer
-- in: query
+col:
+  in: query
   name: col
   required: false
   description: 欄號
   example: a
   schema:
     type: string
-- in: query
+line:
+  in: query
   name: line
   required: false
   description: 行號
   example: 1
   schema:
     type: integer
-- in: query
+linehead:
+  in: query
   name: linehead
   required: false
   description: 行首資訊

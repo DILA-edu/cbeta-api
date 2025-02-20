@@ -1,4 +1,5 @@
-- in: query
+q:
+  in: query
   name: q
   required: true
   description: 要搜尋的文字片段。
@@ -17,39 +18,33 @@
       value: 若人欲了知，三世一切佛，應觀法界性，一切唯心造
     ex6:
       value: 是日已過，命亦隨減，如少水魚，斯有何樂
-- in: query
+k:
+  in: query
   name: k
   description: 第一階段使用 Manticore 模糊搜尋，取 top k 筆數。
   schema:
     type: integer
     default: 500
-- in: query
+gain:
+  in: query
   name: gain
   description: Smith-Waterman 演算法執行時，match 時的加分.
   schema: 
     type: integer
     minimum: 0
     default: 2
-- in: query
+penality:
+  in: query
   name: penalty
   description: Smith-Waterman 演算法執行時，miss、insertion、deletion 的減分，必須 <= 0，預設為 -1.
   schema:
     type: integer
     maximum: 0
     default: -1
-- in: query
+score_min:
+  in: query
   name: score_min
   description: Smith-Waterman Score 最小值.
   schema:
     type: integer
     default: 16
-- $ref: parameters-filter.yaml#/category
-- $ref: parameters-filter.yaml#/canon
-- $ref: parameters-filter.yaml#/work
-- $ref: parameters-filter.yaml#/works
-- $ref: parameters-filter.yaml#/creator
-- $ref: parameters-filter.yaml#/dynasty
-- $ref: parameters-filter.yaml#/time
-- $ref: parameters-filter.yaml#/work_type
-- $ref: parameters-option.yaml#/facet
-- $ref: parameters-option.yaml#/cache

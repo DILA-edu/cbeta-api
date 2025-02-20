@@ -1,10 +1,16 @@
 get:
   summary: 目次 (Table of content)
-  tags: [toc]
+  tags: [search]
   description: |
     搜尋：部類目錄、佛典標題（經名）、佛典內目次
   parameters:
-    $ref: parameters.yaml
+    - name: q
+      in: query
+      required: false
+      description: 要查詢的字串
+      example: 阿含
+      schema:
+        type: string
   responses:
     '200':
       description: |
@@ -40,6 +46,6 @@ get:
       content:
         application/json:
           schema: 
-            $ref: 'response.yaml'
+            $ref: 'toc-response.yaml'
           example:
-            $ref: 'response-example.yaml'
+            $ref: 'toc-response-example.yaml'

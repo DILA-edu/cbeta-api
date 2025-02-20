@@ -4,7 +4,14 @@ get:
   externalDocs: 
     url: 'https://github.com/DILA-edu/cbeta-api/blob/main/openapi/juans/goto.md'
   parameters:
-    $ref: goto-parameters.yaml
+    - $ref: goto-parameters.yaml#/canon
+    - $ref: goto-parameters.yaml#/work
+    - $ref: goto-parameters.yaml#/juan
+    - $ref: goto-parameters.yaml#/vol
+    - $ref: goto-parameters.yaml#/page
+    - $ref: goto-parameters.yaml#/col
+    - $ref: goto-parameters.yaml#/line
+    - $ref: goto-parameters.yaml#/linehead
   responses:
     '200':
       description: 回傳 Goto 所需相關資訊.

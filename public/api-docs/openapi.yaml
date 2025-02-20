@@ -79,7 +79,9 @@ paths:
     $ref: lines/_.yaml
   /search:
     $ref: search/_.yaml
-  /search_all_in_one:
+  /search/toc:
+    $ref: search/toc.yaml
+  /search/all_in_one:
     $ref: search/all_in_one.yaml
   /search/extended:
     $ref: search/extended.yaml
@@ -111,8 +113,6 @@ paths:
     $ref: search/similar.yaml
   /search/semantic:
     $ref: search/semantic.yaml
-  /toc:
-    $ref: 'toc/_.yaml'
   /word_seg:
     $ref: 'word_seg/_.yaml'
   /works:
@@ -123,7 +123,6 @@ paths:
 tags:
   - name: catalog
   - name: work
-  - name: toc
   - name: juan
   - name: line
   - name: search

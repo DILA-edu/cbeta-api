@@ -1,18 +1,21 @@
-- in: query
+work:
+  in: query
   name: work
   required: true
   description: 佛典編號
   schema:
     type: string
     example: T0001
-- in: query
+juan:
+  in: query
   name: juan
   required: true
   description: 卷號
   schema:
     type: integer
     example: 1
-- in: query
+work_info:
+  in: query
   name: work_info
   required: false
   description: |
@@ -23,7 +26,8 @@
   schema:
     type: integer
     example: 1
-- in: query
+toc:
+  in: query
   name: toc
   required: false
   description: |

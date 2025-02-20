@@ -2,7 +2,21 @@ get:
   summary: 相似搜尋
   tags: [search]
   parameters:
-    $ref: similar-parameters.yaml
+    - $ref: similar-parameters.yaml#/q
+    - $ref: similar-parameters.yaml#/k
+    - $ref: similar-parameters.yaml#/gain
+    - $ref: similar-parameters.yaml#/penality
+    - $ref: similar-parameters.yaml#/score_min
+    - $ref: parameters-filter.yaml#/category
+    - $ref: parameters-filter.yaml#/canon
+    - $ref: parameters-filter.yaml#/work
+    - $ref: parameters-filter.yaml#/works
+    - $ref: parameters-filter.yaml#/creator
+    - $ref: parameters-filter.yaml#/dynasty
+    - $ref: parameters-filter.yaml#/time
+    - $ref: parameters-filter.yaml#/work_type
+    - $ref: parameters-option.yaml#/facet
+    - $ref: parameters-option.yaml#/cache
   responses:
     '200':
       content:

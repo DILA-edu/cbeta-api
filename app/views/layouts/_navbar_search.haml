@@ -2,6 +2,8 @@
   %a#navbarDropdown.nav-link.dropdown-toggle{"aria-expanded" => "false", "aria-haspopup" => "true", "data-toggle" => "dropdown", :href => "#", :role => "button"}
     Search
   .dropdown-menu{"aria-labelledby" => "navbarDropdown"}
+    %a.dropdown-item{ href: url_for(controller: 'static_pages', action: 'search_toc') }
+      經目搜尋
     %a.dropdown-item{ href: url_for(controller: 'static_pages', action: 'search') }
       一般全文檢索
     %a.dropdown-item{ href: url_for(controller: 'static_pages', action: 'search_extended') }

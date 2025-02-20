@@ -12,7 +12,18 @@ get:
       * 搜尋多個朝代： /works?dynasty=符秦,前秦
       * 搜尋成立年代在公元 600年至700年之間的佛典： /works?time_start=600&time_end=700
   parameters:
-    $ref: parameters.yaml
+    - $ref: parameters.yaml#/canon
+    - $ref: parameters.yaml#/vol_start
+    - $ref: parameters.yaml#/vol_end
+    - $ref: parameters.yaml#/work_start
+    - $ref: parameters.yaml#/work_end
+    - $ref: parameters.yaml#/creator_id
+    - $ref: parameters.yaml#/creator
+    - $ref: parameters.yaml#/creator_name
+    - $ref: parameters.yaml#/dynasty
+    - $ref: parameters.yaml#/time_start
+    - $ref: parameters.yaml#/time_end
+work:
   responses:
     '200':
       description: Works Information

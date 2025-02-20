@@ -7,6 +7,7 @@ Rails.application.configure do
   # it changes. This slows down response time but is perfect for development
   # since you don't have to restart the web server when you make code changes.
   config.enable_reloading = true
+  config.reload_classes_only_on_change = false
 
   # Do not eager load code on boot.
   config.eager_load = false
@@ -25,7 +26,9 @@ Rails.application.configure do
 
     config.cache_store = :memory_store
     config.public_file_server.headers = {
-      "Cache-Control" => "public, max-age=#{2.days.to_i}"
+      'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma' => 'no-cache',
+      'Expires' => 'Fri, 01 Jan 1990 00:00:00 GMT'
     }
   else
     config.action_controller.perform_caching = false
@@ -61,6 +64,8 @@ Rails.application.configure do
 
   # Suppress logger output for asset requests.
   config.assets.quiet = true
+  config.assets.debug = true
+  config.assets.digest = false
 
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true

@@ -9,7 +9,11 @@ get:
       * 取得某段行號起迄範圍內文字： /lines?linehead_start=T01n0001_p0001a04&linehead_end=T01n0001_p0001a05
       * 跨卷也沒問題： /lines?linehead_start=T01n0001_p0011a01&linehead_end=T01n0001_p0011a06
   parameters:
-    $ref: parameters.yaml
+    - $ref: parameters.yaml#/linehead
+    - $ref: parameters.yaml#/before
+    - $ref: parameters.yaml#/after
+    - $ref: parameters.yaml#/linehead_start
+    - $ref: parameters.yaml#/linehead_end
   responses:
     '200':
       description: text lines.
