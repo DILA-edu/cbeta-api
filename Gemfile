@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '3.3.4'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 7.1.5'
+gem 'rails', '~> 7.2.2'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3', '~> 1.4'
 # Use Puma as the app server
@@ -17,9 +17,6 @@ gem 'uglifier', '>= 1.3.0'
 gem 'coffee-rails', '~> 5.0.0'
 # See https://github.com/rails/execjs#readme for more supported runtimes
 #gem 'therubyracer', platforms: :ruby
-
-# Use jquery as the JavaScript library
-gem 'jquery-rails'
 
 # 第一次進到網站，上方工具沒有作用，要 reload 才會恢復
 # 不知道是不是 turbolinks 造成？
@@ -43,7 +40,7 @@ group :development do
   gem 'listen', '~> 3.3'
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
-  gem 'spring-watcher-listen', '~> 2.0.0'
+  gem 'spring-watcher-listen'
 end
 
 group :test do
@@ -80,7 +77,8 @@ group :development do
   gem 'capistrano-passenger'
 end
 
-gem 'bootstrap', '~> 4.0.0'
+gem 'dartsass-sprockets'
+gem "autoprefixer-rails"
 
 gem 'rubyzip'
 gem 'colorize'
@@ -90,6 +88,8 @@ gem 'open3'
 gem 'faraday'
 gem 'csv', '~> 3.3', '>= 3.3.2'
 gem "rswag-ui"
+gem 'will_paginate', '~> 4.0'
+gem 'will_paginate-bootstrap-style'
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false

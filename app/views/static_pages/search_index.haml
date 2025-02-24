@@ -1,0 +1,15 @@
+%h1 Search
+%ul
+  %li= link_to "經目搜尋", { controller: 'static_pages', action: 'search_toc' }
+  %li= link_to "一般全文檢索", { controller: 'static_pages', action: 'search' }
+  %li= link_to "擴充語法檢索", { controller: 'static_pages', action: 'search_extended' }
+  %li= link_to "限制搜尋範圍", { controller: 'static_pages', action: 'search_filter' }
+  %li= link_to "異體字", { controller: 'static_pages', action: 'search_vars' }
+  %li= link_to "近義詞 (near synonyms)", { controller: 'static_pages', action: 'search_synonym' }
+  %li= link_to "簡體字", { controller: 'static_pages', action: 'search_sc' }
+  %li= link_to "Facet", { controller: 'static_pages', action: 'search_facet' }
+  %li= link_to "All in One", { controller: 'static_pages', action: 'search_all_in_one' }
+  %li= link_to "Notes", { controller: 'static_pages', action: 'search_notes' }
+  %li= link_to "Title", { controller: 'static_pages', action: 'search_title' }
+  %li= link_to "KWIC", { controller: 'static_pages', action: 'search_kwic' }
+  %li= link_to "相似搜尋", { controller: 'static_pages', action: 'search_similar' }

@@ -400,9 +400,9 @@ class P5aToTextForDownload
     s = File.read(fn)
 
     if fn.include? 'T16n0657'
-      # 這個地方 雙行夾註 跨兩行偈頌
+      # 這個地方 雙行夾注 跨兩行偈頌
       # 把 lb 移到 note 結束之前
-      # 讓 lg-row 先結束，再結束雙行夾註
+      # 讓 lg-row 先結束，再結束雙行夾注
       s.sub!(/(<\/note>)(\n<lb n="0206b29" ed="T"\/>)/, '\2\1')
     end
 

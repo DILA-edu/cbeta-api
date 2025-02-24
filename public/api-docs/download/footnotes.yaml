@@ -1,5 +1,5 @@
 get:
-  summary: 下載某一卷文本中的校註
+  summary: 下載某一卷文本中的校注
   tags: [download]
   parameters:
     - name: canon

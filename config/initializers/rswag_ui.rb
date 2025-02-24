@@ -10,11 +10,11 @@ Rswag::Ui.configure do |c|
 
   case Rails.env
   when 'production'
-    c.swagger_endpoint '/stable/api-docs/openapi.yaml', 'CBETA API Docs'
+    c.openapi_endpoint '/stable/api-docs/openapi.yaml', 'CBETA API Docs'
   when 'staging'
-    c.swagger_endpoint '/dev/api-docs/openapi.yaml', 'CBETA API Docs'
+    c.openapi_endpoint '/dev/api-docs/openapi.yaml', 'CBETA API Docs'
   else
-    c.swagger_endpoint "/api-docs/openapi.yaml?<%= Time.now.to_i %>", 'CBETA API Docs'
+    c.openapi_endpoint "/api-docs/openapi.yaml?<%= Time.now.to_i %>", 'CBETA API Docs'
   end
 
   # Add Basic Auth in case your API is private

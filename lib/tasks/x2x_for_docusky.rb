@@ -190,7 +190,7 @@ class P5aToDocusky
     r = ''
     if @lg_row_open && !@in_l
       # 每行偈頌放在一個 lg-row 裡面
-      # T46n1937, p. 914a01, l 包雙行夾註跨行
+      # T46n1937, p. 914a01, l 包雙行夾注跨行
       # T20n1092, 337c16, lb 在 l 中間，不結束 lg-row
       r << "</div>\n"
       @lg_row_open = false
@@ -537,9 +537,9 @@ class P5aToDocusky
     s = File.read(fn)
 
     if fn.include? 'T16n0657'
-      # 這個地方 雙行夾註 跨兩行偈頌
+      # 這個地方 雙行夾注 跨兩行偈頌
       # 把 lb 移到 note 結束之前
-      # 讓 lg-row 先結束，再結束雙行夾註
+      # 讓 lg-row 先結束，再結束雙行夾注
       s.sub!(/(<\/note>)(\n<lb n="0206b29" ed="T"\/>)/, '\2\1')
     end
 

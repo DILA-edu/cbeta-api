@@ -1,0 +1,9 @@
+%h1 統計報表 
+%ul
+  %li= link_to "全集成統計數字", controller: 'report', action: 'index'
+  %li 
+    存取紀錄
+    %ul
+      %li= link_to "日統計表", controller: 'report', action: 'daily'
+      %li= link_to "URL 統計表", controller: 'report', action: 'url'
+      %li= link_to "Referer 統計表", controller: 'report', action: 'referer'

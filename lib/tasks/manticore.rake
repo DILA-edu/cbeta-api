@@ -33,7 +33,7 @@ namespace :manticore do
     end
   end
 
-  desc "將註解（校註、夾註）轉為 XML 供 Sphinx 建 Index"
+  desc "將註解（校注、夾注）轉為 XML 供 Sphinx 建 Index"
   task :notes, [:canon] => :environment do |t, args|
     require_relative 'manticore-notes'
     ManticoreNotes.new.convert(args[:canon])

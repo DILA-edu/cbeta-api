@@ -489,7 +489,7 @@ class ManticoreNotes
       fn = File.join(folder, "%03d.csv" % juan)
       notes.sort_by! { |x| x[:lb] + x[:n] }
       CSV.open(fn, "wb") do |csv|
-        csv << %w[頁碼行號 校註編號 校註內容]
+        csv << %w[頁碼行號 校注編號 校注內容]
         notes.each do |note|
           csv << [note[:lb], note[:n], note[:text]]
         end

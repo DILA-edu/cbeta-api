@@ -18,4 +18,4 @@ properties:
           description: text line in HTML format
         notes:
           type: object
-          description: 校註。key 是校註編號，value 是校註內容。
+          description: 校注。key 是校注編號，value 是校注內容。

@@ -1,0 +1,22 @@
+.d-flex.flex-column.flex-shrink-0.p-3.text-white.bg-dark{:style => "width: 280px;"}
+  %a.d-flex.align-items-start.mb-3.mb-md-0.me-md-auto.text-white.text-decoration-none{:href => "/"}
+    %span.fs-4 
+      CBETA API
+      =Rails.configuration.cb.ver
+  %hr/
+  %ul.nav.nav-pills.flex-column.mb-auto
+    %li= link_to 'Home', { controller: 'static_pages', action: 'home'}, class: 'nav-link text-white'
+    %li= link_to 'Catalog', { controller: 'static_pages', action: 'catalog_index'}, class: 'nav-link text-white'
+    %li= link_to 'Work', { controller: 'static_pages', action: 'work_index'}, class: 'nav-link text-white'
+    %li= link_to 'Search', { controller: 'static_pages', action: 'search_index'}, class: 'nav-link text-white'
+    %li= link_to 'Download', { controller: 'static_pages', action: 'download'}, class: 'nav-link text-white'
+    %li= link_to 'Export', { controller: 'static_pages', action: 'export'}, class: 'nav-link text-white'
+    %li= link_to '中文工具', { controller: 'static_pages', action: 'chinese_tools'}, class: 'nav-link text-white'
+    %li= link_to 'SHINE API', { controller: 'static_pages', action: 'rise_shine'}, class: 'nav-link text-white'
+    %li= link_to 'API 通用參數', { controller: 'static_pages', action: 'common_parameters'}, class: 'nav-link text-white'
+    %li= link_to '統計報表', { controller: 'static_pages', action: 'report'}, class: 'nav-link text-white'
+    %li= link_to 'Documentation', rswag_ui_path, class: 'nav-link text-white'
+    %li= link_to '更新紀錄', { controller: 'static_pages', action: 'log'}, class: 'nav-link text-white'
+  %hr/
+  %p.text-center
+    DILA 2025

@@ -25,7 +25,7 @@
 
     rake sphinx:notes
 
-目前校註筆數： 1,056,107
+目前校注筆數： 1,056,107
 
 ## xml for sphinx search titles
 

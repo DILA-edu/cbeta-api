@@ -2,7 +2,7 @@ type: object
 properties:
   num_found:
     type: integer
-    description: number of found notes (符合的校註筆數)
+    description: number of found notes (符合的校注筆數)
     example: 38
   total_term_hits:
     type: integer
@@ -48,17 +48,17 @@ properties:
           example: 7
         lb:
           type: string
-          description: 校註所在行號
+          description: 校注所在行號
           example: 0220a06
         n:
           type: string
-          description: 校註編號
+          description: 校注編號
           example: cb_note_8
         content:
           type: string
-          description: 校註內容
+          description: 校注內容
           example: 大法鼓經【CB】，法鼓【印順】
         highlight:
           type: string
-          description: 校註內容（出現 keyword 的地方以 mark 標記)
+          description: 校注內容（出現 keyword 的地方以 mark 標記)
           example: 大<mark>法鼓</mark>經【CB】，<mark>法鼓</mark>【印順】

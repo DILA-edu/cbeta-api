@@ -26,7 +26,7 @@ class P5aToText
   # @param output_root [String] 輸出 Text 路徑
   # @option opts [String] :encoding 輸出編碼，預設 'UTF-8'
   # @option opts [String] :gaiji 缺字處理方式，預設 'default'
-  # @option opts [String] :inline_note 是否呈現夾註，預設為 true
+  # @option opts [String] :inline_note 是否呈現夾注，預設為 true
   #   * 'PUA': 缺字一律使用 Unicode PUA
   #   * 'default': 優先使用通用字
   def initialize(xml_root, output_root, opts={})

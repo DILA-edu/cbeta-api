@@ -1,3 +1,4 @@
+require 'will_paginate/array'
 class ReportController < ApplicationController
   def daily
     @visits = Visit.group(:accessed_at).order(accessed_at: :desc).sum(:count)
@@ -5,6 +6,9 @@ class ReportController < ApplicationController
     @max = a.max
     @sum = a.sum(0)
     @avg = @sum / a.size
+    
+    @visit_keys = @visits.keys.paginate(page: params[:page])
+
     respond_to do |format|
       format.html { render }
       format.csv { daily_csv }
