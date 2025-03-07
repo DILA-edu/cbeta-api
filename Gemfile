@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.3.4'
+ruby '3.4.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 7.2.2'
@@ -90,6 +90,7 @@ gem 'csv', '~> 3.3', '>= 3.3.2'
 gem "rswag-ui"
 gem 'will_paginate', '~> 4.0'
 gem 'will_paginate-bootstrap-style'
+gem "git", "~> 3.0"
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false

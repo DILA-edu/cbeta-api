@@ -5,6 +5,7 @@ require 'json'
 require 'nokogiri'
 require 'set'
 require 'cbeta'
+require_relative 'cbeta-module'
 require_relative 'html-node'
 require_relative 'x2h_share'
 require_relative 'cbeta_p5a_share'
@@ -18,6 +19,8 @@ require_relative 'share'
 #
 # 轉檔規則請參考: http://wiki.ddbc.edu.tw/pages/CBETA_XML_P5a_轉_HTML
 class P5aToHTMLForUI
+  include CBETAModule
+
   # 內容不輸出的元素
   PASS=['back', 'figDesc', 'teiHeader']
   
@@ -44,6 +47,7 @@ class P5aToHTMLForUI
     @j_pages = 0
     @us = UnicodeService.new
     @cbs = CbetaString.new(allow_space: false)
+    @git = Git.open(params[:xml_root])
   end
 
   # 將 CBETA XML P5a 轉為 HTML
@@ -99,7 +103,7 @@ class P5aToHTMLForUI
     puts "\nx2h_for_ui #{@sutra_no}"
     puts "read from #{xml_fn}"
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
-    @updated_at = MyCbetaShare.get_update_date(xml_fn)
+    @updated_at = cb_xml_updated_at
 
     info = Work.get_info_by_id(@work_id)
     return false if info.nil?

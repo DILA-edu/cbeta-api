@@ -5,6 +5,7 @@ require 'json'
 require 'nokogiri'
 require 'set'
 require 'zip'
+require_relative 'cbeta-module'
 require_relative 'html-node'
 require_relative 'x2h_share'
 require_relative 'cbeta_p5a_share'
@@ -16,6 +17,8 @@ require_relative 'share'
 #
 # 轉檔規則請參考: http://wiki.dila.edu.tw/pages/CBETA_XML_P5a_轉_HTML
 class P5aToHTMLForDownload
+  include CBETAModule
+
   # 內容不輸出的元素
   PASS=['back', 'figDesc', 'teiHeader']
 
@@ -29,6 +32,7 @@ class P5aToHTMLForDownload
   def initialize(publish, xml_root, out_root)
     @publish_date = publish
     @xml_root = xml_root
+    @git = Git.open(@xml_root)
     @out_root = out_root
     @cbeta = CBETA.new
     @my_cbeta_share = MyCbetaShare.new
@@ -62,7 +66,7 @@ class P5aToHTMLForDownload
   #
   # T 是大正藏的 ID, CBETA 的藏經 ID 系統請參考: http://www.cbeta.org/format/id.php
   def convert(target=nil)
-    puts "x2h_for_download target: #{target}"
+    puts "\nx2h_for_download target: #{target}"
     return convert_all if target.nil?
 
     arg = target.upcase
@@ -705,15 +709,18 @@ class P5aToHTMLForDownload
     @notes_orig = {}
     @open_divs = []
     @pre = [false]
+
     @sutra_no = File.basename(xml_fn, ".xml")
+    print " #{@sutra_no}"
+    @updated_at = cb_xml_updated_at
+
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @notes_add = {} unless CBETA.juan_across_vol(@vol, @work_id) == 2
-    @updated_at = MyCbetaShare.get_update_date(xml_fn)
     
     if @sutra_no.match(/^(T05|T06|T07)n0220/)
       @sutra_no = "#{$1}n0220"
-    end    
-    
+    end
+
     @out_folder = File.join(@out_root, @canon, @work_id)
     FileUtils::mkdir_p @out_folder
 

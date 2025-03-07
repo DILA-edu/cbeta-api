@@ -6,6 +6,7 @@ require 'nokogiri'
 require 'set'
 require 'yaml'
 require 'zip'
+require_relative 'cbeta-module'
 require_relative 'share'
 require_relative 'cbeta_p5a_share'
 
@@ -15,6 +16,8 @@ require_relative 'cbeta_p5a_share'
 #
 # 轉檔規則請參考: http://wiki.ddbc.edu.tw/pages/CBETA_XML_P5a_轉_HTML
 class P5aToTextForDownload
+  include CBETAModule
+
   # 內容不輸出的元素
   PASS=['anchor', 'back', 'teiHeader']
 
@@ -34,6 +37,7 @@ class P5aToTextForDownload
     @gaijis = MyCbetaShare.get_cbeta_gaiji
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
     @us = UnicodeService.new
+    @git = Git.open(params[:xml_root])
     
     FileUtils.rm_rf    @params[:out_root]
     FileUtils::mkdir_p @params[:out_root]
@@ -346,14 +350,14 @@ class P5aToTextForDownload
     @next_line_buf = ''
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
+    @updated_at = cb_xml_updated_at
     @toc = ''
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     $stderr.puts "x2t_for_download #{@work_id}, notes: #{@params[:notes]}"
-    @updated_at = MyCbetaShare::get_update_date(xml_fn)
-    
+
     if @sutra_no.match(/^(T05|T06|T07)n0220/)
       @sutra_no = "#{$1}n0220"
-    end    
+    end
     
     text = parse_xml(xml_fn)
     write_juans(text)
@@ -517,7 +521,6 @@ class P5aToTextForDownload
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
     @contributors = e.text
-
 
     e = doc.at_xpath("//editorialDecl/punctuation")
     abort "找不到 punctuation" if e.nil?
