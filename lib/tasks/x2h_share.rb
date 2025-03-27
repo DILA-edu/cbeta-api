@@ -3,7 +3,7 @@ module P5aToHtmlShare
   def e_l(e, mode)
     return traverse(e, mode) if mode=='footnote'
 
-    row = HtmlNode.new('div')
+    row = HTMLNode.new('div')
     row['class'] = 'lg-row'
 
     content = traverse(e)
@@ -98,7 +98,7 @@ module P5aToHtmlShare
       r += handle_node(head, mode)
     end
 
-    node = HtmlNode.new('div')
+    node = HTMLNode.new('div')
     classes = ['lg']
     classes << e['rend'] if e.key? 'rend'
     classes << e['type'] if e.key? 'type'
@@ -122,27 +122,9 @@ module P5aToHtmlShare
     r + node.to_s
   end
 
-  def html_copyright(canon, work, juan, publish)
-    args = {
-      source_desc: @source_desc,
-      canon: canon,
-      canon_name: @canon_name,
-      work: work,
-      vol: @vol,
-      juan: juan,
-      title: @title,
-      publish: publish,
-      updated_at: @updated_at,
-      contributors: @contributors,
-      format: :html
-    }
-    MyCbetaShare.cbeta_juan_declare(args)
-  end
-  
   def remove_text_indent_from_style(style)
     a = style.split(';')
     a.delete_if { |s| s.start_with?('text-indent:') }
     a.join(';')
   end
-
 end

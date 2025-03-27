@@ -1,6 +1,23 @@
 require 'cbeta'
 
 module CbetaP5aShare
+  def cbeta_copyright(canon, work, juan, publish, format: :html)
+    args = {
+      source_desc: @source_desc,
+      canon: canon,
+      canon_name: @canon_name,
+      work: work,
+      vol: @vol,
+      juan: juan,
+      title: @title,
+      publish: publish,
+      updated_at: @updated_at,
+      contributors: @contributors,
+      format:
+    }
+    MyCbetaShare.cbeta_juan_declare(args)
+  end
+
   def each_canon(xml_root)
     Dir.entries(xml_root).sort.each do |c|
       next unless c.match(/^#{CBETA::CANON}$/)
@@ -104,7 +121,7 @@ module CbetaP5aShare
     if @format == 'html'
       n = "cb_note_#{n}"
       @notes_add[@juan] << "<span class='footnote add' id='#{n}'>#{s}</span>"
-      node = HtmlNode.new('a')
+      node = HTMLNode.new('a')
       node['class'] = 'noteAnchor add'
       node['href'] = "##{n}"
       node['data-key'] = e['note_key'] if e.key?('note_key')
@@ -143,7 +160,7 @@ module CbetaP5aShare
       return "[#{n}]"
     end
 
-    node = HtmlNode.new('a')
+    node = HTMLNode.new('a')
     node['class'] = 'noteAnchor'
     node['href'] = "#n#{n}"
     node['data-key'] = e['note_key'] if e.key?('note_key')

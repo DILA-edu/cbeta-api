@@ -119,7 +119,7 @@ class P5aToHTMLForDownload
   end
 
   def e_byline(e)
-    node = HtmlNode.new('p')
+    node = HTMLNode.new('p')
     classes = ['byline']
     classes << e['rend'] if e.key? 'rend'
     node['class'] = classes.join(' ')
@@ -139,7 +139,7 @@ class P5aToHTMLForDownload
   end
 
   def e_cell(e)
-    cell = HtmlNode.new('div')
+    cell = HTMLNode.new('div')
     cell['class'] = 'bip-table-cell'
     cell['rowspan'] = e['rows'] if e.key? 'rows'
     cell['colspan'] = e['cols'] if e.key? 'cols'
@@ -167,7 +167,7 @@ class P5aToHTMLForDownload
     r = traverse(e)
     @open_divs.pop
 
-    node = HtmlNode.new('div')
+    node = HTMLNode.new('div')
     node.content = r
 
     classes = []
@@ -277,7 +277,7 @@ class P5aToHTMLForDownload
     return traverse(e, mode) if mode=='footnote'
     return '' if e['type'] == 'added'
 
-    node = HtmlNode.new('p')
+    node = HTMLNode.new('p')
     node.content = traverse(e, mode)
     node['data-head-level'] = @open_divs.size
 
@@ -294,7 +294,7 @@ class P5aToHTMLForDownload
 
   def e_item(e)
     s = traverse(e)
-    li = HtmlNode.new('li')
+    li = HTMLNode.new('li')
     
     # ex: T18n0850_p0087a14
     if e.key? 'n'
@@ -353,7 +353,7 @@ class P5aToHTMLForDownload
   end
 
   def e_list(e)
-    ul = HtmlNode.new('ul')
+    ul = HTMLNode.new('ul')
     ul['class'] = e['rend'] if e.key? 'rend'
     
     # ex: T18n0850_p0087a14
@@ -490,7 +490,7 @@ class P5aToHTMLForDownload
 
     return '' if @mod_notes.include?(n)
     
-    node = HtmlNode.new('a')
+    node = HTMLNode.new('a')
     node['id'] = "note_anchor_#{n}"
     node['class'] = 'noteAnchor'
     node['href'] = "#n#{n}"
@@ -514,9 +514,9 @@ class P5aToHTMLForDownload
     classes = []
     if e['type'] == 'pre'
       @pre << true
-      node = HtmlNode.new('pre')
+      node = HTMLNode.new('pre')
     else
-      node = HtmlNode.new('p')
+      node = HTMLNode.new('p')
       classes << e['type'] if e.key? 'type'
     end
 
@@ -616,7 +616,7 @@ class P5aToHTMLForDownload
   end
 
   def e_table(e)
-    node = HtmlNode.new('div')
+    node = HTMLNode.new('div')
     node.content = traverse(e)
 
     classes = ['bip-table']
@@ -794,7 +794,7 @@ class P5aToHTMLForDownload
     s = traverse(e, mode)
     return s if mode=='footnote'
 
-    span = HtmlNode.new('span')
+    span = HTMLNode.new('span')
     span.content = s
 
     if e.key? 'style'
@@ -949,7 +949,7 @@ class P5aToHTMLForDownload
       title: @title,
       body: body,
       back: back,
-      copyright: html_copyright(@canon, work, juan_no, @publish_date)
+      copyright: cbeta_copyright(@canon, work, juan_no, @publish_date)
     }
     template_fn = Rails.root.join('lib', 'tasks', 'x2h_for_download.html')
     template = File.read(template_fn)

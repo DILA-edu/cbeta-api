@@ -80,7 +80,7 @@ class P5aToDocusky
   end
 
   def e_cell(e)
-    cell = HtmlNode.new('div')
+    cell = HTMLNode.new('div')
     cell['Type'] = 'table-cell'
     cell['rowspan'] = e['rows'] if e.key? 'rows'
     cell['colspan'] = e['cols'] if e.key? 'cols'
@@ -165,7 +165,7 @@ class P5aToDocusky
 
     @in_l = true
 
-    cell = HtmlNode.new('div')
+    cell = HTMLNode.new('div')
     cell['class'] = 'lg-cell'
     cell.content = traverse(e)
     
@@ -210,7 +210,7 @@ class P5aToDocusky
       r = "<Paragraph Type='lg-abnormal'>" + traverse(e) + "</Paragraph>\n"
     else
       @first_l = true
-      node = HtmlNode.new('div')
+      node = HTMLNode.new('div')
       node['Type'] = 'lg'
       @lg_row_open = false
       node.content = traverse(e)

@@ -1,4 +1,4 @@
-class HtmlNode
+class HTMLNode
   attr_accessor :content
   def initialize(tag)
     @tag = tag

@@ -210,7 +210,7 @@ class P5aToHTMLForUI
 
   def e_byline(e, mode)
     return traverse(e, mode) if mode=='footnote'
-    node = HtmlNode.new('p')
+    node = HTMLNode.new('p')
     classes = ['byline']
     classes << e['rend'] if e.key? 'rend'
     node['class'] = classes.join(' ')
@@ -234,7 +234,7 @@ class P5aToHTMLForUI
   end
 
   def e_cell(e)
-    cell = HtmlNode.new('div')
+    cell = HTMLNode.new('div')
 
     cell['class'] = 'bip-table-cell'
     if e.key?('rend')
@@ -271,7 +271,7 @@ class P5aToHTMLForUI
     r = traverse(e)
     @open_divs.pop
 
-    node = HtmlNode.new('div')
+    node = HTMLNode.new('div')
     node.content = r
 
     classes = []
@@ -335,7 +335,7 @@ class P5aToHTMLForUI
       return "<span class='ranja' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
     end
    
-    span = HtmlNode.new('span')
+    span = HTMLNode.new('span')
     span['class'] = 'gaijiInfo'
     span['id'] = gid
 
@@ -411,7 +411,7 @@ class P5aToHTMLForUI
     return traverse(e, mode) if mode=='footnote'
     return '' if e['type'] == 'added'
 
-    node = HtmlNode.new('p')
+    node = HTMLNode.new('p')
     node.content = traverse(e, mode)
 
     classes = []
@@ -436,7 +436,7 @@ class P5aToHTMLForUI
 
   def e_item(e, mode)
     s = traverse(e, mode)
-    li = HtmlNode.new('li')
+    li = HTMLNode.new('li')
     
     # ex: T18n0850_p0087a14
     if e.key? 'n'
@@ -463,7 +463,7 @@ class P5aToHTMLForUI
   def e_l(e, mode)
     return traverse(e, mode) if mode=='footnote'
 
-    row = HtmlNode.new('div')
+    row = HTMLNode.new('div')
     row['class'] = 'lg-row'
 
     content = traverse(e)
@@ -581,7 +581,7 @@ class P5aToHTMLForUI
     line_head = CBETA.get_linehead(@sutra_no, e['n'])
     r = ''
 
-    node = HtmlNode.new('span')
+    node = HTMLNode.new('span')
     node['class'] = 'lb'
     node['class'] << ' honorific' if e['type'] == 'honorific'
     node['id'] = line_head
@@ -638,7 +638,7 @@ class P5aToHTMLForUI
     s = traverse(e, mode)
     return s if mode=='footnote'
     
-    ul = HtmlNode.new('ul')
+    ul = HTMLNode.new('ul')
 
     ul['class'] = e['rend'] if e.key? 'rend'
     
@@ -705,10 +705,10 @@ class P5aToHTMLForUI
   def e_p(e, mode)
     classes = []
     if e.at_xpath('figure')
-      node = HtmlNode.new('div')
+      node = HTMLNode.new('div')
       classes << 'div-figure'
     else
-      node = HtmlNode.new('p')
+      node = HTMLNode.new('p')
     end
 
     classes << e['type'] if e.key? 'type'
@@ -760,7 +760,7 @@ class P5aToHTMLForUI
   end
 
   def e_ref_pts(e)
-    node = HtmlNode.new('span')
+    node = HTMLNode.new('span')
     node.content = traverse(e)
     node['style'] = e['style'] if e.key? 'style'
     node['class'] = 'hint'
@@ -771,7 +771,7 @@ class P5aToHTMLForUI
   end
 
   def link_cbeta_linehead(linehead, content)
-    node = HtmlNode.new('span')
+    node = HTMLNode.new('span')
     node['class'] = 'cbeta-link'
     node['data-linehead'] = linehead
     node.content = content
@@ -878,7 +878,7 @@ class P5aToHTMLForUI
   end
 
   def e_table(e)
-    node = HtmlNode.new('div')
+    node = HTMLNode.new('div')
     node.content = traverse(e)
 
     classes = ['bip-table']
@@ -923,7 +923,7 @@ class P5aToHTMLForUI
   def facsimile_anchor(e)
     ed = e['ed']
     r = ''
-    node = HtmlNode.new('a')
+    node = HTMLNode.new('a')
     node['class'] = 'facsimile'
     node['data-canon'] = ed
 
@@ -1079,7 +1079,7 @@ class P5aToHTMLForUI
     s = traverse(e, mode)
     return s unless e.key?('style') or e.key?('rend')
     
-    span = HtmlNode.new('span')
+    span = HTMLNode.new('span')
     span.content = s
 
     if e.key? 'style'
@@ -1233,7 +1233,7 @@ class P5aToHTMLForUI
   end
 
   def span_t(content)
-    node = HtmlNode.new('span')
+    node = HTMLNode.new('span')
     node['class'] = 't'
     node['l'] = @lb
     node['w'] = @char_count
@@ -1295,7 +1295,7 @@ class P5aToHTMLForUI
         @html_buf = ''
       end
       back = @back_buf + back unless @back_buf.empty?
-      copyright = html_copyright(@canon, work, juan_no, @params[:publish])
+      copyright = cbeta_copyright(@canon, work, juan_no, @params[:publish])
       fn = File.join(folder, "#{juan}.html")
       write_juan_file(fn, body, back, copyright)
       

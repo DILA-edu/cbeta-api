@@ -464,7 +464,7 @@ eos
     @lg_type = e['type']
 
     if @lg_type != 'regular'
-      node = HtmlNode.new('p')
+      node = HTMLNode.new('p')
       node.content = traverse(e)
       node['style'] = e['style'] if e.key? 'style'
       classes = ['lg-abnormal']
@@ -474,7 +474,7 @@ eos
     end
 
     @first_l = true
-    node = HtmlNode.new('div')
+    node = HTMLNode.new('div')
 
     classes = ['lg']
     classes << e['rend'] if e.key? 'rend'
@@ -580,9 +580,9 @@ eos
     @p_type = nil
 
     if e.at_xpath('figure')
-      node = HtmlNode.new('div')
+      node = HTMLNode.new('div')
     else
-      node = HtmlNode.new('p')
+      node = HTMLNode.new('p')
     end
     
     classes = []
@@ -603,7 +603,7 @@ eos
   end
 
   def e_seg(e)
-    node = HtmlNode.new('span')
+    node = HTMLNode.new('span')
     if e.key? 'rend'
       node['class'] = e['rend']
     end

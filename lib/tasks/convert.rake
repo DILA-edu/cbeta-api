@@ -58,6 +58,12 @@ namespace :convert do
     ConvertX2T4D2.new.convert(args[:publish], args[:canon])
   end
 
+  desc "XML 轉 xml4docx 格式 (用來轉 docx)"
+  task :xml4docx, [:publish, :canon] => :environment do |t, args|
+    require 'tasks/convert_xml4docx'
+    XMLForDocx.new.convert(args[:publish], args[:canon])
+  end
+
   desc "XML 轉 目次 toc JSON 檔"
   task :toc, [:arg1] => :environment do |t, args|
     require 'tasks/convert_toc'

@@ -1,0 +1,59 @@
+"標題 1": font-family:微軟正黑體;font-size:26;font-weight:bold
+"標題 2": font-family:微軟正黑體;font-size:24;font-weight:bold
+"標題 3": font-family:微軟正黑體;font-size:20;font-weight:bold
+"標題 4": font-family:微軟正黑體;font-size:20
+"標題 5": font-family:微軟正黑體;font-size:18;font-weight:bold;margin-left:2em
+"標題 6": font-family:微軟正黑體;font-size:18;margin-left:2em
+"標題 7": font-family:微軟正黑體;font-size:16;font-weight:bold;margin-left:4em
+"標題 8": font-family:微軟正黑體;font-size:16;margin-left:4em
+"標題 9": font-family:微軟正黑體;font-size:14
+標題: font-family:微軟正黑體;font-size:30;text-align:center
+byline: color:#408080;font-size:14;text-align:end
+border: "border: 1px solid #000000"
+default: font-family:新細明體;font-size:12
+entry_form: font-weight:bold;font-size:14
+hana_a: font-family:Hanazono Mincho A Regular
+hana_b: font-family:Hanazono Mincho B Regular
+hana_c: font-family:Hanazono Mincho C Regular
+head1: font-family:微軟正黑體;font-size:26;font-weight:bold
+i2: text-indent:2em
+inline_note: font-size:10
+juan: color:#0000ff;font-size:14
+lg: color:#008040
+m0: margin-left:0
+m1: margin-left:1em
+m2: margin-left:2em
+m3: margin-left:3em
+m4: margin-left:4em
+m5: margin-left:5em
+m6: margin-left:6em
+m7: margin-left:7em
+m8: margin-left:8em
+m9: margin-left:9em
+m10: margin-left:10em
+m11: margin-left:11em
+m12: margin-left:12em
+m13: margin-left:13em
+m14: margin-left:14em
+m15: margin-left:15em
+m16: margin-left:16em
+m17: margin-left:17em
+m18: margin-left:18em
+m0i1: margin-left:0;text-indent:1em
+m0i2: margin-left:0;text-indent:2em
+m1i0: margin-left:1em;text-indent:0
+m1i1: margin-left:1em;text-indent:1em
+m1i2: margin-left:1em;text-indent:2em
+m1i_1: margin-left:1em;text-indent:-1em
+m2i_1: margin-left:2em;text-indent:-1em
+m3i_1: margin-left:3em;text-indent:-1em
+m3i_2: margin-left:3em;text-indent:-2em
+m3i_3: margin-left:3em;text-indent:-3em
+m4i_1: margin-left:4em;text-indent:-1em
+m4i_2: margin-left:4em;text-indent:-2em
+m4i_3: margin-left:4em;text-indent:-3em
+m6i_1: margin-left:5em;text-indent:-1em
+m6i_2: margin-left:5em;text-indent:-2em
+pre: white-space:pre
+table_m3: margin-left:3em
+table_no-border: border:none
