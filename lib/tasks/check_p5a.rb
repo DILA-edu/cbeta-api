@@ -5,7 +5,7 @@ class CheckP5a
 
   def initialize(xml_root: nil, figures: nil, log: nil)
     @gaijis = CBETA::Gaiji.new
-    @xml_root = xml_root || Rails.configuration.x.cbeta_xml
+    @xml_root = xml_root || Rails.configuration.cbeta_xml
     @figures = figures || Rails.configuration.x.figures
     @log = log || Rails.root.join('log', 'check_p5a.log')
   end
@@ -13,7 +13,7 @@ class CheckP5a
   def check
     @errors = ''
     @g_errors = {}
-    
+    puts "xml: #{@xml_root}"
     each_canon(@xml_root) do |c|
       @canon = c
       path = File.join(@xml_root, @canon)
