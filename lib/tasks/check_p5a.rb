@@ -1,19 +1,22 @@
+require 'cbeta'
 require_relative 'cbeta_p5a_share'
 
 class CheckP5a
 
-  def initialize
+  def initialize(xml_root: nil, figures: nil, log: nil)
     @gaijis = CBETA::Gaiji.new
+    @xml_root = xml_root || Rails.configuration.x.cbeta_xml
+    @figures = figures || Rails.configuration.x.figures
+    @log = log || Rails.root.join('log', 'check_p5a.log')
   end
   
   def check
     @errors = ''
     @g_errors = {}
     
-    src = Rails.application.config.cbeta_xml
-    each_canon(src) do |c|
+    each_canon(@xml_root) do |c|
       @canon = c
-      path = File.join(src, @canon)
+      path = File.join(@xml_root, @canon)
       handle_canon(path)
     end
 
@@ -25,9 +28,8 @@ class CheckP5a
     if @errors.empty?
       puts "檢查完成，未發現錯誤。".green
     else
-      fn = Rails.root.join('log', 'check_p5a.log')
-      File.write(fn, @errors)
-      puts "\n發現錯誤，請查看 #{fn}".red
+      File.write(@log, @errors)
+      puts "\n發現錯誤，請查看 #{@log}"
     end
   end
   
@@ -50,7 +52,7 @@ class CheckP5a
   
   def e_graphic(e)
     url = File.basename(e['url'])
-    fn = File.join(Rails.configuration.x.figures, @canon, url)
+    fn = File.join(@figures, @canon, url)
     unless File.exist? fn
       error "圖檔 #{url} 不存在"
     end
@@ -65,7 +67,9 @@ class CheckP5a
     @lb = e['n']
     ed_lb = "#{e['ed']}#{@lb}"
     if @lbs.include? ed_lb
-      error "lb: #{@lb}, ed: #{e['ed']}", type: "[E01] 行號重複"
+      unless e['ed'].start_with?('R')
+        error "lb: #{@lb}, ed: #{e['ed']}", type: "[E01] 行號重複"
+      end
     else
       @lbs << ed_lb
     end

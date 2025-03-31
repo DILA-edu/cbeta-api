@@ -49,12 +49,12 @@ CBETA XML 新一季定案後執行。
 
 編輯 config/cb.yml
 
-執行 rake quarterly 會自動執行以下工作。
+執行 rake quarterly 會自動執行以下工作:
 
 * 更新、取得 Github Repositories, 參考 update-github.md
 * Prepare Data Files, 參考 prepare-files.md
 * 資料初始化, 根據 doc/setup.md 做設定
-* kwic 25
+* kwic
 
 ## heaven 比對 HTML
 

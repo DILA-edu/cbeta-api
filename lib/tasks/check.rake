@@ -20,6 +20,6 @@ namespace :check do
   desc "檢查 CBETA xml p5a"
   task :p5a => :environment do
     require "tasks/check_p5a"
-    CheckP5a.new.check
+    c = CheckP5a.new.check
   end
 end
