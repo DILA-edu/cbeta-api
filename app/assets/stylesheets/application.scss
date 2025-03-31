@@ -14,11 +14,19 @@
  /*
 @import "bootstrap";
  */
-@import "static_pages";
 
 div.chapter {
   margin-left: 2rem;
 }
+
+div.code pre {
+  padding: 16px;
+  overflow: auto;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+}
+
 div.section {
   margin-left: 2rem;
 }
@@ -28,4 +36,8 @@ h2 {
 }
 h3 {
   font-size: 1.8rem;
+}
+
+table.table {
+  width: auto;
 }
