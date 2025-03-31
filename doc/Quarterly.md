@@ -12,7 +12,6 @@ CBETA XML 新一季定案後執行。
     * staging.rb
     * production.rb
 * app/views/static_pages
-  * home.haml 製作日期
   * log.haml
 
 ## 從 GitHub 更新資料

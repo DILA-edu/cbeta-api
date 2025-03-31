@@ -1,4 +1,7 @@
 # seg 包 seg, 扁平化 處理
+
+require_relative 'html-node'
+
 class XMLForDocx2
   def initialize
     fn = Rails.root.join('lib', 'tasks', 'xml4docx-styles.yaml')
@@ -42,30 +45,66 @@ class XMLForDocx2
 
   def e_seg(e)
     return if e.at_xpath('seg').nil?
-    rend = e['rend']
+
+    node = HTMLNode.new('seg')
+
+    rend = e['rend'] || ''
     r = ''
     e.children.each do |c|
       if c.text?
-        r << %(<seg rend="#{rend}">#{c.text}</seg>)
+        node.copy_attributes(e)
+        node.content = handle_text(c)
+        r << node.to_s
       elsif c.name == 'seg'
-        if e['rend'] == rend
-          rend2 = rend
-        else
-          rend2 = [rend, c['rend']].sort.join('_')
-          if @styles[rend2].nil?
-            puts "seg 包 seg, #{rend2} 未定義" 
-            puts @fn
-            puts "text: #{e.text}"
-            abort
-          end
-        end
-        r << %(<seg rend="#{rend2}">#{c.inner_html}</seg>)
+        r << e_seg_seg(e, c)
       else
-        r << %(<seg rend="#{rend}">#{c.to_xml}</seg>)
+        node.copy_attributes(e)
+        node.content = c.to_xml
+        r << node.to_s
       end
     end
     e.add_previous_sibling (r)
     e.remove
+  end
+
+  def e_seg_seg(e, c)
+    node = HTMLNode.new('seg')
+
+    rend1 = e['rend']
+    rend2 = c['rend']
+
+    rend = 
+      if rend1 == rend2
+        rend1
+      else
+        a = []
+        a << rend1 if not rend1.nil? and not rend1.empty?
+        a << rend2 if not rend2.nil? and not rend2.empty?
+        a.sort.join('_')
+      end
+
+    if rend.nil? or rend.empty?
+      node.attributes.delete('rend')
+    else
+      if @styles[rend].nil?
+        puts "seg 包 seg, #{rend} 未定義" 
+        puts @fn
+        puts "text: #{e.text}"
+        abort
+      end
+      node['rend'] = rend
+    end
+
+    node['style'] = e['style'] if e.key?('style')
+    node['style'] = c['style'] if c.key?('style') # 內層 style 優先
+    node.content = c.inner_html
+    node.to_s
+  end
+
+  # &lt; 要維持 &lt;
+  def handle_text(node)
+    puts node.text if node.text.include?('&')
+    node.text.encode(xml: :text)
   end
 
   def traverse(e)

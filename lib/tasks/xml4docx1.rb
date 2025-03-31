@@ -198,10 +198,25 @@ class XMLForDocx1
   #   Extension B: U+20000..U+2A6DF
   #   Extension C: U+2A700..U+2B73F
   def e_g(e)
+    skt_priority = %w(symbol romanized)
     id = e["ref"].delete_prefix("#")
-    r = @gaiji.to_s(id)
-    if r.size == 1 and id.start_with?('CB')
-      r = hana(r)
+    r = @gaiji.to_s(id, skt_priority:)
+
+    if r.nil?
+      # 如果沒有羅馬轉寫就顯示圖檔
+      r = 
+        case id
+        when /^SD/
+          url = File.join('sd-gif', id[3, 2], "#{id}.gif")
+          "<graphic url='#{url}'/>"
+        when /^RJ/
+          url = File.join('rj-gif', id[3, 2], "#{id}.gif")
+          "<graphic url='#{url}'/>"
+        end
+    else
+      if r.size == 1 and id.start_with?('CB')
+        r = handle_char(r)
+      end
     end
     r
   end
@@ -414,7 +429,13 @@ class XMLForDocx1
     end
 
     if e.key? 'style'
-      r = "<seg style='#{e['style']}'>#{r}</seg>"
+      s = e['style']
+      if s =~ /^margin-left: ?(\d+)em$/
+        i = $1.to_i
+        r = '　' * i + r if i > 0
+      else
+        r = "<seg style='#{e['style']}'>#{r}</seg>"
+      end
     end
 
     return r if tt['place'] == 'inline'
@@ -447,9 +468,12 @@ class XMLForDocx1
     r
   end
 
-  def hana(char)
+  def handle_char(char)
     code = char.codepoints.first
-    return char if (0x0000..0xFFFF).include?(code)
+    
+    if (0x0000..0xFFFF).include?(code)
+      return char.encode(xml: :text)
+    end
 
     if (0x20000..0x2A6DF).include?(code)
       r = "<font name=\"hana_b\">#{char}</font>"
@@ -501,7 +525,7 @@ class XMLForDocx1
     s = node.text.chomp
     r = ''
     s.each_char do
-      r << hana(it)
+      r << handle_char(it)
     end
     r
   end

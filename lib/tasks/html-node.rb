@@ -14,6 +14,10 @@ class HTMLNode
   def []= name, value
     set name.to_s, value.to_s
   end
+  
+  def copy_attributes(node)
+    @attributes = node.attributes.dup
+  end
 
   def end_tag
     "</#{@tag}>"
