@@ -37,7 +37,7 @@ class P5aToHTMLForUI
     @params = params
     @cbeta = CBETA.new
     @my_cbeta_share = MyCbetaShare.new
-    @gaijis = MyCbetaShare.get_cbeta_gaiji
+    @gaijis = CBETA::Gaiji.new
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
 
     fn = Rails.root.join('data-static', 'facsimile', 'JM.json')
@@ -335,6 +335,10 @@ class P5aToHTMLForUI
       return "<span class='ranja' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
     end
    
+    e_g_span(gid, mode)
+  end
+
+  def e_g_span(gid, mode, default: nil)
     span = HTMLNode.new('span')
     span['class'] = 'gaijiInfo'
     span['id'] = gid
@@ -343,29 +347,29 @@ class P5aToHTMLForUI
     href = href % [gid[2, 2], gid]
     span['figure_url'] = href
 
-    default = ''
+    g = @gaijis[gid]
     c = g['uni_char'].clone
     unless c.blank?
       span['unicode'] = g['unicode']
       span['uni_char'] = c
-      return c if @us.level1?(c)
-      default = c if @us.level2?(c)
+      return c if @us.level1?(c) and default.nil? # unicode 3.0 以內 直接用
+      default = c if default.nil? # 有 unicode 就用，webfont 能顯示，但要有連結 可以看缺字資訊
     end
 
     # 註解常有用字差異，不用通用字，否則會變成兩個版本的用字一樣
     # 例：T02n0099, 181b08, 註：㝹【CB】，[少/免]【大】
     # 不是註解 而且 「沒說 不能用 通用字」才用 通用字
     use_norm = if not mode.include? 'footnote' and @gaiji_norm.last
-        true
-      else
-        false
-      end
+      true
+    else
+      false
+    end
 
     nors = []
     c = g['norm_uni_char'].clone
     unless c.blank?
       nors << c
-      if default.empty? and use_norm and @us.level2?(c)
+      if default.blank? and use_norm
         default = c 
       end
     end
@@ -373,17 +377,17 @@ class P5aToHTMLForUI
     c = g['norm_big5_char'].clone
     unless c.blank?
       nors.prepend(c)
-      default = c if default.empty? and use_norm
+      default = c if default.blank? and use_norm
     end
 
     span['norm'] = nors.join('；') unless nors.empty?
 
     zzs = g['composition']
-    if default.empty?
+    if default.blank?
       abort "缺組字式：#{gid}" if zzs.blank?
       default = zzs
     end
-    
+
     span['zzs'] = zzs
 
     s = g['moe_variant_id']
@@ -394,9 +398,11 @@ class P5aToHTMLForUI
     unless @back[@juan].include?(href)
       @back[@juan] << span.to_s + "\n"
     end
+
     unless @back_orig[@juan].include?(href)
       @back_orig[@juan] << span.to_s + "\n"
     end
+
     "<a class='gaijiAnchor' href='##{gid}'>#{default}</a>"
   end
 
@@ -1039,6 +1045,19 @@ class P5aToHTMLForUI
     r
   end
   
+  def handle_chars(text, mode)
+    r = ''
+    text.each_char do |char|
+      if @us.level1?(char)
+        r << char
+      else
+        gid = @gaijis.unicode_to_cb(char)
+        r << e_g_span(gid, mode, default: char)
+      end
+    end
+    r
+  end
+
   def handle_text(e, mode)
     s = e.content().chomp
     return '' if s.empty?
@@ -1046,9 +1065,10 @@ class P5aToHTMLForUI
 
     # cbeta xml 文字之間會有多餘的換行
     s.gsub!(/[\n\r]/, '')
-    return s if mode=='footnote'
     
     text_size = @cbs.remove_puncs(s).size
+    s = handle_chars(s, mode)
+    return s if mode=='footnote'
     
     if @pass.last and mode == 'html'
       r = s.gsub(/([．。，、；？！：「」『』《》＜＞〈〉〔〕［］【】〖〗…—]+)/, '<span class="pc">\1</span>')

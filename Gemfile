@@ -58,7 +58,7 @@ end
 # bundle install 錯誤: could not be found in any of the sources listed in your Gemfile
 # 可以執行以下命令從 RubyGems 取得最新清單
 # bundle --full-index
-gem 'cbeta', '>= 3.5.5'
+gem 'cbeta', '>= 3.6.0'
 
 gem "haml-rails"
 gem 'time_diff'
@@ -83,7 +83,7 @@ gem "autoprefixer-rails"
 gem 'rubyzip'
 gem 'colorize'
 gem 'diff-lcs'
-gem 'unihan2', '>= 1.0.0'
+gem 'unihan2', '>= 1.2.0'
 gem 'open3'
 gem 'faraday'
 gem 'csv', '~> 3.3', '>= 3.3.2'
