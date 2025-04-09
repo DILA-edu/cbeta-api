@@ -22,6 +22,7 @@ class XMLForDocx2
     print "\rxml4docx2: #{@fn}  "
 
     doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
+    handle_body_text(doc)
     traverse(doc.root)
 
     abort "仍有 seg 包 seg" if doc.at_xpath('//seg/seg')
@@ -29,6 +30,14 @@ class XMLForDocx2
     FileUtils.makedirs(dest_folder)
     dest = File.join(dest_folder, @fn)
     File.write(dest, doc.to_xml)
+  end
+
+  def e_footnote(e)
+    if e.parent.name == 'body' and e.next.name == 'p'
+      e.next.prepend_child(e)
+      return
+    end
+    traverse(e)
   end
 
   def e_item(e)
@@ -101,6 +110,29 @@ class XMLForDocx2
     node.to_s
   end
 
+  # 直接出現在 body 下的文字，移到後面的元素裡
+  def handle_body_text(doc)
+    body = doc.root.at_xpath('body')
+    nodes = body.children
+
+    i = 0
+    while i < nodes.size
+      unless nodes[i].text?
+        i += 1
+        next
+      end
+
+      a = Nokogiri::XML::NodeSet.new(doc)
+      while nodes[i].text? or nodes[i].comment?
+        a << nodes[i]
+        i += 1
+        break if i >= nodes.size
+      end
+
+      nodes[i].prepend_child(a)
+    end
+  end
+
   # &lt; 要維持 &lt;
   def handle_text(node)
     puts node.text if node.text.include?('&')
@@ -110,6 +142,7 @@ class XMLForDocx2
   def traverse(e)
     e.children.each do |c|
       case c.name
+      when 'footnote' then e_footnote(c)
       when 'item' then e_item(c)
       when 'seg' then e_seg(c)
       else

@@ -445,6 +445,7 @@ DEPENDENCIES
   net-pop
   net-smtp
   open3
+  ostruct
   pg
   puma (~> 3.11)
   rails (~> 7.2.2)

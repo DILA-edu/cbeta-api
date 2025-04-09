@@ -91,6 +91,7 @@ gem "rswag-ui"
 gem 'will_paginate', '~> 4.0'
 gem 'will_paginate-bootstrap-style'
 gem "git", "~> 3.0"
+gem "ostruct"
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false

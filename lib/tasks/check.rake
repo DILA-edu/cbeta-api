@@ -25,4 +25,10 @@ namespace :check do
       log: Rails.root.join('log', 'check_p5a.log')
     ).check
   end
+
+  task :xml4docx do
+    require 'tasks/xml4docx3'
+    dir = Rails.root.join('data', 'xml4docx2')
+    XMLForDocx3.new.check(dir)
+  end
 end

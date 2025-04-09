@@ -346,7 +346,7 @@ class ImportLayers
     start_lb.xpath("./following::span[@class='t']").each do |node|
       if node['l'] > lb
         puts '-' * 20
-        puts "發生錯誤, id: #{id}, 程式行號: #{__LINE__}" 
+        puts "發生錯誤, id: #{id}, 程式行號: #{__LINE__}".red
         puts %(lb: #{lb}, <span class="t" l="#{node['l']}">)
         puts row.to_s
         abort
