@@ -140,14 +140,13 @@ class P5aToText
       end
     end
     
-    return g['uni_char'] if @us.level2?(g['unicode'])
+    return g['uni_char'] if g.key?('unicode')
 
     if @gaiji_norm.last # 如果 沒有特別說 不能用 通用字
-      code = g['norm_unicode'] 
-      return g['norm_uni_char'] if @us.level2?(code)
+      return g['norm_uni_char'] if g.key?('norm_uni_char')
 
       s = g['norm_big5_char']
-      return s unless (s.nil? or s.empty?)
+      return s unless s.blank?
     end
 
     g['composition']
