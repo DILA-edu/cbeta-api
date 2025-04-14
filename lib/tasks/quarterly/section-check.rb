@@ -1,8 +1,14 @@
 module SectionCheck
   def run_section_check
     run_section "檢查作業 (section-check.rb)" do
-      run_step 'check cbeta xml (rake check:p5）' do
-        command 'rake check:p5a'
+      cmd = 'rake check:authority'
+      run_step "check authority (#{cmd})" do
+        command cmd
+      end
+
+      cmd = 'rake check:p5a'
+      run_step "check cbeta xml (#{cmd})" do
+        command cmd
       end
       
       run_step '檢查缺字資料' do

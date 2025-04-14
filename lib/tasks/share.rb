@@ -42,6 +42,7 @@ class MyCbetaShare
         case args[:format]
         when :docx then "<lb/>"
         when :html then "<br>"
+        else ''
         end
       r << "\n"
     end

@@ -1,6 +1,12 @@
 namespace :check do
   
   desc "檢查電子書封面是否都存在"
+  task :authority => :environment do
+    require "tasks/check_authority"
+    CheckAuthority.new.check
+  end
+
+  desc "檢查電子書封面是否都存在"
   task :covers => :environment do
     require "tasks/check_covers"
     CheckCover.new.check
