@@ -225,21 +225,19 @@ class P5aToHTMLForDownload
     end
    
     default = ''
-    if @us.level1?(g['unicode'])
-      return g['uni_char'] # 直接採用 unicode
-    elsif @us.level2?(g['unicode'])
+    return g['uni_char'] if @us.level1?(g['unicode']) # 直接採用 unicode
+
+    if g.key?('uni_char')
       default = g['uni_char']
     end
 
     nor = ''
-    if @gaiji_norm.last # 如果沒有特別指定不能用通用字
+    if @gaiji_norm.last # 如果 可以用 通用字
       unless g['norm_uni_char'].blank?
         nor = g['norm_uni_char'].clone
         if default.empty?
-          if @us.level2?(g['norm_unicode'])
-            default = nor.clone 
-            @log.puts "#{__LINE__} default: #{default}"
-          end
+          default = nor.clone 
+          @log.puts "#{__LINE__} default: #{default}"
         end
       end
 

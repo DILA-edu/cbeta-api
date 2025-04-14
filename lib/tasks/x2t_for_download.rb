@@ -137,10 +137,10 @@ class P5aToTextForDownload
       return "◇"
     end
     
-    return g['uni_char'] if @us.level2?(g['unicode']) # 直接採用 unicode
+    return g['uni_char'] if g.key?('uni_char') # 直接採用 unicode
     
     if @gaiji_norm.last
-      return g['norm_uni_char'] if @us.level2?(g['norm_unicode'])
+      return g['norm_uni_char'] if g.key?('norm_uni_char')
       return g['norm_big5_char'] unless g['norm_big5_char'].blank?
     end
 

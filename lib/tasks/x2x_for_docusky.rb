@@ -121,11 +121,11 @@ class P5aToDocusky
       return "[#{gid}]"
     end
    
-    return g['uni_char'] if @us.level2?(g['unicode']) # 直接採用 unicode
+    return g['uni_char'] if g.key?('uni_char') # 直接採用 unicode
 
     default = ''
     if @gaiji_norm.last # 如果沒有特別指定不用通用字
-      return g['norm_uni_char'] if @us.level2?(g['norm_unicode'])
+      return g['norm_uni_char']  if g.key?('norm_uni_char')
       return g['norm_big5_char'] if g.key?('norm_big5_char')
     end
 

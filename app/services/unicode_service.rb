@@ -3,17 +3,15 @@ class UnicodeService
     @u2 = Unihan2.new
   end
 
-  # 根據 unicode 版本，決定是否採用 unicode 字元 或 unicode 通用字
+  # 決定是否採用 unicode 字元 或 unicode 通用字
   def gaiji_unicode(g, normalize: True)
     u = g['uni_char']
-    unless u.blank?
-      return u if level2?(u)
-    end
+    return u unless u.blank?
 
     return nil unless normalize
 
     r = g['norm_uni_char']
-    return r if level2?(r)
+    return r unless r.blank?
 
     r = g['norm_big5_char']
     return r unless r.blank?
