@@ -38,7 +38,7 @@ class DownloadEbooks
   end
 
   def download_one_zip(type)
-    dest = "cbeta-#{type}-#{@q}.zip"
+    dest = "cbeta-#{type}.zip"
 
     go = true
     if File.exist?(dest)
@@ -58,7 +58,7 @@ class DownloadEbooks
       File.rename(remote_fn, dest)
     end
     
-    fn = "cbeta-#{type}-#{@q}.zip"
+    fn = "cbeta-#{type}.zip"
     if exec("unzip #{fn} -d tmp")
       exec("rm -rf #{type}")
       d = "tmp/#{remote_bn}"
@@ -81,8 +81,8 @@ class DownloadEbooks
     remote_paths.each_with_index do |remote_path, i|
       download("#{BASE}/#{remote_path}")
       fn = File.basename(remote_path)
-      File.rename(fn, "cbeta-pdf-#{@q}-#{i+1}.zip")
-      exec("unzip cbeta-pdf-#{@q}-#{i+1}.zip")
+      File.rename(fn, "cbeta-pdf-#{i+1}.zip")
+      exec("unzip cbeta-pdf-#{i+1}.zip")
       basenames << File.basename(fn, '.*')
     end
 
