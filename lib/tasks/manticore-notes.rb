@@ -172,9 +172,7 @@ class ManticoreNotes
   end
 
   def e_g(e, mode)
-    @offset += 1 unless mode == 'footnote'
-
-    gid = e['ref'][1..-1]
+    gid = e['ref'].delete_prefix('#')
     
     if gid.start_with? 'CB'
       g = @gaijis[gid]
@@ -183,18 +181,16 @@ class ManticoreNotes
     end
     
     abort "Line:#{__LINE__} 無缺字資料:#{gid}" if g.nil?
-    zzs = g['composition']
     
+    r = nil
     if gid.start_with?('SD')
-      return g['symbol'] if g.key?('symbol')
-      return g['romanized'] if g.key?('romanized')
-      return CBETA.pua(gid)
+      r = g['symbol'] || g['romanized']
     end
 
-    u = @us.gaiji_unicode(g, normalize: @gaiji_norm.last)
-    return u unless u.nil?
-
-    CBETA.pua(gid)
+    r ||= @us.gaiji_unicode(g, normalize: @gaiji_norm.last)
+    r ||= CBETA.pua(gid)
+    @offset += r.size unless mode == 'footnote'
+    r
   end
 
   def e_lb(e, mode)
