@@ -210,7 +210,7 @@ class ImportCatalog
     
     doc = File.open(path) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
-    node = doc.at_xpath("//title[@lang='zh-Hant']")
+    node = doc.at_xpath("//title[@level='m']")
     if node.nil?
       node = doc.at_xpath("//title")
     end

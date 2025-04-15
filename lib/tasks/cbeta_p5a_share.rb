@@ -243,7 +243,7 @@ module CbetaP5aShare
   end
 
   def get_title(doc)
-    e = doc.at_xpath("//titleStmt/title")
+    e = doc.at_xpath("//titleStmt/title[@level='m']")
     r = traverse(e).split.last
     r.sub(/\(第\d+卷-第\d+卷\)$/, '')
   end
