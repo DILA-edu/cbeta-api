@@ -38,8 +38,12 @@ class ManticoreNotes
     t1 = Time.now
     @stat = Hash.new(0)
     @sphinx_doc_id = 0
-    fn = Rails.root.join('data', 'manticore-xml', 'notes.xml')
+
+    fn = Rails.root.join('data', 'manticore-xml')
+    FileUtils.makedirs(fn)
+    fn = File.join(fn, 'notes.xml')
     @fo = File.open(fn, 'w')
+
     @fo.puts %(<?xml version="1.0" encoding="utf-8"?>)
     @fo.puts "<sphinx:docset>"
     
@@ -93,7 +97,7 @@ class ManticoreNotes
     @back_orig = { 0 => '' }
     @dila_note = 0
     @gaiji_norm = [true]
-    @in_l = false
+    @in_inline = false
     @juan = 0
     @lg_row_open = false
     @mod_notes = Set.new
@@ -307,11 +311,17 @@ class ManticoreNotes
   end
 
   def e_note_inline(e, mode)
-    note = { lb: @lb, offset: @offset }
-    s = traverse(e, mode)
-
     # 校注裡的夾注，不必建一個 index document
-    return "(#{s})" if mode == 'footnote'
+    if mode == 'footnote' or @in_inline
+      s = traverse(e, mode)
+      @offset += 2 unless mode == 'footnote'
+      return "(#{s})"
+    end
+
+    note = { lb: @lb, offset: @offset }
+    @in_inline = true
+    s = traverse(e, mode)
+    @in_inline = false
 
     note[:text] = s
     @notes_inline[@juan] << note
@@ -341,10 +351,10 @@ class ManticoreNotes
     return ''
   end
   
-  def e_reg(e)
+  def e_reg(e, mode)
     r = ''
     choice = e.at_xpath('ancestor::choice')
-    r = traverse(e) if choice.nil?
+    r = traverse(e, mode) if choice.nil?
     r
   end
 
@@ -376,7 +386,7 @@ class ManticoreNotes
     when 'lem'       then e_lem(e, mode)
     when 'note'      then e_note(e, mode)
     when 'milestone' then e_milestone(e)
-    when 'reg'       then e_reg(e)
+    when 'reg'       then e_reg(e, mode)
     when 'unclear'   then e_unclear(e, mode)
     else traverse(e, mode)
     end
@@ -546,10 +556,10 @@ class ManticoreNotes
     s = @text[i, length]
     if s.nil?
       abort <<~MSG
-        \nError 行號: #{__LINE__}
+        \nError manticore-notes.rb 行號: #{__LINE__}
         text size: #{@text.size}
         offset: #{i}
-        #{note.inspect}
+        note: #{note.inspect}
       MSG
     end
     s = s.encode(xml: :text)
@@ -562,9 +572,19 @@ class ManticoreNotes
         \nError 行號: #{__LINE__}
         text size: #{@text.size}
         offset: #{i}
-        #{note.inspect}
+        note: #{note.inspect}
+        text: ...#{@text[note[:offset], note[:text].size + 2]}
       MSG
     end
+
+    text = @text[note[:offset], note[:text].size + 2]
+    if text != "(#{note[:text]})"
+      puts "\nlb: #{note[:lb]}"
+      puts "note text: #{note[:text]}"
+      puts "text: ...#{text}"
+      abort "error #{__LINE__}"
+    end
+
     s = s.encode(xml: :text)
     r + "  <suffix>#{s}</suffix>\n"
   end

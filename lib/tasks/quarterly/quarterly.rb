@@ -88,7 +88,7 @@ class Quarterly
 
   def command(cmd)
     puts cmd
-    system cmd
+    abort unless system(cmd)
   end
 
   def confirm(msg)
