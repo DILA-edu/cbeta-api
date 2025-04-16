@@ -27,13 +27,6 @@ get:
     
     我們也同時提供了對照表，讓有需要的人可以進一步利用。
   parameters:
-    - name: release
-      in: path
-      description: 發行編號
-      required: true
-      schema:
-        type: string
-      example: 2024r3
     - name: part
       in: path
       description: PDF 檔案很多、很大，分成三個 ZIP 檔。

@@ -2,14 +2,6 @@ get:
   summary: 下載 CBETA 某季全部 EPUB
   tags: [download]
   description: 只提供最新一季
-  parameters:
-    - name: release
-      in: path
-      description: 發行編號
-      required: true
-      schema:
-        type: string
-      example: 2024r3
   responses:
     '200':
       description: ZIP File

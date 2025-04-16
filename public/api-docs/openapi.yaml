@@ -29,11 +29,11 @@ paths:
     $ref: 'catalog_entry/_.yaml'
   /chinese_tools/sc2tc:
     $ref: chinese_tools/sc2tc.yaml
-  /download/cbeta-epub-{release}.zip:
+  /download/cbeta-epub.zip:
     $ref: download/epub-all.yaml
-  /download/cbeta-mobi-{release}.zip:
+  /download/cbeta-mobi.zip:
     $ref: download/mobi-all.yaml
-  /download/cbeta-pdf-{release}-{part}.zip:
+  /download/cbeta-pdf-{part}.zip:
     $ref: download/pdf-all.yaml
   /download/docusky/{filename}.docusky.xml:
     $ref: download/docusky.yaml
