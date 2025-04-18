@@ -1,0 +1,76 @@
+body = element body {
+  (\list | p | table)+
+}
+
+cell = element cell {
+  (text | font | footnote | seg)+,
+  attribute cols { text }?,
+  attribute rows { text }?
+}
+
+font = element font {
+  text,
+  attribute name { text }?,
+  attribute rend { text }?,
+  attribute style { text }?
+}
+
+footnote = element footnote { 
+  (text | font | graphic | seg)+
+}
+
+graphic = element graphic {
+  attribute url {text},
+  empty
+}
+
+item = element item {
+  (p | \list | seg)+
+}
+
+lb = element lb {
+  empty
+}
+
+\list = element list {
+  item+,
+  attribute level { text },
+  attribute type { text }?,
+  attribute rend { text }?
+}
+
+p = element p {
+  (text | font | footnote | graphic | lb | seg)+,
+  attribute rend { text }?,
+  attribute style { text }?
+} 
+
+row = element row {
+  cell+
+}
+
+seg = element seg {
+  (text | font | footnote | graphic)+,
+  attribute rend { text }?,
+  attribute style { text }?
+}
+
+table = element table {
+  row+,
+  attribute cols { text }?
+}
+
+start = element document {
+  element settings {
+    element title { text },
+    element byline { text },
+    element footer { text },
+    element styles {
+      element style {
+        text,
+        attribute name { text }
+      }+
+    }
+  },
+  body
+}

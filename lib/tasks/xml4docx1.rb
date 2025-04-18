@@ -23,36 +23,50 @@ class XMLForDocx1
     @predefined_styles = YAML.load_file(fn)
   end
   
-  def convert(publish, canon)
-    @publish = publish
+  def convert(args)
+    @publish = args[:publish] || Date.today.strftime("%Y-%m")
     @pre_max = { work: '', text: '' }
 
-    if canon.nil?
+    if args[:canon].nil?
       each_canon(@xml_root) do |c|
-        convert_canon(c)
+        args[:canon] = c
+        convert_canon(args)
       end
     else
-      convert_canon(canon)
+      convert_canon(args)
     end
 
     #puts "最長的 pre 內容是 #{@pre_max[:work]}: #{@pre_max[:text].size} 字"
     #puts @pre_max[:text]
   end
 
-  def convert_canon(canon)
-    puts canon
-    @canon = canon
+  def convert_canon(args)
+    puts args[:canon]
+    @canon = args[:canon]
     @orig = @cbeta.get_canon_symbol(@canon)
-    @canon_name = @my_cbeta_share.get_canon_name(canon)
+    @canon_name = @my_cbeta_share.get_canon_name(@canon)
     read_authority_catalog
 
-    src = File.join(@xml_root, @canon)
-    Dir.glob("*", base: src, sort: true) do |f|
-      convert_vol(f)
+    if args[:vol].nil?
+      src = File.join(@xml_root, @canon)
+      Dir.glob("*", base: src, sort: true) do |f|
+        convert_vol(f)
+      end
+    else
+      convert_vol(args[:vol])
     end
   end
 
   private
+
+  def before_action(doc)
+    p_note_lg(doc)
+    folder = Rails.root.join('data', 'xml4docx0', @canon, @vol)
+    FileUtils.makedirs(folder)
+    fn = File.join(folder, "#{@v_work}.xml")
+    File.write(fn, doc.to_xml)
+    @log.puts "#{__LINE__} #{@v_work} before_action 結束"
+  end
 
   def convert_vol(vol)
     puts "xml4docx1 #{vol}"
@@ -64,31 +78,61 @@ class XMLForDocx1
     puts
   end
 
-  def copy_style(e, node)
+  def copy_style(e, node, rend: nil)
+    rends = []
+    rends << rend unless rend.nil?
+
     if e["rend"]
       abort "rend 與 type 同時存在, tag: #{e.name}" if e['type']
-      rend = e['rend']
-      rend = "table_#{rend}" if e.name == 'table'
-      node["rend"] = rend
-      @styles << rend
-    elsif e["type"]
-      rend = e['type']
-      if not %w[dharani xx].include?(rend)
-        node['rend'] = rend
-        @styles << rend
+      r = e['rend']
+      
+      case e.name
+      when 'list'
+        case r
+        when 'no-marker'
+          node['type'] = 'none'
+          r = ''
+        when 'ordered'
+          node['type'] = 'ordered'
+          r = ''
+        else
+          abort "unknown list rend: #{r}"
+        end
+      when 'table'
+        rends << "table"
+        rends << r
+      else
+        rends << r
+      end
+    end
+
+    if e.key?("type")
+      case e.name
+      when 'list'
+        node['type'] = r
+      else
+        if not %w[dharani xx].include?(e['type'])
+          rends << e['type']
+        end
       end
     end
     
     if e["style"]
-      rend = CSSParser.new(e["style"]).to_class
-      Rails.logger.info "style: #{e["style"]}, class: #{rend}"
-      if rend.nil? or node.attributes.key?("rend")
+      r = CSSParser.new(e["style"]).to_class
+      Rails.logger.info "style: #{e["style"]}, class: #{r}"
+      if r.nil?
         node["style"] = e["style"] 
       else
-        rend = "table_#{rend}" if e.name == 'table'
-        node["rend"] = rend
-        @styles << rend
+        rends << r
       end
+    end
+
+    rends << 'corr' if @in_corr.last
+
+    unless rends.empty?
+      r = rends.sort.join('_')
+      node['rend'] = r
+      @styles << r
     end
   end
 
@@ -96,6 +140,11 @@ class XMLForDocx1
     @v_work = File.basename(fn, '.xml')
     @v_work.sub!(/^(T\d\dn0220)(.*)$/, '\1')
     @work = CBETA.get_work_id_from_file_basename(@v_work)
+
+    log_folder = Rails.root.join('log', 'xml4docx1', @canon, @vol)
+    FileUtils.makedirs(log_folder)
+    log_fn = File.join(log_folder, "#{@v_work}.log")
+    @log = File.open(log_fn, 'w')
     
     print "\rconvert_file: #{fn}   "
     src = File.join(@xml_root, @canon, @vol, fn)
@@ -111,17 +160,22 @@ class XMLForDocx1
     abort "找不到貢獻者" if e.nil?
     @contributors = e.text
 
+    @in_corr = [false]
+    before_action(doc)
     init_juan
     read_mod_notes(doc)
+
     @div_level = 0
     @list_level = 0
     @next_line_buf = ''
     @juan = 0
+    @inline_note = [false]
     @in_lg = false
     @pre = [false]
     @seg = []
     traverse(doc.root)
     write_juan
+    @log.close
   end
 
   def e_anchor(e)
@@ -141,7 +195,30 @@ class XMLForDocx1
     ''
   end
 
+  def e_app(e, mode=nil)
+    if mode=='text'
+      lem = e.at('lem')
+      return traverse(lem, mode)
+    end
+    
+    r = ''
+    if e['type'] == 'star'
+      corresp = e['corresp'].delete_prefix('#')
+      unless @mod_notes.key?(corresp)
+        corresp.sub!(/^(.*)[a-z]$/, '\1')
+        abort "\n[#{__LINE__}] corresp #{corresp} 不存在" unless @mod_notes.key?(corresp)
+      end
+      r << @mod_notes[corresp]
+    end
+    r + traverse(e)
+  end
+  
   def e_byline(e)
+    # byline 在 item 裡，例: T52n2103_p0118c19
+    if e.parent.name == 'item'
+      return '　' + traverse(e)
+    end
+
     @styles << "byline"
     node = HTMLNode.new('p')
     node["rend"] = "byline"
@@ -227,21 +304,30 @@ class XMLForDocx1
   end
 
   def e_head(e)
-    unless e.parent.name == 'div'
-      return "<p>%s</p>" % traverse(e)
+    case e.parent.name
+    when 'div'
+      if @div_level > 9
+        return "<p>%s</p>" % traverse(e)
+      end
+  
+      style = "標題 #{@div_level}"
+      @styles << style
+  
+      node = HTMLNode.new('p')
+      node["rend"] = style
+      node.content = traverse(e)
+      node.to_s + "\n"
+    when 'lg'
+      ''
+    when 'list'
+      if @inline_note.last
+        traverse(e) + '　'
+      else
+        ''
+      end
+    else
+      "<p>%s</p>" % traverse(e)
     end
-
-    if @div_level > 9
-      return "<p>%s</p>" % traverse(e)
-    end
-
-    style = "標題 #{@div_level}"
-    @styles << style
-
-    node = HTMLNode.new('p')
-    node["rend"] = style
-    node.content = traverse(e)
-    node.to_s + "\n"
   end
 
   def e_hi(e)
@@ -252,28 +338,53 @@ class XMLForDocx1
   end
 
   def e_item(e)
+    content = traverse(e)
+    return '' if content.empty?
+
+    if @inline_note.last
+      return content + '　'
+    end
+  
     node = HTMLNode.new('item')
-    node.content = traverse(e)
+    node.content = content
     r = "\n"
     r << "  " * @list_level
     r << node.to_s
     r
   end
 
-  def e_juan(e)
-    @styles << "juan"
-    node = HTMLNode.new('p')
-    node["rend"] = "juan"
-    node.content = traverse(e)
-    node.to_s + "\n"
+  def e_jhead(e)
+    if e.parent.at_xpath('byline').nil?
+      traverse(e)
+    else
+      @styles << "juan"
+      node = HTMLNode.new('p')
+      node["rend"] = "juan"
+      node.content = traverse(e)
+      node.to_s + "\n"
+    end
   end
 
-  def e_l(e)
+  def e_juan(e, mode)
+    return traverse(e) if mode == 'text'
+
+    if e.at_xpath('byline').nil?
+      @styles << "juan"
+      node = HTMLNode.new('p')
+      copy_style(e, node, rend: 'juan')
+      node.content = traverse(e)
+      node.to_s + "\n"
+    else
+      traverse(e)
+    end
+  end
+
+  def e_l(e, mode)
     r = ''
     
     if @first_l
       @first_l = false
-    else
+    elsif mode != 'text'
       r << "<lb/>\n"
     end
 
@@ -284,7 +395,7 @@ class XMLForDocx1
   def e_lb(e)
     @lb = e['n']
 
-    r = ''
+    r = "<!-- lb: #{@lb} -->"
     if @next_line_buf.empty?
       r << '<lb/>' if @pre.last
     else
@@ -294,24 +405,46 @@ class XMLForDocx1
       @next_line_buf = ''
     end
 
-    
     r
   end
 
+  def can_use_seg_for_corr(lem)
+    return false if @inline_note.last
+    return false if lem.at_xpath('juan | list | p')
+    true
+  end
+
   def e_lem(e)
-    content = traverse(e)
-    return content if @canon=='Y' or @canon=='TX'
-    return '' if content.empty?
+    return traverse(e) if @canon=='Y' or @canon=='TX'
 
     wit = e['wit']
     if (not wit.nil?) and wit.include? '【CB】' and not wit.include? @orig
-      return "<font style='color:#ff0000'>%s</font>" % content
+      if can_use_seg_for_corr(e)
+        r = traverse(e)
+        r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
+        return  r
+      else
+        @in_corr << true
+        r = traverse(e)
+        r = %(<font style="color:#ff0000">#{r}</font>) unless r.include?('corr')
+        @in_corr.pop
+        return r
+      end
     else
-      return content
+      return traverse(e)
     end
   end
 
   def e_lg(e)
+    r = ''
+    head = e.at_xpath('head')
+    unless head.nil?
+      node = HTMLNode.new('p')
+      node['rend'] = 'head'
+      node.content = traverse(head)
+      r << node.to_s + "\n"
+    end
+
     @styles << 'lg'
     @in_lg = true
     @first_l = true
@@ -325,18 +458,37 @@ class XMLForDocx1
     node.content = s
 
     @in_lg = false
-    return node.to_s + "\n"
+    r << node.to_s + "\n"
+    r
   end
 
   def e_list(e)
+    if @inline_note.last
+      node = HTMLNode.new('p')
+      node['rend'] = 'inline_note'
+      r = traverse(e).delete_suffix('　')
+      node.content = "(#{r})"
+      return node.to_s + "\n"
+    end
+
+    r = ''
+    head = e.at_xpath('head')
+    unless head.nil?
+      node = HTMLNode.new('p')
+      node['rend'] = 'head'
+      node.content = traverse(head)
+      r << node.to_s + "\n"
+    end
+
     @list_level += 1
     node = HTMLNode.new('list')
     node['level'] = @list_level
-    node['type'] = 'none' if e['rend'] == 'no-marker'
+    copy_style(e, node)
     node.content = traverse(e)
     @list_level -= 1
-    r = node.to_s
     indent = "  " * @list_level
+    r << indent
+    r << node.to_s + "\n"
     r.gsub!(/<\/item><\/list>/, "</item>\n#{indent}</list>")
     r
   end
@@ -349,21 +501,39 @@ class XMLForDocx1
   end
 
   # todo: Y26n0026_p0021a01
-  def e_note(e)
+  def e_note(e, mode='xml')
     return '' if e['rend'] == 'hide'
     
     if e["place"] == "inline"
-      @styles << "inline_note"
-      return '<seg rend="inline_note">(%s)</seg>' % traverse(e)
+      return "(#{traverse(e)})" if mode == 'text'
+      if e.at_xpath('l')
+        r = traverse(e, 'text')
+        return "(%s)" % traverse(e, 'text')
+      elsif e.at_xpath('lg | list | p')
+        @inline_note << true
+        r = traverse(e)
+        @inline_note.pop
+        return r
+      elsif @inline_note.last
+        return "(%s)" % traverse(e)
+      else
+        @inline_note << true
+        r = traverse(e)
+        @inline_note.pop
+        @styles << "inline_note"
+        return %(<seg rend="inline_note">(#{r})</seg>)
+      end
     end
-
+  
     case e["type"]
     when "add", "mod"
-      "<footnote>%s</footnote>" % traverse(e)
+      "<footnote>%s</footnote>" % traverse(e, 'text')
     when "orig"
       n = e['n']
-      return '' if @mod_notes.include?(n)
-      "<footnote>%s</footnote>" % traverse(e)
+      return '' if @mod_notes.key?(n)
+      s = traverse(e, 'text')
+      @mod_notes[n] = s
+      "<footnote>#{s}</footnote>"
     else
       ""
     end
@@ -371,8 +541,14 @@ class XMLForDocx1
 
   def e_p(e)
     @pre << true if e['type'] == 'pre'
+
     node = HTMLNode.new('p')
-    copy_style(e, node)
+    if @inline_note.last
+      copy_style(e, node, rend: 'inline_note')
+    else
+      copy_style(e, node)
+    end
+
     node.content = traverse(e)
     if e['type'] == 'pre'
       @pre.pop
@@ -462,6 +638,13 @@ class XMLForDocx1
     node.to_s + "\n"
   end
 
+  def e_trailer(e)
+    node = HTMLNode.new('p')
+    copy_style(e, node)
+    node.content = traverse(e)
+    node.to_s + "\n"
+  end
+
   def e_unclear(e)
     r = traverse(e)
     r = '▆' if r.empty?
@@ -475,22 +658,28 @@ class XMLForDocx1
       return char.encode(xml: :text)
     end
 
+    node = HTMLNode.new('font')
+    node.content = char
+    node['rend'] = 'corr' if @in_corr.last
     if (0x20000..0x2A6DF).include?(code)
-      r = "<font name=\"hana_b\">#{char}</font>"
+      node['name'] = 'hana_b'
+      node.to_s
     elsif (0x2A700..0x2FFFF).include?(code)
-      r = "<font name=\"hana_c\">#{char}</font>"
+      node['name'] = 'hana_c'
+      node.to_s
     else
       abort "未知 unicode: %X, lb: #{@lb}" % code
     end
   end
 
-  def handle_node(node)
+  def handle_node(node, mode)
     return "" if node.comment?
     return handle_text(node) if node.text?
     return "" if PASS.include?(node.name)
 
     case node.name
     when 'anchor' then e_anchor(node)
+    when 'app'    then e_app(node, mode)
     when 'byline' then e_byline(node)
     when 'caesura' then e_caesura(node)
     when 'cell' then e_cell(node)
@@ -502,19 +691,21 @@ class XMLForDocx1
     when 'hi'   then e_hi(node)
     when 'head' then e_head(node)
     when 'item' then e_item(node)
-    when 'juan' then e_juan(node)
-    when 'l'    then e_l(node)
+    when 'jhead' then e_jhead(node)
+    when 'juan' then e_juan(node, mode)
+    when 'l'    then e_l(node, mode)
     when 'lb'   then e_lb(node)
     when 'lg'   then e_lg(node)
     when 'lem'  then e_lem(node)
     when 'list' then e_list(node)
     when 'milestone' then e_milestone(node)
-    when 'note' then e_note(node)
+    when 'note' then e_note(node, mode)
     when 'p' then e_p(node)
     when 'row' then e_row(node)
     when 'seg' then e_seg(node)
-    when 'table' then e_table(node)
     when 't'     then e_t(node)
+    when 'table' then e_table(node)
+    when 'trailer' then e_trailer(node)
     when 'unclear' then e_unclear(node)
     else
       traverse(node)
@@ -535,6 +726,79 @@ class XMLForDocx1
     @styles = Set.new(%w[default 標題])
   end
 
+  # ex: T53n2122_p0683b03
+  def p_note_lg(doc)
+    doc.root.xpath("//p/note[@place='inline']/lg").each do
+      p_note_lg_lg(it)
+    end
+  end
+
+  def p_note_lg_lg(lg)
+    note = lg.parent
+    return unless note.name == 'note' # 同一個 note 下的 lg 可能被處理過了
+
+    @log.puts "#{__LINE__} #{@v_work} p_note_lg_lg, id: #{lg['id']}"
+    p = note.parent
+    abort "error #{__LINE__}" unless p.name == 'p'
+
+    new_p = nil
+    p.children.each do |c|
+      if c.text? or c.name == 'lb'
+        new_p ||= add_p_before_p(p)
+        new_p.add_child(c)
+      elsif c.name=='note' and c['place']=='inline'
+        new_p = nil
+        p_note_lg_note(p, c)
+      else
+        new_p ||= add_p_before_p(p)
+        new_p.add_child(c)
+      end
+    end
+    p.remove
+  end
+
+  def p_note_lg_note(p, note)
+    new_p = nil
+    note.children.each do |c|
+      if c.name=='lb' or (c.text? and c.text.gsub(/\s/, '').empty?)
+        if new_p.nil?
+          p.add_previous_sibling(c)
+        else
+          new_p.add_child(c)
+        end
+      elsif %w[lg p].include?(c.name)
+        new_p = nil
+        if c.key?('rend')
+          c['rend'] = c['rend'] + ' inline_note'
+        else
+          c['rend'] = 'inline_note'
+        end
+        p.add_previous_sibling(c)
+      else
+        @log.puts "#{__LINE__} #{@v_work} 移動 #{c.name}"
+        if new_p.nil?
+          new_p = add_p_before_p(p, rend: 'inline_note', style: note['style']) 
+        end
+        new_p.add_child(c)
+      end
+    end
+    note.remove
+  end
+
+  def add_p_before_p(p, rend: nil, style: nil)
+    @log.puts "add_p_before_p, work: #{@v_work}, p id: #{p['id']}"
+    r = p.add_previous_sibling('<p></p>').first
+    r['style'] = p['style'] if p.key?('style')
+    r['style'] = style unless style.nil?
+
+    rends = []
+    rends.concat(p['rend'].split) if p.key?('rend')
+    rends << rend unless rend.nil?
+    r['rend'] = rends.join(' ') unless rends.empty?
+    @log.puts r.to_xml
+    r
+  end
+
   def read_authority_catalog
     fn = File.join(
       Rails.configuration.x.authority, 
@@ -544,21 +808,25 @@ class XMLForDocx1
   end
 
   def read_mod_notes(doc)
-    @mod_notes = Set.new
+    @mod_notes = {}
 
     doc.xpath("//note[@type='mod']").each do |e|
       n = e['n']
-      @mod_notes << n
+      content = e_note(e)
+      @mod_notes[n] = content
 
       # 例 T01n0026_p0506b07, 原註標為 7, CBETA 修訂為 7a, 7b
-      n.match(/^(.*)[a-z]$/) { @mod_notes << $1 }
+      if n =~ /^(.*)[a-z]$/
+        n = $1
+        @mod_notes[n] = content
+      end
     end
   end
 
-  def traverse(node)
+  def traverse(node, mode='xml')
     r = ""
     node.children.each do |c|
-      s = handle_node(c)
+      s = handle_node(c, mode)
       if node.name == "div" or node.name == "body"
         @buf << s
       else
@@ -577,6 +845,7 @@ class XMLForDocx1
 
     xml = <<~XML
       <?xml version="1.0" encoding="UTF-8"?>
+      <?xml-model href="../../../xml4docx.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
       <document>
         <settings>
           <title>#{@title}</title>

@@ -64,6 +64,13 @@ namespace :convert do
     XMLForDocx.new.convert(args[:publish], args[:canon])
   end
 
+  task :xml4docx1, [:publish, :canon, :vol] => :environment do |t, args|
+    require 'tasks/xml4docx1'
+    xml_root = Rails.application.config.cbeta_xml
+    dest1 = Rails.root.join('data', 'xml4docx1')
+    XMLForDocx1.new(xml_root, dest1).convert(args)
+  end
+
   task :xml4docx2, [:filter] => :environment do |t, args|
     require 'tasks/xml4docx2'
     dir1 = Rails.root.join('data', 'xml4docx1')

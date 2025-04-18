@@ -1,4 +1,4 @@
-"標題 1": font-family:微軟正黑體;font-size:26;font-weight:bold
+"標題 1": "font-family:微軟正黑體;font-size:26;font-weight:bold"
 "標題 2": font-family:微軟正黑體;font-size:24;font-weight:bold
 "標題 3": font-family:微軟正黑體;font-size:20;font-weight:bold
 "標題 4": font-family:微軟正黑體;font-size:20
@@ -12,14 +12,18 @@ byline: color:#408080;font-size:14;text-align:end
 border: "border: 1px solid #000000"
 corr: color:#ff0000
 corr_inline_note: color:#ff0000;font-size:10
+corr_juan: color:#ff0000;font-size:14
+corr_m1: margin-left:1em;color:#ff0000
 default: font-family:新細明體;font-size:12
 entry_form: font-weight:bold;font-size:14
+head: color:#0000a0;font-size:14
 hana_a: font-family:Hanazono Mincho A Regular
 hana_b: font-family:Hanazono Mincho B Regular
 hana_c: font-family:Hanazono Mincho C Regular
 head1: font-family:微軟正黑體;font-size:26;font-weight:bold
 i2: text-indent:2em
 inline_note: font-size:10
+inline_note_m1: margin-left:1em;font-size:10
 juan: color:#0000ff;font-size:14
 lg: color:#008040
 m0: margin-left:0
