@@ -421,12 +421,13 @@ class XMLForDocx1
     if (not wit.nil?) and wit.include? '【CB】' and not wit.include? @orig
       if can_use_seg_for_corr(e)
         r = traverse(e)
+        @styles << 'corr'
         r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
         return  r
       else
         @in_corr << true
         r = traverse(e)
-        r = %(<font style="color:#ff0000">#{r}</font>) unless r.include?('corr')
+        r = %(<font rend="corr">#{r}</font>) unless r.include?('corr')
         @in_corr.pop
         return r
       end
