@@ -1,3 +1,4 @@
+# 檢查 xml4docx 檔案 是否正確
 class XMLForDocx3
   def initialize
     fn = Rails.root.join('lib', 'tasks', 'xml4docx-styles.yaml')

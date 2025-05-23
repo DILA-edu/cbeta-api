@@ -31,6 +31,10 @@ class HTMLNode
     r + ">"
   end
 
+  def key?(k)
+    @attributes.key?(k)
+  end
+
   def set(name, value)
     @attributes[name] = value
   end

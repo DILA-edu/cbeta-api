@@ -109,7 +109,7 @@ class XMLForDocx1
     if e.key?("type")
       case e.name
       when 'list'
-        node['type'] = r
+        node['type'] = e['type']
       else
         if not %w[dharani xx].include?(e['type'])
           rends << e['type']
@@ -127,7 +127,12 @@ class XMLForDocx1
       end
     end
 
-    rends << 'corr' if @in_corr.last
+    if @in_corr.last
+      rends << 'corr'
+      rends << 'p' if e.name == 'p'
+    end
+
+    rends << 'p' if rends.include?('inlinenote') and e.name == 'p'
 
     unless rends.empty?
       r = rends.sort.join('_')
@@ -338,7 +343,9 @@ class XMLForDocx1
   end
 
   def e_item(e)
-    content = traverse(e)
+    content = ''
+    content << e['n'] if e.key?('n')
+    content << traverse(e)
     return '' if content.empty?
 
     if @inline_note.last
@@ -366,7 +373,10 @@ class XMLForDocx1
   end
 
   def e_juan(e, mode)
-    return traverse(e) if mode == 'text'
+    content = traverse(e, mode)
+    return content if mode == 'text'
+
+    return '' if content.empty?
 
     if e.at_xpath('byline').nil?
       @styles << "juan"
@@ -428,6 +438,7 @@ class XMLForDocx1
         @in_corr << true
         r = traverse(e)
         r = %(<font rend="corr">#{r}</font>) unless r.include?('corr')
+        @styles << 'corr'
         @in_corr.pop
         return r
       end
@@ -442,6 +453,7 @@ class XMLForDocx1
     unless head.nil?
       node = HTMLNode.new('p')
       node['rend'] = 'head'
+      @styles << 'head'
       node.content = traverse(head)
       r << node.to_s + "\n"
     end
@@ -466,7 +478,7 @@ class XMLForDocx1
   def e_list(e)
     if @inline_note.last
       node = HTMLNode.new('p')
-      node['rend'] = 'inline_note'
+      node['rend'] = 'inlinenote_p'
       r = traverse(e).delete_suffix('　')
       node.content = "(#{r})"
       return node.to_s + "\n"
@@ -521,8 +533,8 @@ class XMLForDocx1
         @inline_note << true
         r = traverse(e)
         @inline_note.pop
-        @styles << "inline_note"
-        return %(<seg rend="inline_note">(#{r})</seg>)
+        @styles << "inlinenote"
+        return %(<seg rend="inlinenote">(#{r})</seg>)
       end
     end
   
@@ -545,7 +557,7 @@ class XMLForDocx1
 
     node = HTMLNode.new('p')
     if @inline_note.last
-      copy_style(e, node, rend: 'inline_note')
+      copy_style(e, node, rend: 'inlinenote')
     else
       copy_style(e, node)
     end
@@ -770,15 +782,15 @@ class XMLForDocx1
       elsif %w[lg p].include?(c.name)
         new_p = nil
         if c.key?('rend')
-          c['rend'] = c['rend'] + ' inline_note'
+          c['rend'] = c['rend'] + ' inlinenote'
         else
-          c['rend'] = 'inline_note'
+          c['rend'] = 'inlinenote'
         end
         p.add_previous_sibling(c)
       else
         @log.puts "#{__LINE__} #{@v_work} 移動 #{c.name}"
         if new_p.nil?
-          new_p = add_p_before_p(p, rend: 'inline_note', style: note['style']) 
+          new_p = add_p_before_p(p, rend: 'inlinenote', style: note['style']) 
         end
         new_p.add_child(c)
       end

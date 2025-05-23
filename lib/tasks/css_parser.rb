@@ -23,16 +23,16 @@ class CSSParser
         if i >= 0
           "i#{i}"
         else
-          "i_#{-i}"
+          "j#{-i}"
         end
       end
     elsif @hash.keys.size == 2 and @hash.key?("margin-left") and @hash.key?("text-indent")
       m = @hash["margin-left"].delete_suffix("em").to_i
       i = @hash["text-indent"].delete_suffix("em").to_i
       if i >= 0
-        "m#{m}i#{i}"
+        "m#{m}_i#{i}"
       else
-        "m#{m}i_#{-i}"
+        "m#{m}_j#{-i}"
       end
     end
   end
