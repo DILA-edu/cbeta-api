@@ -93,10 +93,9 @@ class ImportLines
       when 'production'
         abort "Line:#{__LINE__} 無缺字資料:#{gid}" 
       when 'staging'
-        puts "警告：#{__LINE__} 無缺字資料:#{gid}" 
-      else
-        return "[#{gid}]"
+        puts "警告：#{__LINE__} 無缺字資料:#{gid}"
       end
+      return "[#{gid}]"
     end
     
     if gid.start_with?('SD') or gid.start_with?('RJ')
