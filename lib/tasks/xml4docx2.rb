@@ -23,7 +23,7 @@ class XMLForDocx2
   def add_style(style)
     styles_node = @doc.root.at_xpath('//settings/styles')
     css = @predefined_styles[style]
-    styles_node.add_child("<style name='#{style}'>#{css}</style>")
+    styles_node.add_child("  <style name='#{style}'>#{css}</style>\n    ")
     @styles << style
   end
 

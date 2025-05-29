@@ -112,8 +112,8 @@ class KwicService
     
     result[:time] = Time.now - t1
     result[:results] = hits
-    @logger.info "#{__LINE__}, num_found: #{result[:num_found]}"
-    @logger.info "#{__LINE__}, results size: #{result[:results].size}"
+    @logger.debug "#{__LINE__}, num_found: #{result[:num_found]}"
+    @logger.debug "#{__LINE__}, results size: #{result[:results].size}"
     result
   end
 
@@ -440,13 +440,13 @@ class KwicService
   def exclude_prefix(info_array, q, prefix)
     q2 = prefix + q
     start, found = search_sa_after_open_files(q2)
-    @logger.info "exclude_prefix, q2: #{q2}, found: #{found}, start: #{start}"
+    @logger.debug "exclude_prefix, q2: #{q2}, found: #{found}, start: #{start}"
     return if start.nil?
 
-    @logger.info "info_array size: #{info_array.size}"
+    @logger.debug "info_array size: #{info_array.size}"
     info_array.each do |x|
       i = x[:sa_offset]
-      @logger.info "#{i} => #{sa(i)}"
+      @logger.debug "#{i} => #{sa(i)}"
     end
 
     len = prefix.size
@@ -455,22 +455,22 @@ class KwicService
       a << (sa(start+i) + len)
     end
 
-    @logger.info "prefix array: #{a.inspect}"
+    @logger.debug "prefix array: #{a.inspect}"
 
     info_array.delete_if { |x| a.include?(sa(x[:sa_offset])) }
-    @logger.info "info_array size: #{info_array.size}"
+    @logger.debug "info_array size: #{info_array.size}"
   end
 
   def exclude_suffix(info_array, q, suffix)
     q2 = q + suffix
     start, found = search_sa_after_open_files(q2)
-    @logger.info "exclude_suffix, q2: #{q2}, found: #{found}, start: #{start}"
+    @logger.debug "exclude_suffix, q2: #{q2}, found: #{found}, start: #{start}"
     return if start.nil?
 
-    @logger.info "info_array size: #{info_array.size}"
+    @logger.debug "info_array size: #{info_array.size}"
     info_array.each do |x|
       i = x[:sa_offset]
-      @logger.info "#{i} => #{sa(i)}"
+      @logger.debug "#{i} => #{sa(i)}"
     end
 
     range = (start...start+found)
@@ -514,7 +514,7 @@ class KwicService
   end
 
   def open_files(sa_path)
-    log_info "open_files, sa_path: #{sa_path}"
+    log_debug "open_files, sa_path: #{sa_path}"
 
     return true if @current_sa_path == sa_path
     @current_sa_path = sa_path
@@ -533,7 +533,7 @@ class KwicService
     
     begin
       @info_path = fn
-      log_info "open file: #{fn}"
+      log_debug "open file: #{fn}"
       @f_info = File.open(fn, 'rb')
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
@@ -565,7 +565,7 @@ class KwicService
     end
     
     begin
-      log_info "open file: #{fn}"
+      log_debug "open file: #{fn}"
       @f_sa = File.open(fn, 'rb')
       @sa_files[fn] = @f_sa
     rescue
@@ -574,7 +574,7 @@ class KwicService
   end
 
   def open_sa_file(fn)
-    log_info "open_sa_file: #{fn}"
+    log_debug "open_sa_file: #{fn}"
     File.read(fn, mode: "rb").unpack("V*")
   end
 
@@ -628,7 +628,7 @@ class KwicService
 
   def open_text_file(fn)
     raise CbetaError.new(500), "檔案不存在: #{fn}" unless File.exist?(fn)
-    log_info "open_text_file: #{fn}"
+    log_debug "open_text_file: #{fn}"
     File.read(fn, encoding: "UTF-32LE")
   end
   
@@ -665,7 +665,7 @@ class KwicService
   end
 
   def paginate_by_location(q, sa_results)
-    log_info 'paginate_by_location'
+    log_debug 'paginate_by_location'
     hits = []
     sa_results.each do |sa_path, start, found|
       hits.concat(result_hash(q, start, found))
@@ -935,7 +935,7 @@ class KwicService
   end
       
   def result_hash(q, start, rows)
-    log_info "result_hash, q: #{q}, start: #{start}, rows: #{rows}"
+    log_debug "result_hash, q: #{q}, start: #{start}, rows: #{rows}"
 
     return [] if rows == 0
     return [] if start.nil?
@@ -951,7 +951,7 @@ class KwicService
     read_text_for_info_array(info_array, q)
     add_place_info(info_array) if @option[:place] # 附上 地理資訊
 
-    log_info "q: #{q}, result_hash, return info_array size: #{info_array.size}"
+    log_debug "q: #{q}, result_hash, return info_array size: #{info_array.size}"
     info_array
   end
 
@@ -1027,15 +1027,15 @@ class KwicService
   end
 
   def search_sa_juan(sa_path, q)
-    log_info "search_sa_juan, q: #{q}"
+    log_debug "search_sa_juan, q: #{q}"
     status = open_files(sa_path)
-    log_info "open_files return: #{status}, f_txt size: #{@f_txt.size}"
+    log_debug "open_files return: #{status}, f_txt size: #{@f_txt.size}"
     return nil unless status
     search_sa_after_open_files_juan(q)
   end
 
   def search_sa_after_open_files(q)
-    log_info "search_sa_after_open_files, q: #{q}"
+    log_debug "search_sa_after_open_files, q: #{q}"
     t1 = Time.now
     i = bsearch(q, 0, @sa_last)
     return nil if i.nil?
@@ -1053,11 +1053,11 @@ class KwicService
   end
   
   def search_sa_after_open_files_juan(q)
-    log_info "search_sa_after_open_files_juan, q: #{q}"
+    log_debug "search_sa_after_open_files_juan, q: #{q}"
     t1 = Time.now
     i = bsearch_juan(q, 0, @sa_last)
     if i.nil?
-      log_info 'bsearch_juan return nil'
+      log_debug 'bsearch_juan return nil'
       return nil
     end
   
@@ -1069,7 +1069,7 @@ class KwicService
   
     found = stop - start + 1
     @total_found += found
-    log_info "search_sa_after_open_files_juan, 結果 start: #{start}, found: #{found}"
+    log_debug "search_sa_after_open_files_juan, 結果 start: #{start}, found: #{found}"
     return start, found
   end
 
@@ -1143,6 +1143,13 @@ class KwicService
     r.delete 'col'
     r.delete 'line'
     r
+  end
+
+  def log_debug(msg)
+    location = caller_locations.first
+    file = File.basename(location.path)
+    r = "#{file}:#{location.lineno}, #{msg}"
+    Rails.logger.debug r
   end
 
   def log_info(msg)

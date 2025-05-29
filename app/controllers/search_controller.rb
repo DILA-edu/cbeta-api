@@ -431,6 +431,9 @@ class SearchController < ApplicationController
     if params[:fields].nil? or params[:fields].include?('kwic')
       unless @q.include?('NEAR')
         kwic_by_juan(r)
+        r[:num_found] = r[:results].size
+        r[:total_term_hits] = r[:results].sum { it[:term_hits] }
+        log_info "kwic_by_juan 完成, num_found: #{r[:num_found]}, total_term_hits: #{r[:total_term_hits]}"
       end
     end
 

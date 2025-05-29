@@ -238,6 +238,8 @@ class ApplicationController < ActionController::Base
   end  
 
   def log_info(msg)
-    logger.info "#{caller_locations.first}\n#{msg}"
+    location = caller_locations.first
+    file = File.basename(location.path)
+    logger.info "#{file}:#{location.lineno}, #{msg}"
   end
 end
