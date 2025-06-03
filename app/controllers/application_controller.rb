@@ -237,6 +237,12 @@ class ApplicationController < ActionController::Base
     logger.info params.inspect
   end  
 
+  def log_debug(msg)
+    location = caller_locations.first
+    file = File.basename(location.path)
+    logger.debug "#{file}:#{location.lineno}, #{msg}"
+  end
+
   def log_info(msg)
     location = caller_locations.first
     file = File.basename(location.path)

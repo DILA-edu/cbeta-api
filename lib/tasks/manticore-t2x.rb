@@ -63,8 +63,6 @@ class ManticoreT2X
     r = get_info_from_work(@work, data)
     return if r.nil?
   
-    @id += 1
-    
     fn = File.join(@src, rel_path)
     s = File.read(fn)  
     data[:content] = @cbs.remove_puncs(s) # 要把標點去掉，才能找到跨標點的詞，例如「不也天中天」
@@ -110,12 +108,23 @@ class ManticoreT2X
   end
   
   def write_xml(f, data)
+    case CBETA.juan_across_vol(@vol, @work, @juan.to_i)
+    when 1
+      @vols = [@vol]
+      return
+    when 2
+      @vols << @vol
+    else
+      @vols = [@vol]
+    end
+
+    @id += 1
     s = <<~XML
       <sphinx:document id='#{@id}'>
         <canon>#{@canon}</canon>
         <canon_order>#{@canon_order}</canon_order>
         <xml_file>#{@xml_file}</xml_file>
-        <vol>#{@vol}</vol>
+        <vol>#{@vols.join(',')}</vol>
         <work>#{@work}</work>
         <juan>#{@juan}</juan>
     XML

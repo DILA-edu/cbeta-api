@@ -111,7 +111,7 @@ class SearchController < ApplicationController
   end
 
   def notes
-    log "action notes", __LINE__
+    log_debug "action notes"
     @mode = 'extend'
     remove_puncs_from_query
 
@@ -407,6 +407,7 @@ class SearchController < ApplicationController
       facet_by_sphinx_all(r['facet'])
     end
 
+    log_info "@exclude: #{@exclude.inspect}"
     if @exclude
       exclude_by_sphinx(r)
     end
@@ -493,10 +494,10 @@ class SearchController < ApplicationController
   # 所以先計算最多會有多少 documents 符合條件
   def estimate_max_matches
     cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
-    log "estimate_max_matches, cmd: #{cmd}", __LINE__
+    log_info "estimate_max_matches, cmd: #{cmd}"
     r = @mysql_client.query(cmd)
     @max_matches = r.first['docs']
-    log "max_matches: #{@max_matchescmd}", __LINE__
+    log_info "max_matches: #{@max_matches}"
 
     # max_matches must be from 1 to 100M
     @max_matches = 1 if @max_matches == 0
@@ -506,20 +507,26 @@ class SearchController < ApplicationController
 
   def exclude_by_sphinx(r1)
     r2 = sphinx_search_simple(@exclude) # 要被排除的
+    log_info "exclude_by_sphinx, r2: #{r2.inspect}"
+
     h = {}
     r2.each do |juan|
       k = "#{juan[:work]}_#{juan[:juan]}"
       h[k] = juan[:term_hits]
     end
+    log_info "exclude_by_sphinx, h: #{h.inspect}"
 
     r1[:total_term_hits] = 0
     i = 0
     while i < r1[:results].size
       juan = r1[:results][i]
       k = "#{juan[:work]}_#{juan[:juan]}"
+      log_info "i: #{i}, k: #{k}"
+      log_info "exclude 前 term_hits: #{juan[:term_hits]}"
       if h.key?(k)
         juan[:term_hits] -= h[k]
       end
+      log_info "exclude 後 term_hits: #{juan[:term_hits]}"
       
       if juan[:term_hits] <= 0
         r1[:num_found] -= 1
@@ -970,11 +977,11 @@ class SearchController < ApplicationController
     num_found = 0
 
     q = @q_orig
-    log "q: #{q}", __LINE__
+    log_debug "q: #{q}"
     q.gsub!(/[!\-]"[^"]+"/, '') # 去除 not 之後的關鍵字
     q.gsub!(/(?<!\\)"/, '') # 沒有 escape 的單引號、雙引號 去掉
     q.gsub!(/\\(['"])/, '\1')
-    log "q: #{q}", __LINE__
+    log_debug "q: #{q}"
     keys = q.split
 
     keys.each do |k|
@@ -1353,7 +1360,7 @@ class SearchController < ApplicationController
   end
 
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)
-    log "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}", __LINE__
+    log_info "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
     t1 = Time.now
 
     if start >= @max_matches
@@ -1369,7 +1376,7 @@ class SearchController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{facet}" unless facet.nil?
-    log("select: #{@select}", __LINE__)
+    log_info "select: #{@select}"
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     rescue
@@ -1474,10 +1481,6 @@ class SearchController < ApplicationController
     return found, term_hits
   end
 
-  def log(msg, line)
-    log_info "#{File.basename(__FILE__)}, line: #{line}, #{msg}"
-  end
-
   # 根據異體字表，回傳各種可能異體字串及搜尋結果筆數
   # 效率測試：
   #   * 無上正等正覺
@@ -1525,7 +1528,7 @@ class SearchController < ApplicationController
 
     r = empty_result
     r[:select] = @select unless @select.nil?
-    r[:code] = e.code
+    #r[:code] = e.code
     r[:error] = e.message
     r[:backtrace] = e.backtrace
     my_render r
