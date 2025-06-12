@@ -33,8 +33,8 @@ namespace :check do
   end
 
   task :xml4docx do
-    require 'tasks/xml4docx3'
+    require 'tasks/check_xml4docx'
     dir = Rails.root.join('data', 'xml4docx2')
-    XMLForDocx3.new.check(dir)
+    CheckXMLForDocx.new.check(dir)
   end
 end

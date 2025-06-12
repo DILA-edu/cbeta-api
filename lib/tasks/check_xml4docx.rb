@@ -1,10 +1,10 @@
 # 檢查 xml4docx 檔案 是否正確
-class XMLForDocx3
+class CheckXMLForDocx
   def initialize
     fn = Rails.root.join('lib', 'tasks', 'xml4docx-styles.yaml')
     @styles = YAML.load_file(fn)
 
-    fn = Rails.root.join('log', 'xml4docx3.log')
+    fn = Rails.root.join('log', 'check_xml4docx.log')
     @log = File.open(fn, 'w')
 
     rnc = Rails.root.join('data-static', 'schema', 'xml4docx.rnc')
@@ -14,7 +14,7 @@ class XMLForDocx3
   end
 
   def check(src)
-    puts "xml4docx3 檢查 XML 格式"
+    puts "check_xml4docx 檢查 XML 格式"
     Dir.glob("#{src}/**/*.xml", sort: true) do
       do_file(it)
     end
@@ -23,21 +23,21 @@ class XMLForDocx3
   private
 
   def do_file(xml_path)
-    print "\rxml4docx3 #{xml_path}  "
+    print "\rcheck_xml4docx #{xml_path}  "
 
-    doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
-    unless doc.errors.empty?
-      abort "XML not well-form: #{doc.errors}"
+    @doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
+    unless @doc.errors.empty?
+      abort "XML not well-form: #{@doc.errors}"
     end
 
-    errors = @relaxng.validate(doc)
+    errors = @relaxng.validate(@doc)
     unless errors.empty?
       abort "\nXML not valid ❌"
     end
 
-    traverse(doc.root)
+    traverse(@doc.root)
 
-    abort "仍有 seg 包 seg" if doc.at_xpath('//seg/seg')
+    abort "仍有 seg 包 seg" if @doc.at_xpath('//seg/seg')
   end
 
   def e_footnote(e)
@@ -52,6 +52,16 @@ class XMLForDocx3
 
   def e_item(e)
     abort "item 下面沒有 p, lb: #{$lb}" if e.at_xpath('p').nil?
+    traverse(e)
+  end
+  
+  def e_p(e)
+    if e.key?('rend')
+      rend = e['rend']
+      if @doc.at_xpath("//styles/style[@name='#{rend}']").nil?
+        warn "p rend: #{rend.inspect} 檔頭 style 未定義" 
+      end
+    end
     traverse(e)
   end
 
@@ -84,6 +94,7 @@ class XMLForDocx3
       case c.name
       when 'footnote' then e_footnote(c)
       when 'item' then e_item(c)
+      when 'p'    then e_p(c)
       when 'seg' then e_seg(c)
       else
         traverse(c)

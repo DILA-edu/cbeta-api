@@ -479,6 +479,7 @@ class XMLForDocx1
     if @inline_note.last
       node = HTMLNode.new('p')
       node['rend'] = 'inlinenote_p'
+      @styles << 'inlinenote_p'
       r = traverse(e).delete_suffix('　')
       node.content = "(#{r})"
       return node.to_s + "\n"
@@ -489,6 +490,7 @@ class XMLForDocx1
     unless head.nil?
       node = HTMLNode.new('p')
       node['rend'] = 'head'
+      @styles << 'head'
       node.content = traverse(head)
       r << node.to_s + "\n"
     end
