@@ -265,6 +265,11 @@ class XMLForDocx1
     node.to_s + "\n"
   end
 
+  def e_foreign(e)
+    return '' if e.key?('place') and e['place'].include?('foot')
+    traverse(e)
+  end
+
   def e_form(e)
     abort "form 的 parent 不是 entry" unless e.parent.name == 'entry'
     @styles << "entry_form"
@@ -700,6 +705,7 @@ class XMLForDocx1
     when 'cell' then e_cell(node)
     when 'div' then e_div(node)
     when 'docNumber' then e_doc_number(node)
+    when 'foreign'   then e_foreign(node)
     when 'form' then e_form(node)
     when 'g'    then e_g(node)
     when 'graphic' then e_graphic(node)
