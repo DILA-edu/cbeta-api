@@ -744,7 +744,7 @@ class XMLForDocx1
 
   def init_juan
     @buf = ""
-    @styles = Set.new(%w[default 標題])
+    @styles = Set.new(%w[default license 標題])
   end
 
   # ex: T53n2122_p0683b03

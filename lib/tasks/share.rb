@@ -11,7 +11,7 @@ class MyCbetaShare
 
     r = 
       case args[:format]
-      when :docx then "<p>"
+      when :docx then %(<p rend="license">)
       when :text then "#%s\n" % ('-' * 70)
       else "<div id='cbeta-copyright'><p>\n"
       end

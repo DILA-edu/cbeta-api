@@ -29,6 +29,7 @@ inlinenote_m1_p: margin-left:1em;font-size:10
 inlinenote_p: font-size:10
 juan: color:#0000ff;font-size:14
 lg: color:#008040
+license: background-color:#f0f0f0
 m0: margin-left:0
 m1: margin-left:1em
 m2: margin-left:2em
