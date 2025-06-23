@@ -9,5 +9,4 @@
 3. check:xml4docx
    檢查 xml4docx 正確性
    rake check:xml4docx
-4. 產生 比對用 text
-   rake convert:xml4docx2t
+4. 給 heven 比對 text 正確性

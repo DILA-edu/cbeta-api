@@ -78,13 +78,6 @@ namespace :convert do
     XMLForDocx2.new.convert(dir1, dir2, filter: args[:filter])
   end
 
-  task :xml4docx2t => :environment do
-    require 'tasks/convert_xml4docx2t'
-    dir1 = Rails.root.join('data', 'xml4docx2')
-    dir2 = Rails.root.join('data', 'xml4docx2t')
-    XMLForDocxToText.new.convert(dir1, dir2)
-  end
-
   desc "XML 轉 目次 toc JSON 檔"
   task :toc, [:arg1] => :environment do |t, args|
     require 'tasks/convert_toc'

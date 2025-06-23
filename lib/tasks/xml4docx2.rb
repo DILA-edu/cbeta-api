@@ -88,15 +88,14 @@ class XMLForDocx2
       # T55n2154_p0611a05 item 下有文字夾在兩個 p 之間
       new_p = nil
       e.children.each do |c|
-        if %w[list p].include?(c.name)
-        else
-          if c.text? and c.text.match?(/\A\s+\z/m)
-            c.remove if c == e.children.last
-            next
-          end
-          new_p ||= c.add_previous_sibling("<p></p>").first
-          new_p.add_child(c)
+        next if c.comment?
+        next if %w[list p].include?(c.name)
+        if c.text? and c.text.match?(/\A\s+\z/m)
+          c.remove if c == e.children.last
+          next
         end
+        new_p ||= c.add_previous_sibling("<p></p>").first
+        new_p.add_child(c)
       end
     else
       e.inner_html = "<p>#{e.inner_html}</p>"
