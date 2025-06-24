@@ -506,8 +506,8 @@ class XMLForDocx1
     copy_style(e, node)
     node.content = traverse(e)
     @list_level -= 1
+
     indent = "  " * @list_level
-    r << indent
     r << node.to_s + "\n"
     r.gsub!(/<\/item><\/list>/, "</item>\n#{indent}</list>")
     r
@@ -552,8 +552,8 @@ class XMLForDocx1
       n = e['n']
       return '' if @mod_notes.key?(n)
       s = traverse(e, 'text')
-      @mod_notes[n] = s
-      "<footnote>#{s}</footnote>"
+      r = "<footnote>#{s}</footnote>"
+      @mod_notes[n] = r
     else
       ""
     end
@@ -609,6 +609,11 @@ class XMLForDocx1
     copy_style(e, node)
     node.content = traverse(e)
     node.to_s + "\n"
+  end
+
+  def e_sg(e)
+    s = traverse(e)
+    "(#{s})"
   end
 
   def e_t(e)
@@ -724,6 +729,7 @@ class XMLForDocx1
     when 'p' then e_p(node)
     when 'row' then e_row(node)
     when 'seg' then e_seg(node)
+    when 'sg'  then e_sg(node)
     when 't'     then e_t(node)
     when 'table' then e_table(node)
     when 'trailer' then e_trailer(node)

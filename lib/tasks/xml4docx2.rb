@@ -26,20 +26,43 @@ class XMLForDocx2
     styles_node.add_child("  <style name='#{style}'>#{css}</style>\n    ")
     @styles << style
   end
+  
+  def parse_xml(xml_path)
+    text = File.read(xml_path)
+
+    # 把 行號 移到 p, item 裡面
+    regexp = /
+      (
+        (?:<!--\ lb:\ [^>]+\ -->)+
+      )
+      (
+        \s*
+        (?:<(?:item|p)(?:\ [^>]+?)?>)+
+      )
+    /x
+
+    text.gsub!(regexp, '\2\1')
+    fn = Rails.root.join('data', 'xml4docx1a', @rel_path, "#{@work}.xml")
+    FileUtils.makedirs(File.dirname(fn))
+    File.write(fn, text)
+
+    Nokogiri::XML(text)
+  end
 
   def do_file(xml_path)
     a = xml_path.split('/')
-    rel_path = a[-4..-2].join('/')
-    dest_folder = File.join(@dest, rel_path)
+    @rel_path = a[-4..-2].join('/')
+    dest_folder = File.join(@dest, @rel_path)
     @xml_fn = a[-1]
     print "\rxml4docx2: #{@xml_fn}  "
 
     @work = File.basename(@xml_fn, '.*')
-    fn = Rails.root.join('log', 'xml4docx2', rel_path, "#{@work}.log")
+    fn = Rails.root.join('log', 'xml4docx2', @rel_path, "#{@work}.log")
     FileUtils.makedirs(File.dirname(fn))
     @log = File.open(fn, 'w')
 
-    @doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
+    @doc = parse_xml(xml_path)
+
     read_settings_styles
     handle_body_text
     handle_list_footnote
@@ -88,7 +111,6 @@ class XMLForDocx2
       # T55n2154_p0611a05 item 下有文字夾在兩個 p 之間
       new_p = nil
       e.children.each do |c|
-        next if c.comment?
         next if %w[list p].include?(c.name)
         if c.text? and c.text.match?(/\A\s+\z/m)
           c.remove if c == e.children.last

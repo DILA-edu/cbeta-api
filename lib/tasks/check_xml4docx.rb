@@ -18,9 +18,29 @@ class CheckXMLForDocx
     Dir.glob("#{src}/**/*.xml", sort: true) do
       do_file(it)
     end
+    puts
+    check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
+    check_as_text('T/T54/T54n2128/T54n2128_063.xml', /百一羯磨十卷.*0725a24/m)
   end
 
   private
+
+  def check_as_text(fn, regex)
+    xml_path = Rails.root.join('data', 'xml4docx2', fn)
+    unless File.exist?(xml_path)
+      abort "檔案不存在: #{xml_path}"
+    end
+
+    puts "檢查 XML 檔案: #{xml_path}"
+    text = File.read(xml_path)
+    if text !~ regex
+      puts "Error: 行號錯誤"
+      puts "File: #{fn}"
+      puts "應為：#{regex.source}"
+      abort
+    end
+    puts "檢查完畢"
+  end
 
   def do_file(xml_path)
     print "\rcheck_xml4docx #{xml_path}  "
@@ -62,6 +82,11 @@ class CheckXMLForDocx
         warn "p rend: #{rend.inspect} 檔頭 style 未定義" 
       end
     end
+    
+    if e.text.empty? and e.at_xpath('graphic').nil?
+      abort "\np 的內容是空的, lb: #{$lb}"
+    end
+
     traverse(e)
   end
 
