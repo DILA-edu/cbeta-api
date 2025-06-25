@@ -61,6 +61,7 @@ class XMLForDocx1
 
   def before_action(doc)
     p_note_lg(doc)
+    p_tt_lb(doc)
     folder = Rails.root.join('data', 'xml4docx0', @canon, @vol)
     FileUtils.makedirs(folder)
     fn = File.join(folder, "#{@v_work}.xml")
@@ -410,11 +411,13 @@ class XMLForDocx1
   def e_lb(e)
     @lb = e['n']
 
-    r = "<!-- lb: #{@lb} -->"
+    r = ''
     if @next_line_buf.empty?
       r << '<lb/>' if @pre.last
+      r << "<!-- lb: #{@lb} -->"
     else
       r << "<lb/>\n"
+      r << "<!-- lb: #{@lb} -->"
       r << @next_line_buf
       r << "<lb/>\n"
       @next_line_buf = ''
@@ -824,6 +827,25 @@ class XMLForDocx1
     r['rend'] = rends.join(' ') unless rends.empty?
     @log.puts r.to_xml
     r
+  end
+
+  # T18n0859_p0178a08 tt 雙行對照
+  # p 結束了，但第二行的 lb 在 p 外面
+  # 把 lb 移到 p 裡面
+  def p_tt_lb(doc)
+    doc.root.xpath("//p/tt[last()]").each do |tt|
+      next if %w(app single-line).include? tt['type']
+      next if tt['rend'] == 'normal'
+      next if tt['place'] == 'inline'
+      next unless tt.next_element.nil?
+
+      p = tt.parent
+      node = p.next_element
+      next if node.nil?
+      next unless node.name == 'lb'
+
+      p.add_child(node)
+    end
   end
 
   def read_authority_catalog

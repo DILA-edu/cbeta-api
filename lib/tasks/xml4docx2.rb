@@ -36,8 +36,7 @@ class XMLForDocx2
         (?:<!--\ lb:\ [^>]+\ -->)+
       )
       (
-        \s*
-        (?:<(?:item|p)(?:\ [^>]+?)?>)+
+        (?:\s*<(?:item|list|p)(?:\ [^>]+?)?>)+
       )
     /x
 
@@ -67,6 +66,7 @@ class XMLForDocx2
     handle_body_text
     handle_list_footnote
     traverse(@doc.root)
+    abort "仍有 seg 包 seg" if @doc.at_xpath('//seg/seg')
 
     FileUtils.makedirs(dest_folder)
     dest = File.join(dest_folder, @xml_fn)
@@ -75,9 +75,9 @@ class XMLForDocx2
     # <p> 的前面 如果不是 換行 或 <item>, 就加 換行
     xml.gsub!(/(?<!\n| |\-\->|<item>)(<p[> ])/m, "\n\\1")
 
+    # <p> 最後的 <lb/> 要移除
+    xml.gsub!(/<lb\/>\s*<\/p>/m, '</p>')
     File.write(dest, xml)
-
-    abort "仍有 seg 包 seg" if @doc.at_xpath('//seg/seg')
   end
 
   def e_footnote(e)
@@ -111,7 +111,11 @@ class XMLForDocx2
       # T55n2154_p0611a05 item 下有文字夾在兩個 p 之間
       new_p = nil
       e.children.each do |c|
-        next if %w[list p].include?(c.name)
+        if %w[list p].include?(c.name)
+          new_p = nil
+          next
+        end
+
         if c.text? and c.text.match?(/\A\s+\z/m)
           c.remove if c == e.children.last
           next
