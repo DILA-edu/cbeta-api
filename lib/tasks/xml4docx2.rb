@@ -11,11 +11,13 @@ class XMLForDocx2
   def convert(src, dest, filter: nil)
     @filter = filter
     @dest = dest
+    time_start = Time.now
     Dir.glob("#{src}/**/*.xml", sort: true) do
       next if not @filter.nil? and not it.include?(@filter)
       do_file(it)
       @log.close if @log
     end
+    puts "花費時間：" + ChronicDuration.output(Time.now - time_start)
   end
 
   private

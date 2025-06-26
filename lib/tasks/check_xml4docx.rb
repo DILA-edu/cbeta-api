@@ -20,6 +20,7 @@ class CheckXMLForDocx
     end
     puts
     check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
+    check_as_text('T/T20/T20n1096/T20n1096_001.xml', /0420c26.*0420c27/m)
     check_as_text('T/T54/T54n2128/T54n2128_063.xml', /百一羯磨十卷.*0725a24/m)
     check_as_text('T/T55/T55n2149/T55n2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T55/T55n2154/T55n2154_011.xml', /0592b06.*0592b07/m)

@@ -27,6 +27,7 @@ class XMLForDocx1
     @publish = args[:publish] || Date.today.strftime("%Y-%m")
     @pre_max = { work: '', text: '' }
 
+    time_start = Time.now
     if args[:canon].nil?
       each_canon(@xml_root) do |c|
         args[:canon] = c
@@ -35,9 +36,7 @@ class XMLForDocx1
     else
       convert_canon(args)
     end
-
-    #puts "最長的 pre 內容是 #{@pre_max[:work]}: #{@pre_max[:text].size} 字"
-    #puts @pre_max[:text]
+    puts "花費時間：" + ChronicDuration.output(Time.now - time_start)
   end
 
   def convert_canon(args)
@@ -58,10 +57,19 @@ class XMLForDocx1
   end
 
   private
+  
+  def add_style(style)
+    if @juan_styles.key?(@juan)
+      @juan_styles[@juan] << style
+    else
+      abort "Erroe##{__LINE__}: @juan_styles 無 @juan: #{@juan}"
+    end
+  end
 
   def before_action(doc)
     p_note_lg(doc)
     p_tt_lb(doc)
+    init_juan_styles(doc)
     folder = Rails.root.join('data', 'xml4docx0', @canon, @vol)
     FileUtils.makedirs(folder)
     fn = File.join(folder, "#{@v_work}.xml")
@@ -138,7 +146,7 @@ class XMLForDocx1
     unless rends.empty?
       r = rends.sort.join('_')
       node['rend'] = r
-      @styles << r
+      add_style(r)
     end
   end
 
@@ -168,7 +176,6 @@ class XMLForDocx1
 
     @in_corr = [false]
     before_action(doc)
-    init_juan
     read_mod_notes(doc)
 
     @div_level = 0
@@ -179,8 +186,8 @@ class XMLForDocx1
     @in_lg = false
     @pre = [false]
     @seg = []
-    traverse(doc.root)
-    write_juan
+    xml = traverse(doc.root)
+    write_juans(xml)
     @log.close
   end
 
@@ -225,7 +232,7 @@ class XMLForDocx1
       return '　' + traverse(e)
     end
 
-    @styles << "byline"
+    add_style("byline")
     node = HTMLNode.new('p')
     node["rend"] = "byline"
     node.content = traverse(e)
@@ -255,9 +262,9 @@ class XMLForDocx1
 
   def e_div(e)
     @div_level += 1
-    traverse(e)
+    r = traverse(e)
     @div_level -= 1
-    ""
+    r
   end
 
   def e_doc_number(e)
@@ -273,7 +280,7 @@ class XMLForDocx1
 
   def e_form(e)
     abort "form 的 parent 不是 entry" unless e.parent.name == 'entry'
-    @styles << "entry_form"
+    add_style("entry_form")
 
     node = HTMLNode.new('p')
     node["rend"] = "entry_form"
@@ -322,8 +329,8 @@ class XMLForDocx1
       end
   
       style = "標題 #{@div_level}"
-      @styles << style
-  
+      add_style(style)
+
       node = HTMLNode.new('p')
       node["rend"] = style
       node.content = traverse(e)
@@ -370,7 +377,7 @@ class XMLForDocx1
     if e.parent.at_xpath('byline').nil?
       traverse(e)
     else
-      @styles << "juan"
+      add_style("juan")
       node = HTMLNode.new('p')
       node["rend"] = "juan"
       node.content = traverse(e)
@@ -385,7 +392,7 @@ class XMLForDocx1
     return '' if content.empty?
 
     if e.at_xpath('byline').nil?
-      @styles << "juan"
+      add_style("juan")
       node = HTMLNode.new('p')
       copy_style(e, node, rend: 'juan')
       node.content = traverse(e)
@@ -428,7 +435,7 @@ class XMLForDocx1
 
   def can_use_seg_for_corr(lem)
     return false if @inline_note.last
-    return false if lem.at_xpath('juan | list | p')
+    return false if lem.at_xpath('div | juan | list | p')
     true
   end
 
@@ -439,14 +446,14 @@ class XMLForDocx1
     if (not wit.nil?) and wit.include? '【CB】' and not wit.include? @orig
       if can_use_seg_for_corr(e)
         r = traverse(e)
-        @styles << 'corr'
+        add_style('corr')
         r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
         return  r
       else
         @in_corr << true
         r = traverse(e)
         r = %(<font rend="corr">#{r}</font>) unless r.include?('corr')
-        @styles << 'corr'
+        add_style('corr')
         @in_corr.pop
         return r
       end
@@ -461,12 +468,12 @@ class XMLForDocx1
     unless head.nil?
       node = HTMLNode.new('p')
       node['rend'] = 'head'
-      @styles << 'head'
+      add_style('head')
       node.content = traverse(head)
       r << node.to_s + "\n"
     end
 
-    @styles << 'lg'
+    add_style('lg')
     @in_lg = true
     @first_l = true
     node = HTMLNode.new('p')
@@ -487,7 +494,7 @@ class XMLForDocx1
     if @inline_note.last
       node = HTMLNode.new('p')
       node['rend'] = 'inlinenote_p'
-      @styles << 'inlinenote_p'
+      add_style('inlinenote_p')
       r = traverse(e).delete_suffix('　')
       node.content = "(#{r})"
       return node.to_s + "\n"
@@ -498,7 +505,7 @@ class XMLForDocx1
     unless head.nil?
       node = HTMLNode.new('p')
       node['rend'] = 'head'
-      @styles << 'head'
+      add_style('head')
       node.content = traverse(head)
       r << node.to_s + "\n"
     end
@@ -518,9 +525,8 @@ class XMLForDocx1
 
   def e_milestone(e)
     return "" unless e["unit"] == "juan"
-    write_juan
     @juan = e["n"].to_i
-    ""
+    "<juan n='#{@juan}'/>"
   end
 
   # todo: Y26n0026_p0021a01
@@ -543,7 +549,7 @@ class XMLForDocx1
         @inline_note << true
         r = traverse(e)
         @inline_note.pop
-        @styles << "inlinenote"
+        add_style("inlinenote")
         return %(<seg rend="inlinenote">(#{r})</seg>)
       end
     end
@@ -751,11 +757,14 @@ class XMLForDocx1
     r
   end
 
-  def init_juan
-    @buf = ""
-    @styles = Set.new(%w[default license 標題])
+  def init_juan_styles(doc)
+    @juan_styles = {}
+    doc.root.xpath("//milestone[@unit='juan']").each do |ms|
+      j = ms['n'].to_i
+      @juan_styles[j] = Set.new(%w[default license 標題])
+    end
   end
-
+  
   # ex: T53n2122_p0683b03
   def p_note_lg(doc)
     doc.root.xpath("//p/note[@place='inline']/lg").each do
@@ -875,22 +884,33 @@ class XMLForDocx1
   def traverse(node, mode='xml')
     r = ""
     node.children.each do |c|
-      s = handle_node(c, mode)
-      if node.name == "div" or node.name == "body"
-        @buf << s
-      else
-        r << s
-      end
+      r << handle_node(c, mode)
     end
     r
   end
 
-  def write_juan
-    return if @juan < 1
-    return if @buf.empty?
-
+  def write_juans(xml)
     @title = @works[@work]["title"]
-    copyright = cbeta_copyright(@canon, @work, @juan, @publish, format: :docx)
+    buf = ''
+    juan = nil
+    xml.split(/(<juan n='.*?'\/>)/).each do |s|
+      if s =~ /<juan n='(.*?)'\/>/
+        j = $1
+        write_juan(juan, buf)
+        buf = ''
+        juan = j.to_i
+      else
+        buf << s
+      end
+    end
+    write_juan(juan, buf)
+  end
+
+  def write_juan(juan, buf)
+    return if juan.nil?
+    return if buf.empty?
+
+    copyright = cbeta_copyright(@canon, @work, juan, @publish, format: :docx)
 
     xml = <<~XML
       <?xml version="1.0" encoding="UTF-8"?>
@@ -900,25 +920,24 @@ class XMLForDocx1
           <title>#{@title}</title>
           <byline>#{@works[@work]["byline"]}</byline>
           <footer>第 {Page} 頁／共 {NumPages} 頁</footer>
-          <styles>#{xml_styles}
+          <styles>#{xml_styles(juan)}
           </styles>
         </settings>
         <body>
           <p rend="標題">#{@title}</p>
-          #{@buf}#{copyright}</body>
+          #{buf}#{copyright}</body>
       </document>
     XML
-    init_juan
 
-    dest = File.join(@dest_folder, "#{@v_work}_%03d.xml" % @juan)
+    dest = File.join(@dest_folder, "#{@v_work}_%03d.xml" % juan)
     File.write(dest, xml)
   end
 
-  def xml_styles
+  def xml_styles(juan)
     r = ""
     indent = "\n      "
 
-    @styles.each do |k|
+    @juan_styles[juan].each do |k|
       s = @predefined_styles[k]
       abort "[#{__LINE__}] style 未定義: #{k.inspect}" if s.nil?
       r << "#{indent}<style name=\"#{k}\">#{s}</style>"
