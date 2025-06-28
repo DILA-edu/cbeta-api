@@ -36,11 +36,10 @@ class XMLForDocx1
     else
       convert_canon(args)
     end
-    puts "花費時間：" + ChronicDuration.output(Time.now - time_start)
+    puts "\n花費時間：" + ChronicDuration.output(Time.now - time_start)
   end
 
   def convert_canon(args)
-    puts args[:canon]
     @canon = args[:canon]
     @orig = @cbeta.get_canon_symbol(@canon)
     @canon_name = @my_cbeta_share.get_canon_name(@canon)
@@ -78,13 +77,11 @@ class XMLForDocx1
   end
 
   def convert_vol(vol)
-    puts "xml4docx1 #{vol}"
     @vol = vol
     src = File.join(@xml_root, @canon, vol)
     Dir.glob("*.xml", base: src, sort: true) do |f|
       convert_file(f)
     end
-    puts
   end
 
   def copy_style(e, node, rend: nil)
@@ -184,6 +181,7 @@ class XMLForDocx1
     @juan = 0
     @inline_note = [false]
     @in_lg = false
+    @lg_type = [nil]
     @pre = [false]
     @seg = []
     xml = traverse(doc.root)
@@ -288,10 +286,10 @@ class XMLForDocx1
     node.to_s + "\n"
   end
 
-  # Basic Multilingual Plane, U+0000 - U+FFFF[3]
-  # Supplementary Ideographic Plane, U+20000 - U+2FFFF
-  #   Extension B: U+20000..U+2A6DF
-  #   Extension C: U+2A700..U+2B73F
+  # 2025-06-26 執行委員會 決議：
+  #   * docx 不內嵌字型, 避免檔案太大。
+  #   * Unicode 10 (含) 以內，直接使用 Unicode.
+  #   * 有通用字, 使用通用字。
   def e_g(e)
     skt_priority = %w(symbol romanized)
     id = e["ref"].delete_prefix("#")
@@ -407,7 +405,7 @@ class XMLForDocx1
     
     if @first_l
       @first_l = false
-    elsif mode != 'text'
+    elsif (@lg_type.last == 'abnormal') and (mode != 'text')
       r << "<lb/>\n"
     end
 
@@ -417,10 +415,13 @@ class XMLForDocx1
 
   def e_lb(e)
     @lb = e['n']
+    @log.puts "#{__LINE__} lb: #{@lb}"
 
     r = ''
     if @next_line_buf.empty?
-      r << '<lb/>' if @pre.last
+      if @pre.last or (@in_lg and e.parent.name=='lg' and @lg_type.last != 'abnormal')
+        r << "<lb/>\n"
+      end
       r << "<!-- lb: #{@lb} -->"
     else
       r << "<lb/>\n"
@@ -464,6 +465,7 @@ class XMLForDocx1
 
   def e_lg(e)
     r = ''
+    @lg_type << e['type']
     head = e.at_xpath('head')
     unless head.nil?
       node = HTMLNode.new('p')
@@ -486,6 +488,7 @@ class XMLForDocx1
     node.content = s
 
     @in_lg = false
+    @lg_type.pop
     r << node.to_s + "\n"
     r
   end
@@ -546,6 +549,7 @@ class XMLForDocx1
       elsif @inline_note.last
         return "(%s)" % traverse(e)
       else
+        @log.puts "#{__LINE__} seg inlinenote"
         @inline_note << true
         r = traverse(e)
         @inline_note.pop
@@ -701,6 +705,12 @@ class XMLForDocx1
     elsif (0x2A700..0x2FFFF).include?(code)
       node['name'] = 'hana_c'
       node.to_s
+    elsif (0x30000..0x3134F).include?(code)
+      # CJK Unified Ideographs Extension G 
+      char
+    elsif (0x31350..0x323AF).include?(code)
+      # CJK Unified Ideographs Extension H
+      char
     else
       abort "未知 unicode: %X, lb: #{@lb}" % code
     end
@@ -776,20 +786,28 @@ class XMLForDocx1
     note = lg.parent
     return unless note.name == 'note' # 同一個 note 下的 lg 可能被處理過了
 
-    @log.puts "#{__LINE__} #{@v_work} p_note_lg_lg, id: #{lg['id']}"
     p = note.parent
     abort "error #{__LINE__}" unless p.name == 'p'
+    @log.puts %(#{__LINE__} #{@v_work} <p id="#{p['id']}"> 下面有 <note place="inline"> 下面有 <lg id="#{lg['id']}">)
 
     new_p = nil
     p.children.each do |c|
       if c.text? or c.name == 'lb'
         new_p ||= add_p_before_p(p)
+        @log.puts "#{__LINE__} 移動 #{log_node(c)}"
         new_p.add_child(c)
       elsif c.name=='note' and c['place']=='inline'
-        new_p = nil
-        p_note_lg_note(p, c)
+        if c.at_xpath('lg').nil?
+          new_p ||= add_p_before_p(p)
+          @log.puts "#{__LINE__} 移動 #{log_node(c)}"
+          new_p.add_child(c)
+        else
+          new_p = nil
+          p_note_lg_note(p, c)
+        end
       else
         new_p ||= add_p_before_p(p)
+        @log.puts "#{__LINE__} 移動 #{log_node(c)}"
         new_p.add_child(c)
       end
     end
@@ -814,18 +832,28 @@ class XMLForDocx1
         end
         p.add_previous_sibling(c)
       else
-        @log.puts "#{__LINE__} #{@v_work} 移動 #{c.name}"
         if new_p.nil?
           new_p = add_p_before_p(p, rend: 'inlinenote', style: note['style']) 
         end
+
+        msg = "#{@v_work} 移動 #{c.name}"
+        if c.key?('type')
+          msg << ", type: #{c['type']}"
+        else
+          msg << ": #{c.text[0,10]}..."
+        end
+        @log.puts "#{__LINE__} #{msg}"
+
         new_p.add_child(c)
       end
     end
+
     note.remove
+    new_p
   end
 
   def add_p_before_p(p, rend: nil, style: nil)
-    @log.puts "add_p_before_p, work: #{@v_work}, p id: #{p['id']}"
+    @log.puts "#{__LINE__} add_p_before_p, 在 <p id='#{p['id']}'> 前面新增一個 p"
     r = p.add_previous_sibling('<p></p>').first
     r['style'] = p['style'] if p.key?('style')
     r['style'] = style unless style.nil?
@@ -834,7 +862,7 @@ class XMLForDocx1
     rends.concat(p['rend'].split) if p.key?('rend')
     rends << rend unless rend.nil?
     r['rend'] = rends.join(' ') unless rends.empty?
-    @log.puts r.to_xml
+    @log.puts "#{__LINE__} #{r.to_xml}"
     r
   end
 
@@ -849,11 +877,10 @@ class XMLForDocx1
       next unless tt.next_element.nil?
 
       p = tt.parent
-      node = p.next_element
-      next if node.nil?
-      next unless node.name == 'lb'
-
-      p.add_child(node)
+      while node = p.next_element
+        break unless %w[lb pb].include?(node.name)
+        p.add_child(node)
+      end
     end
   end
 
@@ -943,6 +970,18 @@ class XMLForDocx1
       r << "#{indent}<style name=\"#{k}\">#{s}</style>"
     end
 
+    r
+  end
+
+  def log_node(node)
+    r = node.name
+    if node.element?
+      %w[id type n].each do |k|
+        r << ", #{k}: #{node[k]}" if node.key?(k)
+      end
+    end
+    s = node.text.gsub("\n", '').strip
+    r << ", text: #{s[0,10]}..." unless s.empty?
     r
   end
 

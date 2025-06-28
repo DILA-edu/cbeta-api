@@ -110,7 +110,7 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
-    cbeta (3.6.11)
+    cbeta (3.6.13)
       csv (~> 3.3, >= 3.3.2)
       nokogiri (~> 1.18.8, >= 1.18.8)
       unihan2 (~> 1.2, >= 1.2.0)
@@ -399,7 +399,7 @@ DEPENDENCIES
   capistrano-passenger
   capistrano-rails
   capybara (>= 2.15)
-  cbeta (>= 3.6.1)
+  cbeta (>= 3.6.13)
   chronic_duration
   coffee-rails (~> 5.0.0)
   colorize

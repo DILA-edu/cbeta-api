@@ -41,6 +41,14 @@ class WorksController < ApplicationController
       }
     end
     my_render(r)
+  rescue CbetaError => e
+    r = { error: { code: e.code, message: $!, backtrace: e.backtrace.first(3) } }
+    my_render(r)
+  rescue => e
+    r = { 
+      error: { code: 500, message: $!, backtrace: e.backtrace } 
+    }
+    my_render(r)
   end
 
   def toc
@@ -139,6 +147,10 @@ class WorksController < ApplicationController
   end
   
   def search_by_vol_range
+    unless params[:vol_start] =~ /\A\d+\z/
+      raise CbetaError.new(400), "vol_start 必須是數字"
+    end
+
     c = params[:canon]
     if CBETA::VOL3.include?(c) # 冊號三碼
       pattern = "%s%03d"
@@ -147,6 +159,9 @@ class WorksController < ApplicationController
     end
     v1 = pattern % [c, params[:vol_start].to_i]
     if params.key? :vol_end
+      unless params[:vol_end] =~ /\A\d+\z/
+        raise CbetaError.new(400), "vol_end 必須是數字"
+      end
       v2 = pattern % [c, params[:vol_end].to_i]
     else
       v2 = v1

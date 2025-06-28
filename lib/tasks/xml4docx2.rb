@@ -17,7 +17,7 @@ class XMLForDocx2
       do_file(it)
       @log.close if @log
     end
-    puts "花費時間：" + ChronicDuration.output(Time.now - time_start)
+    puts "\n花費時間：" + ChronicDuration.output(Time.now - time_start)
   end
 
   private
@@ -139,7 +139,11 @@ class XMLForDocx2
   def e_p(e)
     @log.puts "#{@xml_fn} e_p"
     if e.at_xpath('p').nil?
-      traverse(e)
+      if e['rend'] == 'inlinenote_p' and e.text !~ /^\(/
+        e.inner_html = "(#{e.inner_html})"
+      else
+        traverse(e)
+      end
       return
     end
 
