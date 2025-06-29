@@ -50,6 +50,17 @@ class XMLForDocx2
     Nokogiri::XML(text)
   end
 
+  def before_write(doc)
+    xml = doc.to_xml
+    # <p> 的前面 如果不是 換行 或 <item>, 就加 換行
+    xml.gsub!(/(?<!\n| |\-\->|<item>)(<p[> ])/m, "\n\\1")
+
+    # <p> 最後的 <lb/> 要移除
+    xml.gsub!(/<lb\/>\s*<\/p>/m, '</p>')
+
+    xml
+  end
+
   def do_file(xml_path)
     a = xml_path.split('/')
     @rel_path = a[-4..-2].join('/')
@@ -72,13 +83,8 @@ class XMLForDocx2
 
     FileUtils.makedirs(dest_folder)
     dest = File.join(dest_folder, @xml_fn)
-    xml = @doc.to_xml
+    xml = before_write(@doc)
 
-    # <p> 的前面 如果不是 換行 或 <item>, 就加 換行
-    xml.gsub!(/(?<!\n| |\-\->|<item>)(<p[> ])/m, "\n\\1")
-
-    # <p> 最後的 <lb/> 要移除
-    xml.gsub!(/<lb\/>\s*<\/p>/m, '</p>')
     File.write(dest, xml)
   end
 
@@ -135,12 +141,23 @@ class XMLForDocx2
     e.remove if e.children.empty?
     traverse(e)
   end
+  
+  def inlinenote?(e)
+    return false if e.nil?
+    return false if e.name !='p'
+    return false unless e.key?('rend')
+    e['rend'].include?('inlinenote')
+  end
 
   def e_p(e)
     @log.puts "#{@xml_fn} e_p"
     if e.at_xpath('p').nil?
-      if e['rend'] == 'inlinenote_p' and e.text !~ /^\(/
-        e.inner_html = "(#{e.inner_html})"
+      if inlinenote?(e) and e.text !~ /^\(/
+        s = ''
+        s << '(' unless inlinenote?(e.previous_element)
+        s << e.inner_html
+        s << ')' unless inlinenote?(e.next_element)
+        e.inner_html = s
       else
         traverse(e)
       end

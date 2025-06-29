@@ -21,11 +21,15 @@ class CheckXMLForDocx
     end
     puts
     check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
+    check_as_text('T/T18/T18n0860/T18n0860_001.xml', /0182c10.*?帝　娑嚩\(二合\)　訶/m)
     check_as_text('T/T18/T18n0867/T18n0867_001.xml', /0254b01.*?怛.*?0254b02/m)
+    check_as_text('T/T18/T18n0868/T18n0868_002.xml', /0274b18.*』.*0274b19/m)
     check_as_text('T/T18/T18n0912/T18n0912_001.xml', /兩重緣四指.*?<lb\/>.*?白色高一指/m)
     check_as_text('T/T20/T20n1096/T20n1096_001.xml', /0420c26.*0420c27/m)
+    check_as_text('T/T21/T21n1299/T21n1299_001.xml', /虛室奎胃畢參鬼星翼角氐心<\/p>/m)
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /\(如四分律云/m)
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /\(故佛本行經云/m)
+    check_as_text('T/T53/T53n2122/T53n2122_053.xml', /0683b02.*(?!\()爾時舍利弗.*0683b03/m)
     check_as_text('T/T54/T54n2128/T54n2128_063.xml', /百一羯磨十卷.*0725a24/m)
     check_as_text('T/T55/T55n2149/T55n2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T55/T55n2154/T55n2154_011.xml', /0592b06.*0592b07/m)

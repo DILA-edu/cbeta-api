@@ -76,6 +76,17 @@ class XMLForDocx1
     @log.puts "#{__LINE__} #{@v_work} before_action 結束"
   end
 
+  def before_parse(xml_file_path)
+    xml = File.read(xml_file_path)
+
+    # </cb:tt></p></cb:div><lb/>
+    # => 
+    # </cb:tt><lb/></p></cb:div>
+    xml.gsub!(/<\/cb:tt>(<\/p>(?:<\/cb:div>)?\s*)(<lb [^>]+?\/>』?)/, '</cb:tt>\2\1')
+
+    xml
+  end
+
   def convert_vol(vol)
     @vol = vol
     src = File.join(@xml_root, @canon, vol)
@@ -163,7 +174,9 @@ class XMLForDocx1
 
     @dest_folder = File.join(@dest_root, @canon, @vol, @v_work)
     FileUtils.makedirs(@dest_folder)
-    doc = File.open(src) { |f| Nokogiri::XML(f) }
+
+    xml = before_parse(src)
+    doc = Nokogiri::XML(xml)
     doc.remove_namespaces!
     @source_desc = get_source_desc(doc)
 
@@ -427,7 +440,7 @@ class XMLForDocx1
       r << "<lb/>\n"
       r << "<!-- lb: #{@lb} -->"
       r << @next_line_buf
-      r << "<lb/>\n"
+      r << "<lb/>\n" if e.at_xpath("following-sibling::tt")
       @next_line_buf = ''
     end
 
@@ -475,11 +488,15 @@ class XMLForDocx1
       r << node.to_s + "\n"
     end
 
-    add_style('lg')
     @in_lg = true
     @first_l = true
     node = HTMLNode.new('p')
-    node['rend'] = 'lg'
+
+    rends = Set['lg']
+    rends.merge(e['rend'].split) if e.key?('rend')
+    node['rend'] = rends.to_a.sort.join('_')
+    add_style(node['rend'])
+
     node['style'] = e['style'] if e.key?('style')
     
     s = traverse(e)
