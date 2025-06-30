@@ -52,6 +52,9 @@ class XMLForDocx2
 
   def before_write(doc)
     xml = doc.to_xml
+    # 去除多餘的 lb
+    xml.gsub!(/(<\/p>\n*)<lb\/>\n*/, '\1')
+
     # <p> 的前面 如果不是 換行 或 <item>, 就加 換行
     xml.gsub!(/(?<!\n| |\-\->|<item>)(<p[> ])/m, "\n\\1")
 

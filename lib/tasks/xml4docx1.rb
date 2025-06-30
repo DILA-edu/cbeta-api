@@ -425,6 +425,13 @@ class XMLForDocx1
     r << traverse(e)
     r
   end
+  
+  def lb_force_break?(e)
+    return true if @pre.last
+    return true if e['type'] == "honorific"
+    return true if @in_lg && e.parent.name=='lg' && @lg_type.last!='abnormal'
+    false
+  end
 
   def e_lb(e)
     @lb = e['n']
@@ -432,9 +439,7 @@ class XMLForDocx1
 
     r = ''
     if @next_line_buf.empty?
-      if @pre.last or (@in_lg and e.parent.name=='lg' and @lg_type.last != 'abnormal')
-        r << "<lb/>\n"
-      end
+      r << "<lb/>\n" if lb_force_break?(e)
       r << "<!-- lb: #{@lb} -->"
     else
       r << "<lb/>\n"

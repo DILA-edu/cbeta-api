@@ -20,6 +20,7 @@ class CheckXMLForDocx
       do_file(it)
     end
     puts
+    check_as_text('T/T09/T09n0262/T09n0262_007.xml', /伏遇.*<lb\/>.*亡夫/m)
     check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
     check_as_text('T/T18/T18n0860/T18n0860_001.xml', /0182c10.*?帝　娑嚩\(二合\)　訶/m)
     check_as_text('T/T18/T18n0867/T18n0867_001.xml', /0254b01.*?怛.*?0254b02/m)
