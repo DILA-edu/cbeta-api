@@ -559,8 +559,10 @@ class XMLForDocx1
         r = traverse(e, 'text')
         return "(%s)" % traverse(e, 'text')
       elsif e.at_xpath('lg | list | p')
+        e_note_text(e)
         @inline_note << true
         r = traverse(e)
+        @log.puts "#{__LINE__} 夾注下有 (lg|list|p), xml: #{r}"
         @inline_note.pop
         return r
       elsif @inline_note.last
@@ -586,6 +588,16 @@ class XMLForDocx1
       @mod_notes[n] = r
     else
       ""
+    end
+  end
+
+  # 如果 夾注 下已有 lg 或 list 或 p, 夾注下的文字就要包 p
+  def e_note_text(e)
+    e.children.each do |c|
+      next unless c.text?
+      next if c.text.gsub(/\s/, '').empty?
+      p = c.add_previous_sibling("<p></p>").first
+      p.add_child(c)
     end
   end
 

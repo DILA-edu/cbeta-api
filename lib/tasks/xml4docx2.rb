@@ -58,6 +58,10 @@ class XMLForDocx2
     # <p> 最後的 <lb/> 要移除
     xml.gsub!(/<lb\/>\s*<\/p>/m, '</p>')
 
+    # 段落開頭的 "(" 要在 行號 之後
+    # <p rend="inlinenote_p">(<!-- lb: 0388a16 -->
+    xml.gsub!(/(<p rend="inlinenote_p">)\((<!-- lb: \d+[a-z]\d+ -->)/, '\1\2(')
+
     xml
   end
 
