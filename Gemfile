@@ -87,7 +87,6 @@ gem 'unihan2', '>= 1.2.0'
 gem 'open3'
 gem 'faraday'
 gem 'csv', '~> 3.3', '>= 3.3.2'
-gem "rswag-ui"
 gem 'will_paginate', '~> 4.0'
 gem 'will_paginate-bootstrap-style'
 gem "git", "~> 3.0"

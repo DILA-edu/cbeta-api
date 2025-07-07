@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => '/api-docs'
   root 'static_pages#home'
   get '/health', to: proc { [200, {}, ['success']] }
 

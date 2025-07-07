@@ -29,11 +29,6 @@
 
 * 使用 GitHub 新增的 [Discussions](https://github.com/DILA-edu/cbeta-api/discussions) 功能。
 
-## OpenAPI
-
-使用 OpenAPI 規格撰寫的文件:
-<https://app.swaggerhub.com/apis-docs/Ray.Chou/CBETA-API/1.2>
-
 ## 參考規範
 
 * [OpenAPI](https://swagger.io/specification/)

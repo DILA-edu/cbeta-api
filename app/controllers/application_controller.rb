@@ -248,4 +248,11 @@ class ApplicationController < ActionController::Base
     file = File.basename(location.path)
     logger.info "#{file}:#{location.lineno}, #{msg}"
   end
+
+  def validate_param_int(k)
+    return unless params.key?(k)
+    unless params[k] =~ /\A\d+\z/
+      raise CbetaError.new(400), "#{k.to_s} 必須是數字"
+    end
+  end
 end

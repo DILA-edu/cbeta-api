@@ -4,6 +4,9 @@ class WorksController < ApplicationController
 
   def index
     if params.key? :work and not params[:work].empty?
+      unless params[:work] =~ /^#{CBETA::CANON}(\d{4}|[AB]\d{3})[a-zA-Z]?$/
+        raise CbetaError.new(400), "work 參數 格式錯誤"
+      end
       if referer_cn? and filter_cn?(id: params[:work])
         my_render EMPTY_RESULT
         return
@@ -42,7 +45,7 @@ class WorksController < ApplicationController
     end
     my_render(r)
   rescue CbetaError => e
-    r = { error: { code: e.code, message: $!, backtrace: e.backtrace.first(3) } }
+    r = { error: { code: e.code, message: $! } }
     my_render(r)
   rescue => e
     r = { 
@@ -123,8 +126,13 @@ class WorksController < ApplicationController
   end
   
   def search_by_dynasty
+    if params[:dynasty] =~ /[a-zA-Z]/
+      raise CbetaError.new(400), "dynasty 參數 格式錯誤。"
+    end
+
     r = []
     params[:dynasty].split(',').each do |q|
+      next if q.empty?
       works = Work.where("time_dynasty = ?", q).order(:n)
       works.each do |w|
         r << w.to_hash
@@ -134,6 +142,9 @@ class WorksController < ApplicationController
   end
   
   def search_by_time_range
+    validate_param_int(:time_start)
+    validate_param_int(:time_end)
+
     y1 = params[:time_start].to_i
     y2 = params[:time_end].to_i
     #works = Work.where('time_from <= ?'vol: v1..v2).order(:n)
@@ -157,11 +168,10 @@ class WorksController < ApplicationController
     else
       pattern = "%s%02d"
     end
+
     v1 = pattern % [c, params[:vol_start].to_i]
     if params.key? :vol_end
-      unless params[:vol_end] =~ /\A\d+\z/
-        raise CbetaError.new(400), "vol_end 必須是數字"
-      end
+      validate_param_int(:vol_end)
       v2 = pattern % [c, params[:vol_end].to_i]
     else
       v2 = v1
@@ -191,6 +201,7 @@ class WorksController < ApplicationController
     
     if params.key? :work_end
       w2 = work_nor(c, params[:work_end])
+      raise CbetaError.new(400), "work_end 格式錯誤" if w2.nil?
     else
       w2 = w1
     end
@@ -210,6 +221,8 @@ class WorksController < ApplicationController
       "#{canon}%04d#{$2}" % $1.to_i
     elsif n.match(/^([a-zA-Z])(\d+)$/)
       "#{canon}#{$1}%03d" % $2.to_i
+    else
+      nil
     end
   end
 end
