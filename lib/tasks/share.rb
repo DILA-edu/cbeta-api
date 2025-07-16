@@ -49,12 +49,12 @@ class MyCbetaShare
 
     case args[:format]
     when :docx
-      r << "【版權宣告】https://cbeta.org/copyright.php</p>\n"
+      r << "【版權宣告】https://cbeta.org/copyright</p>\n"
     when :text
       r << "#【其他事項】本資料庫可自由免費流通，詳細內容請參閱【財團法人佛教電子佛典基金會資料庫版權宣告】\n"
       r << "#%s\n\n" % ('-' * 70)
     when :html
-      r << "【其他事項】詳細說明請參閱【<a href='https://www.cbeta.org/copyright.php' target='_blank'>財團法人佛教電子佛典基金會資料庫版權宣告</a>】\n"
+      r << "【其他事項】詳細說明請參閱【<a href='https://www.cbeta.org/copyright' target='_blank'>財團法人佛教電子佛典基金會資料庫版權宣告</a>】\n"
       r << "</p></div><!-- end of cbeta-copyright -->\n"  
     end
 

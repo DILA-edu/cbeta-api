@@ -415,7 +415,8 @@ class XMLForDocx1
 
   def e_l(e, mode)
     r = ''
-    
+
+    @log.puts "#{__LINE__} e_l, first_l: #{@first_l}, lg_type: #{@lg_type.last}, mode: #{mode}"
     if @first_l
       @first_l = false
     elsif (@lg_type.last == 'abnormal') and (mode != 'text')

@@ -535,7 +535,7 @@ class P5aToTextForDownload
       'publisher' => '中華電子佛典協會（CBETA）',
       'contributors' => @contributors,
       'punctuation' => @punc,
-      'license' => '本資料庫可自由免費流通，詳細內容請參閱 [中華電子佛典協會資料庫版權宣告](http://www.cbeta.org/copyright.php)'
+      'license' => '本資料庫可自由免費流通，詳細內容請參閱 [中華電子佛典協會資料庫版權宣告](http://www.cbeta.org/copyright)'
     }
     
     fn = "#{@work_id}.yaml"
