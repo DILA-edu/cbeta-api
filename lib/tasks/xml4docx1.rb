@@ -419,7 +419,7 @@ class XMLForDocx1
     @log.puts "#{__LINE__} e_l, first_l: #{@first_l}, lg_type: #{@lg_type.last}, mode: #{mode}"
     if @first_l
       @first_l = false
-    elsif (@lg_type.last == 'abnormal') and (mode != 'text')
+    elsif mode != 'text'
       r << "<lb/>\n"
     end
 
@@ -430,17 +430,17 @@ class XMLForDocx1
   def lb_force_break?(e)
     return true if @pre.last
     return true if e['type'] == "honorific"
-    return true if @in_lg && e.parent.name=='lg' && @lg_type.last!='abnormal'
     false
   end
 
   def e_lb(e)
     @lb = e['n']
-    @log.puts "#{__LINE__} lb: #{@lb}"
+    br = lb_force_break?(e)
+    @log.puts "#{__LINE__} lb: #{@lb}, br: #{br}"
 
     r = ''
     if @next_line_buf.empty?
-      r << "<lb/>\n" if lb_force_break?(e)
+      r << "<lb/>\n" if br
       r << "<!-- lb: #{@lb} -->"
     else
       r << "<lb/>\n"

@@ -16,3 +16,9 @@ $ gem install mysql2 -- --with-mysql-dir=/opt/homebrew/Cellar/mysql/9.0.1
 ## crf++
 
 brew install crf++
+
+## trang
+
+$ brew install openjdk
+$ echo 'export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"' >> ~/.zshrc
+$ brew install jing-trang

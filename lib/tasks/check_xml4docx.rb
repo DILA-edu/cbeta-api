@@ -9,7 +9,7 @@ class CheckXMLForDocx
 
     rnc = Rails.root.join('data-static', 'schema', 'xml4docx.rnc')
     rng = Rails.root.join('data', 'xml4docx2', 'xml4docx.rng')
-    abort unless system("trang #{rnc} #{rng}")
+    puts `trang #{rnc} #{rng}`
     @relaxng = Nokogiri::XML::RelaxNG(File.read(rng))
   end
 
@@ -25,10 +25,16 @@ class CheckXMLForDocx
     check_as_text('T/T18/T18n0860/T18n0860_001.xml', /0182c10.*?帝　娑嚩\(二合\)　訶/m)
     check_as_text('T/T18/T18n0867/T18n0867_001.xml', /0254b01.*?怛.*?0254b02/m)
     check_as_text('T/T18/T18n0868/T18n0868_002.xml', /0274b18.*』.*0274b19/m)
-    check_as_text('T/T18/T18n0912/T18n0912_001.xml', /兩重緣四指.*?<lb\/>.*?白色高一指/m)
+    
+    # 夾注 在 lg 下，l 之間, 應改 xml
+    #check_as_text('T/T18/T18n0912/T18n0912_001.xml', /兩重緣四指.*?<lb\/>.*?白色高一指/m)
+
     check_as_text('T/T20/T20n1096/T20n1096_001.xml', /0420c26.*0420c27/m)
     check_as_text('T/T21/T21n1299/T21n1299_001.xml', /虛室奎胃畢參鬼星翼角氐心<\/p>/m)
     check_as_text('T/T21/T21n1299/T21n1299_001.xml', /0388a16.*\(新演如左.*0388a17/m)
+    check_as_text('T/T22/T22n1431/T22n1431_001.xml', /及法比丘僧，.*<lb\/>.*今演毘尼法/m)
+    check_as_text('T/T48/T48n2023/T48n2023_010.xml', /群生得光輝。<lb\/>\n?一萬八千土/m)
+    
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /\(如四分律云/m)
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /\(故佛本行經云/m)
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /0683b02.*(?!\()爾時舍利弗.*0683b03/m)
@@ -36,7 +42,9 @@ class CheckXMLForDocx
     check_as_text('T/T55/T55n2149/T55n2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T55/T55n2154/T55n2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T55/T55n2154/T55n2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)
-    puts "\n花費時間：" + ChronicDuration.output(Time.now - time_start)
+    
+    puts "\n未發現錯誤"
+    puts "花費時間：" + ChronicDuration.output(Time.now - time_start)
   end
 
   private
@@ -140,6 +148,12 @@ class CheckXMLForDocx
         traverse(c)
       end
     end
+  end
+
+  def error(msg)
+    location = caller_locations.first
+    file = File.basename(location.path)
+    abort "#{file}:#{location.lineno}, #{msg}"
   end
 
   def warn(msg)
