@@ -406,10 +406,10 @@ class XMLForDocx1
       add_style("juan")
       node = HTMLNode.new('p')
       copy_style(e, node, rend: 'juan')
-      node.content = traverse(e)
+      node.content = content
       node.to_s + "\n"
     else
-      traverse(e)
+      content
     end
   end
 
@@ -592,6 +592,7 @@ class XMLForDocx1
       s = traverse(e, 'text')
       r = "<footnote>#{s}</footnote>"
       @mod_notes[n] = r
+      r
     else
       ""
     end
