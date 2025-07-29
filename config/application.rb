@@ -55,5 +55,14 @@ module CbData
     config.x.se.index_notes  = "notes#{config.cb.v}"
     config.x.se.index_titles = "titles#{config.cb.v}"
     config.x.se.index_chunks = "chunks#{config.cb.v}"
+
+    # Manticore ngram_chars: 要做 ngram 的字元清單
+    # 不能大範圍列 U+3000..U+2FA1F, 因為不能與 charset_table 重複, 否則建 index 時會有錯誤。
+    #
+    # 2025-07-24 CBETA 決議 把「□」和「▆」當作一般文字，不忽略。
+    #   * “□” (U+25A1) 表示此處應該有字，但編書的人也不知道是什麼字，就印出一個空白方塊「□」。
+    #   * XML unclear 元素 轉成各版用字會使用 “▆” (U+2586) 字元，
+    #     這是 CBETA 認為書中文字難以辨識，例如影印古籍，但此處有污損或蟲蛀。
+    config.x.se.ngram_chars = "cjk, U+2580..U+25FF, U+2F00..U+A4CF, U+F900..U+FAFF, U+FE30..U+FE4F, U+20000..U+2FA1F"
   end
 end
