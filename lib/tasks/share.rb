@@ -30,11 +30,13 @@ class MyCbetaShare
       v = "#{v.first}-#{v.last}"
     end
 
+    digital_sources = args[:contributors].sub(/，其他$/, '，以及其他來源')
+
     lines = []
     lines << "#{prefix}【經文資訊】#{c_name} 第 #{v} 冊 No. #{n} #{args[:title]}"
     lines << "#{prefix}【版本記錄】發行日期：#{args[:publish]}，最後更新：#{args[:updated_at]}"
     lines << "#{prefix}【編輯說明】本資料庫由 財團法人佛教電子佛典基金會（CBETA）依#{source}所編輯"
-    lines << "#{prefix}【原始資料】#{args[:contributors]}"
+    lines << "#{prefix}【原始資料】#{digital_sources}"
 
     lines.each do |s|
       r << s

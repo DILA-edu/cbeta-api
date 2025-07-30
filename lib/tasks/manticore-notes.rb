@@ -60,14 +60,16 @@ class ManticoreNotes
 
     @fo.write '</sphinx:docset>'
     @fo.close
-    puts <<~MSG
+    msg = <<~MSG
       \n--------------------
       原書校注數量：#{@stat[:foot]}
       CBETA校注數量：#{@stat[:add]}
       夾注數量：#{@stat[:inline]}
       註解總數：#{@stat.values.sum}
     MSG
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
+    msg << "花費時間：" + ChronicDuration.output(Time.now - t1)
+    @log.puts msg
+    puts msg
   end
 
   private

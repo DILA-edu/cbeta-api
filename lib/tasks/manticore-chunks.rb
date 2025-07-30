@@ -32,8 +32,10 @@ class ManticoreChunks
     @fo = open_xml(fn)
     convert_all  
     close_xml(@fo)
-    puts "\n總筆數： #{@count}"
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
+    msg = "\n總筆數： #{@count}"
+    msg << "花費時間：" + ChronicDuration.output(Time.now - t1)
+    puts msg
+    @log.puts msg
   end  
 
   private
