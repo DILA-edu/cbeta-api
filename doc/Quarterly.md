@@ -34,6 +34,8 @@ CBETA XML 新一季定案後執行。
 
 ## gem update cbeta
 
+https://rubygems.org/gems/cbeta
+
 * 缺字資料要更新
   * cbeta_gaiji.json
   * cbeta_sanskrit.json
