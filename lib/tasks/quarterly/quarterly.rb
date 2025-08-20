@@ -88,7 +88,9 @@ class Quarterly
 
   def command(cmd)
     puts cmd
-    abort unless system(cmd)
+    unless system(cmd)
+      abort "執行 command 發生錯誤"
+    end
   end
 
   def confirm(msg)

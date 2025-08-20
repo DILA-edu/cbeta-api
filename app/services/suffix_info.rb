@@ -1,3 +1,4 @@
+# 將來可考慮改用 bindata: https://rubygems.org/gems/bindata
 class SuffixInfo
   SIZE = 24
 

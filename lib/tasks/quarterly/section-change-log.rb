@@ -10,10 +10,18 @@ module SectionChangeLog
       end
 
       run_step '使用 diff 命令比對兩個版本 normal 產生 diff.txt' do
+        puts "chdir: #{@config[:change_log]}"
         Dir.chdir(@config[:change_log]) do
           v1 = "cbeta-normal-#{@config[:q1]}"
           v2 = "cbeta-normal-#{@config[:q2]}"
-          command "diff -r #{v1} #{v2} > diff.txt"
+          system("diff -r #{v1} #{v2} > diff.txt")
+          if $?.exitstatus == 0
+            puts "執行成功，無差異。"
+          elsif $?.exitstatus == 1
+            puts "執行成功，有差異。"
+          else
+            abort "執行失敗，exit status: #{$?.exitstatus}"
+          end
         end
       end
 

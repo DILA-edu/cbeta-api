@@ -332,8 +332,18 @@ class XMLForDocx1
     "<graphic url='#{url}'/>"
   end
 
+  # node 可能在 app 下
+  def get_parent_skip_app(e)
+    nodes = e.ancestors
+    while %w[app lem].include?(nodes.first.name)
+      nodes.shift
+    end
+    nodes.first
+  end
+
   def e_head(e)
-    case e.parent.name
+    parent = get_parent_skip_app(e)
+    case parent.name
     when 'div'
       if @div_level > 9
         return "<p>%s</p>" % traverse(e)
