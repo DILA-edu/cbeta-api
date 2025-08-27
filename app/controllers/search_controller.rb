@@ -1155,7 +1155,7 @@ class SearchController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{args[:facet]}" if args.key?(:facet)
-    log("select: #{@select}", __LINE__)
+    log_info "select: #{@select}"
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     end
