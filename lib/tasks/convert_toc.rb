@@ -68,9 +68,10 @@ class ConvertToc
   end
   
   def handle_lb(e)
-    unless @canon=='X' and e['ed'].start_with? 'R'
-      @lb = e['n']
-    end
+    return if @canon=='X' and e['ed'].start_with? 'R'
+    return if @canon=='Y' and e['type'] == 'old'
+    
+    @lb = e['n']
   end
   
   def handle_milestone(e)
