@@ -53,6 +53,11 @@ module SectionRDB
         confirm '如果 搜尋結果的排序規則 有變動的話，要更新 cbeta gem.'
         command 'rake update:sort_order'
       end
+
+      run_step '匯入 Goto Abbreviations (rake import:goto_abbrs)' do
+        command "rake import:goto_abbrs"
+      end
+
     end
   end
 end
