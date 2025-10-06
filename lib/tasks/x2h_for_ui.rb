@@ -1052,6 +1052,9 @@ class P5aToHTMLForUI
         r << char
       else
         gid = @gaijis.unicode_to_cb(char)
+        if gid.nil?          
+          abort "#{__LINE__} gid is nil, char: #{char} (U+%X)" % char.ord
+        end
         r << e_g_span(gid, mode, default: char)
       end
     end

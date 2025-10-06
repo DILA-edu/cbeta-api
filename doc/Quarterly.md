@@ -98,7 +98,8 @@ https://rubygems.org/gems/cbeta
   * cbdata-cn.conf (cbetaonline.cn 會呼叫 api.cbetaonline.cn)
 
 檢視 config/database.yml
-production analytics database 應為 cb_analytics
+* production analytics database 應為 cb_analytics
+* cn 也要指向正確的 database
 
 使用 direnv 管理 環境變數, 編輯 /var/www/cbapi?/.envrc
     export RAILS_ENV=production

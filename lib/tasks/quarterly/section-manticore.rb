@@ -14,7 +14,10 @@ module SectionManticore
     run_step 'manticore 建資料夾' do
       Dir.chdir(@data_dir) do
         @indexes.each do |s|
-          command "sudo mkdir r#{@config[:v]}-#{s}"
+          dir = "r#{@config[:v]}-#{s}"
+          unless Dir.exist?(dir)
+            command "sudo mkdir #{dir}"
+          end
         end
       end
     end

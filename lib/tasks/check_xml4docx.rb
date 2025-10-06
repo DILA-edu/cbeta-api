@@ -56,7 +56,7 @@ class CheckXMLForDocx
       abort "檔案不存在: #{xml_path}"
     end
 
-    print "check: #{xml_path}  \r"
+    print "\rcheck: #{xml_path}  "
     text = File.read(xml_path)
     if text !~ regex
       puts "Error: check_as_text"
@@ -67,7 +67,7 @@ class CheckXMLForDocx
   end
 
   def do_file(xml_path)
-    print "\rcheck_xml4docx #{xml_path}  "
+    print "\rcheck_xml4docx #{File.basename(xml_path)}  "
 
     @doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
     unless @doc.errors.empty?

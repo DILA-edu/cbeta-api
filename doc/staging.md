@@ -56,6 +56,10 @@ tables 建好後，再把 analytics 加回 database.yml。
 
     export RAILS_ENV=staging
 
+## manticore
+
+/etc/manticoresearch/manticore.conf
+
 ## Runbook
 
 server 端 編輯 ~/.bashrc

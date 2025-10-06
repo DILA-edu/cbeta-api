@@ -18,6 +18,7 @@ class ImportGaiji
       end
     end
     
+    # @todo 或許可改用 Gaiji.insert_all
     $stderr.puts "執行 SQL insert 命令：#{number_to_human(@inserts.size)} records"
     sql = 'INSERT INTO gaijis '
     sql << '("cb", "zzs", "pua")'

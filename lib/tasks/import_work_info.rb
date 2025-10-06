@@ -236,6 +236,16 @@ class ImportWorkInfo
     }
   end
 
+  def exist_in_cbeta?(work_id, work_info)
+    alt = work_info[:alt]
+    return true if alt.nil?
+    
+    # alt 裡有 選錄 二字，或有本身 work_id, 也列入統計
+    return true if alt.include?('選錄')
+    return true if alt.include?(work_id.to_s)
+    false
+  end
+
   def import_from_authority
     @people = {}
 
@@ -248,7 +258,7 @@ class ImportWorkInfo
       works_info.each do |k, v|
         @work_type[k.to_s] = v[:type]
         w = Work.find_or_create_by(n: k)
-        if not v.key?(:alt)
+        if exist_in_cbeta?(k, v)
           if v[:type]=="textbody"
             @stat[@canon][:works_main] += 1
             @stat[@canon][:juans_main] += v[:juans]
@@ -503,6 +513,7 @@ class ImportWorkInfo
 
   def update_work(data)
     w = Work.find_by n: @work
+    puts data if @work == 'L1557'
     if w.nil?
       $stderr.puts "#{__LINE__} Work table 中無此編號: #{@work}"
     else
