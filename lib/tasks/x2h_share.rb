@@ -1,4 +1,10 @@
 module P5aToHtmlShare
+  def e_form(e, mode)
+    content = traverse(e, mode)
+    return content unless mode == 'html'
+
+    %(<p class="form">#{content}</p>\n)
+  end
 
   def e_l(e, mode)
     return traverse(e, mode) if mode=='footnote'

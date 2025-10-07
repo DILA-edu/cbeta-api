@@ -99,6 +99,12 @@ class P5aToDocusky
     end
   end
 
+  def e_form(e)
+    r = '<Paragraph Type="form">'
+    r << traverse(e)
+    r + "</Paragraph>\n"
+  end
+
   def e_g(e, mode)
     gid = e['ref'][1..-1]
 
@@ -387,6 +393,7 @@ class P5aToDocusky
     when 'byline'    then e_byline(e)
     when 'cell'      then e_cell(e)
     when 'div'       then e_div(e)
+    when 'form'      then e_form(e)
     when 'g'         then e_g(e, mode)
     when 'head'      then e_head(e)
     when 'item'      then e_item(e)

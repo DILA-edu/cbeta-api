@@ -304,7 +304,7 @@ class P5aToTextForDownload
     return '' if PASS.include?(e.name)
     return '' if %w(rdg sic).include? e.name
     
-    if %w(byline figure head juan lg list table).include? e.name
+    if %w(byline entry figure form head juan lg list table).include? e.name
       r = traverse(e) + "\n"
       r << "\n" unless e.name == 'lg'
       return r + write_block_notes

@@ -1010,6 +1010,7 @@ class P5aToHTMLForUI
     when 'div'       then e_div(e, mode)
     when 'entry'     then html_span(e, mode)
     when 'foreign'   then e_foreign(e, mode)
+    when 'form'      then e_form(e, mode)
     when 'formula'   then html_span(e, mode)
     when 'g'         then e_g(e, mode)
     when 'graphic'   then e_graphic(e)
