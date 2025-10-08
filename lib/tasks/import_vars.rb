@@ -15,13 +15,9 @@ class ImportVars
     @inserts = []
     read_variants
 
-    sql = 'INSERT INTO variants ("k", "vars")'
-    sql << ' VALUES ' + @inserts.join(", ")
-    $stderr.puts Benchmark.measure {
-      ActiveRecord::Base.connection.execute(sql) 
-    }
+    Variant.insert_all(@inserts)
 
-    puts "entries: #{Variant.all.size}"
+    puts "Variant records: #{number_with_delimiter(Variant.count)}"
     puts "total vars: #{@total}"
   end
   
@@ -71,7 +67,7 @@ class ImportVars
 
       @total += vars.size
       s = vars.join(',')
-      @inserts << "('#{k1}', '#{s}')"
+      @inserts << { k: k1, vars: s }
     end
 
     @manticore.close

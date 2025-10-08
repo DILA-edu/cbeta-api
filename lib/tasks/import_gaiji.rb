@@ -4,28 +4,25 @@ class ImportGaiji
   end
   
   def import
-    $stderr.puts "destroy old gaijis"
-    Gaiji.destroy_all
+    puts "delete old gaijis"
+    Gaiji.delete_all
+
     fn = File.join(@folder, 'cbeta_gaiji.json')
     gaijis = JSON.parse(File.read(fn))
     
-    @inserts = []
+    inserts = []
     gaijis.each do |k,v|
       if v.key? 'composition'
         pua = v['pua'].delete_prefix('U+').to_i(16)
         pua = [pua].pack 'U'
-        @inserts << "('#{k}', '#{v['composition']}', '#{pua}')"
+        inserts << { cb: k, zzs: v['composition'], pua: pua }
       end
     end
     
-    # @todo 或許可改用 Gaiji.insert_all
-    $stderr.puts "執行 SQL insert 命令：#{number_to_human(@inserts.size)} records"
-    sql = 'INSERT INTO gaijis '
-    sql << '("cb", "zzs", "pua")'
-    sql << ' VALUES ' + @inserts.join(", ")
-    $stderr.puts Benchmark.measure {
-      ActiveRecord::Base.connection.execute(sql) 
-    }
+    puts "insert new gaijis"
+    Gaiji.insert_all(inserts)
+
+    puts "Gaiji records: #{number_with_delimiter(Gaiji.count)}"
   end
     
 end

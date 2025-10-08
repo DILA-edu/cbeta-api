@@ -9,9 +9,8 @@ class ImportJuanLine
   
   def import
     $stderr.puts "delete all records from table: juan_lines"
-    $stderr.puts Benchmark.measure {
-      JuanLine.delete_all
-    }
+    JuanLine.delete_all
+    
     @inserts = []
     @uuids = Set.new
     @vol_lbs = Set.new
@@ -24,13 +23,8 @@ class ImportJuanLine
       import_canon(path)
     end
 
-    $stderr.puts "#{__LINE__} execute SQL insert #{number_to_human(@inserts.size)} records"
-    sql = 'INSERT INTO juan_lines '
-    sql << '("vol", "work", "juan", "lb", "lb_end", "uuid", "content_uuid")'
-    sql << ' VALUES ' + @inserts.join(", ")
-    $stderr.puts Benchmark.measure {
-      ActiveRecord::Base.connection.execute(sql) 
-    }
+    JuanLine.insert_all(@inserts)
+    puts "JuanLine records: #{number_with_delimiter(JuanLine.count)}"
   end
   
   private
@@ -73,8 +67,15 @@ class ImportJuanLine
         @vol_lbs << vol_lb
       end
       
-      @inserts << "('#{v['vol']}', '#{@work}', #{k}, "\
-        "'#{lb}', '#{v['lb_end']}', '#{uuid1}', '#{uuid2}')"
+      @inserts << {
+        vol: v['vol'],
+        work: @work,
+        juan: k,
+        lb: lb,
+        lb_end: v['lb_end'],
+        uuid: uuid1,
+        content_uuid: uuid2
+      }
     end
   end
   

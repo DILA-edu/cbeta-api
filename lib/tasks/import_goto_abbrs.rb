@@ -12,17 +12,17 @@ class ImportGotoAbbrs
     GotoAbbr.delete_all
     
     fn = File.join(@base, 'goto', 'goto-list.txt')
-    @inserts = []
+    inserts = []
     File.foreach(fn) do |line|
       line.chomp!
       if line.match /^(.*?)=(.*)$/
-        @inserts << "('#{$1}', '#{$2}')"
+        inserts << { abbr: $1, ref: $2 }
       end
     end
     
-    sql = %[INSERT INTO #{TABLE} ("abbr", "ref")]
-    sql << ' VALUES ' + @inserts.join(", ")
-    ActiveRecord::Base.connection.execute(sql)
+    GotoAbbr.insert_all(inserts)
+    s = number_with_delimiter(GotoAbbr.count)
+    puts "GotoAbbr records: #{s}"
   end
 
 end

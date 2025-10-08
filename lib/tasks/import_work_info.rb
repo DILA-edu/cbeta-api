@@ -39,6 +39,10 @@ class ImportWorkInfo
     dynasty_combine_and_sort
     dynasty_write_count
     dynasty_write_works
+
+    puts "Work   records: #{number_with_delimiter(Work.count)}"
+    puts "Person records: #{number_with_delimiter(Person.count)}"
+    puts "Place  records: #{number_with_delimiter(Place.count)}"
     
     total = {}
     @stat['T'].each_key do |k|
@@ -201,7 +205,7 @@ class ImportWorkInfo
     Dir.entries(path).sort.each do |f|
       next if f.start_with? '.'
       @vol = f
-      $stderr.puts "import_work_info from xml #{@vol}"
+      $stderr.print "\rimport_work_info from xml #{@vol}   "
       p = File.join(path, f)
       import_vol_from_xml(p)
     end
@@ -220,6 +224,7 @@ class ImportWorkInfo
       @stat[@canon]["CBETA_新標卷數"] = @new_punc_juans[:cbeta].size
       @stat[@canon]["CBETA_新標部數"] = @new_punc_works[:cbeta].size
     end
+    puts
   end
 
   def init_stat_canon(canon)
@@ -247,13 +252,13 @@ class ImportWorkInfo
   end
 
   def import_from_authority
-    @people = {}
+    @people = []
 
     each_canon(@xml_root) do |c|
       @canon = c
       init_stat_canon(c)
       fn = File.join(@work_info_dir, "#{c}.json")
-      puts "update from #{fn}"
+      print "\rupdate from authority #{File.basename(fn)}  "
       works_info = JSON.load_file(fn, symbolize_names: true)
       works_info.each do |k, v|
         @work_type[k.to_s] = v[:type]
@@ -269,30 +274,16 @@ class ImportWorkInfo
         update_work_from_authority(w, v)
       end
     end
+    puts
 
-    insert_into_people
-  end
-
-  def insert_into_people
-    inserts = []
-    @people.each do |k, v|
-      inserts << "('#{k}', '#{v}')"
-    end
-
-    puts "Insert #{inserts.size} records into people table:"
-    sql = 'INSERT INTO people '
-    sql << '("id2", "name")'
-    sql << ' VALUES ' + inserts.join(", ")
-    puts Benchmark.measure {
-      ActiveRecord::Base.connection.execute(sql) 
-    }
+    Person.insert_all(@people, unique_by: :id2)
   end
 
   def update_contributors(w, v)
     return unless v.key?(:contributors)
 
     v[:contributors].each do |x|
-      @people[x[:id]] = x[:name]
+      @people << { id2: x[:id], name: x[:name] } unless x[:id].blank?
     end
 
     a = v[:contributors].map { |x| x[:name] }
@@ -513,9 +504,9 @@ class ImportWorkInfo
 
   def update_work(data)
     w = Work.find_by n: @work
-    puts data if @work == 'L1557'
+
     if w.nil?
-      $stderr.puts "#{__LINE__} Work table 中無此編號: #{@work}"
+      $stderr.puts "\n#{__LINE__} Work table 中無此編號: #{@work}".red
     else
       if data.key? :juan_list_array
         data[:juan_list] = data[:juan_list_array].join(',')

@@ -37,6 +37,7 @@ class ImportLines
     # 因為全部有個 序號，必須全部執行，不能只執行部分
     import_all
     
+    puts "Line records: #{number_with_delimiter(Line.count)}"
     $stderr.puts "花費時間：" + Time.diff(start_time, Time.now)[:diff]
   end
   
@@ -308,7 +309,7 @@ class ImportLines
   end
     
   def import_vol(vol)
-    print vol + ' '
+    print "\r#{vol}  "
     
     @canon = CBETA.get_canon_from_vol(vol)    
     @vol = vol
@@ -323,10 +324,7 @@ class ImportLines
       import_xml_file(p)
     end
     
-    sql = 'INSERT INTO lines '\
-          '("linehead", "html", "notes", "juan", "work", "vol", "page", "col", "line", "ser_no")'
-    sql << ' VALUES ' + @inserts.join(", ")
-    ActiveRecord::Base.connection.execute(sql)
+    Line.insert_all(@inserts)
   end
   
   def import_xml_file(fn)
@@ -389,25 +387,40 @@ class ImportLines
     
     html.split("\n").each do |line|
       next if line.empty?
-      line.match(/<lb n='(.*?)'\/><j(\d+)>(.*)$/) {
-        lb = $1
-        juan = $2
-        line_html = $3
-        if lb.match(/^(.*)([a-z])(\d+)$/)
-          page = $1
-          col = $2
-          line = $3
-        else
-          abort "#{__LINE__}, lb: #{lb}"
-        end
-        linehead = @basename.clone
-        linehead << '_' if @work_id.match?(/\d$/)
-        linehead << "p#{lb}"
-        notes = JSON.generate(@notes[lb]) if @notes.key? lb
-        @ser_no += 1
-        @inserts << "('#{linehead}', '#{line_html}', '#{notes}', #{juan}, '#{@work_id}', '#{@vol}', '#{page}', '#{col}', '#{line}', #{@ser_no})"
-      }
+      line.match(/<lb n='(.*?)'\/><j(\d+)>(.*)$/) { insert_line(it) }
     end
+  end
+
+  def insert_line(mo)
+    lb = mo[1]
+    juan = mo[2]
+    html = mo[3]
+
+    if lb.match(/^(.*)([a-z])(\d+)$/)
+      page = $1
+      col = $2
+      line = $3
+    else
+      abort "#{__LINE__}, lb: #{lb}"
+    end
+
+    linehead = @basename.clone
+    linehead << '_' if @work_id.match?(/\d$/)
+    linehead << "p#{lb}"
+    notes = JSON.generate(@notes[lb]) if @notes.key? lb
+    @ser_no += 1
+    @inserts << {
+      linehead:,
+      html:,
+      notes:,
+      juan:,
+      work: @work_id,
+      vol: @vol,
+      page:,
+      col:,
+      line:,
+      ser_no: @ser_no
+    }
   end
 
   include CbetaP5aShare

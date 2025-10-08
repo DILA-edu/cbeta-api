@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_12_055713) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
   create_table "canons", force: :cascade do |t|
     t.string "id2"
     t.string "name"
@@ -95,9 +95,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_12_055713) do
   end
 
   create_table "people", force: :cascade do |t|
-    t.string "id2"
+    t.string "id2", null: false
     t.string "name"
-    t.index ["id2"], name: "index_people_on_id2"
+    t.index ["id2"], name: "index_people_on_id2", unique: true
     t.index ["name"], name: "index_people_on_name"
   end
 
@@ -181,5 +181,4 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_12_055713) do
     t.index ["work", "file"], name: "index_xml_files_on_work_and_file"
     t.index ["work", "vol"], name: "index_xml_files_on_work_and_vol"
   end
-
 end

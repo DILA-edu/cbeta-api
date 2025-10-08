@@ -17,13 +17,8 @@ class ImportToc
       TocNode.where("work LIKE ?", "#{arg}%").delete_all
     end
         
-    puts "execute SQL insert #{number_to_human(@inserts.size)} records"
-    sql = 'INSERT INTO toc_nodes '
-    sql << '("canon", "parent", "n", "label", "work", "file", "juan", "lb", "sort_order")'
-    sql << ' VALUES ' + @inserts.join(", ")
-    puts Benchmark.measure {
-      ActiveRecord::Base.connection.execute(sql) 
-    }
+    TocNode.insert_all(@inserts)
+    puts "TocNode records: #{number_with_delimiter(TocNode.count)}"
   end
   
   private
@@ -59,10 +54,22 @@ class ImportToc
     while @toc_stack.size > level
       @toc_stack.pop
     end
+
     @toc_stack[-1] += 1
-    parent, n = toc_n(@toc_stack)    
-    @inserts << "('#{@canon}', '#{parent}', '#{n}', '#{e.text}', '#{@work}', '#{@file}', #{@juan}, '#{@lb}', '#{@sort_order}')"
-  
+    parent, n = toc_n(@toc_stack)
+
+    @inserts << {
+      canon: @canon,
+      parent:,
+      n:,
+      label: e.text,
+      work: @work,
+      file: @file,
+      juan: @juan,
+      lb: @lb,
+      sort_order: @sort_order
+    }
+
     @toc_stack << 0
   end
   
@@ -70,6 +77,7 @@ class ImportToc
     each_canon(@xml_root) do |c|
       import_canon c
     end
+    puts
   end
   
   def import_canon(canon)
@@ -86,7 +94,7 @@ class ImportToc
   end
   
   def import_vol(path)
-    $stderr.puts "import toc #{@vol}"
+    print "\rimport toc #{@vol}  "
     Dir.entries(path).sort.each do |f|
       next if f.start_with? '.'
       if f.match(/^.*?n(.*?)\.xml$/)

@@ -13,6 +13,7 @@ class ImportLbMaps
     LbMap.delete_all
     
     import_all
+    puts "LbMap records: #{number_with_delimiter(LbMap.count)}"
     
     puts "花費時間：" + Time.diff(start_time, Time.now)[:diff]
   end
@@ -27,13 +28,13 @@ class ImportLbMaps
     folder = File.join(@xml_base, canon)
     Dir.entries(folder).sort.each do |v|
       next if v.start_with? '.'
+      print "\rimport_lb_maps #{v}"
       import_vol(v)
     end
+    puts
   end
     
   def import_vol(vol)
-    $stderr.puts "import_lb_maps #{vol}"
-    
     @canon = vol.sub(/^([A-Z]{1,2})\d+$/, '\1')
     @vol = vol
     
@@ -45,9 +46,7 @@ class ImportLbMaps
       import_xml_file(p)
     end
     
-    sql = 'INSERT INTO lb_maps ("lb1", "lb2")'
-    sql << ' VALUES ' + @inserts.join(", ")
-    ActiveRecord::Base.connection.execute(sql)
+    LbMap.insert_all(@inserts)
   end
   
   def import_xml_file(fn)
@@ -59,7 +58,7 @@ class ImportLbMaps
       next if n.nil?
       if n.name=='lb' and n['ed']!='X'
         lb2 = n['ed'] + '.' + n['n']
-        @inserts << "('#{lb1}', '#{lb2}')"
+        @inserts << { lb1:, lb2: }
       end
     end
   end

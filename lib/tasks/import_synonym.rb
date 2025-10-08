@@ -13,19 +13,14 @@ class ImportSynonym
     arrange_synonyms
     moe_variant_words # 教育部 異形詞
 
-    @inserts = []
+    inserts = []
     @synonyms.each_pair do |term, synonyms|
       s = synonyms.to_a.join("\t")
-      @inserts << "('#{term}', '#{s}')"
+      inserts << { term:, synonyms: s }
     end
 
-    $stderr.puts "execute SQL insert #{number_to_human(@inserts.size)} records"
-    sql = 'INSERT INTO terms '
-    sql << '("term", "synonyms")'
-    sql << ' VALUES ' + @inserts.join(", ")
-    $stderr.puts Benchmark.measure {
-      ActiveRecord::Base.connection.execute(sql) 
-    }
+    Term.insert_all(inserts)
+    puts "Term records: #{number_with_delimiter(Term.count)}"
   end
 
   private
