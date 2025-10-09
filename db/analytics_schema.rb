@@ -10,7 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2022_09_23_035010) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_09_005502) do
+  create_table "changes", force: :cascade do |t|
+    t.string "lb", null: false
+    t.string "html", null: false
+    t.string "ver", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lb", "ver"], name: "index_changes_on_lb_and_ver", unique: true
+  end
+
   create_table "visits", force: :cascade do |t|
     t.string "url"
     t.date "accessed_at"

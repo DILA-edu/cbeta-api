@@ -15,10 +15,11 @@ class ImportVars
     @inserts = []
     read_variants
 
+    puts "insert_all"
     Variant.insert_all(@inserts)
 
     puts "Variant records: #{number_with_delimiter(Variant.count)}"
-    puts "total vars: #{@total}"
+    puts "total vars: #{number_with_delimiter(@total)}"
   end
   
   private

@@ -96,4 +96,10 @@ namespace :import do
     importer = ImportVisit.new
     importer.import
   end
+
+  desc "匯入修訂紀錄"
+  task :changelog, [:arg1] => :environment do |t, args|
+    require "tasks/import_changelog"
+    ImportChangelog.new.import(args[:arg1])
+  end
 end

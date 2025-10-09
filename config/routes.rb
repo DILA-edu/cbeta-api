@@ -15,7 +15,11 @@ Rails.application.routes.draw do
   match '/api/sections/:uuid', to: 'juans#show_for_asia_network', via: [:get, :post]
 
   match 'category/:category', to: 'juans#index', via: [:get, :post]
+
+  match 'changes/:lb', to: 'changes#index', via: [:get, :post]
+
   match 'chinese_tools/sc2tc', via: [:get, :post]
+
   get 'download/:id', to: 'download#index', id: /.+/
   
   match 'export/all_creators2', via: [:get, :post]
@@ -59,6 +63,7 @@ Rails.application.routes.draw do
   get 'static_pages/catalog'
   get 'static_pages/callback'
   get 'static_pages/category'
+  get 'static_pages/changes'
   get 'static_pages/common_parameters'
   get 'static_pages/creators'
   get 'static_pages/download_docusky'
