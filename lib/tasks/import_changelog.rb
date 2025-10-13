@@ -32,7 +32,7 @@ class ImportChangelog
         bn = $1
         @juan = $2.to_i
         @work = CBETA.get_work_id_from_file_basename(bn)
-      elsif not line =~ /^<h\d>.*<\/h\d>$/
+      elsif not line =~ /^ *<h\d>.*<\/h\d>$/
         abort "[#{__LINE__}] 例外: #{line.inspect}"
       end
     end
