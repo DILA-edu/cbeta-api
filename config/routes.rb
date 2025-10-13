@@ -16,7 +16,7 @@ Rails.application.routes.draw do
 
   match 'category/:category', to: 'juans#index', via: [:get, :post]
 
-  match 'changes/:lb', to: 'changes#index', via: [:get, :post]
+  match 'changes', to: 'changes#index', via: [:get, :post]
 
   match 'chinese_tools/sc2tc', via: [:get, :post]
 

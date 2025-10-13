@@ -1,7 +1,7 @@
 %h1 Changes (內容修訂紀錄)
 %ul
   %li endpoint: /changes/:lb
-  %li Note: 標點修訂不記錄。
+  %li 標點修訂不記錄。
 
 %h2 Parameters
 %table.table
@@ -12,11 +12,30 @@
     %td lb
     %td
       %ul
-        %li in: path
-        %li required: true
+        %li CBETA 行首資訊
+        %li lb 或 work 必須指定其中之一。
         %li 
           example: 
-          =link_to_url '/changes/A091n1057_p0321a10'
+          =link_to_url '/changes?lb=A091n1057_p0321a10'
+  %tr
+    %td work
+    %td
+      %ul
+        %li 典籍編號 (經號)
+        %li lb 或 work 必須指定其中之一。
+        %li 
+          example: 
+          =link_to_url '/changes?work=T0026'
+  %tr
+    %td juan
+    %td
+      %ul
+        %li 卷號
+        %li type: integer
+        %li 必須指定 work 才能指定 juan。
+        %li 
+          example: 
+          =link_to_url '/changes?work=T0951&juan=4'
 
 %h2 Response
 .code
