@@ -25,11 +25,13 @@ class ImportChangelog
 
     body.split("\n") do |line|
       next if line.empty?
-
       line.sub!(/^(<span class="(?:ins|del)">)(#{LINEHEAD}║)/, '\2\1')
-
       if line.match(/^(#{LINEHEAD})║(.*)<br>/)
         insert_line($1, $2, ver)
+      elsif line =~ /^<h2>(#{CBETA::BASENAME}).*卷(\d+)<\/h2>$/
+        bn = $1
+        @juan = $2.to_i
+        @work = CBETA.get_work_id_from_file_basename(bn)
       elsif not line =~ /^<h\d>.*<\/h\d>$/
         abort "[#{__LINE__}] 例外: #{line.inspect}"
       end
@@ -44,9 +46,9 @@ class ImportChangelog
   
   def insert_line(lb, html, ver)
     html.gsub!(/(?:<span class="del">[^<]*<\/span>){2,}/) { merge_del(it) }
-    line = Line.find_by(linehead: lb)
-    abort "在 lines 裡找不到 linehead: #{lb}" if line.nil?
-    @inserts << { lb:, html:, ver:, work: line.work, juan: line.juan }
+    abort "@work 是空的, lb: #{lb}" if @work.blank?
+    abort "@juan 是空的" if @juan.blank?
+    @inserts << { lb:, html:, ver:, work: @work, juan: @juan }
     @log.puts @inserts.last
   end
 
