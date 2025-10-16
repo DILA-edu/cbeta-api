@@ -24,9 +24,16 @@ class ExportController < ApplicationController
   def all_creators2
     fn = Rails.root.join('data', 'all-creators-with-alias.json')
     r = {}
+
     if File.file?(fn)
       s = File.read(fn)
       data = JSON.parse(s)
+
+      if referer_cn?
+        data.delete('A023393') # 印順法師
+        data.delete('A004819') # 太虛
+      end
+
       r[:num_found] = data.size
       r[:results] = data
     else

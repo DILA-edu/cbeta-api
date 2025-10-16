@@ -31,7 +31,11 @@ class WorksController < ApplicationController
       search_by_canon_uuid
       return
     end
-    
+
+    if referer_cn?
+      result.delete_if { filter_cn?(id: it[:work]) }
+    end
+
     if result.nil?
       r = {
         num_found: 0,
