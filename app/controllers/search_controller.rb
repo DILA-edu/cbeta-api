@@ -49,6 +49,14 @@ class SearchController < ApplicationController
     r[:time] = Time.now - t1
     
     my_render r
+  rescue CbetaError => e
+    r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
+    my_render(r)
+  rescue => e
+    r = { 
+      error: { code: 500, message: $!, backtrace: e.backtrace } 
+    }
+    my_render(r)
   end
 
   def index
