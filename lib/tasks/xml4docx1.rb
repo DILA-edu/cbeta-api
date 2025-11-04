@@ -69,6 +69,8 @@ class XMLForDocx1
     p_note_lg(doc)
     p_tt_lb(doc)
     init_juan_styles(doc)
+    read_lem_cf(doc)
+
     folder = Rails.root.join('data', 'xml4docx0', @canon, @vol)
     FileUtils.makedirs(folder)
     fn = File.join(folder, "#{@v_work}.xml")
@@ -100,7 +102,10 @@ class XMLForDocx1
     rends << rend unless rend.nil?
 
     if e["rend"]
-      abort "rend 與 type 同時存在, tag: #{e.name}" if e['type']
+      if e.key?('type') and e['type'] != 'dharani'
+        abort "[#{__LINE__}] rend 與 type 同時存在, tag: #{e.name}, xml: #{e.to_xml}" 
+      end
+
       r = e['rend']
       
       case e.name
@@ -570,42 +575,67 @@ class XMLForDocx1
     return '' if e['rend'] == 'hide'
     
     if e["place"] == "inline"
-      return "(#{traverse(e)})" if mode == 'text'
-      if e.at_xpath('l')
-        r = traverse(e, 'text')
-        return "(%s)" % traverse(e, 'text')
-      elsif e.at_xpath('lg | list | p')
-        e_note_text(e)
-        @inline_note << true
-        r = traverse(e)
-        @log.puts "#{__LINE__} 夾注下有 (lg|list|p), xml: #{r}"
-        @inline_note.pop
-        return r
-      elsif @inline_note.last
-        return "(%s)" % traverse(e)
-      else
-        @log.puts "#{__LINE__} seg inlinenote"
-        @inline_note << true
-        r = traverse(e)
-        @inline_note.pop
-        add_style("inlinenote")
-        return %(<seg rend="inlinenote">(#{r})</seg>)
-      end
+      return e_note_inline(e, mode)
     end
   
     case e["type"]
     when "add", "mod"
-      "<footnote>%s</footnote>" % traverse(e, 'text')
+      e_note_add_mod(e)
     when "orig"
-      n = e['n']
-      return '' if @mod_notes.key?(n)
-      s = traverse(e, 'text')
-      r = "<footnote>#{s}</footnote>"
-      @mod_notes[n] = r
-      r
+      e_note_orig(e)
     else
       ""
     end
+  end
+
+  def e_note_add_mod(e)
+    s = traverse(e, 'text')
+
+    n = e['n']
+    if @lem_cf.key?(n)
+      s << ' ' + @lem_cf[n]
+    end
+
+    "<footnote>#{s}</footnote>"
+  end
+
+  def e_note_inline(e, mode)
+    return "(#{traverse(e)})" if mode == 'text'
+
+    if e.at_xpath('l')
+      r = traverse(e, 'text')
+      return "(%s)" % traverse(e, 'text')
+    end
+
+    if e.at_xpath('lg | list | p')
+      e_note_text(e)
+      @inline_note << true
+      r = traverse(e)
+      @log.puts "#{__LINE__} 夾注下有 (lg|list|p), xml: #{r}"
+      @inline_note.pop
+      return r
+    end
+
+    if @inline_note.last
+      return "(%s)" % traverse(e)
+    end
+
+    @log.puts "#{__LINE__} seg inlinenote"
+    @inline_note << true
+    r = traverse(e)
+    @inline_note.pop
+    add_style("inlinenote")
+    return %(<seg rend="inlinenote">(#{r})</seg>)
+  end
+
+  def e_note_orig(e)
+    n = e['n']
+    return '' if @mod_notes.key?(n)
+
+    s = traverse(e, 'text')
+    r = "<footnote>#{s}</footnote>"
+    @mod_notes[n] = r
+    r
   end
 
   # 如果 夾注 下已有 lg 或 list 或 p, 夾注下的文字就要包 p
@@ -663,7 +693,7 @@ class XMLForDocx1
   end
 
   def e_seg(e)
-    abort "rend 與 style 同時存在" if e.key?("rend") and e.key?("style")
+    abort "[#{__LINE__}] rend 與 style 同時存在" if e.key?("rend") and e.key?("style")
     node = HTMLNode.new('seg')
     copy_style(e, node)
     node.content = traverse(e)
@@ -936,6 +966,35 @@ class XMLForDocx1
       'authority_catalog', 'json', "#{@canon}.json"
     )
     @works = JSON.parse(File.read(fn))
+
+    # 要放在 MS Word 摘要資訊裡的東西 使用 組字式
+    repl = {
+      "𡇪" => "[囗@告]",        # U+211EA
+      "𬎞" => "[王*寶]",        # U+2C39E
+      "𭖏" => "[峚-大+(企-止)]", # U+2D58F
+      "𭮨" => "[辰*殳]",        # U+2DBA8
+      "𮗿" => "[(工*刀)/言]"    # U+2E5FF
+    }
+
+    s = repl.keys.join()
+
+    @works.each do |k, v|
+      v['title'].gsub!(/[#{s}]/, repl) if v.key?('title')
+      v['byline'].gsub!(/[#{s}]/, repl) if v.key?('byline')
+    end
+  end
+
+  def read_lem_cf(doc)
+    @lem_cf = {}
+
+    doc.xpath("//lem").each do |lem|
+      cf = ele_lem_cf(lem)
+      next if cf.empty?
+
+      app = lem.parent
+      abort "error [#{__LINE__}]" unless app.name == 'app'
+      @lem_cf[app['n']] = cf
+    end
   end
 
   def read_mod_notes(doc)
