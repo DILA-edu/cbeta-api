@@ -184,6 +184,8 @@ class XMLForDocx1
     doc = Nokogiri::XML(xml)
     doc.remove_namespaces!
     @source_desc = get_source_desc(doc)
+    @title = get_title(doc)
+    @log.puts "#{__LINE__} title: #{@title}"
 
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
@@ -777,7 +779,9 @@ class XMLForDocx1
     node['rend'] = 'corr' if @in_corr.last
     if (0x20000..0x2A6DF).include?(code)
       node['name'] = 'hana_b'
-      node.to_s
+      r = node.to_s
+      @log.puts "#{__LINE__} handle_char, #{r}"
+      r
     elsif (0x2A700..0x2FFFF).include?(code)
       node['name'] = 'hana_c'
       node.to_s
@@ -1022,7 +1026,6 @@ class XMLForDocx1
   end
 
   def write_juans(xml)
-    @title = @works[@work]["title"]
     buf = ''
     juan = nil
     xml.split(/(<juan n='.*?'\/>)/).each do |s|
@@ -1049,7 +1052,7 @@ class XMLForDocx1
       <?xml-model href="../../../xml4docx.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
       <document>
         <settings>
-          <title>#{@title}</title>
+          <title>#{@works[@work]["title"]}</title>
           <byline>#{@works[@work]["byline"]}</byline>
           <footer>第 {Page} 頁／共 {NumPages} 頁</footer>
           <styles>#{xml_styles(juan)}

@@ -249,8 +249,7 @@ module CbetaP5aShare
 
   def get_title(doc)
     e = doc.at_xpath("//titleStmt/title[@level='m']")
-    r = traverse(e).split.last
-    r.sub(/\(第\d+卷-第\d+卷\)$/, '')
+    traverse(e)
   end
 
   def read_mod_notes(doc)
