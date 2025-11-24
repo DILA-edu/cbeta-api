@@ -4,7 +4,8 @@
 
 以下相對目錄位於 <https://github.com/DILA-edu/cbeta-metadata>
 
-如果有增修「藏經 ID」，要編輯 `/canons.yml`。
+如果有增修「藏經 ID」，要參考 <https://github.com/cbeta-git/xml-p5a/blob/master/canons.json>，
+編輯 `/canons.yml`。
 
 ### catalog
 

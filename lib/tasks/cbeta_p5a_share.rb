@@ -77,13 +77,14 @@ module CbetaP5aShare
   end
 
   def ele_note(e, mode)
-    return ele_note_in_foot(e) if mode == 'footnote'
+    return ele_note_in_foot(e, mode) if mode == 'footnote'
     return '' if e['rend'] == 'hide'
       
     n = e['n']
     if e.has_attribute?('type')
       t = e['type']
       case t
+      when 'authorial'  then return traverse(e, mode)
       when 'equivalent' then return ''
       when 'rest'       then return ''
       when 'add'        then return ele_note_add(e, mode)
@@ -218,10 +219,12 @@ module CbetaP5aShare
     return "<a class='noteAnchor star' href='##{href}'></a>"
   end
 
-  def ele_note_in_foot(e)
+  def ele_note_in_foot(e, mode)
+    return traverse(e, mode) if e['type'] == 'authorial'
     return '' unless e.key?('place')
+
     if %w(interlinear inline inline2).include? e['place']
-      return '(%s)' % traverse(e, 'footnote')
+      return '(%s)' % traverse(e, mode)
     else
       return ''
     end
