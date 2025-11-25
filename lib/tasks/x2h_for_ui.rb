@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'cgi'
 require 'date'
 require 'fileutils'
@@ -85,8 +87,8 @@ class P5aToHTMLForUI
   include CbetaShare
   
   def before_parse_xml(xml_fn)
-    @back = { 0 => '' }
-    @back_orig = { 0 => '' }
+    @back = { 0 => +'' }
+    @back_orig = { 0 => +'' }
     @char_count = 1
     @dila_note = 0
     @div_count = 0
@@ -94,7 +96,7 @@ class P5aToHTMLForUI
     @juan = 0
     @lg_row_open = false
     @mod_notes = Set.new
-    @next_line_buf = ''
+    @next_line_buf = +''
     @notes_mod = {}
     @notes_add = {}
     @note_star_count = Hash.new(0)
@@ -151,7 +153,7 @@ class P5aToHTMLForUI
     text = parse_xml(xml_fn)
     
     folder = File.join(@out_folder, @work_id)
-    puts "\noutput folder: #{folder}"
+    puts "output folder: #{folder}"
     FileUtils.makedirs folder
     
     # 註標移到 lg-cell 裡面，不然以 table 呈現 lg 會有問題
@@ -236,7 +238,7 @@ class P5aToHTMLForUI
   def e_cell(e)
     cell = HTMLNode.new('div')
 
-    cell['class'] = 'bip-table-cell'
+    cell['class'] = +'bip-table-cell'
     if e.key?('rend')
       cell['class'] << ' ' + e['rend']
     end
@@ -536,7 +538,7 @@ class P5aToHTMLForUI
     end
 
     a = s.split(/(<caesura[^>]*?\/>)/)
-    r = ''
+    r = +''
     a.each_with_index do |v, i|
       next if v.start_with?('<caesura')
       
@@ -585,10 +587,10 @@ class P5aToHTMLForUI
     @char_count = 1
     @lb = e['n']
     line_head = CBETA.get_linehead(@sutra_no, e['n'])
-    r = ''
+    r = +''
 
     node = HTMLNode.new('span')
-    node['class'] = 'lb'
+    node['class'] = +'lb'
     node['class'] << ' honorific' if e['type'] == 'honorific'
     node['id'] = line_head
     node['data-lr'] = @lb_r unless @lb_r.nil?
@@ -599,7 +601,7 @@ class P5aToHTMLForUI
 
     unless @next_line_buf.empty?
       r << @next_line_buf
-      @next_line_buf = ''
+      @next_line_buf = +''
     end
 
     @first_l_in_line = true
@@ -659,7 +661,7 @@ class P5aToHTMLForUI
   end
 
   def e_milestone(e)
-    r = ''
+    r = +''
     if e['unit'] == 'juan'
       # 如果有 div 跨卷，要先結束, ex: T55n2154, p. 680a29, 跨 19, 20 兩卷
       r << "</div>" * @open_divs.size
@@ -671,8 +673,8 @@ class P5aToHTMLForUI
         @back_orig[@juan] = @back_orig[0]
         @back_orig.delete(0)
       else
-        @back[@juan] = ''
-        @back_orig[@juan] = ''
+        @back[@juan] = +''
+        @back_orig[@juan] = +''
       end
 
       @first_lb_in_juan = true
@@ -687,7 +689,6 @@ class P5aToHTMLForUI
           end
         end
       }
-      print "\r#{@juan}"
     end
     r
   end
@@ -928,7 +929,7 @@ class P5aToHTMLForUI
 
   def facsimile_anchor(e)
     ed = e['ed']
-    r = ''
+    r = +''
     node = HTMLNode.new('a')
     node['class'] = 'facsimile'
     node['data-canon'] = ed
@@ -1047,7 +1048,7 @@ class P5aToHTMLForUI
   end
   
   def handle_chars(text, mode)
-    r = ''
+    r = +''
     text.each_char do |char|
       if @us.level1?(char)
         r << char
@@ -1138,7 +1139,7 @@ class P5aToHTMLForUI
   end
 
   def lem_note_rdg(lem)
-    r = ''
+    r = +''
     app = lem.parent
     @pass << false
     app.xpath('rdg').each { |rdg|
@@ -1288,7 +1289,7 @@ class P5aToHTMLForUI
     pass = false if mode == 'footnote'
     @pass << pass
     
-    r = ''
+    r = +''
     e.children.each { |c| 
       s = handle_node(c, mode)
       r << s

@@ -1,5 +1,5 @@
 %h2#lg 偈頌
-%h3 規則偈頌
+%h3#lg_regular 規則偈頌
 %p 例 T01n0001_p0001c03：
 .code
   %pre
@@ -21,7 +21,7 @@
   %li &lt;div class="lg-row"> 偈頌使用表格對齊時，相當於一個 tr (table row)。
   %li &lt;div class="lg-cell"> 偈頌使用表格對齊時，相當於一個 td (table cell)。
 
-%h3 詞、賦
+%h3#lg_verse 詞、賦
 %p 例 GA001n0002_p0240a11
 .code
   %pre
@@ -36,3 +36,12 @@
       </div>
 
 %p &lt;div class="lg"> 沒有 regular，表示是一行一行的不規則詞、賦，不能用 table 對齊。
+
+%h3#lg_inlinenote 夾注下的偈頌
+%p 例 T23n1443_p1019a15, class 多一個 "inlinenote"
+.code
+  %pre
+    :escaped
+      <div class="lg inlinenote regular" style="margin-left:1em;">
+        ...
+      </div>

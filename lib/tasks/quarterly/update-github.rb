@@ -12,6 +12,7 @@ def pull(repo, tag=nil)
   if Dir.exist?(folder)
     puts "git pull #{folder}"
     Dir.chdir(folder) do
+      system('git checkout master')
       system('git pull')
       unless tag.nil?
         system("git checkout tags/#{tag}")

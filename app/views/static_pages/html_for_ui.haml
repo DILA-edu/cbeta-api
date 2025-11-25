@@ -8,7 +8,12 @@
       %li=link_to '作譯者', '#byline'
       %li=link_to '章節標題', '#head'
       %li=link_to '段落', '#p'
-      %li=link_to '偈頌', '#lg'
+      %li
+        =link_to '偈頌 (line group)', '#lg'
+        %ul
+          %li=link_to '規則偈頌', '#lg_regular'
+          %li=link_to '詞、賦', '#lg_verse'
+          %li=link_to '夾注下的偈頌', '#lg_inlinenote'
       %li=link_to '表格', '#table'
       %li=link_to 'form', '#form'
       %li=link_to '版權資訊', '#copyright'
