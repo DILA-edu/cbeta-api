@@ -560,7 +560,7 @@ class P5aToTextForDownload
       next if f.start_with? '.'
       folder = File.join(canon_folder, f)
       zipfile_name = File.join(@params[:out_root], "#{f}.txt.zip")
-      Zip::File.open(zipfile_name, Zip::File::CREATE) do |zipfile|
+      Zip::File.open(zipfile_name, create: true) do |zipfile|
         Dir.entries(folder).sort.each do |filename|
           next if filename.start_with? '.'
           # Two arguments:

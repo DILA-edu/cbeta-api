@@ -966,7 +966,7 @@ class P5aToHTMLForDownload
       juan_folder = File.join(folder, work)
       zipfile_name = File.join(@out_root, "#{work}.html.zip")
       $stderr.puts zipfile_name
-      Zip::File.open(zipfile_name, Zip::File::CREATE) do |zipfile|
+      Zip::File.open(zipfile_name, create: true) do |zipfile|
         Dir.entries(juan_folder).sort.each do |filename|
           next if filename.start_with? '.'
           # Two arguments:
