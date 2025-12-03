@@ -5,7 +5,7 @@
 .ml-5
   %p URL: download/{電子書格式}/{藏經代碼}/{佛典編號}.{副檔名}
   %h3 電子書格式
-  %p 可能值： epub, mobi, pdf
+  %p 可能值： epub, mobi, pdf, docx
   %h3 藏經代碼
   %p 
     請參考： 
@@ -15,21 +15,21 @@
     請參考：
     =link_to nil, "https://github.com/DILA-edu/cbeta-documentation/blob/master/xml/file-structure.md"
 
-%h2 EPUB
+%h2#epub EPUB
 %ul
   %li 單部佛典下載例： #{ link_to_url '/download/epub/A/A1057.epub' }
   %li 
     全部下載：
     =link_to_url "/download/cbeta-epub.zip"
 
-%h2 MOBI
+%h2#mobi MOBI
 %ul
   %li 單部佛典下載例： #{ link_to_url '/download/mobi/A/A1057.mobi' }
   %li 
     全部下載： 
     =link_to_url "/download/cbeta-mobi.zip"
 
-%h2 PDF
+%h2#pdf PDF
 %p 
   單部佛典下載例：
   =link_to_url '/download/pdf/A/A1057.pdf'
@@ -39,6 +39,15 @@
   - Dir["#{folder}/cbeta-pdf-*.zip"].sort.each do |f|
     - b = File.basename(f)
     %li= link_to_url "/download/#{b}"
+
+%h2#docx DOCX
+%p DOCX 與其他格式的下載 URL 稍有不同。
+%p 
+  單卷佛典下載例：
+  =link_to_url '/download/docx/T/T02/T02n0099/T02n0099_001.docx'
+%p 
+  全部《大正藏》下載：
+  =link_to_url '/download/docx/T.zip'
 
 %h4 Q: 下載的 PDF 裡有總目錄嗎？
 %p
