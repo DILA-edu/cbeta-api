@@ -311,26 +311,26 @@ class XMLForDocx1
   #   * Unicode 10 (含) 以內，直接使用 Unicode.
   #   * 有通用字, 使用通用字。
   def e_g(e)
-    skt_priority = %w(symbol romanized)
     id = e["ref"].delete_prefix("#")
-    r = @gaiji.to_s(id, skt_priority:)
+    g = @gaiji[id]
 
-    if r.nil?
-      # 如果沒有羅馬轉寫就顯示圖檔
-      r = 
-        case id
-        when /^SD/
-          url = File.join('sd-gif', id[3, 2], "#{id}.gif")
-          "<graphic url='#{url}'/>"
-        when /^RJ/
-          url = File.join('rj-gif', id[3, 2], "#{id}.gif")
-          "<graphic url='#{url}'/>"
-        end
+    return g['symbol'] if g.key?('symbol')
+
+    case id
+    when /^CB/
+      r = @gaiji.to_s(id)
+      r = handle_char(r) if r.size == 1
+    when /^(SD|RJ)/
+      type = id[0, 2].downcase
+      url = File.join("#{type}-gif", id[3, 2], "#{id}.gif")
+      r = +"<graphic url='#{url}'/>"
+
+      # 如果有羅馬轉寫
+      r << "(#{g['romanized']})" if g.key?('romanized')
     else
-      if r.size == 1 and id.start_with?('CB')
-        r = handle_char(r)
-      end
+      abort "未知的缺字類型: #{id}"
     end
+
     r
   end
 
@@ -487,16 +487,38 @@ class XMLForDocx1
         r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
         return  r
       else
-        @in_corr << true
-        r = traverse(e)
-        r = %(<font rend="corr">#{r}</font>) unless r.include?('corr')
-        add_style('corr')
-        @in_corr.pop
+        return e_lem_font(e)
         return r
       end
     else
       return traverse(e)
     end
+  end
+
+  def e_lem_font(e)
+    @in_corr << true
+    r = traverse(e)
+
+    unless r.include?('corr')
+      if r.include?('<graphic')
+        # 避免 <font> 包 <graphic>
+        r2 = r.dup
+        r = +''
+        r2.split(/(<graphic [^>]+>)/).each do
+          if it.start_with?(/<graphic /)
+            r << it
+          elsif not it.empty?
+            r << %(<font rend="corr">#{it}</font>) 
+          end
+        end
+      else
+        r = %(<font rend="corr">#{r}</font>) 
+      end
+    end
+
+    add_style('corr')
+    @in_corr.pop
+    r
   end
 
   def e_lg(e)
