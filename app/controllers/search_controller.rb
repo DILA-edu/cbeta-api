@@ -21,7 +21,7 @@ class SearchController < ApplicationController
   rescue_from Exception, with: :error_handler
 
   def initialize
-    log_info "SearchController initialize"
+    log_debug "SearchController initialize"
   end
   
   # 2019-11-01 決定不以「經」做 group, 因為不能以「經」的 term_hits 做排序
@@ -280,7 +280,7 @@ class SearchController < ApplicationController
        OPTION max_matches=#{@max_matches}
     SQL
 
-    log_info select
+    log_debug select
     results = @mysql_client.query(select, symbolize_keys: true)    
 
     hits = results.to_a
@@ -298,7 +298,7 @@ class SearchController < ApplicationController
     results = @mysql_client.query("SHOW META LIKE 'total_found%';")    
     a = results.to_a
     total_found = a[0]['Value'].to_i
-    log_info "total_found: #{total_found}"
+    log_debug "total_found: #{total_found}"
 
     r = {
       query_string: @q,
@@ -415,7 +415,7 @@ class SearchController < ApplicationController
       facet_by_sphinx_all(r['facet'])
     end
 
-    log_info "@exclude: #{@exclude.inspect}"
+    log_debug "@exclude: #{@exclude.inspect}"
     if @exclude
       exclude_by_sphinx(r)
     end
@@ -447,7 +447,7 @@ class SearchController < ApplicationController
     end
 
     if r.key?(:results)
-      log_info "results size: #{r[:results].size}"
+      log_debug "results size: #{r[:results].size}"
       # 回傳 行首資訊
       r[:results].each do |juan|
         if juan.key?(:kwics)
@@ -458,7 +458,7 @@ class SearchController < ApplicationController
         end
       end
     else
-      log_info "#{__LINE__} r 沒有 results"
+      log_debug "#{__LINE__} r 沒有 results"
     end
 
     r
@@ -467,7 +467,7 @@ class SearchController < ApplicationController
   end
 
   def downsize_vars_array(vars)
-    log_info "downsize_vars_array, vars: #{vars}"
+    log_debug "downsize_vars_array, vars: #{vars}"
     return vars if vars.size < 5
     vars2 = vars.clone
     r = []
@@ -482,10 +482,10 @@ class SearchController < ApplicationController
       if vars2.size == 1
         a << vars2.shift
       end
-      log_info "downsize_vars_array, a: #{a}"
+      log_debug "downsize_vars_array, a: #{a}"
       r << expand_vars_array(a, true)
     end
-    log_info "downsize_vars_array, r: #{r}"
+    log_debug "downsize_vars_array, r: #{r}"
     r
   end
   
@@ -502,10 +502,10 @@ class SearchController < ApplicationController
   # 所以先計算最多會有多少 documents 符合條件
   def estimate_max_matches
     cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
-    log_info "estimate_max_matches, cmd: #{cmd}"
+    log_debug "estimate_max_matches, cmd: #{cmd}"
     r = @mysql_client.query(cmd)
     @max_matches = r.first['docs']
-    log_info "max_matches: #{@max_matches}"
+    log_debug "max_matches: #{@max_matches}"
 
     # max_matches must be from 1 to 100M
     @max_matches = 1 if @max_matches == 0
@@ -515,26 +515,26 @@ class SearchController < ApplicationController
 
   def exclude_by_sphinx(r1)
     r2 = sphinx_search_simple(@exclude) # 要被排除的
-    log_info "exclude_by_sphinx, r2: #{r2.inspect}"
+    log_debug "exclude_by_sphinx, r2: #{r2.inspect}"
 
     h = {}
     r2.each do |juan|
       k = "#{juan[:work]}_#{juan[:juan]}"
       h[k] = juan[:term_hits]
     end
-    log_info "exclude_by_sphinx, h: #{h.inspect}"
+    log_debug "exclude_by_sphinx, h: #{h.inspect}"
 
     r1[:total_term_hits] = 0
     i = 0
     while i < r1[:results].size
       juan = r1[:results][i]
       k = "#{juan[:work]}_#{juan[:juan]}"
-      log_info "i: #{i}, k: #{k}"
-      log_info "exclude 前 term_hits: #{juan[:term_hits]}"
+      log_debug "i: #{i}, k: #{k}"
+      log_debug "exclude 前 term_hits: #{juan[:term_hits]}"
       if h.key?(k)
         juan[:term_hits] -= h[k]
       end
-      log_info "exclude 後 term_hits: #{juan[:term_hits]}"
+      log_debug "exclude 後 term_hits: #{juan[:term_hits]}"
       
       if juan[:term_hits] <= 0
         r1[:num_found] -= 1
@@ -573,7 +573,7 @@ class SearchController < ApplicationController
   end
 
   def expand_vars_array(vars, chk_exist)
-    log_info "expand_vars_array, vars: #{vars}, chk_exist: #{chk_exist}"
+    log_debug "expand_vars_array, vars: #{vars}, chk_exist: #{chk_exist}"
     t1 = Time.now
     #vars = downsize_vars_array(vars) if vars.size > 4
     args = vars[1..-1]
@@ -585,7 +585,7 @@ class SearchController < ApplicationController
     a.each do |s|
       r << s if exist_in_cbeta(s)
     end
-    log_info "#{__LINE__} expand_vars_array result: %s" % r.inspect
+    log_debug "#{__LINE__} expand_vars_array result: %s" % r.inspect
     r
   end
   
@@ -669,7 +669,7 @@ class SearchController < ApplicationController
   end
   
   def get_query_variants(q)
-    log_info "get_query_variants, q: #{q}"
+    log_debug "get_query_variants, q: #{q}"
     remove_puncs_from_query
     vars = []
     q.each_char do |c|
@@ -744,7 +744,7 @@ class SearchController < ApplicationController
       @index = Rails.configuration.x.se.index_text
     end
 
-    log_info "index: #{@index}"
+    log_debug "index: #{@index}"
     
     init_order unless action_name == 'similar'
     set_filter
@@ -1163,15 +1163,15 @@ class SearchController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{args[:facet]}" if args.key?(:facet)
-    log_info "select: #{@select}"
+    log_debug "select: #{@select}"
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     end
-    log_info "#{__LINE__} mysql query 完成"
+    log_debug "#{__LINE__} mysql query 完成"
 
     hits = results.to_a
     return hits if @mode == 'group'
-    log_info "#{__LINE__} hits size: #{hits.size}"
+    log_debug "#{__LINE__} hits size: #{hits.size}"
     
     #add_work_info(hits)
     
@@ -1187,7 +1187,7 @@ class SearchController < ApplicationController
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
-    log_info "#{__LINE__} total_found: #{total_found}"
+    log_debug "#{__LINE__} total_found: #{total_found}"
     
     total_term_hits = nil
     if args[:count_hits]
@@ -1200,10 +1200,10 @@ class SearchController < ApplicationController
           WHERE #{args[:where]} 
           OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
         SQL
-        log_info "#{__LINE__} 計算 total_term_hits: #{select2}"
+        log_debug "#{__LINE__} 計算 total_term_hits: #{select2}"
         r = @mysql_client.query(select2)
         total_term_hits = r.to_a[0]['sum']
-        log_info "#{__LINE__} total_term_hits: #{total_term_hits}"
+        log_debug "#{__LINE__} total_term_hits: #{total_term_hits}"
       end
     end
     
@@ -1226,7 +1226,7 @@ class SearchController < ApplicationController
     # 允許標點差異的 regular expression
     q2 = @q.sub(/\A"(.*)"\z/, '\1')
     s = q2.chars.join("[【】，〔－〕＊。]*")
-    log_info "notes_highlight, exp: #{s}"
+    log_debug "notes_highlight, exp: #{s}"
     exp = Regexp.new(s)
 
     r[:results].each do |h|
@@ -1246,7 +1246,7 @@ class SearchController < ApplicationController
   end
 
   def notes_inline_around(h)
-    log_info "notes_inline_around, highlight: #{h[:highlight]}"
+    log_debug "notes_inline_around, highlight: #{h[:highlight]}"
     hh = h[:highlight]
     hh.match(/^(.*?)(<mark>.*<\/mark>)(.*)$/) do |m|
       hh = m[2]
@@ -1260,7 +1260,7 @@ class SearchController < ApplicationController
   end
 
   def similar_sub
-    log_info "similar_sub"
+    log_debug "similar_sub"
     remove_puncs_from_query
     @canon_name = {}
     @max_matches = params[:k] || SIMILAR_K
@@ -1276,9 +1276,9 @@ class SearchController < ApplicationController
     r = manticore_search(data)
     hits = r[:results]
 
-    log_info "begin similar_smith_waterman"
+    log_debug "begin similar_smith_waterman"
     similar_smith_waterman(hits)
-    log_info "begin similar_rm_duplicate"
+    log_debug "begin similar_rm_duplicate"
     similar_rm_duplicate(hits)
     hits.sort_by! { |x| -x[:score] }
 
@@ -1293,7 +1293,7 @@ class SearchController < ApplicationController
   end
 
   def similar_smith_waterman(hits)
-    log_info "begin similar_smith_waterman, hits size: #{hits.size}, gain: #{@gain}, penalty: #{@penalty}"
+    log_debug "begin similar_smith_waterman, hits size: #{hits.size}, gain: #{@gain}, penalty: #{@penalty}"
 
     cs = CbetaString.new(allow_digit: true, allow_space: false)
     i = 0
@@ -1328,7 +1328,7 @@ class SearchController < ApplicationController
         i += 1
       end
     end
-    log_info "end similar_smith_waterman"
+    log_debug "end similar_smith_waterman"
   end
 
   def similar_rm_duplicate(hits)
@@ -1368,7 +1368,7 @@ class SearchController < ApplicationController
   end
 
   def sphinx_search(fields, where, start, rows, order: nil, facet: nil)
-    log_info "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
+    log_debug "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
     t1 = Time.now
 
     if start >= @max_matches
@@ -1384,7 +1384,7 @@ class SearchController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{facet}" unless facet.nil?
-    log_info "select: #{@select}"
+    log_debug "select: #{@select}"
     begin
       results = @mysql_client.query(@select, symbolize_keys: true)
     rescue
@@ -1396,7 +1396,7 @@ class SearchController < ApplicationController
 
     hits = results.to_a
     return hits if @mode == 'group'
-    log_info "#{__LINE__} hits size: #{hits.size}"
+    log_debug "#{__LINE__} hits size: #{hits.size}"
     
     #add_work_info(hits)
     
@@ -1412,7 +1412,7 @@ class SearchController < ApplicationController
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
-    log_info "total_found: #{total_found}"
+    log_debug "total_found: #{total_found}"
     
     if total_found == 0
       total_term_hits = 0
@@ -1495,10 +1495,10 @@ class SearchController < ApplicationController
   #   * 大比丘三千威儀
   #   * 阿耨多羅三藐三菩提
   def variants_sub
-    log_info "scope: #{params[:scope]}"
+    log_debug "scope: #{params[:scope]}"
     t1 = Time.now
     remove_puncs_from_query
-    log_info "variants_sub, q: #{@q}"
+    log_debug "variants_sub, q: #{@q}"
     q_ary = get_query_variants(@q)
     
     if @q.include? '菩薩'
