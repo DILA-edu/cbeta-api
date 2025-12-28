@@ -73,7 +73,7 @@ class KwicService
 
   def search(query, args={})
     t1 = Time.now
-    @logger.info "[#{Time.now}] #{__LINE__}, search(), query: #{query}, work: #{args[:work]}, juan: #{args[:juan]}"
+    @logger.debug "[#{Time.now}] #{__LINE__}, search(), query: #{query}, work: #{args[:work]}, juan: #{args[:juan]}"
     @option = OPTION.merge args
     set_cache_base(@option)
 
