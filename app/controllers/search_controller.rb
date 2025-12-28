@@ -548,11 +548,11 @@ class SearchController < ApplicationController
   end
   
   def exist_in_cbeta(q)
-    log_info "exist_in_cbeta, q: #{q}"
+    log_debug "exist_in_cbeta, q: #{q}"
     if params[:scope] == 'title'
       index = Rails.configuration.x.se.index_titles
       r = exist_in_index(q, index)
-      log_info "exist_in_cbeta: #{r}"
+      log_debug "exist_in_cbeta: #{r}"
       r
     end
 

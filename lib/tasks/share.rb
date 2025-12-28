@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class MyCbetaShare
   attr_reader :canons
 
@@ -11,9 +13,9 @@ class MyCbetaShare
 
     r = 
       case args[:format]
-      when :docx then %(<p rend="license">)
-      when :text then "#%s\n" % ('-' * 70)
-      else "<div id='cbeta-copyright'><p>\n"
+      when :docx then +%(<p rend="license">)
+      when :text then +"#%s\n" % ('-' * 70)
+      else +"<div id='cbeta-copyright'><p>\n"
       end
 
     c = args[:canon]
@@ -51,7 +53,10 @@ class MyCbetaShare
 
     case args[:format]
     when :docx
-      r << "【版權宣告】https://cbeta.org/copyright</p>\n"
+      r << <<~HTML
+        【版權宣告】https://cbeta.org/copyright<lb/>
+        【製作說明】感謝志工黃訓慶先生將本佛典轉換至 DOCX 格式。</p>
+        HTML
     when :text
       r << "#【其他事項】本資料庫可自由免費流通，詳細內容請參閱【財團法人佛教電子佛典基金會資料庫版權宣告】\n"
       r << "#%s\n\n" % ('-' * 70)
