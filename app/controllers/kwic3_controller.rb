@@ -3,7 +3,7 @@ class Kwic3Controller < ApplicationController
   
   def init
     return unless params.key?(:q)
-    logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{params[:q]}"
+    logger.debug "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{params[:q]}"
 
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
     @q = Gaiji.replace_zzs_with_pua(params[:q])
@@ -13,7 +13,7 @@ class Kwic3Controller < ApplicationController
     @q = CbetaString.new(allow_digit: true, allow_comma: true).remove_puncs(@q)
 
     @q.gsub!(/\\(['"\-\\])/, '\1') # unescape: \' 取代為 ', \" 取代為 "
-    logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
+    logger.debug "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
     
     @opts = { 
       inline_note: true,
@@ -54,7 +54,7 @@ class Kwic3Controller < ApplicationController
     return unless juan_check_params
 
     t1 = Time.now
-    logger.info "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
+    logger.debug "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
     if @q.match?(/ NEAR\/(\d+) /)
       logger.debug "search near"
       h = @se.search_near(@q, @opts)
