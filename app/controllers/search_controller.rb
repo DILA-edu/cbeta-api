@@ -945,7 +945,7 @@ class SearchController < ApplicationController
     base = Rails.configuration.x.kwic.base
     se = KwicService.new(base, @inline_note)
     r[:results].each do |juan|
-      log_info "kwic_by_juan, work: #{juan[:work]}, juan: #{juan[:juan]}"
+      log_debug "kwic_by_juan, work: #{juan[:work]}, juan: #{juan[:juan]}"
       opts = {
         work: juan[:work],
         juan: juan[:juan].to_i,
