@@ -228,14 +228,14 @@ class ApplicationController < ActionController::Base
   end
   
   def log_action_end
-    logger.info "end #{controller_name}##{action_name} #{@start_time}, spend_time: #{Time.now-@start_time}"
+    logger.debug "end #{controller_name}##{action_name} #{@start_time}, spend_time: #{Time.now-@start_time}"
   end
 
   def log_action_start
     @start_time = Time.now
-    logger.info "start #{controller_name}##{action_name} #{@start_time}"
-    logger.info params.inspect
-  end  
+    logger.debug "start #{controller_name}##{action_name} #{@start_time}"
+    logger.debug params.inspect
+  end
 
   def log_debug(msg)
     location = caller_locations.first
