@@ -233,7 +233,8 @@ class ApplicationController < ActionController::Base
 
   def log_action_start
     @start_time = Time.now
-    logger.info "Request #{request.path} from #{request.remote_ip}, referer: #{request.referer}, origin: #{request.origin}, user_agent: #{request.user_agent}"
+    user_agent = UserAgent.parse(request.user_agent)
+    logger.info "Request #{request.path} from #{request.remote_ip}, referer: #{request.referer}, origin: #{request.origin}, user_agent: #{user_agent.platform}/#{user_agent.browser}/#{user_agent.version}"
     logger.debug "start #{controller_name}##{action_name} #{@start_time}"
     logger.debug params.inspect
   end
