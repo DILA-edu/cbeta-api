@@ -1,4 +1,7 @@
+# frozen_string_literal: true
+
 class ApplicationController < ActionController::Base
+  rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_request_timeout
   before_action :log_action_start
   before_action :record_visit
   after_action  :log_action_end
@@ -234,7 +237,12 @@ class ApplicationController < ActionController::Base
   def log_action_start
     @start_time = Time.now
     user_agent = UserAgent.parse(request.user_agent)
-    logger.info "Request #{request.fullpath} from #{request.remote_ip} at #{@start_time}, referer: #{request.referer}, origin: #{request.origin}, user_agent: #{user_agent.platform}/#{user_agent.browser}/#{user_agent.version}"
+    
+    msg = +"Request #{request.fullpath} from #{request.remote_ip} at #{@start_time}"
+    msg << ", referer: #{request.referer}, origin: #{request.origin}"
+    msg << ", user_agent: #{user_agent.platform}/#{user_agent.browser}/#{user_agent.version}"
+    logger.info msg
+
     logger.debug "start #{controller_name}##{action_name} #{@start_time}"
     logger.debug params.inspect
   end
@@ -256,5 +264,16 @@ class ApplicationController < ActionController::Base
     unless params[k] =~ /\A\d+\z/
       raise CbetaError.new(400), "#{k.to_s} 必須是數字"
     end
+  end
+
+  private
+
+  def handle_request_timeout(e)
+    logger.warn(e.class)
+    render json: { 
+      error: { 
+        code: 504, message: "#{e.class} Request timed out." 
+      } 
+    }, status: :request_timeout
   end
 end

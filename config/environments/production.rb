@@ -52,7 +52,7 @@ Rails.application.configure do
 
   # Replace the default in-process memory cache store with a durable alternative.
   # config.cache_store = :mem_cache_store
-config.cache_store = :mem_cache_store, { value_max_bytes: 2_000_000 }
+  config.cache_store = :mem_cache_store, { value_max_bytes: 2_000_000 }
 
   # Use a real queuing backend for Active Job (and separate queues per environment).
   # config.active_job.queue_adapter = :resque

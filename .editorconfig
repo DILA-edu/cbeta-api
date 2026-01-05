@@ -1,0 +1,43 @@
+# top-most EditorConfig file
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+indent_style = space
+indent_size = 2
+
+# Ruby
+[*.rb]
+indent_size = 2
+
+# ERB / Rails views
+[*.{erb,html.erb}]
+indent_size = 2
+
+# YAML (Rails config)
+[*.{yml,yaml}]
+indent_size = 2
+
+# JavaScript / TypeScript
+[*.{js,jsx,ts,tsx}]
+indent_size = 2
+
+# CSS / SCSS
+[*.{css,scss}]
+indent_size = 2
+
+# Markdown: 通常不 trim 末尾空白，避免破壞「換行」語意（markdown 兩個空白換行）
+[*.md]
+trim_trailing_whitespace = false
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+
+# Makefile 一定要 tab（這個很重要）
+[Makefile]
+indent_style = tab

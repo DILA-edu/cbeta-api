@@ -31,7 +31,7 @@ gem 'bootsnap', '>= 1.1.0', require: false
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
-  gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+  gem 'byebug', platforms: [:mri, :windows]
 end
 
 group :development do
@@ -92,6 +92,7 @@ gem 'will_paginate-bootstrap-style'
 gem "git", "~> 3.0"
 gem "ostruct"
 gem "useragent"
+gem "rack-timeout"
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false

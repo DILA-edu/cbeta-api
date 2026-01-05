@@ -615,6 +615,7 @@ class SearchController < ApplicationController
       "LIMIT #{FACET_MAX} "\
       "OPTION ranker=#{RANKER}, max_matches=#{FACET_MAX};"
 
+    log_debug cmd
     result = @mysql_client.query(cmd, symbolize_keys: true)
     r = result.to_a
     
