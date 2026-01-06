@@ -280,8 +280,7 @@ class SearchController < ApplicationController
        OPTION max_matches=#{@max_matches}
     SQL
 
-    log_debug select
-    results = @mysql_client.query(select, symbolize_keys: true)    
+    results = manticore_query(select)
 
     hits = results.to_a
     hits.each do |h|
@@ -295,7 +294,7 @@ class SearchController < ApplicationController
       h[:time_to] = w.time_to
     end
 
-    results = @mysql_client.query("SHOW META LIKE 'total_found%';")    
+    results = manticore_query("SHOW META LIKE 'total_found%';")
     a = results.to_a
     total_found = a[0]['Value'].to_i
     log_debug "total_found: #{total_found}"
@@ -503,7 +502,7 @@ class SearchController < ApplicationController
   def estimate_max_matches
     cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
     log_debug "estimate_max_matches, cmd: #{cmd}"
-    r = @mysql_client.query(cmd)
+    r = manticore_query(cmd)
     @max_matches = r.first['docs']
     log_debug "max_matches: #{@max_matches}"
 
@@ -568,7 +567,7 @@ class SearchController < ApplicationController
   
   def exist_in_index(q, index)
     select = %(SELECT id FROM #{index} WHERE MATCH('"#{q}"') LIMIT 0, 1)
-    result = @mysql_client.query(select)
+    result = manticore_query(select)
     result.size > 0
   end
 
@@ -615,8 +614,7 @@ class SearchController < ApplicationController
       "LIMIT #{FACET_MAX} "\
       "OPTION ranker=#{RANKER}, max_matches=#{FACET_MAX};"
 
-    log_debug cmd
-    result = @mysql_client.query(cmd, symbolize_keys: true)
+    result = manticore_query(cmd)
     r = result.to_a
     
     case facet
@@ -687,7 +685,7 @@ class SearchController < ApplicationController
   
   def get_hit_count(where)
     select = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
-    r = @mysql_client.query(select)
+    r = manticore_query(select)
     return 0 if r.count==0
     r.each do |row|
       return row['sum']
@@ -1146,6 +1144,23 @@ class SearchController < ApplicationController
     @filter += ' AND ' + and_conditions.join(' AND ')
   end
 
+  def manticore_query(select)
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    r = @mysql_client.query(select, symbolize_keys: true)
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+    sql = select.tr("\n", " ")[0, 2000]
+    Rails.logger.info("[Manticore] elapsed=#{elapsed.round(3)}s sql=#{sql}")
+    r
+  rescue Mysql2::Error::TimeoutError, Timeout::Error, Errno::ETIMEDOUT => e
+    logger.warn e
+    raise CbetaError.new(504), "Manticore query timeout: #{e.message}"
+  rescue
+    logger.fatal $!
+    logger.fatal "environment: #{Rails.env}"
+    logger.fatal "select: #{@select}"
+    raise
+  end
+
   def manticore_search(user_args={})
     args = user_args.with_defaults(
       rows: @rows, 
@@ -1164,11 +1179,9 @@ class SearchController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{args[:facet]}" if args.key?(:facet)
-    log_debug "select: #{@select}"
     begin
-      results = @mysql_client.query(@select, symbolize_keys: true)
+      results = manticore_query(@select)
     end
-    log_debug "#{__LINE__} mysql query 完成"
 
     hits = results.to_a
     return hits if @mode == 'group'
@@ -1184,7 +1197,7 @@ class SearchController < ApplicationController
       end
     end    
     
-    results = @mysql_client.query("SHOW META LIKE 'total_found%';")
+    results = manticore_query("SHOW META LIKE 'total_found%';")
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
@@ -1202,7 +1215,7 @@ class SearchController < ApplicationController
           OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
         SQL
         log_debug "#{__LINE__} 計算 total_term_hits: #{select2}"
-        r = @mysql_client.query(select2)
+        r = manticore_query(select2)
         total_term_hits = r.to_a[0]['sum']
         log_debug "#{__LINE__} total_term_hits: #{total_term_hits}"
       end
@@ -1386,14 +1399,7 @@ class SearchController < ApplicationController
     
     @select += " FACET #{facet}" unless facet.nil?
     log_debug "select: #{@select}"
-    begin
-      results = @mysql_client.query(@select, symbolize_keys: true)
-    rescue
-      logger.fatal $!
-      logger.fatal "environment: #{Rails.env}"
-      logger.fatal "select: #{@select}"
-      raise
-    end
+    results = manticore_query(@select)
 
     hits = results.to_a
     return hits if @mode == 'group'
@@ -1409,7 +1415,7 @@ class SearchController < ApplicationController
       end
     end    
     
-    results = @mysql_client.query("SHOW META LIKE 'total_found%';")
+    results = manticore_query("SHOW META LIKE 'total_found%';")
     
     a = results.to_a
     total_found = a[0]['Value'].to_i
@@ -1419,7 +1425,7 @@ class SearchController < ApplicationController
       total_term_hits = 0
     else
       select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
-      r = @mysql_client.query(select2)
+      r = manticore_query(select2)
       total_term_hits = r.to_a[0]['sum']
     end
     
@@ -1451,7 +1457,7 @@ class SearchController < ApplicationController
     ).gsub(/\s+/, " ").strip
     logger.debug select
     
-    results = @mysql_client.query(select, symbolize_keys: true)
+    results = manticore_query(select)
     results.to_a
   end
 
@@ -1469,13 +1475,13 @@ class SearchController < ApplicationController
     unless @max_matches.nil?
       select += ", max_matches=#{@max_matches}"
     end
-    results = @mysql_client.query(select, symbolize_keys: true)    
+    results = manticore_query(select)
     results.to_a
   end
 
   def sphinx_total_found
     # total_found: 上次搜尋符合的 documents 數量
-    r = @mysql_client.query("SHOW META LIKE 'total_found%';")
+    r = manticore_query("SHOW META LIKE 'total_found%';")
     a = r.to_a
     found = a[0]['Value'].to_i
 
@@ -1483,7 +1489,7 @@ class SearchController < ApplicationController
       term_hits = 0
     else
       select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{@where} OPTION ranker=#{RANKER};)
-      r = @mysql_client.query(select2)
+      r = manticore_query(select2)
       term_hits = r.to_a[0]['sum']
     end
 
@@ -1534,6 +1540,16 @@ class SearchController < ApplicationController
     logger.fatal "environment: #{Rails.env}"
     logger.fatal "select: #{@select}"
     logger.fatal e.backtrace.join("\n")
+
+    if e.is_a?(CbetaError) && e.code == 504
+      r = { error: { code: 504, message: e.message } }
+      if params.key?('callback')
+        render json: r, callback: params['callback'], content_type: "application/javascript", status: 504
+      else
+        render json: r, status: 504
+      end
+      return
+    end
 
     r = empty_result
     r[:select] = @select unless @select.nil?
