@@ -296,7 +296,7 @@ class SearchController < ApplicationController
 
     results = manticore_query("SHOW META LIKE 'total_found%';")
     a = results.to_a
-    total_found = a[0]['Value'].to_i
+    total_found = a[0][:Value].to_i
     log_debug "total_found: #{total_found}"
 
     r = {
@@ -503,7 +503,7 @@ class SearchController < ApplicationController
     cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
     log_debug "estimate_max_matches, cmd: #{cmd}"
     r = manticore_query(cmd)
-    @max_matches = r.first['docs']
+    @max_matches = r.first[:docs]
     log_debug "max_matches: #{@max_matches}"
 
     # max_matches must be from 1 to 100M
@@ -688,7 +688,7 @@ class SearchController < ApplicationController
     r = manticore_query(select)
     return 0 if r.count==0
     r.each do |row|
-      return row['sum']
+      return row[:sum]
     end
   rescue Mysql2::Error
     logger.fatal "SQL command: #{select}"
@@ -1179,9 +1179,7 @@ class SearchController < ApplicationController
     ).gsub(/\s+/, " ").strip
     
     @select += " FACET #{args[:facet]}" if args.key?(:facet)
-    begin
-      results = manticore_query(@select)
-    end
+    results = manticore_query(@select)
 
     hits = results.to_a
     return hits if @mode == 'group'
@@ -1200,7 +1198,7 @@ class SearchController < ApplicationController
     results = manticore_query("SHOW META LIKE 'total_found%';")
     
     a = results.to_a
-    total_found = a[0]['Value'].to_i
+    total_found = a[0][:Value].to_i
     log_debug "#{__LINE__} total_found: #{total_found}"
     
     total_term_hits = nil
@@ -1216,7 +1214,7 @@ class SearchController < ApplicationController
         SQL
         log_debug "#{__LINE__} 計算 total_term_hits: #{select2}"
         r = manticore_query(select2)
-        total_term_hits = r.to_a[0]['sum']
+        total_term_hits = r.to_a[0][:sum]
         log_debug "#{__LINE__} total_term_hits: #{total_term_hits}"
       end
     end
@@ -1418,7 +1416,7 @@ class SearchController < ApplicationController
     results = manticore_query("SHOW META LIKE 'total_found%';")
     
     a = results.to_a
-    total_found = a[0]['Value'].to_i
+    total_found = a[0][:Value].to_i
     log_debug "total_found: #{total_found}"
     
     if total_found == 0
@@ -1426,7 +1424,7 @@ class SearchController < ApplicationController
     else
       select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
       r = manticore_query(select2)
-      total_term_hits = r.to_a[0]['sum']
+      total_term_hits = r.to_a[0][:sum]
     end
     
     r = {
@@ -1483,14 +1481,14 @@ class SearchController < ApplicationController
     # total_found: 上次搜尋符合的 documents 數量
     r = manticore_query("SHOW META LIKE 'total_found%';")
     a = r.to_a
-    found = a[0]['Value'].to_i
+    found = a[0][:Value].to_i
 
     if found == 0
       term_hits = 0
     else
       select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{@where} OPTION ranker=#{RANKER};)
       r = manticore_query(select2)
-      term_hits = r.to_a[0]['sum']
+      term_hits = r.to_a[0][:sum]
     end
 
     return found, term_hits

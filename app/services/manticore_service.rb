@@ -7,10 +7,7 @@ class ManticoreService
     @client = Mysql2::Client.new(
       host: '127.0.0.1',
       port: 9307,
-      encoding: 'utf8mb4',
-      connect_timeout: 3,
-      read_timeout: 20,    # 可根據查詢複雜度調整, 寧可快速失敗（返回 503 / fallback），也不要讓 worker 卡 30 秒。
-      write_timeout: 5
+      encoding: 'utf8mb4'
     )
 
     if @client.nil?

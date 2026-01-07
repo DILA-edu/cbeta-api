@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_13_001900) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_07_135912) do
   create_table "changes", force: :cascade do |t|
     t.string "lb", null: false
     t.string "html", null: false
@@ -29,6 +29,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_13_001900) do
     t.integer "count"
     t.string "referer"
     t.index ["url", "accessed_at"], name: "index_visits_on_url_and_accessed_at"
-    t.index ["url", "referer", "accessed_at"], name: "index_visits_on_url_and_referer_and_accessed_at"
+    t.index ["url", "referer", "accessed_at"], name: "index_visits_on_url_and_referer_and_accessed_at", unique: true
   end
 end

@@ -167,13 +167,19 @@ class ApplicationController < ActionController::Base
         # referer 只記錄 host
         referer.split('//').last.split('/').first
       end
+    
+    sql = <<~SQL
+      INSERT INTO visits (url, referer, accessed_at, count)
+      VALUES (?, ?, ?, 1)
+      ON CONFLICT (url, referer, accessed_at)
+      DO UPDATE SET count = visits.count + 1
+    SQL
 
-    v = Visit.find_or_create_by(
-      url: path, 
-      referer: referer,
-      accessed_at: Date.today
+    Visit.connection.execute(
+      Visit.sanitize_sql_array(
+        [sql, path, referer, Date.today]
+      )
     )
-    v.update(count: v.count + 1)
   end
   
   def my_render(data)
