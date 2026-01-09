@@ -19,8 +19,6 @@ Rails.application.routes.draw do
   match 'changes', to: 'changes#index', via: [:get, :post]
 
   match 'chinese_tools/sc2tc', via: [:get, :post]
-
-  get 'download/:id', to: 'download#index', id: /.+/
   
   match 'export/all_creators2', via: [:get, :post]
   match 'export/all_creators', via: [:get, :post]
@@ -127,6 +125,4 @@ Rails.application.routes.draw do
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works/word_count', via: [:get, :post]
   match 'works', to: 'works#index', via: [:get, :post]
-
-  #match ':controller', action: 'index', via: [:get, :post]
 end
