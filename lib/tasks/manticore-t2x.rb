@@ -5,7 +5,7 @@ require 'fileutils'
 require 'json'
 require 'set'
 require 'cbeta'
-require_relative 'sphinx-share'
+require_relative 'manticore-share'
 
 class ManticoreT2X
   def initialize

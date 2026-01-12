@@ -13,7 +13,7 @@ class ConvertDocusky
     c.convert(canon)
     
     src = tmpdir
-    dest = Rails.root.join('data', 'download', 'docusky')
+    dest = File.join(Rails.configuration.cb.dl, 'docusky')
     FileUtils.mkdir_p(dest)
     
     # 備份舊資料

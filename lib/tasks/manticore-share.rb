@@ -1,4 +1,4 @@
-module SphinxShare
+module MancicoreShare
   def get_info_from_work(work, data=nil, exclude: [])
     data = {} if data.nil?
 

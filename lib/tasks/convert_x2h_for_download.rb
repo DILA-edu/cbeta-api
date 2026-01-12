@@ -13,7 +13,7 @@ class ConvertX2hForDownload
     x2h.convert(canon)
     
     src = tmpdir
-    dest = Rails.root.join('data', 'download', 'html')
+    dest = File.join(Rails.configuration.cb.dl, 'html')
     FileUtils.mkdir_p(dest)
     
     # 備份舊資料

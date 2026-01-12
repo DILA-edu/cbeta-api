@@ -5,7 +5,7 @@ require 'json'
 require 'set'
 require 'cbeta'
 require_relative 'cbeta_p5a_share'
-require_relative 'sphinx-share'
+require_relative 'manticore-share'
 
 class ManticoreChunks
   MAX = 100 # 區塊 最長 長度

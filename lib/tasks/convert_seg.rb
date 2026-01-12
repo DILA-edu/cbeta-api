@@ -7,7 +7,7 @@ class ConvertSeg
     t1 = Time.now
     @canon = canon
     @model = Rails.configuration.x.seg_model
-    @src_root = Rails.root.join('data', 'download', 'text')
+    @src_root = File.join(Rails.configuration.cb.dl, 'text')
     @dest_root = Rails.root.join('data', 'txt-seg')
 
     Dir.mktmpdir("cbdata_word_seg") do |dir|

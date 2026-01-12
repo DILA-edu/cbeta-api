@@ -10,8 +10,7 @@ class DownloadEbooks
 
   def run(type=nil)
     @errors = ""
-    @dest_folder = Rails.root.join('data', 'download')
-    Dir.chdir(@dest_folder) do
+    Dir.chdir(Rails.configuration.cb.dl) do
       case type
       when 'epub', 'mobi'
         download_one_zip(type)

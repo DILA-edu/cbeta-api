@@ -9,7 +9,7 @@ require 'cbeta'
 require_relative 'cbeta_p5a_share'
 require_relative 'html-node'
 require_relative 'share'
-require_relative 'sphinx-share'
+require_relative 'manticore-share'
 
 # 產生 manticore 所需的 xml 檔案
 class ManticoreNotes
@@ -491,7 +491,8 @@ class ManticoreNotes
   end
 
   def write_footnotes_for_download(all_notes)
-    folder = Rails.root.join('data', 'download', 'footnotes', @canon, @work_id)
+    folder = File.join(Rails.configuration.cb.dl, 'footnotes', @canon, @work_id)
+
     FileUtils.makedirs(folder)
     all_notes.each_pair do |juan, notes|
       fn = File.join(folder, "%03d.csv" % juan)
