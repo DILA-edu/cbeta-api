@@ -13,7 +13,7 @@ class CreateCreatorsList
   def create
     result = read_contributors
 
-    folder = Rails.root.join('data')
+    folder = Rails.configuration.cb.dl
     FileUtils.makedirs(folder)
 
     fn = File.join(folder, 'all-creators.json')
@@ -26,8 +26,8 @@ class CreateCreatorsList
     s = JSON.pretty_generate(@all_creators_with_alias)
     File.write(fn, s)
 
-    fn1 = File.join(folder, 'creators-by-strokes-with-works.json')
-    fn2 = File.join(folder, 'creators-by-strokes.json')
+    fn1 = File.join(folder, 'scope-selector', 'creators-by-strokes-with-works.json')
+    fn2 = File.join(folder, 'scope-selector', 'creators-by-strokes.json')
     output_by_strokes(fn1, fn2)
   end
   

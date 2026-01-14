@@ -10,6 +10,9 @@ module SectionConvert
       end
       
       step_creators_list
+      step_create_all_works_list
+      step_create_scope_selector
+      step_create_check_list_j
       step_t4d
       step_zip_text
 
@@ -18,10 +21,30 @@ module SectionConvert
       end
     end
   end
+  
+  def step_create_all_works_list
+    run_step '產生 全部佛典 卷列表' do
+      puts '必須要在 import:work_info 之後執行'
+      command 'rake create:all_works_list'
+    end
+  end
+
+  def step_create_check_list_j
+    run_step '產生 嘉興藏檢查表' do
+      puts '必須要在 import:work_info 之後執行'
+      command 'rake create:check_list_j'
+    end
+  end
+
+  def step_create_scope_selector
+    run_step '產生 範圍選擇清單 (rake create:scope_selector)' do
+      command 'rake create:scope_selector'
+    end
+  end
 
   def step_creators_list
     run_step '含別名的作譯者清單 (rake create:creators)' do
-      puts '產生 data/all-creators-with-alias.json, 供匯出。'
+      puts '產生 download/all-creators-with-alias.json, 供下載。'
       puts '要從 GitHub 更新 Authority-Databases (如果 Authority ID 有變動，Github 上的 Authority XML 也要請 Authority 管理人員更新)'
       command 'rake create:creators'
     end

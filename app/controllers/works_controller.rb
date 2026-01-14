@@ -70,17 +70,6 @@ class WorksController < ApplicationController
     my_render(r)
   end
   
-  def word_count
-    r = CSV.generate(headers: true) do |csv|
-      csv << %w[work cjk_chars en_words canon category]
-      Work.where(alt: nil).order(:n).each do |w|
-        csv << [w.n, w.cjk_chars, w.en_words, w.canon, w.category]
-      end
-    end
-    
-    send_data r, filename: "cbeta-word-count.csv"
-  end
-
   private
   
   def search_by_canon_uuid

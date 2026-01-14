@@ -8,8 +8,8 @@ module StaticPagesHelper
     "<a href='#{url}'>#{label}</a>".html_safe
   end
 
-  def link_to_path(path, label=nil, params)
-    if params.nil?
+  def link_to_path(label, path, params={})
+    if params.empty?
       url = path
     else
       url = "#{path}?#{params.to_query}"

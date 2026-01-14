@@ -3,8 +3,8 @@
 %p 供前端做「範圍選擇」樹狀目錄使用。
 
 %ul
-  %li=link_to '依部類選擇', controller: 'export', action: 'scope_selector_by_category'
-  %li=link_to '依刊本選擇', controller: 'export', action: 'scope_selector_by_vol'
-  %li=link_to '作譯者依筆劃', controller: 'export', action: 'creator_strokes'
-  %li=link_to '作譯者依筆劃(含譯著)', controller: 'export', action: 'creator_strokes_works'
-  %li=link_to '朝代期間佛典列表', controller: 'export', action: 'dynasty_works'
+  %li=link_to_path '依 部類 選擇', 'download/scope-selector/category.json'
+  %li=link_to_path '依 刊本 選擇', 'download/scope-selector/vol.json'
+  %li=link_to_path '作譯者依筆劃', 'download/scope-selector/creators-by-strokes.json'
+  %li=link_to_path '作譯者依筆劃(含譯著)', 'download/scope-selector/creators-by-strokes-with-works.json'
+  %li=link_to_path '朝代期間佛典列表', 'download/scope-selector/dynasty-works.json'

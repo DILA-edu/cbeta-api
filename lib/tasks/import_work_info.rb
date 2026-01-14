@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'json'
 require_relative 'cbeta_p5a_share'
 
@@ -23,6 +25,9 @@ class ImportWorkInfo
 
     init_regexp
     @work_xml_files = build_work_xml_files
+    
+    @stat_folder = File.join(Rails.configuration.cb.dl, 'stat')
+    FileUtils.makedirs(@stat_folder)
   end
   
   def import
@@ -54,9 +59,11 @@ class ImportWorkInfo
     puts "單部佛典最大字數 max_cjk_chars: %s" % number_with_delimiter(@max_cjk_chars)
 
     r = { total:, by_canon: @stat }
-    fn = Rails.root.join('data', 'stat-all.json')
+    fn = File.join(@stat_folder, 'stat-all.json')
     puts "write #{fn}"
     File.write(fn, JSON.pretty_generate(r))
+
+    word_count
   end
   
   private
@@ -94,7 +101,7 @@ class ImportWorkInfo
         @dynasty_works_count << [dynasties, y1, y2, works.size]
         
         dynasty_h = { key: dynasties }
-        title = "#{dynasties} #{y1} "
+        title = +"#{dynasties} #{y1} "
         title << (y1<0 ? 'BCE' : 'CE')
         title << " ~ #{y2} "
         title << (y2<0 ? 'BCE' : 'CE')
@@ -112,7 +119,7 @@ class ImportWorkInfo
   end
 
   def dynasty_write_count
-    fn = Rails.root.join('data', 'dynasty-all.csv')
+    fn = File.join(@stat_folder, 'dynasty-all.csv')
     puts "write #{fn}"
     CSV.open(fn, "wb") do |csv|
        csv << %w(朝代 起始年 結束年 典籍數)
@@ -130,11 +137,10 @@ class ImportWorkInfo
       }
     ]
     s = JSON.pretty_generate(r)
-    fn = Rails.root.join('data', 'dynasty-works.json')
+    fn = File.join(Rails.configuration.cb.sc, 'dynasty-works.json')
     puts "write #{fn}"
     File.write(fn, s)
   end
-  
   
   def count_chars(doc)
     # 去除 xml document 中不列入計算的元素
@@ -319,7 +325,7 @@ class ImportWorkInfo
     w.work_type = v[:type] || 'textbody' # 預設：正文
 
     title = v[:title]
-    long_title = "#{w.n} #{title}"
+    long_title = +"#{w.n} #{title}"
     unless %w(N Y ZS ZW).include? @canon
       long_title << " (#{v[:juans]}卷)"
     end
@@ -421,7 +427,7 @@ class ImportWorkInfo
 
   def init_regexp
     # 構成 en_word 的字元
-    s = '\da-zA-Z'
+    s = +'\da-zA-Z'
     s << "'"  # don't 算一個 word
     s << '\-' # Saddharma-puṇḍarīka 算一個 word
     s << "\u00C0-\u00D6" # C1 Controls and Latin-1 Supplement => Letters
@@ -444,7 +450,7 @@ class ImportWorkInfo
     @regexp_en_word = Regexp.new("[#{s}]+")
 
     # 不計入 cjk_chars 的字元
-    s = "\u0000-\u00FF" # C0 Controls and Basic Latin, C1 Controls and Latin-1 Supplement
+    s += "\u0000-\u00FF" # C0 Controls and Basic Latin, C1 Controls and Latin-1 Supplement
     s << "\u02B0-\u036F" # ʼˇˋ ̐
     s << "\u2000-\u206F" # – — ’ “ ” … ‧ ※ ⁉
     s << "\u2150-\u218F" # ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ
@@ -538,6 +544,18 @@ class ImportWorkInfo
       w.vol = vol
       w.juan_start = info[:juan_start]
       w.juans = info[:juan]
+    end
+  end
+
+  def word_count
+    fn = File.join(@stat_folder, "cbeta-word-count.csv")
+    puts "write #{fn}"
+
+    CSV.open(fn, "wb") do |csv|
+      csv << %w[work cjk_chars en_words canon category]
+      Work.where(alt: nil).order(:n).each do |w|
+        csv << [w.n, w.cjk_chars, w.en_words, w.canon, w.category]
+      end
     end
   end
   

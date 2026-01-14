@@ -21,15 +21,6 @@ Rails.application.routes.draw do
   match 'chinese_tools/sc2tc', via: [:get, :post]
   
   match 'export/all_creators2', via: [:get, :post]
-  match 'export/all_creators', via: [:get, :post]
-  match 'export/all_works', via: [:get, :post]
-  match 'export/check_list', via: [:get, :post]
-  match 'export/creator_strokes', via: [:get, :post]
-  match 'export/creator_strokes_works', via: [:get, :post]
-  match 'export/dynasty_works', via: [:get, :post]
-  match 'export/dynasty', via: [:get, :post]
-  match 'export/scope_selector_by_category', via: [:get, :post]
-  match 'export/scope_selector_by_vol', via: [:get, :post]
 
   match 'juans/goto', via: [:get, :post]
   match 'juans', to: 'juans#index', via: [:get, :post]
@@ -41,7 +32,6 @@ Rails.application.routes.draw do
   get   'report/daily',   to: 'report#daily',   as: :report_daily
   match 'report/url',     to: 'report#url',     as: :report_url,     via: [:get, :post]
   match 'report/referer', to: 'report#referer', as: :report_referer, via: [:get, :post]
-  match   'report/total',   to: 'report#total', via: [:get, :post]
 
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
@@ -123,6 +113,5 @@ Rails.application.routes.draw do
 
   match 'works/toc', via: [:get, :post]
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
-  match 'works/word_count', via: [:get, :post]
   match 'works', to: 'works#index', via: [:get, :post]
 end

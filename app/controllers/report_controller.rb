@@ -43,11 +43,6 @@ class ReportController < ApplicationController
     end
   end
 
-  def total
-    fn = Rails.root.join('data', 'stat-all.json')
-    render json: JSON.load_file(fn)
-  end
-
   private
 
   def h2d(h)

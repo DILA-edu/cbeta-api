@@ -1,0 +1,24 @@
+class CreateAllWorksList
+  def create
+    puts "read model Work"
+    r = []
+    Work.order(:sort_order).each do |w|
+      h = {
+        work: w.n,
+        title: w.title
+      }
+      if w.juan_list.nil?
+        if not w.juan.nil? and w.juan > 1
+          h[:juans] = (1..w.juan).to_a
+        end
+      else
+        h[:juans] = w.juan_list.split(',')
+      end
+      r << h
+    end
+
+    fn = File.join(Rails.configuration.cb.dl, 'all-works.json')
+    puts "write #{fn}"
+    File.write(fn, JSON.pretty_generate(r))
+  end
+end
