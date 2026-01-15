@@ -55,8 +55,16 @@ Rails.application.configure do
   config.log_tags = [ :request_id ]
 
   # Use a different cache store in production.
-  config.cache_store = :mem_cache_store, { value_max_bytes: 2_000_000 }
-  
+  #config.cache_store = :mem_cache_store, { value_max_bytes: 2_000_000 }
+
+  # Redis
+  config.cache_store = :redis_cache_store, {
+    # /0: 表示要使用的 Redis database 編號。 
+    #     Redis 通常有 16 個資料庫（0-15），您可以根據自己的應用程式 選擇合適的資料庫。
+    url: ENV['REDIS_URL'] ,
+    namespace: 'cbapi_dev' # namespace: 防止 key 衝突
+  }
+
   # Use a real queuing backend for Active Job (and separate queues per environment).
   # config.active_job.queue_adapter     = :resque
   # config.active_job.queue_name_prefix = "cbdata9_production"

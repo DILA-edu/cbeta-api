@@ -91,6 +91,7 @@ gem "git", "~> 3.0"
 gem "ostruct"
 gem "useragent"
 gem "rack-timeout"
+gem "redis"
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false
