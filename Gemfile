@@ -92,6 +92,7 @@ gem "ostruct"
 gem "useragent"
 gem "rack-timeout"
 gem "redis"
+gem 'connection_pool', '~> 2.4', '< 3'
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false
