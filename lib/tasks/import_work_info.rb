@@ -28,6 +28,7 @@ class ImportWorkInfo
     
     @stat_folder = File.join(Rails.configuration.cb.dl, 'stat')
     FileUtils.makedirs(@stat_folder)
+    FileUtils.makedirs(Rails.configuration.cb.sc)
   end
   
   def import

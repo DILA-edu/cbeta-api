@@ -1,11 +1,14 @@
 %h1 Download 
 %ul
-  %li= link_to "HTML版 佛典", controller: 'static_pages', action: 'download_html'
-  %li= link_to "純文字版 佛典", controller: 'static_pages', action: 'download_text'
-  %li= link_to "DocuXml", controller: 'static_pages', action: 'download_docusky'
   %li
-    =link_to "電子書", controller: 'static_pages', action: 'download_ebooks'
-    (EPUP, MOBI, PDF, DOCX)
+    全文
+    %ul
+      %li= link_to "HTML版 佛典", controller: 'static_pages', action: 'download_html'
+      %li= link_to "純文字版 佛典", controller: 'static_pages', action: 'download_text'
+      %li= link_to "DocuXml", controller: 'static_pages', action: 'download_docusky'
+      %li
+        =link_to "電子書", controller: 'static_pages', action: 'download_ebooks'
+        (EPUP, MOBI, PDF, DOCX)
   %li= link_to "校注", controller: 'static_pages', action: 'download_footnotes'
   %li= link_to_path '嘉興藏檢查表', 'download/check-list-J.csv'
   %li= link_to_path '全部作譯者列表', 'download/all-creators.json'
