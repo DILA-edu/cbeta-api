@@ -1,9 +1,25 @@
 %h1 統計報表 
 %ul
-  %li= link_to "全集成統計數字", controller: 'report', action: 'index'
+  %li= link_to_path '各朝代 佛典數量', 'download/stat/dynasty-all.csv'
+  %li 
+    字數統計
+    %ul
+      %li=link_to "字數統計規則", "https://bit.ly/3MMH1V8"
+      %li
+        = link_to "全集成統計數字", controller: 'report', action: 'index'
+        (含以藏經為單位 字數統計)
+      %li= link_to '分部 字數統計表', '#work'
   %li 
     存取紀錄
     %ul
       %li= link_to "日統計表", controller: 'report', action: 'daily'
       %li= link_to "URL 統計表", controller: 'report', action: 'url'
       %li= link_to "Referer 統計表", controller: 'report', action: 'referer'
+
+%h2#work 分部 字數統計
+%p=link_to_path nil, "download/stat/cbeta-word-count.csv"
+%p 回傳 CSV 格式檔案，內容是各部典籍字數統計。例：
+%pre.ms-4
+  work,cjk_chars,en_words,canon,category
+  A1057,38830,0,A,事彙部類
+

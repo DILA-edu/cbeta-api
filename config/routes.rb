@@ -99,7 +99,6 @@ Rails.application.routes.draw do
   get 'static_pages/sphinx'
   get 'static_pages/time'
   get 'static_pages/toc'
-  get 'static_pages/word_count'
   get 'static_pages/word_seg'
   get 'static_pages/works'
   get 'static_pages/work_index'
