@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # 將 CBETA XML 簡化為適合轉換成 docx 的 XML 格式 (xml4docx)
 
 require_relative 'css_parser'
@@ -36,7 +37,10 @@ class XMLForDocx1
     else
       convert_canon(args)
     end
-    puts "\n花費時間：" + ChronicDuration.output(Time.now - time_start)
+    puts "\n花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
+  rescue => e
+    puts "lb: #{@lb}"
+    raise
   end
 
   def convert_canon(args)
@@ -197,7 +201,8 @@ class XMLForDocx1
 
     @div_level = 0
     @list_level = 0
-    @next_line_buf = ''
+    @next_line_buf = +''
+    @tt_buf = []
     @juan = 0
     @inline_note = [false]
     @in_lg = false
@@ -219,7 +224,14 @@ class XMLForDocx1
 
     if e.has_attribute?('type')
       if e['type'] == 'circle'
-        return '◎'
+        case e.parent.name
+        when 'div'
+          return "<p>◎</p>"
+        when 'list'
+          return "<item><p>◎</p></item>" 
+        else
+          return '◎'
+        end
       end
     end
 
@@ -232,7 +244,7 @@ class XMLForDocx1
       return traverse(lem, mode)
     end
     
-    r = ''
+    r = +''
     if e['type'] == 'star'
       corresp = e['corresp'].delete_prefix('#')
       unless @mod_notes.key?(corresp)
@@ -384,7 +396,7 @@ class XMLForDocx1
   end
 
   def e_item(e)
-    content = ''
+    content = +''
     content << e['n'] if e.key?('n')
     content << traverse(e)
     return '' if content.empty?
@@ -395,7 +407,7 @@ class XMLForDocx1
   
     node = HTMLNode.new('item')
     node.content = content
-    r = "\n"
+    r = +"\n"
     r << "  " * @list_level
     r << node.to_s
     r
@@ -431,7 +443,7 @@ class XMLForDocx1
   end
 
   def e_l(e, mode)
-    r = ''
+    r = +''
 
     @log.puts "#{__LINE__} e_l, first_l: #{@first_l}, lg_type: #{@lg_type.last}, mode: #{mode}"
     if @first_l
@@ -450,23 +462,43 @@ class XMLForDocx1
     false
   end
 
+  def output_tt
+    return '' if @tt_buf.empty?
+
+    # 把 array [[悉1, 羅1, 漢1], [悉2, 羅2, 漢2]]
+    # 轉成 [[悉1, 悉2], [羅1, 羅2], [漢1, 漢2]]
+    # 再轉成 XML table
+    r = +"<table rend=\"table_tt\">\n"
+    rows = @tt_buf.transpose
+    line2 = rows[0].join.include?('<graphic') ? 2 : 1
+    rows.each_with_index do |a, i|
+      r << "<!-- lb: #{@lb} -->\n" if i == line2
+      r << "  <row>\n"
+      a.each { r << "    <cell>#{it}</cell>\n" }
+      r << "  </row>\n"
+    end
+    r << "</table>\n"
+    @tt_buf = []
+    r
+  rescue => e
+    puts e.message
+    puts e.backtrace[0]
+    error "tt_buf: #{JSON.pretty_generate(@tt_buf)}"
+  end
+
   def e_lb(e)
     @lb = e['n']
     br = lb_force_break?(e)
     @log.puts "#{__LINE__} lb: #{@lb}, br: #{br}"
 
-    r = ''
-    if @next_line_buf.empty?
+    r = +''
+    if @tt_buf.empty?
       r << "<lb/>\n" if br
       r << "<!-- lb: #{@lb} -->"
     else
-      r << "<lb/>\n"
-      r << "<!-- lb: #{@lb} -->"
-      r << @next_line_buf
-      r << "<lb/>\n" if e.at_xpath("following-sibling::tt")
-      @next_line_buf = ''
+      r << output_tt
     end
-
+    
     r
   end
 
@@ -522,7 +554,7 @@ class XMLForDocx1
   end
 
   def e_lg(e)
-    r = ''
+    r = +''
     @lg_type << e['type']
     head = e.at_xpath('head')
     unless head.nil?
@@ -565,7 +597,7 @@ class XMLForDocx1
       return node.to_s + "\n"
     end
 
-    r = ''
+    r = +''
     head = e.at_xpath('head')
     unless head.nil?
       node = HTMLNode.new('p')
@@ -620,7 +652,9 @@ class XMLForDocx1
       s << ' ' + @lem_cf[n]
     end
 
-    "<footnote>#{s}</footnote>"
+    r = "<footnote>#{s}</footnote>"
+    r = "<p>#{r}</p>\n" if e.parent.name == 'div'
+    r
   end
 
   def e_note_inline(e, mode)
@@ -659,6 +693,7 @@ class XMLForDocx1
     s = traverse(e, 'text')
     r = "<footnote>#{s}</footnote>"
     @mod_notes[n] = r
+    r = "<p>#{r}</p>\n" if e.parent.name == 'div'
     r
   end
 
@@ -682,18 +717,43 @@ class XMLForDocx1
       copy_style(e, node)
     end
 
-    node.content = traverse(e)
     if e['type'] == 'pre'
+      node.content = traverse(e)
       @pre.pop
       e_p_pre(node)
+      node.to_s + "\n"
     else
-      unless @next_line_buf.empty?
-        node.content << "<lb/>\n"
-        node.content << @next_line_buf
-        @next_line_buf = ''
-      end  
+      s = traverse(e)
+      s << output_tt
+      e_p_tt(s, node)
     end
-    node.to_s + "\n"
+  end
+
+  def e_p_tt(s, p_node)
+    unless s.include?('<table rend="table_tt">') # 段落 不含 悉漢雙行對照
+      p_node.content = s
+      return p_node.to_s + "\n"
+    end
+
+    xml_doc = Nokogiri::XML("<root>#{s}</root>")
+    r = +''
+    xml_doc.root.children.each do |c|
+      if c.comment?
+        r << c.to_xml
+      elsif c.text?
+        s = c.text.strip
+        unless s.empty?
+          p_node.content = c.text
+          r << p_node.to_s + "\n"
+        end
+      elsif c.name == 'table'
+        r << c.to_xml + "\n"
+      else
+        p_node.content = c.to_xml
+        r << p_node.to_s + "\n"
+      end
+    end
+    r
   end
 
   def e_p_pre(node)
@@ -729,12 +789,12 @@ class XMLForDocx1
     "(#{s})"
   end
 
-  def e_t(e)
+  def e_t(e, mode)
     if e.has_attribute? 'place'
       return '' if e['place'].include? 'foot'
     end
 
-    r = traverse(e)
+    r = traverse(e, mode)
 
     tt = e.at_xpath('ancestor::tt')
     unless tt.nil?
@@ -742,29 +802,75 @@ class XMLForDocx1
       return r if tt['rend'] == 'normal'
     end
 
-    if e.key? 'style'
-      s = e['style']
-      if s =~ /^margin-left: ?(\d+)em$/
-        i = $1.to_i
-        r = '　' * i + r if i > 0
-      else
-        r = "<seg style='#{e['style']}'>#{r}</seg>"
+    if tt['place'] == 'inline'
+      if e.key? 'style'
+        s = e['style']
+        if s =~ /^margin-left: ?(\d+)em$/
+          i = $1.to_i
+          r = '　' * i + r if i > 0
+        else
+          r = "<seg style='#{e['style']}'>#{r}</seg>"
+        end
       end
+      return r
     end
-
-    return r if tt['place'] == 'inline'
 
     # 處理雙行對照
     # <tt type="tr"> 也是 雙行對照
-    i = e.xpath('../t').index(e)
-    case i
-    when 0
-      return r + '　'
-    when 1
-      @next_line_buf << r + '　'
-      return ''
+    buf = @tt_buf[-1]
+    case e['lang']
+    when /^sa/
+      buf << +'' # 放 悉曇字
+      buf << +'' # 放 羅馬轉寫
+      e.children.each do |c|
+        if c.text?
+          buf[-2] << c.text
+        elsif c.element?
+          if c.name =='g'
+            e_t_g(c, buf)
+          else
+            buf[-2] << traverse(c, mode)
+          end
+        end
+      end
+    when /^zh/
+      buf << traverse(e, mode)
     else
-      return r
+      if e.children.empty?
+        buf << +''
+        buf << +'' if buf.size < 3
+      else
+        error "t 元素 未知的 lang: #{e.to_xml}"
+      end
+    end
+
+    ''
+  rescue => e
+    puts "tt_buf: #{@tt_buf.inspect}"
+    raise
+  end
+
+  def e_t_g(e, buf)
+    id = e["ref"].delete_prefix("#")
+    g = @gaiji[id]
+
+    if g.key?('symbol')
+      buf[-2] << g['symbol']
+      return
+    end
+
+    case id
+    when /^CB/
+      abort "#{__LINE__} 不應出現的缺字 ID: #{id}"
+    when /^(SD|RJ)/
+      type = id[0, 2].downcase
+      url = File.join("#{type}-gif", id[3, 2], "#{id}.gif")
+      buf[-2] << "<graphic url='#{url}'/>"
+
+      # 如果有羅馬轉寫
+      buf[-1] << "(#{g['romanized']})" if g.key?('romanized')
+    else
+      abort "未知的缺字類型: #{id}"
     end
   end
 
@@ -781,6 +887,15 @@ class XMLForDocx1
     copy_style(e, node)
     node.content = traverse(e)
     node.to_s + "\n"
+  end
+
+  def e_tt(e, mode)
+    if e['place'] == 'inline' || e['rend'] == 'normal'
+       || e['type'] == 'app' || e['type'] == 'single-line'
+       return traverse(e, mode)
+    end
+    @tt_buf << []
+    traverse(e, mode)
   end
 
   def e_unclear(e)
@@ -851,9 +966,10 @@ class XMLForDocx1
     when 'row' then e_row(node)
     when 'seg' then e_seg(node)
     when 'sg'  then e_sg(node)
-    when 't'     then e_t(node)
+    when 't'     then e_t(node, mode)
     when 'table' then e_table(node)
     when 'trailer' then e_trailer(node)
+    when 'tt' then e_tt(node, mode)
     when 'unclear' then e_unclear(node)
     else
       traverse(node)
@@ -862,10 +978,14 @@ class XMLForDocx1
 
   def handle_text(node)
     s = node.text.chomp
-    r = ''
+    return s if s =~ /\A\s*\z/
+
+    r = +''
     s.each_char do
       r << handle_char(it)
     end
+
+    r = "<p>#{r}</p>\n" if node.parent.name == 'div'
     r
   end
 
@@ -938,7 +1058,7 @@ class XMLForDocx1
           new_p = add_p_before_p(p, rend: 'inlinenote', style: note['style']) 
         end
 
-        msg = "#{@v_work} 移動 #{c.name}"
+        msg = +"#{@v_work} 移動 #{c.name}"
         if c.key?('type')
           msg << ", type: #{c['type']}"
         else
@@ -1040,7 +1160,7 @@ class XMLForDocx1
   end
 
   def traverse(node, mode='xml')
-    r = ""
+    r = +""
     node.children.each do |c|
       r << handle_node(c, mode)
     end
@@ -1048,13 +1168,13 @@ class XMLForDocx1
   end
 
   def write_juans(xml)
-    buf = ''
+    buf = +''
     juan = nil
     xml.split(/(<juan n='.*?'\/>)/).each do |s|
       if s =~ /<juan n='(.*?)'\/>/
         j = $1
         write_juan(juan, buf)
-        buf = ''
+        buf = +''
         juan = j.to_i
       else
         buf << s
@@ -1091,7 +1211,7 @@ class XMLForDocx1
   end
 
   def xml_styles(juan)
-    r = ""
+    r = +""
     indent = "\n      "
 
     @juan_styles[juan].each do |k|
@@ -1115,5 +1235,11 @@ class XMLForDocx1
     r
   end
 
+  def error(msg)
+    location = caller_locations.first
+    file = File.basename(location.path)
+    abort "\n#{file}:#{location.lineno}, lb: #{@lb}, #{msg}"
+  end
+  
   include CbetaP5aShare
 end

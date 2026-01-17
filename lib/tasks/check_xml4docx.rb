@@ -9,7 +9,9 @@ class CheckXMLForDocx
 
     rnc = Rails.root.join('data-static', 'schema', 'xml4docx.rnc')
     rng = Rails.root.join('data', 'xml4docx2', 'xml4docx.rng')
-    puts `trang #{rnc} #{rng}`
+    cmd = "trang #{rnc} #{rng}"
+    puts cmd
+    system(cmd)
     @relaxng = Nokogiri::XML::RelaxNG(File.read(rng))
   end
 
@@ -23,7 +25,6 @@ class CheckXMLForDocx
     check_as_text('T/T09/T09n0262/T09n0262_007.xml', /伏遇.*<lb\/>.*亡夫/m)
     check_as_text('T/T10/T10n0293/T10n0293_001.xml', /0661a04.*<footnote>.*0661a05/m)
     check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
-    check_as_text('T/T18/T18n0860/T18n0860_001.xml', /0182c10.*?帝　娑嚩\(二合\)　訶/m)
     check_as_text('T/T18/T18n0867/T18n0867_001.xml', /0254b01.*?怛.*?0254b02/m)
     check_as_text('T/T18/T18n0868/T18n0868_002.xml', /0274b18.*』.*0274b19/m)
     
@@ -45,7 +46,7 @@ class CheckXMLForDocx
     check_as_text('T/T55/T55n2154/T55n2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)
     
     puts "\n未發現錯誤"
-    puts "花費時間：" + ChronicDuration.output(Time.now - time_start)
+    puts "花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
   end
 
   private

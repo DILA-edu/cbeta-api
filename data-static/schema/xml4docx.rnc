@@ -3,7 +3,7 @@ body = element body {
 }
 
 cell = element cell {
-  (text | font | footnote | lb | seg)+,
+  (text | font | footnote | graphic | lb | seg)+,
   attribute cols { text }?,
   attribute rows { text }?
 }
@@ -57,7 +57,8 @@ seg = element seg {
 
 table = element table {
   row+,
-  attribute cols { text }?
+  attribute cols { text }?,
+  attribute rend { text }?
 }
 
 start = element document {

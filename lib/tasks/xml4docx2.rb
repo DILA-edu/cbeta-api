@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # seg 包 seg, 扁平化 處理
 
 require_relative 'html-node'
@@ -17,7 +18,7 @@ class XMLForDocx2
       do_file(it)
       @log.close if @log
     end
-    puts "\n花費時間：" + ChronicDuration.output(Time.now - time_start)
+    puts "\n花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
   end
 
   private
@@ -84,7 +85,6 @@ class XMLForDocx2
 
     read_settings_styles
     handle_body_text
-    handle_list_footnote
     traverse(@doc.root)
     abort "仍有 seg 包 seg" if @doc.at_xpath('//seg/seg')
 
@@ -96,25 +96,17 @@ class XMLForDocx2
   end
 
   def e_footnote(e)
-    return traverse(e) if e.parent.name != 'body'
-
-    case e.next.name
+    s = traverse(e)
+    case e.parent.name
+    when 'body'
+      p = e.add_previous_sibling("<p></p>").first
+      e.replace(p)
+      p.add_child(e)
     when 'list'
-      move_to_list(e, e.next)
-    when 'p'
-      e.next.prepend_child(e)
-    end
-  end
-
-  def move_to_list(nodes, list)
-    item = list.at_xpath('item')
-    abort "#{__LINE__} list 下無 item" if item.nil?
-
-    p = item.at_xpath('p')
-    if p.nil?
-      item.prepend_child(nodes)
-    else
-      p.prepend_child(nodes)
+      item = e.add_previous_sibling("<item></item>").first
+      e.replace(item)
+      p = item.add_child("<p></p>").first
+      p.add_child(e)
     end
   end
 
@@ -160,7 +152,7 @@ class XMLForDocx2
     @log.puts "#{@xml_fn} e_p"
     if e.at_xpath('p').nil?
       if inlinenote?(e) and e.text !~ /^\(/
-        s = ''
+        s = +''
         s << '(' unless inlinenote?(e.previous_element)
         s << e.inner_html
         s << ')' unless inlinenote?(e.next_element)
@@ -174,7 +166,7 @@ class XMLForDocx2
     node = HTMLNode.new('p')
 
     rend = e['rend'] || ''
-    r = ''
+    r = +''
     e.children.each do |c|
       if c.text?
         node.copy_attributes(e)
@@ -241,7 +233,7 @@ class XMLForDocx2
     node = HTMLNode.new('seg')
 
     rend = e['rend'] || ''
-    r = ''
+    r = +''
     e.children.each do |c|
       if c.text?
         node.copy_attributes(e)
@@ -296,7 +288,15 @@ class XMLForDocx2
     node.to_s
   end
 
-  # 直接出現在 body 下的 (文字 或 footnote)，移到後面的元素裡
+  def e_table(e)
+    if e.key?('rend')
+      rend = e['rend']
+      add_style(rend) unless @styles.include?(rend)
+    end
+    traverse(e)
+  end
+
+  # 直接出現在 body 下的 (文字 或 footnote)，外面包 p
   def handle_body_text
     body = @doc.root.at_xpath('body')
     body_children = body.children
@@ -328,25 +328,10 @@ class XMLForDocx2
       end
 
       if i < body_children.size
-        if node.name == 'list'
-          move_to_list(texts, node)
-        else
-          node.prepend_child(texts)
-        end
+        node.prepend_child(texts)
       else
         p = body.add_child('<p></p>').first
         p.add_child(texts)
-      end
-    end
-  end
-
-  # 處理 (直接出現在 list 下、夾在 item 之間的 footnote)
-  # 移到下一個 item 裡開頭
-  def handle_list_footnote
-    @doc.root.xpath('//list/footnote').each do |footnote|
-      node = footnote.next_element
-      if node.name == 'item'
-        node.prepend_child(footnote)
       end
     end
   end
@@ -373,6 +358,7 @@ class XMLForDocx2
       when 'list' then e_list(c)
       when 'p' then e_p(c)
       when 'seg' then e_seg(c)
+      when 'table' then e_table(c)
       else
         traverse(c)
       end
