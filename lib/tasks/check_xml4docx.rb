@@ -41,6 +41,13 @@ class CheckXMLForDocx
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /\(故佛本行經云/m)
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /0683b02.*(?!\()爾時舍利弗.*0683b03/m)
     check_as_text('T/T54/T54n2128/T54n2128_063.xml', /百一羯磨十卷.*0725a24/m)
+
+    if Rails.configuration.cb.siddham == 'char'
+      check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><font name="Siddam">裶/)
+    else
+      check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><graphic url="sd-gif\/E3\/SD-E3FD.gif"\/>/)
+    end
+    
     check_as_text('T/T55/T55n2149/T55n2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T55/T55n2154/T55n2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T55/T55n2154/T55n2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)

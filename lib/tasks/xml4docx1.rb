@@ -65,7 +65,7 @@ class XMLForDocx1
     if @juan_styles.key?(@juan)
       @juan_styles[@juan] << style
     else
-      abort "Erroe##{__LINE__}: @juan_styles 無 @juan: #{@juan}"
+      abort "Error##{__LINE__}: @juan_styles 無 @juan: #{@juan.inspect}, style: #{style}, lb: #{@lb}"
     end
   end
 
@@ -247,11 +247,11 @@ class XMLForDocx1
     r = +''
     if e['type'] == 'star'
       corresp = e['corresp'].delete_prefix('#')
-      unless @mod_notes.key?(corresp)
+      unless @notes.key?(corresp)
         corresp.sub!(/^(.*)[a-z]$/, '\1')
-        abort "\n[#{__LINE__}] corresp #{corresp} 不存在" unless @mod_notes.key?(corresp)
+        abort "\n[#{__LINE__}] corresp #{corresp} 不存在" unless @notes.key?(corresp)
       end
-      r << @mod_notes[corresp]
+      r << @notes[corresp]
     end
     r + traverse(e)
   end
@@ -692,7 +692,7 @@ class XMLForDocx1
 
     s = traverse(e, 'text')
     r = "<footnote>#{s}</footnote>"
-    @mod_notes[n] = r
+    @notes[n] = r
     r = "<p>#{r}</p>\n" if e.parent.name == 'div'
     r
   end
@@ -829,7 +829,7 @@ class XMLForDocx1
           if c.name =='g'
             e_t_g(c, buf)
           else
-            buf[-2] << traverse(c, mode)
+            buf[-2] << handle_node(c, mode)
           end
         end
       end
@@ -863,9 +863,19 @@ class XMLForDocx1
     when /^CB/
       abort "#{__LINE__} 不應出現的缺字 ID: #{id}"
     when /^(SD|RJ)/
-      type = id[0, 2].downcase
-      url = File.join("#{type}-gif", id[3, 2], "#{id}.gif")
-      buf[-2] << "<graphic url='#{url}'/>"
+      if Rails.configuration.cb.siddham == 'char'
+        if id.match?(/^SD/)
+          buf[-2] << %(<font name="Siddam">#{g['char']}</font>)
+          add_style("siddham")
+        else
+          buf[-2] << %(<font name="Ranjana">#{g['char']}</font>)
+          add_style("ranjana")
+        end
+      else
+        type = id[0, 2].downcase
+        url = File.join("#{type}-gif", id[3, 2], "#{id}.gif")
+        buf[-2] << "<graphic url='#{url}'/>"
+      end
 
       # 如果有羅馬轉寫
       buf[-1] << "(#{g['romanized']})" if g.key?('romanized')
@@ -918,9 +928,11 @@ class XMLForDocx1
       node['name'] = 'hana_b'
       r = node.to_s
       @log.puts "#{__LINE__} handle_char, #{r}"
+      add_style("hana_b")
       r
     elsif (0x2A700..0x2FFFF).include?(code)
       node['name'] = 'hana_c'
+      add_style("hana_c")
       node.to_s
     elsif (0x30000..0x3134F).include?(code)
       # CJK Unified Ideographs Extension G 
@@ -1145,16 +1157,25 @@ class XMLForDocx1
 
   def read_mod_notes(doc)
     @mod_notes = {}
+    @notes = {}
+    doc.root.traverse do |e|
+      case e.name
+      when 'milestone'
+        @juan = e['n'].to_i if e['unit'] == 'juan'
+      when 'note'
+        if e['type'] == 'mod'
+          n = e['n']
+          content = e_note(e)
+          @mod_notes[n] = content
+          @notes[n] = content
 
-    doc.xpath("//note[@type='mod']").each do |e|
-      n = e['n']
-      content = e_note(e)
-      @mod_notes[n] = content
-
-      # 例 T01n0026_p0506b07, 原註標為 7, CBETA 修訂為 7a, 7b
-      if n =~ /^(.*)[a-z]$/
-        n = $1
-        @mod_notes[n] = content
+          # 例 T01n0026_p0506b07, 原註標為 7, CBETA 修訂為 7a, 7b
+          if n =~ /^(.*)[a-z]$/
+            n = $1
+            @mod_notes[n] = content
+            @notes[n] = content
+          end
+        end
       end
     end
   end
@@ -1188,6 +1209,11 @@ class XMLForDocx1
     return if buf.empty?
 
     copyright = cbeta_copyright(@canon, @work, juan, @publish, format: :docx)
+
+    buf.gsub!(/(?:<font name="Siddam">[^<]+<\/font>)+/) do
+      s = $&.gsub(/<[^>]+>/, '')
+      %(<font name="Siddam">#{s}<\/font>)
+    end
 
     xml = <<~XML
       <?xml version="1.0" encoding="UTF-8"?>
