@@ -66,8 +66,8 @@ m4_j3: margin-left:4em;text-indent:-3em
 m6_j1: margin-left:5em;text-indent:-1em
 m6_j2: margin-left:5em;text-indent:-2em
 pre: white-space:pre
-ranjana: font-family:Ranjana
-siddham: font-family:Siddam
+ranj: font-family:Ranjana
+sidd: font-family:Siddam
 table_m3: margin-left:3em
 table_no-border: border:none
 table_tt: cell-align:center

@@ -25,25 +25,23 @@ class CheckXMLForDocx
     check_as_text('T/T09/T09n0262/T09n0262_007.xml', /伏遇.*<lb\/>.*亡夫/m)
     check_as_text('T/T10/T10n0293/T10n0293_001.xml', /0661a04.*<footnote>.*0661a05/m)
     check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
+    check_as_text('T/T10/T10n0299/T10n0299_002.xml', /<footnote><font name="sidd">/)
+    check_as_text('T/T18/T18n0860/T18n0860_001.xml', /<cell><seg rend="corr">\(na\)<\/seg><\/cell>/)
     check_as_text('T/T18/T18n0867/T18n0867_001.xml', /0254b01.*?怛.*?0254b02/m)
     check_as_text('T/T18/T18n0868/T18n0868_002.xml', /0274b18.*』.*0274b19/m)
-    
-    # 夾注 在 lg 下，l 之間, 應改 xml
-    #check_as_text('T/T18/T18n0912/T18n0912_001.xml', /兩重緣四指.*?<lb\/>.*?白色高一指/m)
-
     check_as_text('T/T20/T20n1096/T20n1096_001.xml', /0420c26.*0420c27/m)
     check_as_text('T/T21/T21n1299/T21n1299_001.xml', /虛室奎胃畢參鬼星翼角氐心<\/p>/m)
     check_as_text('T/T21/T21n1299/T21n1299_001.xml', /0388a16.*\(新演如左.*0388a17/m)
     check_as_text('T/T22/T22n1431/T22n1431_001.xml', /及法比丘僧，.*<lb\/>.*今演毘尼法/m)
-    check_as_text('T/T48/T48n2023/T48n2023_010.xml', /群生得光輝。<lb\/>\n?一萬八千土/m)
-    
+    check_as_text('T/T48/T48n2023/T48n2023_010.xml', /群生得光輝。<lb\/>\n?一萬八千土/m)    
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /\(如四分律云/m)
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /\(故佛本行經云/m)
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /0683b02.*(?!\()爾時舍利弗.*0683b03/m)
     check_as_text('T/T54/T54n2128/T54n2128_063.xml', /百一羯磨十卷.*0725a24/m)
+    check_as_text('T/T54/T54n2132/T54n2132_001.xml', /<font rend="corr" name="sidd">裶<\/font>/)
 
     if Rails.configuration.cb.siddham == 'char'
-      check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><font name="Siddam">裶/)
+      check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><font name="sidd">裶/)
     else
       check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><graphic url="sd-gif\/E3\/SD-E3FD.gif"\/>/)
     end
@@ -58,7 +56,7 @@ class CheckXMLForDocx
 
   private
 
-  def check_as_text(fn, regex)
+  def check_as_text(fn, regex)    
     xml_path = Rails.root.join('data', 'xml4docx2', fn)
     unless File.exist?(xml_path)
       abort "檔案不存在: #{xml_path}"
