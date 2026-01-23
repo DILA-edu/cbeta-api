@@ -50,7 +50,7 @@ row = element row {
 }
 
 seg = element seg {
-  (text | font | footnote | graphic)+,
+  (text | font | footnote | graphic | lb)+,
   attribute rend { text }?,
   attribute style { text }?
 }

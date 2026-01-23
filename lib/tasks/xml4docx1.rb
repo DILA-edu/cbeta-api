@@ -202,7 +202,6 @@ class XMLForDocx1
     @div_level = 0
     @list_level = 0
     @next_line_buf = +''
-    @tt_buf = []
     @juan = 0
     @inline_note = [false]
     @in_lg = false
@@ -327,40 +326,24 @@ class XMLForDocx1
     g = @gaiji[id]
     
     if g.key?('symbol')
-      if mode == 'tt'
-        @t_buf[-2] << g['symbol'] 
-        return ''
-      else
-        return g['symbol'] 
-      end
+      r = g['symbol'] 
+      r << '<lb/><lb/>' if mode == 'tt'
+      return r
     end
 
     case id
     when /^CB/
       r = @gaiji.to_s(id)
       r = handle_char(r) if r.size == 1
-      if mode == 'tt'
-        @t_buf[-1] << r
-        return ''
-      else
-        return r
-      end
     when /^(SD|RJ)/
-      a = e_g_sidd(id, g)
-      if mode == 'tt'
-        @t_buf[-2] << a[0] # 悉曇字
-        @t_buf[-1] << a[1] if a.size > 1 # 羅馬轉寫
-        return ''
-      else
-        return a.join
-      end
+      r = e_g_sidd(id, g, mode)
     else
       abort "未知的缺字類型: #{id}"
     end
+    r
   end
 
-  def e_g_sidd(id, g)
-    r = []
+  def e_g_sidd(id, g, mode)
     if Rails.configuration.cb.siddham == 'char'
       node = HTMLNode.new('font')
       node.content = g['char']
@@ -373,15 +356,18 @@ class XMLForDocx1
         node['name'] = "ranj"
         add_style("ranj")
       end
-      r << node.to_s
+      r = node.to_s
     else
       type = id[0, 2].downcase
       url = File.join("#{type}-gif", id[3, 2], "#{id}.gif")
-      r << +"<graphic url='#{url}'/>"
+      r = +"<graphic url='#{url}'/>"
     end
+
+    r << "<lb/>\n" if mode == 'tt'
 
     # 如果有羅馬轉寫
     r << "(#{g['romanized']})" if g.key?('romanized')
+    r << "<lb/>\n" if mode == 'tt'
     r
   end
 
@@ -501,51 +487,14 @@ class XMLForDocx1
     false
   end
 
-  def output_tt
-    return '' if @tt_buf.empty?
-
-    # 把 array [[悉1, 羅1, 漢1], [悉2, 羅2, 漢2]]
-    # 轉成 [[悉1, 悉2], [羅1, 羅2], [漢1, 漢2]]
-    # 再轉成 XML table
-    r = +"<table rend=\"table_tt\">\n"
-    rows = @tt_buf.transpose
-
-    # 決定 第二行的行號 要放在表格的第幾列 (row index)
-    line2 = 
-      if Rails.configuration.cb.siddham == 'char'
-        rows[0].join.match?(/<font name="(Siddam|Ranjana)"/) ? 2 : 1
-      else
-        rows[0].join.match?(/<graphic url="(rj|sd)/) ? 2 : 1
-      end
-    
-      rows.each_with_index do |a, i|
-      r << "<!-- lb: #{@lb} -->\n" if i == line2
-      r << "  <row>\n"
-      a.each { r << "    <cell>#{it}</cell>\n" }
-      r << "  </row>\n"
-    end
-    r << "</table>\n"
-    @tt_buf = []
-    r
-  rescue => e
-    puts e.message
-    puts e.backtrace[0]
-    error "tt_buf: #{JSON.pretty_generate(@tt_buf)}"
-  end
-
   def e_lb(e)
     @lb = e['n']
     br = lb_force_break?(e)
     @log.puts "#{__LINE__} lb: #{@lb}, br: #{br}"
 
     r = +''
-    if @tt_buf.empty?
-      r << "<lb/>\n" if br
-      r << "<!-- lb: #{@lb} -->"
-    else
-      r << output_tt
-    end
-    
+    r << "<lb/>\n" if br
+    r << "<!-- lb: #{@lb} -->"    
     r
   end
 
@@ -555,14 +504,6 @@ class XMLForDocx1
     true
   end
 
-  def tt_traverse(e, mode, prefix, suffix)
-    @t_buf[-2] << prefix
-    @t_buf[-1] << prefix
-    traverse(e, mode)
-    @t_buf[-2] << suffix
-    @t_buf[-1] << suffix
-  end
-
   def e_lem(e, mode)
     return traverse(e, mode) if @canon=='Y' or @canon=='TX'
 
@@ -570,14 +511,9 @@ class XMLForDocx1
     if (not wit.nil?) and wit.include? '【CB】' and not wit.include? @orig
       add_style('corr')
       if can_use_seg_for_corr(e)
-        if mode == 'tt'
-          tt_traverse(e, mode, "<seg rend='corr'>", "</seg>")
-          return ''
-        else
-          r = traverse(e, mode)
-          r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
-          return  r
-        end
+        r = traverse(e, mode)
+        r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
+        return  r
       else
         @in_corr << true
         r = e_lem_font(e, mode)
@@ -590,11 +526,6 @@ class XMLForDocx1
   end
 
   def e_lem_font(e, mode)
-    if mode == 'tt'
-      tt_traverse(e, mode, '<font rend="corr">', '</font>')
-      return
-    end
-
     r = traverse(e, mode)
     unless r.include?('corr')
       if r.include?('<graphic')
@@ -716,12 +647,7 @@ class XMLForDocx1
     end
 
     r = "<footnote>#{s}</footnote>"
-    if mode == 'tt'
-      @t_buf[-2] << r
-      return ''
-    else
-      r = "<p>#{r}</p>\n" if e.parent.name == 'div'
-    end
+    r = "<p>#{r}</p>\n" if e.parent.name == 'div'
     r
   end
 
@@ -762,13 +688,7 @@ class XMLForDocx1
     r = "<footnote>#{s}</footnote>"
     @notes[n] = r
 
-    if mode == 'tt'
-      @t_buf[-2] << r
-      return ''
-    else
-      r = "<p>#{r}</p>\n" if e.parent.name == 'div'
-    end
-
+    r = "<p>#{r}</p>\n" if e.parent.name == 'div'
     r
   end
 
@@ -792,43 +712,30 @@ class XMLForDocx1
       copy_style(e, node)
     end
 
+    r = traverse(e)
+    @log.puts "#{__LINE__} #{r.inspect}"
     if e['type'] == 'pre'
-      node.content = traverse(e)
+      node.content = r
       @pre.pop
       e_p_pre(node)
       node.to_s + "\n"
-    else
-      s = traverse(e)
-      s << output_tt
-      e_p_tt(s, node)
-    end
-  end
+    elsif r.match?(/<table rend=['"]table_tt['"]>/)
+      r.sub!(/\A「(<table rend=['"]table_tt['"]>\s*<row>\s*<cell>)/m, '\1「')
+      @log.puts "#{__LINE__} #{r.inspect}"
+      r.gsub!(/<\/row>\s*<\/table>\s*<table rend=['"]table_tt['"]>\s*<row>/, '')
+      @log.puts "#{__LINE__} #{r.inspect}"
 
-  def e_p_tt(s, p_node)
-    unless s.include?('<table rend="table_tt">') # 段落 不含 悉漢雙行對照
-      p_node.content = s
-      return p_node.to_s + "\n"
-    end
-
-    xml_doc = Nokogiri::XML("<root>#{s}</root>")
-    r = +''
-    xml_doc.root.children.each do |c|
-      if c.comment?
-        r << c.to_xml
-      elsif c.text?
-        s = c.text.strip
-        unless s.empty?
-          p_node.content = c.text
-          r << p_node.to_s + "\n"
-        end
-      elsif c.name == 'table'
-        r << c.to_xml + "\n"
-      else
-        p_node.content = c.to_xml
-        r << p_node.to_s + "\n"
+      # 同一段落中，悉漢雙行對照 之後，可能還有別的東西，例： T18n0864Ap0196a14
+      r.sub!(/\A(.*<\/table>)(.*)\z/m) do
+        node.content = $2
+        $1 + node.to_s + "\n"
       end
+      @log.puts "#{__LINE__} #{r.inspect}"
+      r
+    else
+      node.content = r
+      node.to_s + "\n"
     end
-    r
   end
 
   def e_p_pre(node)
@@ -892,27 +799,7 @@ class XMLForDocx1
 
     # 處理雙行對照
     # <tt type="tr"> 也是 雙行對照
-    @t_buf = @tt_buf[-1]
-    case e['lang']
-    when /^sa/
-      @t_buf << +''
-      @t_buf << +''
-      traverse(e, 'tt')
-    when /^zh/
-      @t_buf << traverse(e, mode)
-    else
-      if e.children.empty?
-        @t_buf << +''
-        @t_buf << +'' if @t_buf.size < 3
-      else
-        error "t 元素 未知的 lang: #{e.to_xml}"
-      end
-    end
-
-    ''
-  rescue => e
-    puts "tt_buf: #{@tt_buf.inspect}"
-    raise
+    traverse(e, 'tt')
   end
 
   def e_table(e)
@@ -932,11 +819,17 @@ class XMLForDocx1
 
   def e_tt(e, mode)
     if e['place'] == 'inline' || e['rend'] == 'normal'
-       || e['type'] == 'app' || e['type'] == 'single-line'
-       return traverse(e, mode)
+      || e['type'] == 'app' || e['type'] == 'single-line'
+      return traverse(e, mode)
     end
-    @tt_buf << []
-    traverse(e, mode)
+
+    r = traverse(e, 'tt')
+
+    <<~XML
+      <table rend='table_tt'>
+        <row><cell>#{r}</cell>\n</row>
+      </table>
+    XML
   end
 
   def e_unclear(e)
@@ -1021,27 +914,14 @@ class XMLForDocx1
 
   def handle_text(node, mode)
     s = node.text.chomp
-    if s =~ /\A\s*\z/
-      if mode == 'tt'
-        @t_buf[-2] << s
-        return ''
-      else
-        return s
-      end
-    end
+    return s if s =~ /\A\s*\z/
 
     r = +''
     s.each_char do
       r << handle_char(it)
     end
 
-    if mode == 'tt'
-      @t_buf[-2] << r
-      return ''
-    else
-      r = "<p>#{r}</p>\n" if node.parent.name == 'div'
-    end
-
+    r = "<p>#{r}</p>\n" if node.parent.name == 'div'
     r
   end
 

@@ -97,11 +97,14 @@ class XMLForDocx2
 
   def e_footnote(e)
     s = traverse(e)
+    @log.puts "#{__LINE__} footnote: #{s}"
+    @log.puts "#{__LINE__} parent: #{e.parent.name}"
     case e.parent.name
     when 'body'
       p = e.add_previous_sibling("<p></p>").first
       e.replace(p)
       p.add_child(e)
+      @log.puts "#{__LINE__} footnote 直接出現在 body 下，包 p: #{p.to_xml}"
     when 'list'
       item = e.add_previous_sibling("<item></item>").first
       e.replace(item)
@@ -319,20 +322,10 @@ class XMLForDocx2
         end
       end
 
-      texts = Nokogiri::XML::NodeSet.new(@doc)
-      while node.text? or node.comment? or %w[footnote seg].include?(node.name)
-        texts << node
-        i += 1
-        break if i >= body_children.size
-        node = body_children[i]
-      end
-
-      if i < body_children.size
-        node.prepend_child(texts)
-      else
-        p = body.add_child('<p></p>').first
-        p.add_child(texts)
-      end
+      p = node.add_previous_sibling("<p></p>\n").first
+      p.add_child(node)
+      @log.puts "#{__LINE__} 直接出現在 body 下，包 p: #{p.to_xml}"
+      i += 1
     end
   end
 
