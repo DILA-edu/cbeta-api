@@ -325,10 +325,14 @@ class XMLForDocx1
     id = e["ref"].delete_prefix("#")
     g = @gaiji[id]
     
-    if g.key?('symbol')
-      r = g['symbol'] 
-      r << '<lb/><lb/>' if mode == 'tt'
-      return r
+    r = g['symbol']
+    unless r.blank?
+      if mode == 'tt'
+        @t_buf[0] << r
+        return ''
+      else
+        return r
+      end
     end
 
     case id
@@ -344,30 +348,35 @@ class XMLForDocx1
   end
 
   def e_g_sidd(id, g, mode)
-    if Rails.configuration.cb.siddham == 'char'
-      node = HTMLNode.new('font')
-      node.content = g['char']
-      node['rend'] = 'corr' if @in_corr.last
+    node = HTMLNode.new('font')
+    node.content = g['char']
+    node['rend'] = 'corr' if @in_corr.last
 
-      if id.match?(/^SD/)
-        node['name'] = "sidd"
-        add_style("sidd")
-      else
-        node['name'] = "ranj"
-        add_style("ranj")
-      end
-      r = node.to_s
+    if id.match?(/^SD/)
+      node['name'] = "sidd"
+      add_style("sidd")
     else
-      type = id[0, 2].downcase
-      url = File.join("#{type}-gif", id[3, 2], "#{id}.gif")
-      r = +"<graphic url='#{url}'/>"
+      node['name'] = "ranj"
+      add_style("ranj")
     end
 
-    r << "<lb/>\n" if mode == 'tt'
+    if mode == 'tt'
+      @t_buf[0] << node.to_s
+      r = ''
+    else
+      r = node.to_s
+    end
 
     # 如果有羅馬轉寫
-    r << "(#{g['romanized']})" if g.key?('romanized')
-    r << "<lb/>\n" if mode == 'tt'
+    s = g['romanized']
+    unless s.blank?
+      if mode == 'tt'
+        @t_buf[1] << "(#{s})"
+      else
+        r << "(#{s})"
+      end
+    end
+
     r
   end
 
@@ -504,6 +513,15 @@ class XMLForDocx1
     true
   end
 
+  def tt_traverse(e, mode, prefix, suffix)
+    @log.puts "#{__LINE__} tt_traverse, prefi: #{prefix}, suffix: #{suffix}"
+    @t_buf[0] << prefix
+    @t_buf[1] << prefix
+    traverse(e, mode)
+    @t_buf[0] << suffix
+    @t_buf[1] << suffix
+  end
+
   def e_lem(e, mode)
     return traverse(e, mode) if @canon=='Y' or @canon=='TX'
 
@@ -511,9 +529,14 @@ class XMLForDocx1
     if (not wit.nil?) and wit.include? '【CB】' and not wit.include? @orig
       add_style('corr')
       if can_use_seg_for_corr(e)
-        r = traverse(e, mode)
-        r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
-        return  r
+        if mode == 'tt'
+          tt_traverse(e, mode, "<seg rend='corr'>", "</seg>")
+          return ''
+        else
+          r = traverse(e, mode)
+          r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
+          return  r
+        end
       else
         @in_corr << true
         r = e_lem_font(e, mode)
@@ -526,6 +549,11 @@ class XMLForDocx1
   end
 
   def e_lem_font(e, mode)
+    if mode == 'tt'
+      tt_traverse(e, mode, '<font rend="corr">', '</font>')
+      return ''
+    end
+
     r = traverse(e, mode)
     unless r.include?('corr')
       if r.include?('<graphic')
@@ -628,7 +656,7 @@ class XMLForDocx1
       return e_note_inline(e, mode)
     end
   
-    case e["type"]
+    r = case e["type"]
     when "add", "mod"
       e_note_add_mod(e, mode)
     when "orig"
@@ -636,6 +664,13 @@ class XMLForDocx1
     else
       ""
     end
+
+    if mode == 'tt'
+      @t_buf[0] << r
+      r = ''
+    end
+
+    r
   end
 
   def e_note_add_mod(e, mode)
@@ -776,11 +811,15 @@ class XMLForDocx1
       return '' if e['place'].include? 'foot'
     end
 
+    @log.puts "#{__LINE__} e_t, mode: #{mode}"
     r = traverse(e, mode)
 
     tt = e.at_xpath('ancestor::tt')
     unless tt.nil?
-      return r if %w(app single-line).include? tt['type']
+      if %w(app single-line).include? tt['type']
+        @log.puts "#{__LINE__} return t: #{r}"
+        return r 
+      end
       return r if tt['rend'] == 'normal'
     end
 
@@ -799,7 +838,13 @@ class XMLForDocx1
 
     # 處理雙行對照
     # <tt type="tr"> 也是 雙行對照
-    traverse(e, 'tt')
+    if e['lang']=~/^sa/
+      @t_buf = [+'', +''] 
+      traverse(e, 'tt')
+      @t_buf.join("<lb/>\n")
+    else
+      "<lb/>\n" + traverse(e, mode)
+    end
   end
 
   def e_table(e)
@@ -823,7 +868,7 @@ class XMLForDocx1
       return traverse(e, mode)
     end
 
-    r = traverse(e, 'tt')
+    r = traverse(e, mode)
 
     <<~XML
       <table rend='table_tt'>

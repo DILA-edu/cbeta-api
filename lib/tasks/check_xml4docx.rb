@@ -26,7 +26,7 @@ class CheckXMLForDocx
     check_as_text('T/T10/T10n0293/T10n0293_001.xml', /0661a04.*<footnote>.*0661a05/m)
     check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
     check_as_text('T/T10/T10n0299/T10n0299_002.xml', /<footnote><font name="sidd">/)
-    check_as_text('T/T18/T18n0860/T18n0860_001.xml', /183b08.*<seg rend="corr"><font name="sidd">巧<\/font><lb\/>\s*\(na\)<lb\/>\s*<\/seg>/m)
+    check_as_text('T/T18/T18n0860/T18n0860_001.xml', /183b08.*<seg rend="corr"><font name="sidd">巧<\/font><\/seg><lb\/>\s*<seg rend="corr">\(na\)<\/seg>/m)
     check_as_text('T/T18/T18n0864A/T18n0864A_001.xml', /0196a15.*部嚕唵.*0196a16/m)
     check_as_text('T/T18/T18n0867/T18n0867_001.xml', /0254a29.*?怛.*?0254b02/m)
     check_as_text('T/T18/T18n0868/T18n0868_002.xml', /0274b18.*』.*0274b19/m)
@@ -40,13 +40,9 @@ class CheckXMLForDocx
     check_as_text('T/T53/T53n2122/T53n2122_053.xml', /0683b02.*(?!\()爾時舍利弗.*0683b03/m)
     check_as_text('T/T54/T54n2128/T54n2128_063.xml', /百一羯磨十卷.*0725a24/m)
     check_as_text('T/T54/T54n2132/T54n2132_001.xml', /<font rend="corr" name="sidd">裶<\/font>/)
-
-    if Rails.configuration.cb.siddham == 'char'
-      check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><font name="sidd">裶/)
-    else
-      check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><graphic url="sd-gif\/E3\/SD-E3FD.gif"\/>/)
-    end
-    
+    check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /<footnote>uparopara\?<\/footnote><font name="sidd">裶/)
+    check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /1190a22.*?<cell><font name="sidd">辱絞箌<\/font><lb\/>\n?\(sva\)\(rga\)<lb\/>\n?天<\/cell>.*?1190a24/m)
+    check_as_text('T/T54/T54n2133A/T54n2133A_001.xml', /1194c17.*?<font name="sidd">巴<\/font>\(ṭa\)〔<font name="sidd">一<\/font>\(ka\)〕/m)
     check_as_text('T/T55/T55n2149/T55n2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T55/T55n2154/T55n2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T55/T55n2154/T55n2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)
