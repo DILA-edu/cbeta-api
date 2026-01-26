@@ -527,24 +527,28 @@ class XMLForDocx1
 
     wit = e['wit']
     if (not wit.nil?) and wit.include? '【CB】' and not wit.include? @orig
-      add_style('corr')
-      if can_use_seg_for_corr(e)
-        if mode == 'tt'
-          tt_traverse(e, mode, "<seg rend='corr'>", "</seg>")
-          return ''
-        else
-          r = traverse(e, mode)
-          r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
-          return  r
-        end
+      e_lem_corr(e, mode)
+    else
+      traverse(e, mode)
+    end
+  end
+
+  def e_lem_corr(e, mode)
+    add_style('corr')
+    if can_use_seg_for_corr(e)
+      if mode == 'tt'
+        tt_traverse(e, mode, "<seg rend='corr'>", "</seg>")
+        return ''
       else
-        @in_corr << true
-        r = e_lem_font(e, mode)
-        @in_corr.pop
-        return r
+        r = traverse(e, mode)
+        r = "<seg rend='corr'>#{r}</seg>" unless r.empty?
+        return  r
       end
     else
-      return traverse(e)
+      @in_corr << true
+      r = e_lem_font(e, mode)
+      @in_corr.pop
+      return r
     end
   end
 
@@ -811,7 +815,6 @@ class XMLForDocx1
       return '' if e['place'].include? 'foot'
     end
 
-    @log.puts "#{__LINE__} e_t, mode: #{mode}"
     r = traverse(e, mode)
 
     tt = e.at_xpath('ancestor::tt')
