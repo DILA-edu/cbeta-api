@@ -51,6 +51,9 @@ class StaticPagesController < ApplicationController
       '是日已過，命亦隨減，如少水魚，斯有何樂'
     ]
   end
+  
+  def stat_rule
+  end
 
   def work
   end

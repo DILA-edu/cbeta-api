@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 module CbData
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 8.0
+    config.load_defaults 8.1
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
@@ -26,7 +26,7 @@ module CbData
     
     config.cb = config_for(:cb)
 
-    config.x.ver = '3.7.2'
+    config.x.ver = '3.7.3'
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
     config.time_zone = 'Taipei'

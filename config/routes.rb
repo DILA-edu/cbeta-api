@@ -97,6 +97,7 @@ Rails.application.routes.draw do
   get 'static_pages/sphinx_title'
   get 'static_pages/sphinx_vars'
   get 'static_pages/sphinx'
+  get 'static_pages/stat_rule'
   get 'static_pages/time'
   get 'static_pages/toc'
   get 'static_pages/word_seg'

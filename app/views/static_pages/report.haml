@@ -4,7 +4,7 @@
   %li 
     字數統計
     %ul
-      %li=link_to "字數統計規則", "https://bit.ly/3MMH1V8"
+      %li=link_to "字數統計規則", controller: 'static_pages', action: 'stat_rule'
       %li
         = link_to "全集成統計數字", controller: 'report', action: 'index'
         (含以藏經為單位 字數統計)
