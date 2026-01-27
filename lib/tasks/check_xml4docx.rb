@@ -31,6 +31,7 @@ class CheckXMLForDocx
     check_as_text('T/T18/T18n0867/T18n0867_001.xml', /0254a29.*?怛.*?0254b02/m)
     check_as_text('T/T18/T18n0868/T18n0868_002.xml', /0274b18.*』.*0274b19/m)
     check_as_text('T/T20/T20n1096/T20n1096_001.xml', /0420c26.*0420c27/m)
+    check_as_text('T/T20/T20n1168B/T20n1168B_001.xml', /0676c16.*?<cell>如<lb\/>\n?<font name="sidd">珫<\/font><lb\/>\n?\(e\)<\/cell>.*?0676c18/m)
     check_as_text('T/T21/T21n1299/T21n1299_001.xml', /虛室奎胃畢參鬼星翼角氐心<\/p>/m)
     check_as_text('T/T21/T21n1299/T21n1299_001.xml', /0388a16.*\(新演如左.*0388a17/m)
     check_as_text('T/T22/T22n1431/T22n1431_001.xml', /及法比丘僧，.*<lb\/>.*今演毘尼法/m)

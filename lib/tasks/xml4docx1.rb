@@ -844,9 +844,9 @@ class XMLForDocx1
     if e['lang']=~/^sa/
       @t_buf = [+'', +''] 
       traverse(e, 'tt')
-      @t_buf.join("<lb/>\n")
+      @t_buf.join("<lb/>\n") + "<lb/>\n"
     else
-      "<lb/>\n" + traverse(e, mode)
+      traverse(e, mode) + "<lb/>\n"
     end
   end
 
@@ -872,6 +872,7 @@ class XMLForDocx1
     end
 
     r = traverse(e, mode)
+    r.sub!(/<lb\/>\n?\z/m, '')
 
     <<~XML
       <table rend='table_tt'>
