@@ -1,6 +1,6 @@
 namespace :check do
   
-  desc "檢查電子書封面是否都存在"
+  desc "檢查 Authority"
   task :authority => :environment do
     require "tasks/check_authority"
     CheckAuthority.new.check
@@ -18,6 +18,12 @@ namespace :check do
     CheckGaiji.new.check
   end
   
+  desc "檢查 HTML for UI"
+  task :html => :environment do
+    require "tasks/check_html"
+    CheckHTML.new.check
+  end
+
   task :metadata => :environment do
     require "tasks/check_metadata"
     CheckMetadata.new.check

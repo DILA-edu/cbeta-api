@@ -11,6 +11,10 @@ module SectionHTML
         command "rake import:layers"
       end
   
+      run_step 'check to html (rake check:html)' do
+        command 'rake check:html'
+      end
+
       run_step '打包 html 給 heaven' do
         step_zip_html
       end

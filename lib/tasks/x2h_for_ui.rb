@@ -102,8 +102,7 @@ class P5aToHTMLForUI
     @note_star_count = Hash.new(0)
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
-    puts "\nx2h_for_ui #{@sutra_no}"
-    puts "read from #{xml_fn}"
+    print "\rx2h_for_ui #{@sutra_no}   "
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @updated_at = cb_xml_updated_at
 
@@ -123,7 +122,6 @@ class P5aToHTMLForUI
     $stderr.puts 'convert canon: ' + c
     folder = File.join(@params[:xml_root], @canon)
     
-    puts "output folder: #{@out_folder}"
     FileUtils::rm_rf @out_folder
     FileUtils::mkdir_p @out_folder
     
@@ -131,6 +129,7 @@ class P5aToHTMLForUI
       next if vol.start_with? '.'
       convert_vol(vol)
     end
+    puts
   end
 
   def convert_canon_init(c)
@@ -153,7 +152,6 @@ class P5aToHTMLForUI
     text = parse_xml(xml_fn)
     
     folder = File.join(@out_folder, @work_id)
-    puts "output folder: #{folder}"
     FileUtils.makedirs folder
     
     # 註標移到 lg-cell 裡面，不然以 table 呈現 lg 會有問題
@@ -736,6 +734,11 @@ class P5aToHTMLForUI
     end
     
     node.content << traverse(e)
+    unless @next_line_buf.empty? || (mode == 'footnote')
+      node.content << @next_line_buf
+      @next_line_buf = +''
+    end
+
     node.to_s + "\n"
   end
 
@@ -1238,7 +1241,7 @@ class P5aToHTMLForUI
     @t2k = Hash.new { |hash, key| hash[key] = Hash.new }
     old_k = nil
     Dir.glob("#{Rails.configuration.x.t2k}/*.txt") do |f|
-      puts "read #{f}"
+      print "\rread #{f}"
       File.foreach(f) do |line|
         lh_t, lh_k = line.split('║')
         next if lh_k.blank?
@@ -1255,6 +1258,7 @@ class P5aToHTMLForUI
         old_k = lh_k
       end
     end
+    puts
   end
 
   def span_t(content)
