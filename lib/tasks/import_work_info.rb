@@ -15,7 +15,7 @@ class ImportWorkInfo
       @category_name2id[v] = k
     end
 
-    fn = Rails.root.join('log', 'import.log')
+    fn = Rails.root.join('log', 'import_work_info.log')
     @log = File.open(fn, 'w')
     
     @work_uuid = read_uuid
@@ -33,6 +33,8 @@ class ImportWorkInfo
   
   def import
     @stat = {}
+    @stat_vol = Hash.new { |h, k| h[k] = { cjk_chars: 0, en_words: 0 } }
+    @stat_cat = Hash.new { |h, k| h[k] = { cjk_chars: 0, en_words: 0 } }
     @work_type = {}
 
     XmlFile.delete_all
@@ -65,6 +67,8 @@ class ImportWorkInfo
     File.write(fn, JSON.pretty_generate(r))
 
     word_count
+    write_word_count_by_vol
+    write_word_count_by_cat
   end
   
   private
@@ -180,6 +184,7 @@ class ImportWorkInfo
   end
   
   def get_info_from_xml(xml_path)
+    @log.puts "#{__LINE__} get_info_from_xml: #{xml_path}"
     r = {}
     doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
@@ -205,6 +210,25 @@ class ImportWorkInfo
     end
 
     r[:cjk_chars], r[:en_words] = count_chars(doc)
+
+    i = r[:cjk_chars].size
+    j = r[:en_words].size
+
+    bn = File.basename(xml_path)
+    vol = bn.sub(/^((?:#{CBETA::CANON})\d{2,3}).*$/, '\1')
+    @log.puts "#{__LINE__} get_info_from_xml, #{bn}, vol: #{vol}"
+    @stat_vol[vol][:cjk_chars] += i
+    @stat_vol[vol][:en_words]  += j
+
+    w = Work.find_by(n: @work)
+    abort "#{__LINE__} #{@work} 在 Work 裡找不到" if w.nil?
+    unless w.category.nil?
+      w.category.split(',').each do |cat|
+        @stat_cat[cat][:cjk_chars] += i
+        @stat_cat[cat][:en_words]  += j
+      end
+    end
+
     r
   end
   
@@ -212,6 +236,7 @@ class ImportWorkInfo
     Dir.entries(path).sort.each do |f|
       next if f.start_with? '.'
       @vol = f
+      @log.puts "#{__LINE__} vol: #{@vol}"
       $stderr.print "\rimport_work_info from xml #{@vol}   "
       p = File.join(path, f)
       import_vol_from_xml(p)
@@ -390,6 +415,7 @@ class ImportWorkInfo
 
   # 佛典跨冊時，讀取多個 XML 檔
   def import_work_files
+    @log.puts "import_work_files, #{@work}"
     files = @work_xml_files[@work]
 
     data = nil
@@ -559,6 +585,34 @@ class ImportWorkInfo
       end
     end
   end
+
+  def write_word_count_by_vol
+    fn = File.join(@stat_folder, "cbeta-word-count-vol.csv")
+    puts "write #{fn}"
+
+    CSV.open(fn, "wb") do |csv|
+      csv << %w[vol cjk_chars en_words]
+      @stat_vol.keys.sort.each do |v|
+        h = @stat_vol[v]
+        csv << [v, h[:cjk_chars], h[:en_words]]
+      end
+    end
+  end
   
+  def write_word_count_by_cat
+    fn = File.join(@stat_folder, "cbeta-word-count-cat.csv")
+    puts "write #{fn}"
+
+    CSV.open(fn, "wb") do |csv|
+      csv << %w[category cjk_chars en_words]
+      fn = Rails.root.join('data-static', 'categories.json')
+      cats = JSON.load_file(fn)
+      cats.each do |k, cat|
+        h = @stat_cat[cat]
+        csv << [cat, h[:cjk_chars], h[:en_words]]        
+      end
+    end
+  end
+
   include CbetaP5aShare
 end
