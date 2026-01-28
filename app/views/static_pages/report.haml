@@ -9,10 +9,22 @@
     = link_to "全集成統計數字", controller: 'report', action: 'index'
     (含以藏經為單位 字數統計)
   %li
-    =link_to_path '分部', "download/stat/cbeta-word-count.csv"
-    (以「單部佛典」為單位 做統計)
-  %li=link_to_path '分冊', "download/stat/cbeta-word-count-vol.csv"
-  %li=link_to_path '分部類', "download/stat/cbeta-word-count-cat.csv"
+    分部 (以「單部佛典」為單位 做統計)
+    %ul
+      %li=link_to_path nil, "download/stat/cbeta-word-count.csv"
+      %li CSV 欄位： work, cjk_chars, en_words, canon, category, alt
+      %li 同一部佛典 可能屬於多個部類，例如 T0310 的 category 欄位是 "寶積部類,淨土宗部類"。
+      %li 如果是部分收錄，例如 JA123 的 alt 欄位是 "JA123+L1600"。
+  %li
+    分冊
+    %ul
+      %li=link_to_path nil, "download/stat/cbeta-word-count-vol.csv"
+      %li CSV 欄位： vol, cjk_chars, en_words
+  %li
+    分部類
+    %ul
+      %li=link_to_path nil, "download/stat/cbeta-word-count-cat.csv"
+      %li CSV 欄位： category, cjk_chars, en_words
 
 %h2 存取紀錄
 %ul

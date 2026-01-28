@@ -38,6 +38,11 @@ namespace :check do
     ).check
   end
 
+  task :stat do
+    require 'tasks/check_stat'
+    CheckStat.new.check
+  end
+
   task :xml4docx do
     require 'tasks/check_xml4docx'
     dir = Rails.root.join('data', 'xml4docx2')

@@ -579,9 +579,11 @@ class ImportWorkInfo
     puts "write #{fn}"
 
     CSV.open(fn, "wb") do |csv|
-      csv << %w[work cjk_chars en_words canon category]
-      Work.where(alt: nil).order(:n).each do |w|
-        csv << [w.n, w.cjk_chars, w.en_words, w.canon, w.category]
+      csv << %w[work cjk_chars en_words canon category alt]
+
+      # 注意 部分收錄 的佛典，alt 屬性不是 nil, 例如 JA123
+      Work.where.not(cjk_chars: nil).order(:n).each do |w|
+        csv << [w.n, w.cjk_chars, w.en_words, w.canon, w.category, w.alt]
       end
     end
   end
