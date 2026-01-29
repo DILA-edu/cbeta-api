@@ -38,7 +38,7 @@ namespace :check do
     ).check
   end
 
-  task :stat do
+  task :stat => :environment do
     require 'tasks/check_stat'
     CheckStat.new.check
   end
