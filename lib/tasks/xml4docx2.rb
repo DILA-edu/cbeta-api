@@ -24,6 +24,8 @@ class XMLForDocx2
   private
 
   def add_style(style)
+    return if @styles.include?(style)
+
     styles_node = @doc.root.at_xpath('//settings/styles')
     css = @predefined_styles[style]
     styles_node.add_child("  <style name='#{style}'>#{css}</style>\n    ")
@@ -221,6 +223,7 @@ class XMLForDocx2
         abort
       end
       node['rend'] = rend
+      add_style(rend)
     end
 
     node['style'] = e['style'] if e.key?('style')
@@ -282,7 +285,7 @@ class XMLForDocx2
         abort
       end
       node['rend'] = rend
-      add_style(rend) unless @styles.include?(rend)
+      add_style(rend)
     end
 
     node['style'] = e['style'] if e.key?('style')
@@ -294,7 +297,7 @@ class XMLForDocx2
   def e_table(e)
     if e.key?('rend')
       rend = e['rend']
-      add_style(rend) unless @styles.include?(rend)
+      add_style(rend)
     end
     traverse(e)
   end
@@ -316,7 +319,7 @@ class XMLForDocx2
           next
         end
       elsif node.element?
-        unless %w[footnote seg].include?(node.name)
+        unless %w[font footnote seg].include?(node.name)
           i += 1
           next
         end

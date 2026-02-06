@@ -16,7 +16,7 @@ font = element font {
 }
 
 footnote = element footnote { 
-  (text | font | graphic | seg)+
+  (text | font | graphic | p | seg | table)+
 }
 
 graphic = element graphic {

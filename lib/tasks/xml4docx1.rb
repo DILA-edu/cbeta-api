@@ -31,7 +31,8 @@ class XMLForDocx1
     time_start = Time.now
     if args[:canon].nil?
       each_canon(@xml_root) do |c|
-        args[:canon] = c
+        next unless %w[T X].include?(c)
+        @canon = c
         convert_canon(args)
       end
     else
@@ -39,12 +40,12 @@ class XMLForDocx1
     end
     puts "\n花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
   rescue => e
-    puts "lb: #{@lb}"
+    puts "\n[#{__LINE__}] lb: #{@lb}"
     raise
   end
 
   def convert_canon(args)
-    @canon = args[:canon]
+    puts "\ncanon: #{@canon}"
     @orig = @cbeta.get_canon_symbol(@canon)
     @canon_name = @my_cbeta_share.get_canon_name(@canon)
     read_authority_catalog
@@ -62,11 +63,18 @@ class XMLForDocx1
   private
   
   def add_style(style)
+    return if style == '各家會釋'
+    return if style == '訂解總論'
+
     if @juan_styles.key?(@juan)
+      @style_lb[style] = @lb
       @juan_styles[@juan] << style
     else
       abort "Error##{__LINE__}: @juan_styles 無 @juan: #{@juan.inspect}, style: #{style}, lb: #{@lb}"
     end
+  rescue
+    puts "[#{__LINE__}] style: #{style}"
+    raise
   end
 
   def before_action(doc)
@@ -137,7 +145,7 @@ class XMLForDocx1
       when 'list'
         node['type'] = e['type']
       else
-        if not %w[dharani xx].include?(e['type'])
+        if not %w[dharani interlinear xx 各家會釋 訂解總論].include?(e['type'])
           rends << e['type']
         end
       end
@@ -184,6 +192,7 @@ class XMLForDocx1
     @dest_folder = File.join(@dest_root, @canon, @vol, @v_work)
     FileUtils.makedirs(@dest_folder)
 
+    @style_lb = {}
     xml = before_parse(src)
     doc = Nokogiri::XML(xml)
     doc.remove_namespaces!
@@ -309,6 +318,8 @@ class XMLForDocx1
 
   def e_form(e)
     abort "form 的 parent 不是 entry" unless e.parent.name == 'entry'
+    return '' if e.children.empty?
+    
     add_style("entry_form")
 
     node = HTMLNode.new('p')
@@ -497,6 +508,8 @@ class XMLForDocx1
   end
 
   def e_lb(e)
+    return '' if e['ed'].start_with?('R')
+    
     @lb = e['n']
     br = lb_force_break?(e)
     @log.puts "#{__LINE__} lb: #{@lb}, br: #{br}"
@@ -593,11 +606,9 @@ class XMLForDocx1
 
     @in_lg = true
     @first_l = true
+    
     node = HTMLNode.new('p')
-
-    rends = Set['lg']
-    rends.merge(e['rend'].split) if e.key?('rend')
-    node['rend'] = rends.to_a.sort.join('_')
+    node['rend'] = e_lg_rends(e)
     add_style(node['rend'])
 
     node['style'] = e['style'] if e.key?('style')
@@ -611,6 +622,26 @@ class XMLForDocx1
     @lg_type.pop
     r << node.to_s + "\n"
     r
+  end
+
+  def e_lg_rends(e)
+    rends = Set['lg']
+    rends.merge(e['rend'].split) if e.key?('rend')
+
+     # ex: X57n0980_p0779a14 <lg subtype="note1">
+    if e.key?('subtype')
+      a = e['subtype'].split
+      a.delete_if { it =~ /^v\d$/ } # v4, v5, v7 不需特別樣式
+      rends.merge(a)
+    end
+
+    if e.key?('place')
+      a = e['place'].split
+      a.delete('inline')
+      rends.merge(a)
+    end
+
+    rends.to_a.sort.join('_')
   end
 
   def e_list(e)
@@ -897,24 +928,29 @@ class XMLForDocx1
     node = HTMLNode.new('font')
     node.content = char
     node['rend'] = 'corr' if @in_corr.last
-    if (0x20000..0x2A6DF).include?(code)
+    case code
+    when 0x1F780..0x1F7FF
+      node['name'] = 'cbetarc'
+      add_style("cbetarc")
+      node.to_s
+    when 0x20000..0x2A6DF
       node['name'] = 'hana_b'
       r = node.to_s
       @log.puts "#{__LINE__} handle_char, #{r}"
       add_style("hana_b")
       r
-    elsif (0x2A700..0x2FFFF).include?(code)
+    when 0x2A700..0x2FFFF
       node['name'] = 'hana_c'
       add_style("hana_c")
       node.to_s
-    elsif (0x30000..0x3134F).include?(code)
+    when 0x30000..0x3134F
       # CJK Unified Ideographs Extension G 
       char
-    elsif (0x31350..0x323AF).include?(code)
+    when 0x31350..0x323AF
       # CJK Unified Ideographs Extension H
       char
     else
-      abort "未知 unicode: %X, lb: #{@lb}" % code
+      abort "[#{__LINE__}] 未知 unicode: %X, lb: #{@lb}" % code
     end
   end
 
@@ -1215,7 +1251,7 @@ class XMLForDocx1
 
     @juan_styles[juan].each do |k|
       s = @predefined_styles[k]
-      abort "[#{__LINE__}] style 未定義: #{k.inspect}" if s.nil?
+      abort "[#{__LINE__}] style 未定義: #{k.inspect}, lb: #{@style_lb[k]}" if s.nil?
       r << "#{indent}<style name=\"#{k}\">#{s}</style>"
     end
 

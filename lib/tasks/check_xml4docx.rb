@@ -99,7 +99,9 @@ class CheckXMLForDocx
   end
 
   def e_item(e)
-    abort "item 下面沒有 p, lb: #{$lb}" if e.at_xpath('p').nil?
+    if e.at_xpath('list | p').nil?
+      abort "item 下面沒有 p, lb: #{$lb}, item: #{e.to_xml}" 
+    end
     traverse(e)
   end
   
@@ -112,7 +114,7 @@ class CheckXMLForDocx
     end
     
     if e.text.empty? and e.at_xpath('graphic').nil?
-      abort "\np 的內容是空的, lb: #{$lb}"
+      abort "\np 的內容是空的, lb: #{$lb}, xml: #{e.to_xml}"
     end
 
     traverse(e)

@@ -9,12 +9,15 @@
 "標題 9": font-family:微軟正黑體;font-size:14
 標題: font-family:微軟正黑體;font-size:30;text-align:center
 byline: color:#408080;font-size:14;text-align:end
+byline_corr_p: color:#ff0000;font-size:14;text-align:end
 border: "border: 1px solid #000000"
+cbetarc: font-family:cbetarc
 corr: color:#ff0000
 corr_inlinenote: color:#ff0000;font-size:10
 corr_juan: color:#ff0000;font-size:14
 corr_m1: margin-left:1em;color:#ff0000
 corr_m1_p: margin-left:1em;color:#ff0000
+corr_m2_p: margin-left:2em;color:#ff0000
 corr_p: color:#ff0000
 default: font-family:新細明體;font-size:12
 entry_form: font-weight:bold;font-size:14
@@ -22,7 +25,11 @@ head: color:#0000a0;font-size:14
 hana_a: font-family:Hanazono Mincho A Regular
 hana_b: font-family:Hanazono Mincho B Regular
 hana_c: font-family:Hanazono Mincho C Regular
-head1: font-family:微軟正黑體;font-size:26;font-weight:bold
+head1: font-family:微軟正黑體;font-size:24;font-weight:bold
+head2: font-family:微軟正黑體;font-size:20;font-weight:bold
+head3: font-family:微軟正黑體;font-size:16;font-weight:bold
+head4: font-family:微軟正黑體;font-size:14;font-weight:bold
+head5: font-family:微軟正黑體;font-size:12;font-weight:bold
 i2: text-indent:2em
 inlinenote: font-size:10
 inlinenote_lg: font-size:10;color:#008040
@@ -30,6 +37,10 @@ inlinenote_m1_p: margin-left:1em;font-size:10
 inlinenote_p: font-size:10
 juan: color:#0000ff;font-size:14
 lg: color:#008040
+lg_m2: color:#008040;margin-left:2em
+lg_note1: color:#008040;font-size:10
+lg_note1_m2: color:#008040;font-size:10;margin-left:2em
+lg_note2: color:#008040;font-size:10
 license: background-color:#f0f0f0
 m0: margin-left:0
 m1: margin-left:1em
@@ -50,21 +61,47 @@ m15: margin-left:15em
 m16: margin-left:16em
 m17: margin-left:17em
 m18: margin-left:18em
+m19: margin-left:19em
 m0_i1: margin-left:0;text-indent:1em
 m0_i2: margin-left:0;text-indent:2em
+m0_i3: margin-left:0;text-indent:3em
+m0_i8: margin-left:0;text-indent:8em
 m1_i0: margin-left:1em;text-indent:0
 m1_i1: margin-left:1em;text-indent:1em
 m1_i2: margin-left:1em;text-indent:2em
+m1_i6: margin-left:1em;text-indent:6em
+m2_i1: margin-left:2em;text-indent:1em
+m3_i2: margin-left:3em;text-indent:2em
+m11_i4: margin-left:11em;text-indent:4em
 m1_j1: margin-left:1em;text-indent:-1em
 m2_j1: margin-left:2em;text-indent:-1em
+m2_j2: margin-left:2em;text-indent:-2em
 m3_j1: margin-left:3em;text-indent:-1em
 m3_j2: margin-left:3em;text-indent:-2em
 m3_j3: margin-left:3em;text-indent:-3em
 m4_j1: margin-left:4em;text-indent:-1em
 m4_j2: margin-left:4em;text-indent:-2em
 m4_j3: margin-left:4em;text-indent:-3em
-m6_j1: margin-left:5em;text-indent:-1em
-m6_j2: margin-left:5em;text-indent:-2em
+m4_j4: margin-left:4em;text-indent:-4em
+m5_j4: margin-left:5em;text-indent:-4em
+m5_j5: margin-left:5em;text-indent:-5em
+m6_j1: margin-left:6em;text-indent:-1em
+m6_j2: margin-left:6em;text-indent:-2em
+m6_j4: margin-left:6em;text-indent:-4em
+m6_j5: margin-left:6em;text-indent:-5em
+m6_j6: margin-left:6em;text-indent:-6em
+m7_j1: margin-left:7em;text-indent:-1em
+m7_j7: margin-left:7em;text-indent:-7em
+m8_j8: margin-left:8em;text-indent:-8em
+m9_j8: margin-left:9em;text-indent:-8em
+m9_j9: margin-left:9em;text-indent:-9em
+m10_j9: margin-left:10em;text-indent:-9em
+m10_j10: margin-left:10em;text-indent:-10em
+m11_j10: margin-left:11em;text-indent:-10em
+m11_j11: margin-left:11em;text-indent:-11em
+m12_j12: margin-left:12em;text-indent:-12em
+m15_j15: margin-left:15em;text-indent:-15em
+no-border_table: border:none
 pre: white-space:pre
 ranj: font-family:Ranjana
 sidd: font-family:Siddam
