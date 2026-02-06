@@ -1,40 +1,40 @@
 %h1 CBETA API 字數統計規則
-%p.text-end 2022-06-13
+%p.text-end 2026-02-06
 
 %h2 目次
 %ul
-  %li= link_to "一、校注 不算", '#footnote'
-  %li= link_to '二、夾注 要算', '#inline_note'
+  %li= link_to "1 前言", '#intro'
   %li
-    &= link_to "三、<docNumber> 不算", '#doc_no'
-  %li= link_to '四、「中文字數」與「英數字數」分開計算', '#zh_en'
-  %li 
-    &= link_to "五、缺字標記 <g> 算一個字", '#gaiji'
-  %li 
-    &= link_to "六、<unclear> 算一個字", "#unclear"
-  %li 
-    = link_to '七、英數字以 word 計算，而不是 characters', '#en'
+    = link_to "2 共同原則", '#common'
     %ul
-      %li= link_to '1. 可以構成 en_word 的字元', '#en_word'
-      %li= link_to '2. 連結符號', '#en_dash'
-      %li= link_to '3. 各種用例', '#en_cases'
-      %li= link_to '4. 悉曇字 Unicode', '#sidd'
-  %li= link_to '八、標點、符號不算', '#puncs'
-  %li= link_to '九、要列入計算的特殊字元', '#special'
+      %li 
+        &= link_to "2.1 缺字標記 <g> 算一個字", '#gaiji'
+      %li 
+        &= link_to "2.2 <unclear> 算一個字", "#unclear"
+  %li= link_to "3 chars 字元數", '#chars'
+  %li
+    = link_to '4 「中文字數」與「英數字數」共同原則', '#zh_en'
+    %ul
+      %li= link_to "4.1 校注 不算", '#footnote'
+      %li= link_to '4.2 夾注 要算', '#inline_note'
+      %li
+        &= link_to "4.3 <docNumber> 不算", '#doc_no'
+  %li= link_to '5 標點、符號不算', '#puncs'
+  %li= link_to '6 要列入計算的特殊字元', '#special'
+  %li 
+    = link_to '7 英數字以 word 計算，而不是 characters', '#en'
+    %ul
+      %li= link_to '7.1 可以構成 en_word 的字元', '#en_word'
+      %li= link_to '7.2 連結符號', '#en_dash'
+      %li= link_to '7.3 各種用例', '#en_cases'
+      %li= link_to '7.4 悉曇字 Unicode', '#sidd'
 
-%h2#footnote 一、校注 不算
-%h2#inline_note 二、夾注 要算
-%h2#doc_no
-  &= "三、<docNumber> 不算"
-
-例如大正藏：No.72[No.26(155),Nos.73,74,No.125(27.3)]  <br>
-在 CBETA XML 裡標記為 &lt;docNumber>.  <br>
-使用者要的應該是「典籍內文的字數」，  <br>
-而 docNumber 其實是大正藏加上去的，  <br>
-並不是這一部典籍裡的字數。  <br>
-例如我們通常說心經有幾個字， 是不會想要把 docNumber 加上去的。<br>
-
-%h2#zh_en 四、「中文字數」與「英數字數」分開計算
+%h2#intro 1 前言
+%p 字數統計分三類：
+%ul
+  %li chars 字元數
+  %li cjk_chars 中文、日文、悉曇字、蘭札體
+  %li en_words 英文、梵巴文 詞數
 
 %p API 回傳 CSV 欄位：
 %table.table.table-striped
@@ -45,8 +45,11 @@
     %td work
     %td 典籍編號
   %tr
+    %td chars
+    %td 字元數
+  %tr
     %td cjk_chars
-    %td 中、日、韓、悉曇、蘭札 字元數
+    %td 中、日、韓、悉曇、蘭札 字數
   %tr
     %td en_words
     %td 英數 word 數
@@ -57,193 +60,40 @@
     %td category
     %td 部類
 
-%h2#gaiji
-  &= "五、缺字標記 <g> 算一個字"
+%h2#common 2 共通原則
+%h3#gaiji
+  &= "2.1 缺字標記 <g> 算一個字"
 
 %ul
-  %li 計入 cjk_chars
+  %li 計入 chars, cjk_chars
   %li 包含：悉曇字、蘭札體
 
-%h2#unclear
-  &= "六、<unclear> 算一個字"
+%h3#unclear
+  &= "2.2 <unclear> 算一個字"
 %ul
   %li 原書字跡不清、難以辨識的字，在 CBETA XML 標記為 &lt;unclear>，這也算一個字。  
-  %li 計入 cjk_chars
+  %li 計入 chars, cjk_chars
 
-%h2#en 七、英數字以 word 計算，而不是 characters
-
-%p 例如
+%h2#chars 3 chars 字元數
 %ul
-  %li 「1993」算一個 word，而不是四個字元。  
-  %li 「CBETA」算一個 word，而不是五個字元。
+  %li 這些都列入計算：空格、換行、原書用字、CBETA 選字、對校本用字、原書校注、CBETA 修訂校注、CBETA 新增校注
+  %li 英文 book 算四個字元
 
-%h3#en_word 1. 可以構成 en_word 的字元
-%table.table.table-striped
-  %thead.table-dark
-    %tr
-      %th Unicode Name
-      %th Unicode Range
-      %th CBETA 使用字元
-  %tbody
-    %tr
-      %td ASCII digits
-      %td 0030-0039
-      %td 0123456789
-    %tr
-      %td Uppercase Latin alphabet
-      %td 0041-005A
-      %td ABCDEFGHIJKLMNOPQRSTUVWXYZ
-    %tr
-      %td Lowercase Latin alphabet
-      %td 0061-007A
-      %td abcdefghijklmnopqrstuvwxyz
-    %tr
-      %td{ rowspan: 3}= link_to 'C1 Controls and Latin-1 Supplement', 'https://www.unicode.org/charts/PDF/U0080.pdf'
-      %td 00C0-00D6
-      %td Ñ
-    %tr
-      %td 00D8-00F6
-      %td Üàáâäæéêíïñóôö
-    %tr
-      %td 00F8-00FF
-      %td ùúûü
-    %tr
-      %td= link_to 'Latin Extended-A', 'https://www.unicode.org/charts/PDF/U0100.pdf'
-      %td 0100-017F
-      %td ĀāċēĪīōŚśũŪū
-    %tr
-      %td= link_to 'Latin Extended-B', 'https://www.unicode.org/charts/PDF/U0180.pdf'
-      %td 0180-024F
-      %td ȧ
-    %tr
-      %td MODIFIER LETTER APOSTROPHE
-      %td 02BC
-      %td ʼ
-    %tr
-      %td= link_to 'Combining Diacritical Marks', 'https://www.unicode.org/charts/PDF/U0300.pdf'
-      %td 0300-036F
-      %td  ̐
-    %tr
-      %td= link_to 'Greek and Coptic', 'https://www.unicode.org/charts/PDF/U0370.pdf'
-      %td 0370-03FF
-      %td Φ
-    %tr
-      %td= link_to 'Cyrillic', 'https://www.unicode.org/charts/PDF/U0400.pdf'
-      %td 0400-04FF
-      %td ДФх
-    %tr
-      %td Latin Extended Additional
-      %td 1E00-1EFF
-      %td ḄḌḍḤḥḳḶḷṀṁṃṄṅṆṇṚṛṠṢṣṬṭẖạụ
-    %tr
-      %td= link_to 'Number Forms', 'https://www.unicode.org/charts/PDF/U2150.pdf'
-      %td 2150-218F
-      %td ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ
-    %tr
-      %td= link_to 'Enclosed Alphanumerics', 'https://www.unicode.org/charts/PDF/U2460.pdf'
-      %td 2460-24FF
-      %td ①②③④⑤⑥⑦⑧⑨⑩
-    %tr
-      %td= link_to 'Latin Extended-C', 'https://www.unicode.org/charts/PDF/U2C60.pdf'
-      %td 2C60-2C7F
-      %td CBETA 目前未使用
-    %tr
-      %td= link_to 'Latin Extended-D', 'https://www.unicode.org/charts/PDF/UA720.pdf'
-      %td A720-A7FF
-      %td CBETA 目前未使用
-    %tr
-      %td= link_to 'Latin Extended-E', 'https://www.unicode.org/charts/PDF/UAB30.pdf'
-      %td AB30-AB6F
-      %td CBETA 目前未使用
-    %tr
-      %td{ rowspan: 3}= link_to 'Halfwidth and Fullwidth Forms', 'https://www.unicode.org/charts/PDF/UFF00.pdf'
-      %td FF10-FF19
-      %td ０１２３４５６７８９
-    %tr
-      %td FF21-FF3A
-      %td ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＲＳＴＵＶＷＸＹＺ
-    %tr
-      %td FF41-FF5A
-      %td ａｂｃｄｅｉｕ
+%h2#zh_en 4 「中文字數」與「英數字數」共同原則
 
-%h3#en_dash 2. 連結符號
+%h3#footnote 4.1 校注 不算
+%h3#inline_note 4.2 夾注 要算
+%h3#doc_no
+  &= "4.3 <docNumber> 不算"
 
-%p 構成「英數字」以外的字元，都是分隔字元，除了以下字元例外：
-%table.table.table-striped
-  %thead.table-dark
-    %tr
-      %td Name
-      %td Unicode
-      %td 字元
-      %td 用例
-      %td Note
-  %tbody
-    %tr
-      %td APOSTROPHE
-      %td U+0027
-      %td '
-      %td don't
-      %td 
-    %tr
-      %td HYPHEN-MINUS
-      %td U+002D
-      %td -
-      %td Saddharma-puṇḍarīka
-      %td 單獨一個 \- 字元不列入計算。
-    %tr
-      %td MODIFIER LETTER APOSTROPHE
-      %td U+02BC
-      %td ʼ
-      %td paʼi
-      %td 
+例如大正藏：No.72[No.26(155),Nos.73,74,No.125(27.3)]  <br>
+在 CBETA XML 裡標記為 &lt;docNumber>.  <br>
+使用者要的應該是「典籍內文的字數」，  <br>
+而 docNumber 其實是大正藏加上去的，  <br>
+並不是這一部典籍裡的字數。  <br>
+例如我們通常說心經有幾個字， 是不會想要把 docNumber 加上去的。<br>
 
-%h3#en_cases 3. 各種用例
-%table.table.table-striped
-  %thead.table-dark
-    %tr
-      %th 字串
-      %th word 數
-  %tdoby
-    %tr
-      %td 1993
-      %td 1
-    %tr
-      %td １０
-      %td 1
-    %tr
-      %td CBETA
-      %td 1
-    %tr
-      %td ＭＰ
-      %td 1
-    %tr
-      %td Saddharma-puṇḍarīka
-      %td 1
-    %tr
-      %td isn't
-      %td 1
-    %tr
-      %td ud-vsad,udvsyad
-      %td 2
-    %tr
-      %td (ref taixu::vol:26;page:p102)
-      %td 6
-    %tr
-      %td ～Caṇḍālakumāraka(+vā caṇḍālakumārikā vā)
-      %td 4
-
-%h3#sidd 4. 悉曇字 Unicode
-
-%p 目前 CBETA 尚未使用如下 Unicode 悉曇字，將來如果使用，也需考慮計算方式。
-
-%p 下面例子，應該只能算 1 個字：
-%p.ms-3 𑖭𑖿𑖧𑖯𑖾 = U+115AD(𑖭), U+115BF(𑖿 ), U+115A7(𑖧), U+115AF(𑖯), U+115BE(𑖾) 
-
-%p 圖:  
-%p.ms-3
-  = image_tag('stat-sidd.png')
-
-%h2#puncs 八、標點、符號不算
+%h2#puncs 5. 標點、符號不算
 
 %p cjk_chars 不計算以下字元 
 %table.table.table-striped
@@ -393,7 +243,7 @@
       %td ｜｝～
       %td 
 
-%h2#special 九、要列入計算的特殊字元
+%h2#special 6 要列入計算的特殊字元
 %table.table.table-striped
   %thead.table-dark
     %tr
@@ -461,3 +311,177 @@
         %p
           參考:
           =link_to nil, 'https://ja.wikipedia.org/wiki/%E3%80%BC'
+
+%h2#en 7 英數字以 word 計算，而不是 characters
+
+%p 例如
+%ul
+  %li 「1993」算一個 word，而不是四個字元。  
+  %li 「CBETA」算一個 word，而不是五個字元。
+
+%h3#en_word 7.1 可以構成 en_word 的字元
+%table.table.table-striped
+  %thead.table-dark
+    %tr
+      %th Unicode Name
+      %th Unicode Range
+      %th CBETA 使用字元
+  %tbody
+    %tr
+      %td ASCII digits
+      %td 0030-0039
+      %td 0123456789
+    %tr
+      %td Uppercase Latin alphabet
+      %td 0041-005A
+      %td ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    %tr
+      %td Lowercase Latin alphabet
+      %td 0061-007A
+      %td abcdefghijklmnopqrstuvwxyz
+    %tr
+      %td{ rowspan: 3}= link_to 'C1 Controls and Latin-1 Supplement', 'https://www.unicode.org/charts/PDF/U0080.pdf'
+      %td 00C0-00D6
+      %td Ñ
+    %tr
+      %td 00D8-00F6
+      %td Üàáâäæéêíïñóôö
+    %tr
+      %td 00F8-00FF
+      %td ùúûü
+    %tr
+      %td= link_to 'Latin Extended-A', 'https://www.unicode.org/charts/PDF/U0100.pdf'
+      %td 0100-017F
+      %td ĀāċēĪīōŚśũŪū
+    %tr
+      %td= link_to 'Latin Extended-B', 'https://www.unicode.org/charts/PDF/U0180.pdf'
+      %td 0180-024F
+      %td ȧ
+    %tr
+      %td MODIFIER LETTER APOSTROPHE
+      %td 02BC
+      %td ʼ
+    %tr
+      %td= link_to 'Combining Diacritical Marks', 'https://www.unicode.org/charts/PDF/U0300.pdf'
+      %td 0300-036F
+      %td  ̐
+    %tr
+      %td= link_to 'Greek and Coptic', 'https://www.unicode.org/charts/PDF/U0370.pdf'
+      %td 0370-03FF
+      %td Φ
+    %tr
+      %td= link_to 'Cyrillic', 'https://www.unicode.org/charts/PDF/U0400.pdf'
+      %td 0400-04FF
+      %td ДФх
+    %tr
+      %td Latin Extended Additional
+      %td 1E00-1EFF
+      %td ḄḌḍḤḥḳḶḷṀṁṃṄṅṆṇṚṛṠṢṣṬṭẖạụ
+    %tr
+      %td= link_to 'Number Forms', 'https://www.unicode.org/charts/PDF/U2150.pdf'
+      %td 2150-218F
+      %td ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ
+    %tr
+      %td= link_to 'Enclosed Alphanumerics', 'https://www.unicode.org/charts/PDF/U2460.pdf'
+      %td 2460-24FF
+      %td ①②③④⑤⑥⑦⑧⑨⑩
+    %tr
+      %td= link_to 'Latin Extended-C', 'https://www.unicode.org/charts/PDF/U2C60.pdf'
+      %td 2C60-2C7F
+      %td CBETA 目前未使用
+    %tr
+      %td= link_to 'Latin Extended-D', 'https://www.unicode.org/charts/PDF/UA720.pdf'
+      %td A720-A7FF
+      %td CBETA 目前未使用
+    %tr
+      %td= link_to 'Latin Extended-E', 'https://www.unicode.org/charts/PDF/UAB30.pdf'
+      %td AB30-AB6F
+      %td CBETA 目前未使用
+    %tr
+      %td{ rowspan: 3}= link_to 'Halfwidth and Fullwidth Forms', 'https://www.unicode.org/charts/PDF/UFF00.pdf'
+      %td FF10-FF19
+      %td ０１２３４５６７８９
+    %tr
+      %td FF21-FF3A
+      %td ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＲＳＴＵＶＷＸＹＺ
+    %tr
+      %td FF41-FF5A
+      %td ａｂｃｄｅｉｕ
+
+%h3#en_dash 7.2 連結符號
+
+%p 構成「英數字」以外的字元，都是分隔字元，除了以下字元例外：
+%table.table.table-striped
+  %thead.table-dark
+    %tr
+      %td Name
+      %td Unicode
+      %td 字元
+      %td 用例
+      %td Note
+  %tbody
+    %tr
+      %td APOSTROPHE
+      %td U+0027
+      %td '
+      %td don't
+      %td 
+    %tr
+      %td HYPHEN-MINUS
+      %td U+002D
+      %td -
+      %td Saddharma-puṇḍarīka
+      %td 單獨一個 \- 字元不列入計算。
+    %tr
+      %td MODIFIER LETTER APOSTROPHE
+      %td U+02BC
+      %td ʼ
+      %td paʼi
+      %td 
+
+%h3#en_cases 7.3 各種用例
+%table.table.table-striped
+  %thead.table-dark
+    %tr
+      %th 字串
+      %th word 數
+  %tdoby
+    %tr
+      %td 1993
+      %td 1
+    %tr
+      %td １０
+      %td 1
+    %tr
+      %td CBETA
+      %td 1
+    %tr
+      %td ＭＰ
+      %td 1
+    %tr
+      %td Saddharma-puṇḍarīka
+      %td 1
+    %tr
+      %td isn't
+      %td 1
+    %tr
+      %td ud-vsad,udvsyad
+      %td 2
+    %tr
+      %td (ref taixu::vol:26;page:p102)
+      %td 6
+    %tr
+      %td ～Caṇḍālakumāraka(+vā caṇḍālakumārikā vā)
+      %td 4
+
+%h3#sidd 7.4 悉曇字 Unicode
+
+%p 目前 CBETA 尚未使用如下 Unicode 悉曇字，將來如果使用，也需考慮計算方式。
+
+%p 下面例子，應該只能算 1 個字：
+%p.ms-3 𑖭𑖿𑖧𑖯𑖾 = U+115AD(𑖭), U+115BF(𑖿 ), U+115A7(𑖧), U+115AF(𑖯), U+115BE(𑖾) 
+
+%p 圖:  
+%p.ms-3
+  = image_tag('stat-sidd.png')
+

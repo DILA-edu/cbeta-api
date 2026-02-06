@@ -10,27 +10,27 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_090000) do
   create_table "canons", force: :cascade do |t|
+    t.integer "children_count"
     t.string "id2"
     t.string "name"
     t.string "uuid"
-    t.integer "children_count"
     t.index ["id2"], name: "index_canons_on_id2", unique: true
     t.index ["uuid"], name: "index_canons_on_uuid", unique: true
   end
 
   create_table "catalog_entries", force: :cascade do |t|
-    t.string "n"
-    t.string "label"
-    t.string "parent"
-    t.string "node_type"
-    t.integer "juan_start"
-    t.integer "juan_end"
-    t.string "work"
     t.string "file"
+    t.integer "juan_end"
+    t.integer "juan_start"
+    t.string "label"
     t.string "lb"
+    t.string "n"
+    t.string "node_type"
+    t.string "parent"
     t.integer "sort"
+    t.string "work"
     t.index ["parent", "n"], name: "index_catalog_entries_on_parent_and_n"
     t.index ["parent", "sort"], name: "index_catalog_entries_on_parent_and_sort"
   end
@@ -44,8 +44,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
 
   create_table "gaijis", force: :cascade do |t|
     t.string "cb"
-    t.string "zzs"
     t.string "pua"
+    t.string "zzs"
     t.index ["cb"], name: "index_gaijis_on_cb"
     t.index ["pua"], name: "index_gaijis_on_pua"
     t.index ["zzs"], name: "index_gaijis_on_zzs"
@@ -58,13 +58,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
   end
 
   create_table "juan_lines", force: :cascade do |t|
-    t.string "vol"
-    t.string "work"
+    t.string "content_uuid"
     t.integer "juan"
     t.string "lb"
-    t.string "uuid"
-    t.string "content_uuid"
     t.string "lb_end"
+    t.string "uuid"
+    t.string "vol"
+    t.string "work"
     t.index ["uuid"], name: "index_juan_lines_on_uuid", unique: true
     t.index ["vol", "lb"], name: "index_juan_lines_on_vol_and_lb", unique: true
     t.index ["work", "juan"], name: "index_juan_lines_on_work_and_juan"
@@ -77,17 +77,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
     t.index ["lb2"], name: "index_lb_maps_on_lb2"
   end
 
-  create_table "lines", force: :cascade do |t|
-    t.string "linehead"
-    t.text "html"
-    t.text "notes"
-    t.integer "juan"
-    t.string "work"
-    t.string "vol"
-    t.string "page"
+  create_table "lines", id: :integer, default: nil, force: :cascade do |t|
     t.string "col"
+    t.text "html"
+    t.integer "juan"
     t.string "line"
+    t.string "linehead"
+    t.text "notes"
+    t.string "page"
     t.integer "ser_no"
+    t.string "vol"
+    t.string "work"
     t.index ["linehead"], name: "index_lines_on_edition_and_linehead"
     t.index ["ser_no"], name: "index_lines_on_ser_no"
     t.index ["vol", "page", "col", "line"], name: "index_lines_on_vol_and_page_and_col_and_line"
@@ -103,9 +103,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
 
   create_table "places", force: :cascade do |t|
     t.string "auth_id"
-    t.string "name"
-    t.float "longitude"
     t.float "latitude"
+    t.float "longitude"
+    t.string "name"
     t.index ["auth_id"], name: "index_places_on_auth_id", unique: true
   end
 
@@ -115,21 +115,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
   end
 
   create_table "terms", force: :cascade do |t|
-    t.string "term"
     t.text "synonyms"
+    t.string "term"
     t.index ["term"], name: "index_terms_on_term"
   end
 
-  create_table "toc_nodes", force: :cascade do |t|
-    t.string "parent"
-    t.string "n"
-    t.string "label"
-    t.string "work"
+  create_table "toc_nodes", id: :integer, default: nil, force: :cascade do |t|
+    t.string "canon"
     t.string "file"
     t.integer "juan"
+    t.string "label"
     t.string "lb"
+    t.string "n"
+    t.string "parent"
     t.string "sort_order"
-    t.string "canon"
+    t.string "work"
     t.index ["canon"], name: "index_toc_nodes_on_canon"
     t.index ["n"], name: "index_toc_nodes_on_n"
     t.index ["parent", "n"], name: "index_toc_nodes_on_parent_and_n"
@@ -142,28 +142,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
     t.index ["k"], name: "index_variants_on_k"
   end
 
-  create_table "works", force: :cascade do |t|
-    t.string "n"
-    t.string "title"
-    t.integer "juan"
-    t.string "byline"
+  create_table "works", id: :integer, default: nil, force: :cascade do |t|
     t.string "alt"
-    t.string "vol"
+    t.string "byline"
+    t.string "canon"
     t.string "category"
+    t.string "category_ids"
+    t.integer "chars"
+    t.integer "cjk_chars"
     t.text "creators"
+    t.text "creators_with_id"
+    t.integer "en_words"
+    t.integer "juan"
+    t.text "juan_list"
+    t.integer "juan_start"
+    t.string "n"
+    t.string "orig_category"
+    t.string "sort_order"
     t.string "time_dynasty"
     t.integer "time_from"
     t.integer "time_to"
-    t.text "creators_with_id"
-    t.integer "juan_start"
-    t.string "orig_category"
-    t.string "sort_order"
-    t.string "category_ids"
-    t.text "juan_list"
+    t.string "title"
     t.string "uuid"
-    t.string "canon"
-    t.integer "cjk_chars"
-    t.integer "en_words"
+    t.string "vol"
     t.string "work_type"
     t.index ["canon"], name: "index_works_on_canon"
     t.index ["n"], name: "index_works_on_n"
@@ -172,11 +173,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_08_012230) do
   end
 
   create_table "xml_files", force: :cascade do |t|
-    t.string "vol"
-    t.string "work"
     t.string "file"
     t.integer "juan_start"
     t.integer "juans"
+    t.string "vol"
+    t.string "work"
     t.index ["vol", "file"], name: "index_xml_files_on_vol_and_file"
     t.index ["work", "file"], name: "index_xml_files_on_work_and_file"
     t.index ["work", "vol"], name: "index_xml_files_on_work_and_vol"

@@ -33,8 +33,8 @@ class ImportWorkInfo
   
   def import
     @stat = {}
-    @stat_vol = Hash.new { |h, k| h[k] = { cjk_chars: 0, en_words: 0 } }
-    @stat_cat = Hash.new { |h, k| h[k] = { cjk_chars: 0, en_words: 0 } }
+    @stat_vol = Hash.new { |h, k| h[k] = { chars: 0, cjk_chars: 0, en_words: 0 } }
+    @stat_cat = Hash.new { |h, k| h[k] = { chars: 0, cjk_chars: 0, en_words: 0 } }
     @work_type = {}
 
     XmlFile.delete_all
@@ -66,7 +66,7 @@ class ImportWorkInfo
     puts "write #{fn}"
     File.write(fn, JSON.pretty_generate(r))
 
-    word_count
+    write_word_count
     write_word_count_by_vol
     write_word_count_by_cat
   end
@@ -148,12 +148,18 @@ class ImportWorkInfo
   end
   
   def count_chars(doc)
-    # 去除 xml document 中不列入計算的元素
+    r = OpenStruct.new
+
     doc.at_xpath('//teiHeader').remove
+    doc.xpath("//g").each { |x| x.content = '一' }
+    doc.xpath("//unclear").each { |x| x.content = '⍰' }
+    text_all = doc.text
+    r.chars = text_all.size
+
+    # 去除 xml document 中不列入計算的元素
     doc.xpath('//docNumber').each { |x| x.remove }
     doc.xpath("//figDesc").each { |x| x.remove }
     doc.xpath("//foreign[contains(@place, 'foot')]").each { |x| x.remove }
-    doc.xpath("//g").each { |x| x.content = '一' }
     doc.xpath("//mulu").each { |x| x.remove }
     doc.xpath("//note[@type='add']").each { |x| x.remove }
     doc.xpath("//note[@type='cf1']").each { |x| x.remove }
@@ -166,25 +172,28 @@ class ImportWorkInfo
     doc.xpath("//rdg").each { |x| x.remove }
     doc.xpath("//sic").each { |x| x.remove }
     doc.xpath("//t[contains(@place, 'foot')]").each { |x| x.remove }
-    doc.xpath("//unclear").each { |x| x.content = '⍰' }
   
-    text = doc.text.gsub(/\n/, '')
+    text_cjk = doc.text.gsub(/\n/, '')
     en_words = []
     
     # 英數梵巴, 計算後去除
-    text.gsub!(@regexp_en_word) do
+    text_cjk.gsub!(@regexp_en_word) do
       en_words << $& unless $& == '-'
       ''
     end
+    r.en_words  = en_words.size
   
     # 去標點, 剩下的就是 CJK 字元
-    text.gsub!(@regexp_not_cjk, '')
-    
-    return text, en_words
+    text_cjk.gsub!(@regexp_not_cjk, '')
+    r.cjk_chars = text_cjk.size
+
+    log_chars(text_all, text_cjk, en_words)
+    r
   end
   
   def get_info_from_xml(xml_path)
     @log.puts "#{__LINE__} get_info_from_xml: #{xml_path}"
+    @work_bn = File.basename(xml_path, '.*')
     r = {}
     doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
@@ -209,27 +218,29 @@ class ImportWorkInfo
       end
     end
 
-    r[:cjk_chars], r[:en_words] = count_chars(doc)
-
-    i = r[:cjk_chars].size
-    j = r[:en_words].size
+    stat = count_chars(doc)
+    r.merge!(stat.to_h)
 
     bn = File.basename(xml_path)
     vol = bn.sub(/^((?:#{CBETA::CANON})\d{2,3}).*$/, '\1')
     @log.puts "#{__LINE__} get_info_from_xml, #{bn}, vol: #{vol}"
-    @stat_vol[vol][:cjk_chars] += i
-    @stat_vol[vol][:en_words]  += j
+    add_stat(stat, @stat_vol[vol])
 
     w = Work.find_by(n: @work)
     abort "#{__LINE__} #{@work} 在 Work 裡找不到" if w.nil?
     unless w.category.nil?
       w.category.split(',').each do |cat|
-        @stat_cat[cat][:cjk_chars] += i
-        @stat_cat[cat][:en_words]  += j
+        add_stat(stat, @stat_cat[cat])
       end
     end
 
     r
+  end
+
+  def add_stat(src, dest)
+    dest[:chars]     += src.chars
+    dest[:cjk_chars] += src.cjk_chars
+    dest[:en_words]  += src.en_words
   end
   
   def import_canon_from_xml(path)
@@ -266,6 +277,8 @@ class ImportWorkInfo
       works_main: 0,
       juans_all: 0,
       juans_main: 0,
+      chars_all: 0,
+      chars_main: 0,
       cjk_chars_all: 0,
       cjk_chars_main: 0,
       en_words_all: 0,
@@ -392,25 +405,26 @@ class ImportWorkInfo
       data = import_work_files
     else
       data = get_info_from_xml(xml_path)
-      log_chars(data[:cjk_chars], data[:en_words])
-      data[:cjk_chars] = data[:cjk_chars].size
-      data[:en_words]  = data[:en_words].size
-
       update_xml_files(xml_path, @vol, data)
-      
       update_work(data)
     end
 
     @done << @work
 
+    @stat[@canon][:chars_all]     += data[:chars]
     @stat[@canon][:cjk_chars_all] += data[:cjk_chars]
     @stat[@canon][:en_words_all]  += data[:en_words]
+
     if @work_type[@work] == 'textbody'
+      @stat[@canon][:chars_main]     += data[:chars]
       @stat[@canon][:cjk_chars_main] += data[:cjk_chars]
       @stat[@canon][:en_words_main]  += data[:en_words]
     end
 
     @max_cjk_chars = data[:cjk_chars] if data[:cjk_chars] > @max_cjk_chars
+  rescue
+    puts "#{__LINE__} xml_path: #{xml_path}, data: #{data.inspect}"
+    raise
   end
 
   # 佛典跨冊時，讀取多個 XML 檔
@@ -419,8 +433,10 @@ class ImportWorkInfo
     files = @work_xml_files[@work]
 
     data = nil
-    @cjk_chars = ''
-    @en_words = []
+    chars = 0
+    cjk_chars = 0
+    en_words  = 0
+
     files.each do |f|
       vol = f.sub(/^(.*?)n.*$/, '\1')
       xml_path = File.join(@xml_root, @canon, vol, f+'.xml')
@@ -439,16 +455,17 @@ class ImportWorkInfo
       end
 
       update_xml_files(xml_path, vol, info)
-      @cjk_chars += info[:cjk_chars]
-      @en_words  += info[:en_words]
+
+      chars     += info[:chars]
+      cjk_chars += info[:cjk_chars]
+      en_words  += info[:en_words]
     end
 
-    data[:cjk_chars] = @cjk_chars.size
-    data[:en_words]  = @en_words.size
-    log_chars(@cjk_chars, @en_words)
+    data[:chars]     = chars
+    data[:cjk_chars] = cjk_chars
+    data[:en_words]  = en_words
 
     update_work(data)
-
     data
   end
 
@@ -495,16 +512,18 @@ class ImportWorkInfo
     @regexp_not_cjk = Regexp.new("[#{s}]+")
   end
 
-  def log_chars(cjk_chars, en_words)
+  def log_chars(text_all, text_cjk, en_words)
     folder = Rails.root.join('log', 'import_work_info', @canon, @work)
-    FileUtils.rm_rf(folder) if Dir.exist?(folder)
     FileUtils.makedirs(folder)
 
-    fn = File.join(folder, "#{@work}-cjk-chars.txt")
-    File.write(fn, cjk_chars)
+    fn = File.join(folder, "#{@work_bn}-text-all.txt")
+    File.write(fn, text_all)
+
+    fn = File.join(folder, "#{@work_bn}-cjk-chars.txt")
+    File.write(fn, text_cjk)
 
     unless en_words.empty?
-      fn = File.join(folder, "#{@work}-en-words.json")
+      fn = File.join(folder, "#{@work_bn}-en-words.json")
       s = JSON.generate(en_words)
       File.write(fn, s)
     end
@@ -574,16 +593,16 @@ class ImportWorkInfo
     end
   end
 
-  def word_count
+  def write_word_count
     fn = File.join(@stat_folder, "cbeta-word-count.csv")
     puts "write #{fn}"
 
     CSV.open(fn, "wb") do |csv|
-      csv << %w[work cjk_chars en_words canon category alt]
+      csv << %w[work chars cjk_chars en_words canon category alt]
 
       # 注意 部分收錄 的佛典，alt 屬性不是 nil, 例如 JA123
       Work.where.not(cjk_chars: nil).order(:n).each do |w|
-        csv << [w.n, w.cjk_chars, w.en_words, w.canon, w.category, w.alt]
+        csv << [w.n, w.chars, w.cjk_chars, w.en_words, w.canon, w.category, w.alt]
       end
     end
   end
@@ -593,10 +612,10 @@ class ImportWorkInfo
     puts "write #{fn}"
 
     CSV.open(fn, "wb") do |csv|
-      csv << %w[vol cjk_chars en_words]
+      csv << %w[vol chars cjk_chars en_words]
       @stat_vol.keys.sort.each do |v|
         h = @stat_vol[v]
-        csv << [v, h[:cjk_chars], h[:en_words]]
+        csv << [v, h[:chars], h[:cjk_chars], h[:en_words]]
       end
     end
   end
@@ -606,12 +625,12 @@ class ImportWorkInfo
     puts "write #{fn}"
 
     CSV.open(fn, "wb") do |csv|
-      csv << %w[category cjk_chars en_words]
+      csv << %w[category chars cjk_chars en_words]
       fn = Rails.root.join('data-static', 'categories.json')
       cats = JSON.load_file(fn)
       cats.each do |k, cat|
         h = @stat_cat[cat]
-        csv << [cat, h[:cjk_chars], h[:en_words]]        
+        csv << [cat, h[:chars], h[:cjk_chars], h[:en_words]]
       end
     end
   end
