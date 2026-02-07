@@ -33,8 +33,8 @@ class ImportWorkInfo
   
   def import
     @stat = {}
-    @stat_vol = Hash.new { |h, k| h[k] = { chars: 0, cjk_chars: 0, en_words: 0 } }
-    @stat_cat = Hash.new { |h, k| h[k] = { chars: 0, cjk_chars: 0, en_words: 0 } }
+    @stat_vol = Hash.new { |h, k| h[k] = stat_hash }
+    @stat_cat = Hash.new { |h, k| h[k] = stat_hash }
     @work_type = {}
 
     XmlFile.delete_all
@@ -72,6 +72,15 @@ class ImportWorkInfo
   end
   
   private
+
+  def stat_hash
+    { 
+      chars: 0, 
+      chars2: 0,
+      cjk_chars: 0, 
+      en_words: 0 
+    }
+  end
 
   def build_work_xml_files
     r = Hash.new { |h, k| h[k] = [] }
@@ -156,6 +165,9 @@ class ImportWorkInfo
     text_all = doc.text
     r.chars = text_all.size
 
+    text_no_spaces = text_all.gsub(/[\s　]/, '')
+    r.chars2 = text_no_spaces.size
+
     # 去除 xml document 中不列入計算的元素
     doc.xpath('//docNumber').each { |x| x.remove }
     doc.xpath("//figDesc").each { |x| x.remove }
@@ -187,7 +199,7 @@ class ImportWorkInfo
     text_cjk.gsub!(@regexp_not_cjk, '')
     r.cjk_chars = text_cjk.size
 
-    log_chars(text_all, text_cjk, en_words)
+    log_chars(text_all, text_no_spaces, text_cjk, en_words)
     r
   end
   
@@ -239,6 +251,7 @@ class ImportWorkInfo
 
   def add_stat(src, dest)
     dest[:chars]     += src.chars
+    dest[:chars2]    += src.chars2
     dest[:cjk_chars] += src.cjk_chars
     dest[:en_words]  += src.en_words
   end
@@ -279,6 +292,8 @@ class ImportWorkInfo
       juans_main: 0,
       chars_all: 0,
       chars_main: 0,
+      chars_no_spaces_all: 0,
+      chars_no_spaces_main: 0,
       cjk_chars_all: 0,
       cjk_chars_main: 0,
       en_words_all: 0,
@@ -411,14 +426,16 @@ class ImportWorkInfo
 
     @done << @work
 
-    @stat[@canon][:chars_all]     += data[:chars]
-    @stat[@canon][:cjk_chars_all] += data[:cjk_chars]
-    @stat[@canon][:en_words_all]  += data[:en_words]
+    @stat[@canon][:chars_all]           += data[:chars]
+    @stat[@canon][:chars_no_spaces_all] += data[:chars2]
+    @stat[@canon][:cjk_chars_all]       += data[:cjk_chars]
+    @stat[@canon][:en_words_all]        += data[:en_words]
 
     if @work_type[@work] == 'textbody'
-      @stat[@canon][:chars_main]     += data[:chars]
-      @stat[@canon][:cjk_chars_main] += data[:cjk_chars]
-      @stat[@canon][:en_words_main]  += data[:en_words]
+      @stat[@canon][:chars_main]           += data[:chars]
+      @stat[@canon][:chars_no_spaces_main] += data[:chars2]
+      @stat[@canon][:cjk_chars_main]       += data[:cjk_chars]
+      @stat[@canon][:en_words_main]        += data[:en_words]
     end
 
     @max_cjk_chars = data[:cjk_chars] if data[:cjk_chars] > @max_cjk_chars
@@ -434,6 +451,7 @@ class ImportWorkInfo
 
     data = nil
     chars = 0
+    chars2 = 0
     cjk_chars = 0
     en_words  = 0
 
@@ -457,11 +475,13 @@ class ImportWorkInfo
       update_xml_files(xml_path, vol, info)
 
       chars     += info[:chars]
+      chars2    += info[:chars2]
       cjk_chars += info[:cjk_chars]
       en_words  += info[:en_words]
     end
 
     data[:chars]     = chars
+    data[:chars2]    = chars2
     data[:cjk_chars] = cjk_chars
     data[:en_words]  = en_words
 
@@ -512,12 +532,15 @@ class ImportWorkInfo
     @regexp_not_cjk = Regexp.new("[#{s}]+")
   end
 
-  def log_chars(text_all, text_cjk, en_words)
+  def log_chars(text_all, text_no_spaces, text_cjk, en_words)
     folder = Rails.root.join('log', 'import_work_info', @canon, @work)
     FileUtils.makedirs(folder)
 
-    fn = File.join(folder, "#{@work_bn}-text-all.txt")
+    fn = File.join(folder, "#{@work_bn}-all.txt")
     File.write(fn, text_all)
+
+    fn = File.join(folder, "#{@work_bn}-no-spaces.txt")
+    File.write(fn, text_no_spaces)
 
     fn = File.join(folder, "#{@work_bn}-cjk-chars.txt")
     File.write(fn, text_cjk)
@@ -598,11 +621,11 @@ class ImportWorkInfo
     puts "write #{fn}"
 
     CSV.open(fn, "wb") do |csv|
-      csv << %w[work chars cjk_chars en_words canon category alt]
+      csv << %w[work chars chars_no_spaces cjk_chars en_words canon category alt]
 
       # 注意 部分收錄 的佛典，alt 屬性不是 nil, 例如 JA123
       Work.where.not(cjk_chars: nil).order(:n).each do |w|
-        csv << [w.n, w.chars, w.cjk_chars, w.en_words, w.canon, w.category, w.alt]
+        csv << [w.n, w.chars, w.chars2, w.cjk_chars, w.en_words, w.canon, w.category, w.alt]
       end
     end
   end
@@ -612,10 +635,10 @@ class ImportWorkInfo
     puts "write #{fn}"
 
     CSV.open(fn, "wb") do |csv|
-      csv << %w[vol chars cjk_chars en_words]
+      csv << %w[vol chars chars_no_spaces cjk_chars en_words]
       @stat_vol.keys.sort.each do |v|
         h = @stat_vol[v]
-        csv << [v, h[:chars], h[:cjk_chars], h[:en_words]]
+        csv << [v, h[:chars], h[:chars2], h[:cjk_chars], h[:en_words]]
       end
     end
   end
@@ -625,12 +648,12 @@ class ImportWorkInfo
     puts "write #{fn}"
 
     CSV.open(fn, "wb") do |csv|
-      csv << %w[category chars cjk_chars en_words]
+      csv << %w[category chars chars_no_spaces cjk_chars en_words]
       fn = Rails.root.join('data-static', 'categories.json')
       cats = JSON.load_file(fn)
       cats.each do |k, cat|
         h = @stat_cat[cat]
-        csv << [cat, h[:chars], h[:cjk_chars], h[:en_words]]
+        csv << [cat, h[:chars], h[:chars2], h[:cjk_chars], h[:en_words]]
       end
     end
   end

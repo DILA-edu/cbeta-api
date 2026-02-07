@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_07_035302) do
   create_table "canons", force: :cascade do |t|
     t.integer "children_count"
     t.string "id2"
@@ -149,6 +149,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_090000) do
     t.string "category"
     t.string "category_ids"
     t.integer "chars"
+    t.integer "chars2"
     t.integer "cjk_chars"
     t.text "creators"
     t.text "creators_with_id"

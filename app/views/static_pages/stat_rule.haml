@@ -11,7 +11,7 @@
         &= link_to "2.1 缺字標記 <g> 算一個字", '#gaiji'
       %li 
         &= link_to "2.2 <unclear> 算一個字", "#unclear"
-  %li= link_to "3 chars 字元數", '#chars'
+  %li= link_to "3 chars, chars_no_spaces (字元數)", '#chars'
   %li
     = link_to '4 「中文字數」與「英數字數」共同原則', '#zh_en'
     %ul
@@ -30,53 +30,30 @@
       %li= link_to '7.4 悉曇字 Unicode', '#sidd'
 
 %h2#intro 1 前言
-%p 字數統計分三類：
+%p 字數統計分四類：
 %ul
-  %li chars 字元數
-  %li cjk_chars 中文、日文、悉曇字、蘭札體
+  %li chars 字元數 (含空格)
+  %li chars_no_spaces 字元數 (不含空格)
+  %li cjk_chars 中、日、韓、悉曇字、蘭札體
   %li en_words 英文、梵巴文 詞數
-
-%p API 回傳 CSV 欄位：
-%table.table.table-striped
-  %tr
-    %th 欄位名稱
-    %th 說明
-  %tr
-    %td work
-    %td 典籍編號
-  %tr
-    %td chars
-    %td 字元數
-  %tr
-    %td cjk_chars
-    %td 中、日、韓、悉曇、蘭札 字數
-  %tr
-    %td en_words
-    %td 英數 word 數
-  %tr
-    %td canon
-    %td 藏經(套書) ID
-  %tr
-    %td category
-    %td 部類
 
 %h2#common 2 共通原則
 %h3#gaiji
   &= "2.1 缺字標記 <g> 算一個字"
 
 %ul
-  %li 計入 chars, cjk_chars
+  %li 計入 chars, chars_no_spaces, cjk_chars
   %li 包含：悉曇字、蘭札體
 
 %h3#unclear
   &= "2.2 <unclear> 算一個字"
 %ul
   %li 原書字跡不清、難以辨識的字，在 CBETA XML 標記為 &lt;unclear>，這也算一個字。  
-  %li 計入 chars, cjk_chars
+  %li 計入 chars, chars_no_spaces, cjk_chars
 
-%h2#chars 3 chars 字元數
+%h2#chars 3 chars, chars_no_spaces (字元數)
 %ul
-  %li 這些都列入計算：空格、換行、原書用字、CBETA 選字、對校本用字、原書校注、CBETA 修訂校注、CBETA 新增校注
+  %li 這些都列入計算：原書用字、CBETA 選字、對校本用字、原書校注、CBETA 修訂校注、CBETA 新增校注
   %li 英文 book 算四個字元
 
 %h2#zh_en 4 「中文字數」與「英數字數」共同原則
