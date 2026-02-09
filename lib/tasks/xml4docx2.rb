@@ -89,6 +89,7 @@ class XMLForDocx2
     handle_body_text
     traverse(@doc.root)
     abort "仍有 seg 包 seg" if @doc.at_xpath('//seg/seg')
+    remove_empty_p
 
     FileUtils.makedirs(dest_folder)
     dest = File.join(dest_folder, @xml_fn)
@@ -342,6 +343,18 @@ class XMLForDocx2
     @styles = Set.new
     @doc.root.xpath('//settings/styles/style').each do |s|
       @styles << s['name']
+    end
+  end
+
+  def remove_empty_p
+    traverse(@doc.root)
+    @doc.xpath('//p').each do |e|
+      next if e.at_xpath('graphic')
+      s = e.text.gsub(/\s/, '')
+      if s.empty?
+        e.add_previous_sibling(e.inner_html) # p 裡面可能有 lb
+        e.remove
+      end
     end
   end
 

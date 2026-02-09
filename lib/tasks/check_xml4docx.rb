@@ -113,7 +113,8 @@ class CheckXMLForDocx
       end
     end
     
-    if e.text.empty? and e.at_xpath('graphic').nil?
+    s = e.text.gsub(/\s/, '')
+    if s.empty? and e.at_xpath('graphic').nil?
       abort "\np 的內容是空的, lb: #{$lb}, xml: #{e.to_xml}"
     end
 

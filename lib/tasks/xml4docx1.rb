@@ -166,6 +166,7 @@ class XMLForDocx1
       rends << 'p' if e.name == 'p'
     end
 
+    rends << 'entry_def' if e.parent.name == 'def'
     rends << 'p' if rends.include?('inlinenote') and e.name == 'p'
 
     unless rends.empty?

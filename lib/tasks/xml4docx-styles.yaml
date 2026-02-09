@@ -20,6 +20,12 @@ corr_m1_p: margin-left:1em;color:#ff0000
 corr_m2_p: margin-left:2em;color:#ff0000
 corr_p: color:#ff0000
 default: font-family:新細明體;font-size:12
+entry_def: font-size:12
+entry_def_m1: font-size:12;margin-left:1em
+entry_def_m2: font-size:12;margin-left:2em
+entry_def_m3: font-size:12;margin-left:3em
+entry_def_m1_j1: font-size:12;margin-left:1em;text-indent:-1em
+entry_def_m2_j1: font-size:12;margin-left:2em;text-indent:-1em
 entry_form: font-weight:bold;font-size:14
 head: color:#0000a0;font-size:14
 hana_a: font-family:Hanazono Mincho A Regular
