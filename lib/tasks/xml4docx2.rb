@@ -87,6 +87,7 @@ class XMLForDocx2
 
     read_settings_styles
     handle_body_text
+    handle_footnote_p
     traverse(@doc.root)
     abort "仍有 seg 包 seg" if @doc.at_xpath('//seg/seg')
     remove_empty_p
@@ -330,6 +331,16 @@ class XMLForDocx2
       p.add_child(node)
       @log.puts "#{__LINE__} 直接出現在 body 下，包 p: #{p.to_xml}"
       i += 1
+    end
+  end
+
+  def handle_footnote_p
+    @doc.root.xpath('//footnote').each do |e|
+      paras = e.xpath('p')
+      next if paras.size == 0 or paras.size > 1
+
+      # 如果 footnote 下只有一個 p, 把 p 拿掉
+      e.inner_html = paras.first.inner_html
     end
   end
 

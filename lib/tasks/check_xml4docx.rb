@@ -47,6 +47,7 @@ class CheckXMLForDocx
     check_as_text('T/T55/T55n2149/T55n2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T55/T55n2154/T55n2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T55/T55n2154/T55n2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)
+    check_as_text('X/X14/X14n0288/X14n0288_001.xml', /0006a13.*<footnote>真鑑曰.*0006a14/m)
     
     puts "\n未發現錯誤"
     puts "花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
