@@ -930,19 +930,9 @@ class XMLForDocx1
     node.content = char
     node['rend'] = 'corr' if @in_corr.last
     case code
-    when 0x1F780..0x1F7FF
+    when 0x1F780..0x1F7FF, 0x20000..0x2A6DF, 0x2A700..0x2FFFF
       node['name'] = 'cbetarc'
       add_style("cbetarc")
-      node.to_s
-    when 0x20000..0x2A6DF
-      node['name'] = 'hana_b'
-      r = node.to_s
-      @log.puts "#{__LINE__} handle_char, #{r}"
-      add_style("hana_b")
-      r
-    when 0x2A700..0x2FFFF
-      node['name'] = 'hana_c'
-      add_style("hana_c")
       node.to_s
     when 0x30000..0x3134F
       # CJK Unified Ideographs Extension G 
