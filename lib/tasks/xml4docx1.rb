@@ -36,6 +36,7 @@ class XMLForDocx1
         convert_canon(args)
       end
     else
+      @canon = args[:canon]
       convert_canon(args)
     end
     puts "\n花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
@@ -45,7 +46,7 @@ class XMLForDocx1
   end
 
   def convert_canon(args)
-    puts "\ncanon: #{@canon}"
+    puts "\n[#{__LINE__}] canon: #{@canon}"
     @orig = @cbeta.get_canon_symbol(@canon)
     @canon_name = @my_cbeta_share.get_canon_name(@canon)
     read_authority_catalog
@@ -585,8 +586,8 @@ class XMLForDocx1
             r << %(<font rend="corr">#{it}</font>) 
           end
         end
-      else
-          r = %(<font rend="corr">#{r}</font>) 
+      elsif not r.empty?
+        r = %(<font rend="corr">#{r}</font>)
       end
     end
 

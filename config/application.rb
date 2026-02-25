@@ -26,7 +26,7 @@ module CbData
     
     config.cb = config_for(:cb)
 
-    config.x.ver = '3.7.7'
+    config.x.ver = '3.7.8'
     config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
     config.time_zone = 'Taipei'

@@ -22,6 +22,7 @@ class CheckXMLForDocx
       do_file(it)
     end
     puts
+    check_as_text('T/T08/T08n0261/T08n0261_002.xml', /<\/footnote>\)<\/seg>娜岸<!-- lb: 0873c26 -->/m)
     check_as_text('T/T09/T09n0262/T09n0262_007.xml', /伏遇.*<lb\/>.*亡夫/m)
     check_as_text('T/T10/T10n0293/T10n0293_001.xml', /0661a04.*<footnote>.*0661a05/m)
     check_as_text('T/T10/T10n0293/T10n0293_040.xml', /0851a17.*住持沙門如賢/m)
