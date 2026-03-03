@@ -1,6 +1,4 @@
 class ImportChangelog
-  IN = '/Users/ray/Downloads/2025R2-text.htm'
-
   LINEHEAD = /
     [A-Z]{1,2}\d{2,3} # 冊號
     n[a-zA-Z\d]\d{3}[_a-zA-Z] # 經號
