@@ -23,11 +23,12 @@ namespace :manticore do
     v = Rails.configuration.cb.v
     base = Rails.configuration.x.se.conf
     ngram_chars = Rails.configuration.x.se.ngram_chars
+    manticore = Rails.configuration.cb.manticore
 
     Rails.configuration.x.se.indexes.each do |index|
       fn = Rails.root.join("lib/tasks/quarterly/manticore-template-#{index}.conf")
       template = File.read(fn)
-      s = template % { v: v, ngram_chars: }
+      s = template % { v: v, ngram_chars:, manticore: }
       dest = File.join(base, "#{v}-#{index}.conf")
       puts "write #{dest}"
       File.write(dest, s)
