@@ -932,8 +932,8 @@ class XMLForDocx1
     node['rend'] = 'corr' if @in_corr.last
     case code
     when 0x1F780..0x1F7FF, 0x20000..0x2A6DF, 0x2A700..0x2FFFF
-      node['name'] = 'cbetarc'
-      add_style("cbetarc")
+      node['name'] = 'cbeta-supp'
+      add_style("cbeta-supp")
       node.to_s
     when 0x30000..0x3134F
       # CJK Unified Ideographs Extension G 

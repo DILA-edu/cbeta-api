@@ -259,5 +259,5 @@ class ManticoreChunks
   end
   
   include CbetaP5aShare
-  include SphinxShare
+  include ManticoreShare
 end

@@ -758,7 +758,7 @@ class SearchController < ApplicationController
       'term_hits' => 'weight()',
       'canon' => 'canon',
       'category' => 'category', 
-      'file' => 'xml_file',
+      'file' => 'file',
       'work' => 'work',
       'juan' => 'juan',
       'title' => 'title',

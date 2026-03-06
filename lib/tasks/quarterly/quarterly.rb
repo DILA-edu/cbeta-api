@@ -6,7 +6,6 @@ class Quarterly
   require_relative 'section-change-log'
   require_relative 'section-rdb'
   require_relative 'section-convert'
-  #require_relative 'section-sphinx'
   require_relative 'section-manticore'
   require_relative 'section-kwic'
   require_relative 'section-download-ebooks'

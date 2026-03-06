@@ -6,7 +6,7 @@ class ManticoreService
   def open
     @client = Mysql2::Client.new(
       host: '127.0.0.1',
-      port: 9307,
+      port: Rails.configuration.cb.manticore_port,
       encoding: 'utf8mb4'
     )
 

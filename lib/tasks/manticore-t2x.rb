@@ -123,7 +123,7 @@ class ManticoreT2X
       <sphinx:document id='#{@id}'>
         <canon>#{@canon}</canon>
         <canon_order>#{@canon_order}</canon_order>
-        <xml_file>#{@xml_file}</xml_file>
+        <file>#{@xml_file}</file>
         <vol>#{@vols.join(',')}</vol>
         <work>#{@work}</work>
         <juan>#{@juan}</juan>
@@ -137,5 +137,5 @@ class ManticoreT2X
     f.puts s
   end
 
-  include SphinxShare
+  include ManticoreShare
 end

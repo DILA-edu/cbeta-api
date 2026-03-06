@@ -1,4 +1,4 @@
-module MancicoreShare
+module ManticoreShare
   def get_info_from_work(work, data=nil, exclude: [])
     data = {} if data.nil?
 

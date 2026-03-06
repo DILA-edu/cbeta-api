@@ -30,7 +30,7 @@ module SectionManticore
       puts "可以手動清除 #{base} 資料夾下的舊資料"
     end
 
-    confirm "手動編輯 /etc/manticoresearch/manticore.conf"
+    confirm "檢查 /etc/#{@config[:manticore]}/manticore.conf"
   end
 
   def step_manticore_index    
@@ -53,10 +53,10 @@ module SectionManticore
     end
 
     run_step 'manticore restart' do
-      command 'docker compose -f /home/ray/manticore/compose.yaml restart'
+      command "docker compose -f /home/ray/#{@config[:manticore]}/compose.yaml restart"
 
-      puts '可手動清除舊版 Index: /var/lib/manticore'
-      puts '注意 /var/lib/manticore/data 不能刪。'
+      puts "可手動清除舊版 Index: /var/lib/#{@config[:manticore]}"
+      puts "注意 /var/lib/#{@config[:manticore]}/data 不能刪。"
     end
   end
 
@@ -77,14 +77,14 @@ module SectionManticore
   def step_manticore_vars
     run_step '匯入 異體字 (rake import:vars)' do
       puts '資料來源是 https://github.com/DILA-edu/cbeta-metadata/blob/master/variants/variants.json'
-      confirm '這要在 Sphinx Index 建好之後才能執行'
+      confirm '這要在 Manticore Index 建好之後才能執行'
       command 'rake import:vars'
     end
   end
 
   def step_manticore_x2t
     run_step '先把 XML P5a 轉為 text' do
-      confirm '如果欄位有變更，要修改： /etc/manticoresearch/manticore.conf'
+      confirm "如果欄位有變更，要修改： /etc/#{@config[:manticore]}/manticore.conf"
       command 'rake manticore:x2t'
     end
   end

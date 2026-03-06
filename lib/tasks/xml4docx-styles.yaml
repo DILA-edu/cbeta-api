@@ -11,7 +11,7 @@
 byline: color:#408080;font-size:14;text-align:end
 byline_corr_p: color:#ff0000;font-size:14;text-align:end
 border: "border: 1px solid #000000"
-cbetarc: font-family:cbetarc
+cbeta-supp: font-family:"CBETA Supplement"
 corr: color:#ff0000
 corr_inlinenote: color:#ff0000;font-size:10
 corr_juan: color:#ff0000;font-size:14

@@ -1,18 +1,22 @@
 namespace :manticore do
+  manticore = Rails.configuration.cb.manticore
+
   task :build, [:name] => :environment do |t, args|
     v = Rails.configuration.cb.v
     s = args[:name]
-    cmd = "docker exec -it manticore gosu manticore mkdir /var/lib/manticore/r#{v}-#{s}"
+
+    # 在 container 內 以 manticore 用戶身份 執行命令
+    cmd = "docker exec -it #{manticore} gosu manticore mkdir /var/lib/manticore/r#{v}-#{s}"
     puts cmd
     r = system(cmd)
     puts "exit code: #{r}"
 
-    cmd = "sudo chown -R systemd-coredump:systemd-coredump /var/lib/manticore/r#{v}-#{s}"
+    cmd = "sudo chown -R systemd-coredump:systemd-coredump /var/lib/#{manticore}/r#{v}-#{s}"
     puts cmd
     r = system(cmd)
     puts "exit code: #{r}"
     
-    cmd = "docker exec -it manticore gosu manticore indexer #{s}#{v} --rotate"
+    cmd = "docker exec -it #{manticore} gosu manticore indexer #{s}#{v} --rotate"
     puts cmd
     system(cmd)
     puts "exit code: #{r}"
@@ -22,20 +26,18 @@ namespace :manticore do
   task :conf => :environment do
     v = Rails.configuration.cb.v
     base = Rails.configuration.x.se.conf
-    ngram_chars = Rails.configuration.x.se.ngram_chars
-    manticore = Rails.configuration.cb.manticore
 
     Rails.configuration.x.se.indexes.each do |index|
       fn = Rails.root.join("lib/tasks/quarterly/manticore-template-#{index}.conf")
       template = File.read(fn)
-      s = template % { v: v, ngram_chars:, manticore: }
+      s = template % { v: v, manticore: }
       dest = File.join(base, "#{v}-#{index}.conf")
       puts "write #{dest}"
       File.write(dest, s)
     end
   end
 
-  desc "將註解（校注、夾注）轉為 XML 供 Sphinx 建 Index"
+  desc "將註解（校注、夾注）轉為 XML 供 Manticore 建 Index"
   task :notes, [:canon] => :environment do |t, args|
     require_relative 'manticore-notes'
     ManticoreNotes.new.convert(args[:canon])
