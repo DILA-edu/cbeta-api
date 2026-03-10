@@ -11,7 +11,11 @@ class XMLForDocx2
 
   def convert(src, dest, filter: nil)
     @filter = filter
-    @dest = dest
+    
+    @dest = Pathname.new(dest)
+    @dest.rmtree
+    @dest.mkpath
+
     time_start = Time.now
     Dir.glob("#{src}/**/*.xml", sort: true) do
       next if not @filter.nil? and not it.include?(@filter)
@@ -73,7 +77,7 @@ class XMLForDocx2
 
   def do_file(xml_path)
     a = xml_path.split('/')
-    @rel_path = a[-4..-2].join('/')
+    @rel_path = a[-3..-2].join('/')
     dest_folder = File.join(@dest, @rel_path)
     @xml_fn = a[-1]
     print "\rxml4docx2: #{@xml_fn}  "

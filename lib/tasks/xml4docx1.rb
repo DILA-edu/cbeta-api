@@ -15,7 +15,7 @@ class XMLForDocx1
   def initialize(src, dest)
     @xml_root = src
     @git = Git.open(@xml_root)
-    @dest_root = dest
+    @dest_root = Pathname.new(dest)
     @cbeta = CBETA.new
     @gaiji = CBETA::Gaiji.new
     @my_cbeta_share = MyCbetaShare.new
@@ -51,14 +51,19 @@ class XMLForDocx1
     @canon_name = @my_cbeta_share.get_canon_name(@canon)
     read_authority_catalog
 
-    if args[:vol].nil?
-      src = File.join(@xml_root, @canon)
-      Dir.glob("*", base: src, sort: true) do |f|
-        convert_vol(f)
-      end
-    else
-      convert_vol(args[:vol])
+    dest_folder = @dest_root.join(@canon)
+    puts "remove #{dest_folder}"
+    dest_folder.rmtree
+
+    @works_xml = Hash.new { |h, k| h[k] = +"" }
+    @juan_styles = Hash.new { |h, k| h[k] = Hash.new }
+
+    src = File.join(@xml_root, @canon)
+    Dir.glob("*", base: src, sort: true) do |f|
+      convert_vol(f)
     end
+
+    write_juans
   end
 
   private
@@ -66,12 +71,13 @@ class XMLForDocx1
   def add_style(style)
     return if style == '各家會釋'
     return if style == '訂解總論'
+    return if @juan.nil?
 
-    if @juan_styles.key?(@juan)
+    if @juan_styles[@work].key?(@juan)
       @style_lb[style] = @lb
-      @juan_styles[@juan] << style
+      @juan_styles[@work][@juan] << style
     else
-      abort "Error##{__LINE__}: @juan_styles 無 @juan: #{@juan.inspect}, style: #{style}, lb: #{@lb}"
+      abort "Error##{__LINE__}: @juan_styles 無 @juan: #{@juan.inspect}, work: #{@work}, style: #{style}, lb: #{@lb}"
     end
   rescue
     puts "[#{__LINE__}] style: #{style}"
@@ -81,7 +87,6 @@ class XMLForDocx1
   def before_action(doc)
     p_note_lg(doc)
     p_tt_lb(doc)
-    init_juan_styles(doc)
     read_lem_cf(doc)
 
     folder = Rails.root.join('data', 'xml4docx0', @canon, @vol)
@@ -181,24 +186,26 @@ class XMLForDocx1
     @v_work = File.basename(fn, '.xml')
     @v_work.sub!(/^(T\d\dn0220)(.*)$/, '\1')
     @work = CBETA.get_work_id_from_file_basename(@v_work)
+    @juan = nil
 
     log_folder = Rails.root.join('log', 'xml4docx1', @canon, @vol)
     FileUtils.makedirs(log_folder)
     log_fn = File.join(log_folder, "#{@v_work}.log")
     @log = File.open(log_fn, 'w')
-    
+    @log.puts "convert_file #{fn}, juan: #{@juan.inspect}"
+
     print "\rconvert_file: #{fn}   "
     src = File.join(@xml_root, @canon, @vol, fn)
     @updated_at = cb_xml_updated_at(path: src)
-
-    @dest_folder = File.join(@dest_root, @canon, @vol, @v_work)
-    FileUtils.makedirs(@dest_folder)
 
     @style_lb = {}
     xml = before_parse(src)
     doc = Nokogiri::XML(xml)
     doc.remove_namespaces!
+    init_juan_styles(doc)
+
     @source_desc = get_source_desc(doc)
+    @log.puts "#{__LINE__} source_desc: #{@source_desc}"
     @title = get_title(doc)
     @log.puts "#{__LINE__} title: #{@title}"
 
@@ -219,8 +226,8 @@ class XMLForDocx1
     @lg_type = [nil]
     @pre = [false]
     @seg = []
-    xml = traverse(doc.root)
-    write_juans(xml)
+    @works_xml[@work] << traverse(doc.root)
+    #write_juans(xml)
     @log.close
   end
 
@@ -365,13 +372,10 @@ class XMLForDocx1
     node.content = g['char']
     node['rend'] = 'corr' if @in_corr.last
 
-    if id.match?(/^SD/)
-      node['name'] = "sidd"
-      add_style("sidd")
-    else
-      node['name'] = "ranj"
-      add_style("ranj")
-    end
+    # font name sidd 對應 font-family: Siddam
+    # font name ranj 對應 font-family: Ranjana
+    # 在 xml4docx 轉 docx 的程式裡指定
+    node['name'] = id.match?(/^SD/) ? "sidd" : "ranj"
 
     if mode == 'tt'
       @t_buf[0] << node.to_s
@@ -932,8 +936,9 @@ class XMLForDocx1
     node['rend'] = 'corr' if @in_corr.last
     case code
     when 0x1F780..0x1F7FF, 0x20000..0x2A6DF, 0x2A700..0x2FFFF
-      node['name'] = 'cbeta-supp'
-      add_style("cbeta-supp")
+      # font name cbeta 對應 font-family: "CBETA Supplement"
+      # 在 xml4docx 轉 docx 的程式裡指定
+      node['name'] = 'cbeta' 
       node.to_s
     when 0x30000..0x3134F
       # CJK Unified Ideographs Extension G 
@@ -1003,10 +1008,10 @@ class XMLForDocx1
   end
 
   def init_juan_styles(doc)
-    @juan_styles = {}
+    @log.puts "init_juan_styles"
     doc.root.xpath("//milestone[@unit='juan']").each do |ms|
       j = ms['n'].to_i
-      @juan_styles[j] = Set.new(%w[default license 標題])
+      @juan_styles[@work][j] ||= Set.new(%w[default license 標題])
     end
   end
   
@@ -1189,59 +1194,65 @@ class XMLForDocx1
     r
   end
 
-  def write_juans(xml)
-    buf = +''
-    juan = nil
-    xml.split(/(<juan n='.*?'\/>)/).each do |s|
-      if s =~ /<juan n='(.*?)'\/>/
-        j = $1
-        write_juan(juan, buf)
-        buf = +''
-        juan = j.to_i
-      else
-        buf << s
+  def write_juans
+    @works_xml.each do |work, xml|
+      juans = Hash.new { |h, k| h[k] = +"" }
+
+      juan = nil
+      xml.split(/(<juan n='.*?'\/>)/).each do |s|
+        if s =~ /<juan n='(.*?)'\/>/
+          juan = $1.to_i
+        else
+          juans[juan] << s unless juan.nil?
+        end
+      end
+
+      @dest_folder = @dest_root.join(@canon, work)
+      @dest_folder.mkpath
+
+      juans.each do |juan, xml|
+        write_juan(work, juan, xml)
       end
     end
-    write_juan(juan, buf)
   end
 
-  def write_juan(juan, buf)
+  def write_juan(work, juan, xml)
     return if juan.nil?
-    return if buf.empty?
+    return if xml.empty?
 
-    copyright = cbeta_copyright(@canon, @work, juan, @publish, format: :docx)
+    copyright = cbeta_copyright(@canon, work, juan, @publish, format: :docx)
 
-    buf.gsub!(/(?:<font name="sidd">[^<]+<\/font>)+/) do
+    xml.gsub!(/(?:<font name="sidd">[^<]+<\/font>)+/) do
       s = $&.gsub(/<[^>]+>/, '')
       %(<font name="sidd">#{s}<\/font>)
     end
 
-    xml = <<~XML
+    output = <<~XML
       <?xml version="1.0" encoding="UTF-8"?>
       <?xml-model href="../../../xml4docx.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
       <document>
         <settings>
-          <title>#{@works[@work]["title"]}</title>
-          <byline>#{@works[@work]["byline"]}</byline>
+          <title>#{@works[work]["title"]}</title>
+          <byline>#{@works[work]["byline"]}</byline>
           <footer>第 {Page} 頁／共 {NumPages} 頁</footer>
-          <styles>#{xml_styles(juan)}
+          <styles>#{xml_styles(work, juan)}
           </styles>
         </settings>
         <body>
           <p rend="標題">#{@title}</p>
-          #{buf}#{copyright}</body>
+          #{xml}#{copyright}</body>
       </document>
     XML
 
-    dest = File.join(@dest_folder, "#{@v_work}_%03d.xml" % juan)
-    File.write(dest, xml)
+    dest = File.join(@dest_folder, "#{work}_%03d.xml" % juan)
+    File.write(dest, output)
   end
 
-  def xml_styles(juan)
+  def xml_styles(work, juan)
     r = +""
     indent = "\n      "
 
-    @juan_styles[juan].each do |k|
+    @juan_styles[work][juan].each do |k|
       s = @predefined_styles[k]
       abort "[#{__LINE__}] style 未定義: #{k.inspect}, lb: #{@style_lb[k]}" if s.nil?
       r << "#{indent}<style name=\"#{k}\">#{s}</style>"

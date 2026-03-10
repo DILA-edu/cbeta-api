@@ -11,7 +11,6 @@
 byline: color:#408080;font-size:14;text-align:end
 byline_corr_p: color:#ff0000;font-size:14;text-align:end
 border: "border: 1px solid #000000"
-cbeta-supp: font-family:"CBETA Supplement"
 corr: color:#ff0000
 corr_inlinenote: color:#ff0000;font-size:10
 corr_juan: color:#ff0000;font-size:14
@@ -106,8 +105,6 @@ m12_j12: margin-left:12em;text-indent:-12em
 m15_j15: margin-left:15em;text-indent:-15em
 no-border_table: border:none
 pre: white-space:pre
-ranj: font-family:Ranjana
-sidd: font-family:Siddam
 table_m3: margin-left:3em
 table_no-border: border:none
 table_tt: cell-align:center

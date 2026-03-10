@@ -5,8 +5,8 @@
 
 1. xml4docx1
    將 CBETA XML 簡化為適合 docx 使用
-   * 全部: `rake 'convert:xml4docx1[2026-02]'`
-   * 只做某部藏經: `rake 'convert:xml4docx1[2026-02,T]'`
+   * 全部: `rake 'convert:xml4docx1[2026-03]'`
+   * 只做某部藏經: `rake 'convert:xml4docx1[2026-03,T]'`
 2. xml4docx2
    將 xml4docx1 結果 做 扁平化 處理，如例：seg 包 seg
    rake 'convert:xml4docx2[T]'

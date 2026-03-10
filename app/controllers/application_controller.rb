@@ -244,10 +244,11 @@ class ApplicationController < ActionController::Base
     @start_time = Time.now
     user_agent = UserAgent.parse(request.user_agent)
     
+    # warn level log for fail2ban
     msg = +"Request #{request.fullpath} from #{request.remote_ip} at #{@start_time}"
     msg << ", referer: #{request.referer}, origin: #{request.origin}"
     msg << ", user_agent: #{user_agent.platform}/#{user_agent.browser}/#{user_agent.version}"
-    logger.info msg
+    logger.warn msg
 
     logger.debug "start #{controller_name}##{action_name} #{@start_time}"
     logger.debug params.inspect
