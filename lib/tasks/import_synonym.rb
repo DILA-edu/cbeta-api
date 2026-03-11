@@ -54,15 +54,16 @@ class ImportSynonym
   end
 
   def read_synonyms
-    fn = File.join(@folder, 'synonym.txt')
+    fn = File.join(@folder, 'synonyms.xml')
+    puts "read #{fn}"
+    doc = File.open(fn) { |f| Nokogiri::XML(f) }
+    doc.remove_namespaces!
+
     @groups = {}
-    IO.foreach(fn) do |line|
-      next if line.empty?
-      line.chomp!
-      a = line.split(',')
-      gid = a[0].to_i
-      @groups[gid] = [] unless @groups.key?(gid)
-      @groups[gid] << a[1]
+    doc.root.xpath('sense').each do |sense|
+      id = sense['id']
+      terms = sense.xpath('form').to_a.map { it.text }
+      @groups[id] = terms
     end
   end
   
