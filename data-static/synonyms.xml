@@ -17257,7 +17257,9 @@
   <form>僧人</form>
 </sense>
 <sense xml:id="s3560">
+  <note when="2026-03-13" resp="林聖詠" source="https://dhforum.dila.edu.tw/t/topic/444/2">新增：支樓迦讖。</note>
   <form>支婁迦讖</form>
+  <form>支樓迦讖</form>
   <form>支讖</form>
 </sense>
 <sense xml:id="s3561">
@@ -26818,6 +26820,7 @@
   <form>五百問</form>
 </sense>
 <sense xml:id="s5354">
+  <note when="2026-03-13" resp="林聖詠" source="https://dhforum.dila.edu.tw/t/topic/442/2">新增：目揵羅夜那。</note>
   <form>目犍連</form>
   <form>摩訶目犍連</form>
   <form>大目犍連</form>
@@ -26838,6 +26841,7 @@
   <form>拘理迦</form>
   <form>俱離多</form>
   <form>天抱</form>
+  <form>目揵羅夜那</form>
 </sense>
 <sense xml:id="s5355">
   <form>目犍連子帝須</form>
@@ -40684,6 +40688,7 @@
   <form>法頌舍利</form>
 </sense>
 <sense xml:id="s7957">
+  <note when="2026-03-13" resp="林聖詠" source="https://dhforum.dila.edu.tw/t/topic/442/2">新增：優波室沙、優婆室沙。</note>
   <form>舍利弗</form>
   <form>舍利弗多</form>
   <form>舍利弗羅</form>
@@ -40705,6 +40710,8 @@
   <form>優婆提舍</form>
   <form>優波帝須</form>
   <form>大光</form>
+  <form>優波室沙</form>
+  <form>優婆室沙</form>
 </sense>
 <sense xml:id="s7958">
   <form>舍利弗阿毘曇論</form>
