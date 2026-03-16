@@ -76630,6 +76630,7 @@
   <form>憍尸衣</form>
 </sense>
 <sense xml:id="s14655">
+  <note when="2026-03-16" resp="林聖詠" source="https://dhforum.dila.edu.tw/t/topic/449/2">新增：憍桓鉢、橋桓鉢、憍梵鉢提、橋梵波提。</note>
   <form>憍梵波提</form>
   <form>憍梵跋提</form>
   <form>笈房鉢底</form>
@@ -76646,6 +76647,10 @@
   <form>牛呞</form>
   <form>牛相</form>
   <form>牛相比丘</form>
+  <form>憍桓鉢</form>
+  <form>橋桓鉢</form>
+  <form>憍梵鉢提</form>
+  <form>橋梵波提</form>
 </sense>
 <sense xml:id="s14656">
   <form>憍陳如</form>
