@@ -57,6 +57,7 @@ class XMLForDocx1
 
     @works_xml = Hash.new { |h, k| h[k] = +"" }
     @juan_styles = Hash.new { |h, k| h[k] = Hash.new }
+    @works_title = {}
 
     src = File.join(@xml_root, @canon)
     Dir.glob("*", base: src, sort: true) do |f|
@@ -208,6 +209,7 @@ class XMLForDocx1
     @log.puts "#{__LINE__} source_desc: #{@source_desc}"
     @title = get_title(doc)
     @log.puts "#{__LINE__} title: #{@title}"
+    @works_title[@work] = @title
 
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
@@ -1239,7 +1241,7 @@ class XMLForDocx1
           </styles>
         </settings>
         <body>
-          <p rend="標題">#{@title}</p>
+          <p rend="標題">#{@works_title[work]}</p>
           #{xml}#{copyright}</body>
       </document>
     XML
