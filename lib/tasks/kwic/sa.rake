@@ -1,6 +1,9 @@
-require 'yaml'
-require 'fileutils'
-require 'chronic_duration'
+namespace :kwic do
+  task :sa => :environment do
+    KwicSuffixArray.new.build('sa')
+    KwicSuffixArray.new.build('sa-without-notes')
+  end
+end
 
 class KwicSuffixArray
   def initialize

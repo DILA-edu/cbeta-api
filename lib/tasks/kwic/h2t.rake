@@ -1,15 +1,12 @@
+namespace :kwic do
+  task :h2t, [:canon, :vol] => :environment do |t, args|
+    c = KwicHtml2Text.new
+    c.convert(args[:canon], args[:vol], true)
+    c.convert(args[:canon], args[:vol], false)
+  end
+end
+
 # 讀入每卷 html, 連成一個 all.txt, 並儲存相關資訊 info.dat
-
-require 'benchmark'
-require 'chronic_duration'
-require 'fileutils'
-require 'pp'
-require 'json'
-require 'nokogiri'
-require 'yaml'
-require 'cbeta'
-require_relative 'kwic-builder.rb'
-
 class KwicHtml2Text
   def initialize
     @work_base = Rails.configuration.x.kwic.temp

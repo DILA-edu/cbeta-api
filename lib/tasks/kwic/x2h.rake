@@ -1,9 +1,12 @@
-require 'cgi'
-require 'fileutils'
-require 'json'
-require 'nokogiri'
-require 'set'
-require 'cbeta'
+namespace :kwic do
+  task :x2h, [:canon] => :environment do |t, args|
+    xml   = Rails.configuration.cbeta_xml
+    gaiji = Rails.configuration.cbeta_gaiji
+    out   = Rails.configuration.x.kwic.html
+    c = P5aToSimpleHTML.new(xml, gaiji, out)
+    c.convert(args[:canon])
+  end
+end
 
 # Convert CBETA XML P5a to simple HTML
 #

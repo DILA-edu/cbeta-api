@@ -1,5 +1,8 @@
-require 'fileutils'
-require 'yaml'
+namespace :kwic do
+  task :rotate => :environment do
+    KwicRotate.new.run
+  end
+end
 
 class KwicRotate
   WORK    = Rails.configuration.x.kwic.temp

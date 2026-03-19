@@ -1,8 +1,11 @@
+namespace :kwic do
+  task :test, [:env] => :environment do |t, args|
+    KwicTest.new.run(args[:env])
+  end
+end
+
 # 使用工作檔做測試：ruby test.rb
 # 使用正式 production 檔做測試：ruby test.rb p
-
-require 'json'
-require 'yaml'
 
 class KwicTest
   def run(env=nil)

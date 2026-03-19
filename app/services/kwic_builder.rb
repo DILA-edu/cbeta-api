@@ -2,7 +2,6 @@ require 'fileutils'
 require 'date'
 require 'json'
 require 'yaml'
-require_relative '../../app/services/suffix_info'
 
 class KwicBuilder
   attr_accessor :juan, :offset, :relative_path, :text_with_punc, :canon, :vol, :work
