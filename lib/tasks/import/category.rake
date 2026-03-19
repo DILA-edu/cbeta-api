@@ -1,3 +1,10 @@
+namespace :import do    
+  desc "匯入部類 ID"
+  task :category => :environment do
+    ImportCategory.new.import
+  end
+end
+
 class ImportCategory
   def import
     Category.delete_all

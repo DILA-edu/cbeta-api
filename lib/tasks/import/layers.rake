@@ -1,6 +1,13 @@
-require 'csv'
-require 'colorize'
-require_relative 'share'
+namespace :import do  
+  # 可以指定 某一部佛典
+  # 例如： bundle exec rake 'import:layers[GA090n0089]'
+  task :layers, [:arg1] => :environment do |t, args|
+    importer = ImportLayers.new
+    importer.import args[:arg1]
+  end
+end
+
+require_relative '../share'
 
 # Prerequisites:
 #   * GitHub: CBETA 缺字資料, 異體字資料

@@ -1,7 +1,11 @@
-require 'cbeta'
+namespace :import do
+  desc "匯入 異體字表"
+  task :vars => :environment do
+    ImportVars.new.import
+  end
+end
 
-class ImportVars
-  
+class ImportVars  
   def initialize
     @folder = Rails.application.config.cbeta_data
     @index = Rails.configuration.x.se.index_text

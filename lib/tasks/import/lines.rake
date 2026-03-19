@@ -1,3 +1,10 @@
+namespace :import do  
+  task :lines, [:arg1] => :environment do |t, args|
+    importer = ImportLines.new
+    importer.import args[:arg1]
+  end  
+end
+
 # 讀取 CBETA XML P5a，匯入資料庫，每個版本一行一筆。
 # CBETA版以及底本，還要有註解。
 # 供 API 取得某個行號範圍的文字及註解。
@@ -6,12 +13,8 @@
 #   * cbeta xml p5a
 #   * cbeta metadata gaijis
 
-require 'cbeta'
-require 'json'
-require 'pp'
-require 'time_diff'
-require_relative 'html-node'
-require_relative 'cbeta_p5a_share'
+require_relative '../html-node'
+require_relative '../cbeta_p5a_share'
 
 class ImportLines
   BLOCK_ELEMENTS = %w(byline cell head iterm juan lg p)

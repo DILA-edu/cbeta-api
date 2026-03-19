@@ -1,5 +1,11 @@
-class ImportCanons
-  
+namespace :import do  
+  task :canons => :environment do
+    importer = ImportCanons.new
+    importer.import
+  end
+end
+
+class ImportCanons  
   def initialize
     @canon_uuid = read_uuid
   end

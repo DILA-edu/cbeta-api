@@ -1,5 +1,11 @@
-# 讀取 CBETA XML P5a，匯入卍續藏 行號對照表
+namespace :import do  
+  task :lb_maps => :environment do
+    importer = ImportLbMaps.new
+    importer.import
+  end
+end
 
+# 讀取 CBETA XML P5a，匯入卍續藏 行號對照表
 class ImportLbMaps
   
   def initialize

@@ -1,3 +1,10 @@
+namespace :import do
+  desc "匯入存取紀錄"
+  task :visits => :environment do
+    ImportVisit.new.import
+  end
+end
+
 class ImportVisit
   def import
     fn = Rails.root.join('data', 'visits.csv')

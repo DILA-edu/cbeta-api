@@ -1,4 +1,9 @@
-require 'json'
+namespace :import do  
+  task :juanline => :environment do
+    importer = ImportJuanLine.new
+    importer.import
+  end
+end
 
 # Prerequisites:
 #   * data-static/uuid/juans.json

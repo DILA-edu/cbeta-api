@@ -1,7 +1,13 @@
 # frozen_string_literal: true
 
-require 'json'
-require_relative 'cbeta_p5a_share'
+namespace :import do
+  desc "匯入經名、卷數、作譯者"
+  task :work_info => :environment do
+    ImportWorkInfo.new.import
+  end
+end
+
+require_relative '../cbeta_p5a_share'
 
 class ImportWorkInfo
   def initialize

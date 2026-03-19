@@ -1,3 +1,10 @@
+namespace :import do    
+  desc "匯入 同義詞"
+  task :synonym => :environment do
+    ImportSynonym.new.import
+  end
+end
+
 class ImportSynonym
   def initialize
     @folder = Rails.root.join('data-static')

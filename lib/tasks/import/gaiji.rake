@@ -1,3 +1,10 @@
+namespace :import do
+  task :gaiji => :environment do
+    importer = ImportGaiji.new
+    importer.import
+  end
+end
+
 class ImportGaiji
   def initialize
     @folder = Rails.application.config.cbeta_gaiji

@@ -1,5 +1,11 @@
-require 'json'
-require_relative 'cbeta_p5a_share'
+namespace :import do    
+  desc "匯入 佛典內目次"
+  task :toc, [:arg1] => :environment do |t, args|
+    ImportToc.new.import args[:arg1]
+  end
+end
+
+require_relative '../cbeta_p5a_share'
 
 class ImportToc
   def initialize

@@ -1,3 +1,11 @@
+namespace :import do
+  desc "匯入部類目錄"
+  task :catalog, [:arg1] => :environment do |t, args|
+    importer = ImportCatalog.new
+    importer.import args[:arg1]
+  end
+end
+
 # 匯入全部: rake import:catalog
 # 只匯入某個目錄: rake import:catalog[Vol-L]
 #
