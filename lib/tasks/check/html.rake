@@ -1,3 +1,10 @@
+namespace :check do  
+  desc "檢查 HTML for UI"
+  task :html => :environment do
+    CheckHTML.new.check
+  end
+end
+
 class CheckHTML
   def initialize
     @base = Rails.root.join('data', 'html')

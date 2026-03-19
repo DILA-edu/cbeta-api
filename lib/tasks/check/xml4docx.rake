@@ -1,3 +1,10 @@
+namespace :check do
+  task :xml4docx do
+    dir = Rails.root.join('data', 'xml4docx2')
+    CheckXMLForDocx.new.check(dir)
+  end
+end
+
 # 檢查 xml4docx 檔案 是否正確
 class CheckXMLForDocx
   def initialize

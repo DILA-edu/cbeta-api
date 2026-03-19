@@ -1,4 +1,11 @@
-require_relative 'cbeta_p5a_share'
+namespace :check do  
+  desc "檢查 Authority"
+  task :authority => :environment do
+    CheckAuthority.new.check
+  end
+end
+
+require_relative '../cbeta_p5a_share'
 
 class CheckAuthority
 

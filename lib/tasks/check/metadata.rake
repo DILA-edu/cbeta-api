@@ -1,3 +1,9 @@
+namespace :check do
+  task :metadata => :environment do
+    CheckMetadata.new.check
+  end
+end
+
 class CheckMetadata
   def check
     $stderr.puts "check metadata"

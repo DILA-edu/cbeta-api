@@ -1,7 +1,13 @@
-require_relative 'cbeta_p5a_share'
+namespace :check do
+  desc "檢查電子書封面是否都存在"
+  task :covers => :environment do
+    CheckCover.new.check
+  end
+end
+
+require_relative '../cbeta_p5a_share'
 
 class CheckCover
-
   def initialize
     @xml = Rails.application.config.cbeta_xml
     @base = File.join(Rails.configuration.cb.git, 'ebook-covers')
@@ -26,7 +32,7 @@ class CheckCover
   def check_canon(canon)
     src = File.join(@xml, canon)
     Dir["#{src}/**/*.xml"].sort.each do |fn|
-      bn = File.basename(fn)
+      bn = File.basename(fn, '.*')
       $stderr.puts "check ebook cover: #{bn}"
       work = CBETA.get_work_id_from_file_basename(bn)
       cover = File.join(@base, canon, "#{work}.jpg")
