@@ -1,8 +1,15 @@
-require 'chronic_duration'
-require_relative 'x2x_for_docusky'
+namespace :convert do
+  desc "XML 轉 Docusky"
+  task :docusky, [:canon] => :environment do |t, args|
+    c = ConvertDocusky.new
+    c.convert(args[:canon])
+  end
+end
 
-class ConvertDocusky
-    
+require 'chronic_duration'
+require_relative '../x2x_for_docusky'
+
+class ConvertDocusky    
   def convert(canon)
     t1 = Time.now
     xml_root = Rails.application.config.cbeta_xml

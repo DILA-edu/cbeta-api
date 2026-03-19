@@ -1,5 +1,12 @@
+namespace :convert do
+  desc "XML 轉 下載用 Text"
+  task :x2t4d, [:publish, :canon] => :environment do |t, args|
+    ConvertX2tForDownload.new.convert(args[:publish], args[:canon])
+  end
+end
+
 require 'chronic_duration'
-require_relative 'x2t_for_download'
+require_relative '../x2t_for_download'
 
 class ConvertX2tForDownload
     

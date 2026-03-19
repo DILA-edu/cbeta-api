@@ -1,12 +1,21 @@
 # frozen_string_literal: true
+
+namespace :convert do
+  desc "XML 轉 xml4docx 格式 Step 1"
+    task :xml4docx1, [:publish, :canon, :vol] => :environment do |t, args|
+    xml_root = Rails.application.config.cbeta_xml
+    dest1 = Rails.root.join('data', 'xml4docx1')
+    XMLForDocx1.new(xml_root, dest1).convert(args)
+  end
+end
+
+require_relative '../css_parser'
+require_relative '../cbeta-module'
+require_relative '../cbeta_p5a_share'
+require_relative '../html-node'
+require_relative '../share'
+
 # 將 CBETA XML 簡化為適合轉換成 docx 的 XML 格式 (xml4docx)
-
-require_relative 'css_parser'
-require_relative 'cbeta-module'
-require_relative 'cbeta_p5a_share'
-require_relative 'html-node'
-require_relative 'share'
-
 class XMLForDocx1
   include CBETAModule
 

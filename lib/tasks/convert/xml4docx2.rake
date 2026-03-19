@@ -1,8 +1,16 @@
 # frozen_string_literal: true
+
+namespace :convert do
+  task :xml4docx2, [:filter] => :environment do |t, args|
+    dir1 = Rails.root.join('data', 'xml4docx1')
+    dir2 = Rails.root.join('data', 'xml4docx2')
+    XMLForDocx2.new.convert(dir1, dir2, filter: args[:filter])
+  end
+end
+
+require_relative '../html-node'
+
 # seg 包 seg, 扁平化 處理
-
-require_relative 'html-node'
-
 class XMLForDocx2
   def initialize
     fn = Rails.root.join('lib', 'tasks', 'xml4docx-styles.yaml')

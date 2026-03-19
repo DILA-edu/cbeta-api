@@ -606,7 +606,7 @@ class P5aToDocusky
     return if @work_metadata.key? @work_id
     puts "work_id: #{@work_id}"
     info = @works_info[@work_id]
-    abort __LINE__ if info.nil?
+    raise "在 work_info 裡找不到 #{@work_id}" if info.nil?
 
     xml = "<corpus>%s</corpus>\n"
     xml << "<docclass>#{@work_id}</docclass>\n"

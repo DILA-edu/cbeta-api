@@ -1,8 +1,14 @@
-# 根據 CBETA XML P5a 取得每卷的起始行號、結束行號
+namespace :convert do  
+  desc "由 XML 轉出 JuanLine 檔"
+  task :juanline => :environment do
+    Juanline.new.produce
+  end
+end
 
 require 'cbeta'
 require_relative '../cbeta_p5a_share'
 
+# 根據 CBETA XML P5a 取得每卷的起始行號、結束行號
 class Juanline
   def produce
     @in = Rails.application.config.cbeta_xml

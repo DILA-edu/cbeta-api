@@ -1,4 +1,13 @@
+namespace :convert do  
+  desc "將 純文字版 自動分詞"
+  task :seg, [:canon] => :environment do |t, args|
+    c = ConvertSeg.new
+    c.convert(args[:canon])
+  end
+end
+
 require 'chronic_duration'
+require 'tmpdir'
 require 'zip'
 
 class ConvertSeg
@@ -9,9 +18,11 @@ class ConvertSeg
     @model = Rails.configuration.x.seg_model
     @src_root = File.join(Rails.configuration.cb.dl, 'text')
     @dest_root = Rails.root.join('data', 'txt-seg')
+    tmp_root = Rails.root.join('tmp')
+    FileUtils.mkdir_p(tmp_root)
 
-    Dir.mktmpdir("cbdata_word_seg") do |dir|
-      @tmp_dir = dir
+    Dir.mktmpdir("cbdata_word_seg", tmp_root) do |dir|
+      @tmp_dir = File.expand_path(dir)
       Dir.entries(@src_root).sort.each do |f|
         next if f.start_with? '.'
         next unless f.include? '_'
@@ -45,12 +56,15 @@ class ConvertSeg
       zip_file.each do |entry|
         next unless entry.name.end_with? '.txt'
         print "extract #{entry.name} "
-        entry.extract(txt_path)
+        FileUtils.mkdir_p(File.dirname(txt_path))
+        entry.get_input_stream do |input_stream|
+          File.binwrite(txt_path, input_stream.read)
+        end
         remove_comment(txt_path)
         seg_file(txt_path, dest_path)
       end
     end
-    File.delete(txt_path)
+    File.delete(txt_path) if File.exist?(txt_path)
   end
 
   def remove_comment(fn)
@@ -68,9 +82,8 @@ class ConvertSeg
     Dir.chdir(Rails.configuration.x.seg_bin) do
       `ruby auto-seg.rb #{@model} #{src} #{dest}`
     end
-    unless File.exist? dest
-      abort = 'auto-seg.rb 未回傳輸出檔'
-    end
+    raise 'auto-seg.rb 未回傳輸出檔' unless File.exist?(dest)
+
     print 'done. '
   end
 

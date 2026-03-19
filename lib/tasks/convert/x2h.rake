@@ -1,5 +1,14 @@
+namespace :convert do  
+  desc "XML 轉 HTML"
+  # 只轉某部經： rake convert:x2h[2020-09,T10n0297]
+  task :x2h, [:publish, :canon] => :environment do |t, args|
+    c = ConvertX2h.new
+    c.convert(args[:publish], args[:canon])
+  end
+end
+
 require 'chronic_duration'
-require_relative 'x2h_for_ui'
+require_relative '../x2h_for_ui'
 
 class ConvertX2h    
   def convert(publish, canon=nil)

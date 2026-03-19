@@ -23,8 +23,7 @@ module SectionPrepare
 
   def step_create_juanline
     run_step '產生 Juanline 資料 (juanline.rb)' do
-      require_relative 'juanline'
-      Juanline.new.produce
+      command 'rake convert:juanline'
     end
   end
 

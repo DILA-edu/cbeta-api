@@ -1,9 +1,14 @@
-require 'json'
-require 'nokogiri'
-require_relative 'cbeta_p5a_share'
+namespace :convert do  
+  desc "XML 轉 目次 toc JSON 檔"
+  task :toc, [:arg1] => :environment do |t, args|
+    c = ConvertToc.new
+    c.convert(args[:arg1])
+  end
+end
+
+require_relative '../cbeta_p5a_share'
 
 class ConvertToc
-  
   def initialize
     @xml_root = Rails.application.config.cbeta_xml
     @out_root = Rails.root.join('data', 'toc')

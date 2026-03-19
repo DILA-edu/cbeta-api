@@ -1,11 +1,17 @@
+namespace :convert do  
+  desc "XML 轉 下載用 Text (含校注)"
+  task :x2t4d2, [:publish, :canon] => :environment do |t, args|
+    ConvertX2T4D2.new.convert(args[:publish], args[:canon])
+  end
+end
+
 require 'chronic_duration'
-require_relative 'x2t_for_download'
+require_relative '../x2t_for_download'
 
 # Convert XML to Text for Download (含校注)
 class ConvertX2T4D2    
   def convert(publish, canon)
     t1 = Time.now
-    xml_root = Rails.application.config.cbeta_xml
 
     tmpdir = Rails.root.join('data', 'text-for-download-tmp')    
     args = {
