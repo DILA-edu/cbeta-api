@@ -14,7 +14,7 @@ class KwicTest
     else
       base = Rails.configuration.x.kwic.temp
     end
-    @se = KwicService.new(base)
+    @se = KwicService.new(base, false)
     
     test_juan
     test_juan_no_kwic

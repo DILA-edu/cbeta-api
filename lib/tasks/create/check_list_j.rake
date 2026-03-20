@@ -1,3 +1,10 @@
+namespace :create do
+  desc "產生 嘉興藏檢查表"
+  task :check_list_j => :environment do
+    CreateCheckListJ.new.create
+  end
+end
+
 class CreateCheckListJ
   def create
     puts "read from model Work"

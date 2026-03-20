@@ -1,14 +1,13 @@
-require 'cgi'
-require 'chronic_duration'
-require 'date'
-require 'fileutils'
-require 'json'
-require 'nokogiri'
-require 'set'
-require 'cbeta'
-require_relative 'cbeta_p5a_share'
-require_relative 'html-node'
-require_relative 'share'
+namespace :manticore do  
+  desc "將註解（校注、夾注）轉為 XML 供 Manticore 建 Index"
+  task :notes, [:canon] => :environment do |t, args|
+    ManticoreNotes.new.convert(args[:canon])
+  end
+end
+
+require_relative '../cbeta_p5a_share'
+require_relative '../html-node'
+require_relative '../share'
 require_relative 'manticore-share'
 
 # 產生 manticore 所需的 xml 檔案

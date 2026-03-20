@@ -1,11 +1,32 @@
-require 'cgi'
-require 'date'
-require 'fileutils'
-require 'json'
-require 'nokogiri'
-require 'set'
-require_relative 'share'
-require_relative 'cbeta_p5a_share'
+namespace :manticore do  
+  desc "XML 轉 txt"
+  task :x2t, [:arg1] => :environment do |t, args|
+    def convert(inline_notes, arg)
+      src = Rails.application.config.cbeta_xml
+      dest = inline_notes ? 'with-notes' : 'without-notes'
+      dest = Rails.root.join('data', "cbeta-txt-#{dest}-for-manticore")
+      puts "dest: #{dest}"
+      
+      if arg.nil?
+        FileUtils.remove_dir(dest, force: true)
+      else
+        target_folder = File.join(dest, arg)
+        FileUtils.remove_dir(target_folder, force: true)
+      end
+      
+      # 為了要讓在 CBETA Online 看到什麼就可以搜得到
+      # 所以缺字處理採用預設值，也就是優先使用通用字
+      x2t = P5aToText.new(src, dest, inline_notes:)
+      x2t.convert(arg)
+    end
+
+    convert(true, args[:arg1])
+    convert(false, args[:arg1])
+  end
+end
+
+require_relative '../share'
+require_relative '../cbeta_p5a_share'
 
 # Convert CBETA XML P5a to Text
 #

@@ -1,10 +1,11 @@
+namespace :manticore do
+  desc "轉出 xml for manticore search title"
+  task :titles => :environment do
+    ManticoreTitles.new.run
+  end
+end
+
 # 讀純文字檔，產生 xml 給 manticore 做 index
-
-require 'fileutils'
-require 'json'
-require 'set'
-require 'cbeta'
-
 class ManticoreTitles
   def run
     @id = 0

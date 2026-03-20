@@ -1,3 +1,10 @@
+namespace :create do
+  desc "產生 全部佛典 卷列表"
+  task :all_works_list => :environment do
+    CreateAllWorksList.new.create
+  end
+end
+
 class CreateAllWorksList
   def create
     puts "read model Work"

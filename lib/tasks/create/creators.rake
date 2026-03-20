@@ -1,5 +1,12 @@
-class CreateCreatorsList
+namespace :create do
+  desc "產生 含別名的 作譯者清單"
+  task :creators => :environment do
+    c = CreateCreatorsList.new
+    c.create
+  end
+end
 
+class CreateCreatorsList
   def initialize
     read_person_authority
     @unihan = Unihan2.new
@@ -11,7 +18,7 @@ class CreateCreatorsList
   end
   
   def create
-    result = read_contributors
+    read_contributors
 
     folder = Rails.configuration.cb.dl
     FileUtils.makedirs(folder)

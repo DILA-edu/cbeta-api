@@ -1,10 +1,12 @@
+namespace :manticore do  
+  desc "txt 轉 xml"
+  task :t2x => :environment do
+    ManticoreT2X.new.convert
+  end
+end
+
 # 讀純文字檔，產生 xml 給 manticore 做 index
 
-require 'csv'
-require 'fileutils'
-require 'json'
-require 'set'
-require 'cbeta'
 require_relative 'manticore-share'
 
 class ManticoreT2X

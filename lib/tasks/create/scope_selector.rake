@@ -1,3 +1,10 @@
+namespace :create do
+  desc "產生 供 UI 使用的 範圍選擇清單"
+  task :scope_selector => :environment do
+    CreateScopeSelector.new.create
+  end
+end
+
 class CreateScopeSelector
   def initialize
     @dest = Rails.configuration.cb.sc

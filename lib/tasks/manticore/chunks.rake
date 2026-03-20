@@ -1,10 +1,13 @@
+namespace :manticore do  
+  desc "轉出 xml for manticore search chunks"
+  task :chunks => :environment do
+    ManticoreChunks.new.convert
+  end
+end
+
 # 讀 CBETA XML，切塊，產生 xml 給 manticore 做 index
 
-require 'fileutils'
-require 'json'
-require 'set'
-require 'cbeta'
-require_relative 'cbeta_p5a_share'
+require_relative '../cbeta_p5a_share'
 require_relative 'manticore-share'
 
 class ManticoreChunks
