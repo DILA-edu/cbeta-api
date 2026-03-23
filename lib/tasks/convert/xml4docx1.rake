@@ -73,6 +73,9 @@ class XMLForDocx1
       convert_vol(f)
     end
 
+    log_fn = Rails.root.join('log', 'xml4docx1', "#{@canon}.log")
+    @log = File.open(log_fn, 'w')
+
     write_juans
   end
 
@@ -206,7 +209,7 @@ class XMLForDocx1
 
     print "\rconvert_file: #{fn}   "
     src = File.join(@xml_root, @canon, @vol, fn)
-    @updated_at = cb_xml_updated_at(path: src)
+    @works[@work]["updated_at"] = cb_xml_updated_at(path: src)
 
     @style_lb = {}
     xml = before_parse(src)
@@ -214,15 +217,15 @@ class XMLForDocx1
     doc.remove_namespaces!
     init_juan_styles(doc)
 
-    @source_desc = get_source_desc(doc)
-    @log.puts "#{__LINE__} source_desc: #{@source_desc}"
+    @works[@work]["source_desc"] = get_source_desc(doc)
+    @log.puts "#{__LINE__} source_desc: #{@works[@work]['source_desc']}"
     @title = get_title(doc)
     @log.puts "#{__LINE__} title: #{@title}"
     @works_title[@work] = @title
 
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
-    @contributors = e.text
+    @works[@work]["contributors"] = e.text
 
     @in_corr = [false]
     before_action(doc)
@@ -238,7 +241,6 @@ class XMLForDocx1
     @pre = [false]
     @seg = []
     @works_xml[@work] << traverse(doc.root)
-    #write_juans(xml)
     @log.close
   end
 
@@ -697,6 +699,11 @@ class XMLForDocx1
   def e_milestone(e)
     return "" unless e["unit"] == "juan"
     @juan = e["n"].to_i
+
+    @works[@work]["juans_vol"] ||= {}
+    @works[@work]["juans_vol"][@juan] ||= []
+    @works[@work]["juans_vol"][@juan] << @vol
+
     "<juan n='#{@juan}'/>"
   end
 
@@ -1231,7 +1238,10 @@ class XMLForDocx1
     return if juan.nil?
     return if xml.empty?
 
-    copyright = cbeta_copyright(@canon, work, juan, @publish, format: :docx)
+    @log.puts "#{__LINE__} write_juan, canon: #{@canon}, work: #{work}, juan: #{juan}"
+    
+    copyright = write_juan_copyright(work, juan)
+    @log.puts "#{__LINE__} copyright: #{copyright}"
 
     xml.gsub!(/(?:<font name="sidd">[^<]+<\/font>)+/) do
       s = $&.gsub(/<[^>]+>/, '')
@@ -1257,6 +1267,23 @@ class XMLForDocx1
 
     dest = File.join(@dest_folder, "#{work}_%03d.xml" % juan)
     File.write(dest, output)
+  end
+
+  def write_juan_copyright(work, juan)
+    args = {
+      source_desc: @works[work]["source_desc"],
+      canon: @canon,
+      canon_name: @canon_name,
+      work:,
+      vol: @works[work]["juans_vol"][juan].join("-"),
+      juan:,
+      title: @works[work]["title"],
+      publish: @publish,
+      updated_at: @works[work]["updated_at"],
+      contributors: @works[work]["contributors"],
+      format: :docx
+    }
+    MyCbetaShare.cbeta_juan_declare(args)
   end
 
   def xml_styles(work, juan)

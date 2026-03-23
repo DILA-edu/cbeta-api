@@ -948,7 +948,7 @@ class P5aToHTMLForDownload
       title: @title,
       body: body,
       back: back,
-      copyright: cbeta_copyright(@canon, work, juan_no, @publish_date)
+      copyright: write_juan_copyright(work, juan_no)
     }
     template_fn = Rails.root.join('lib', 'tasks', 'x2h_for_download.html')
     template = File.read(template_fn)
@@ -958,7 +958,24 @@ class P5aToHTMLForDownload
     output_path = File.join(@out_folder, fn)
     File.write(output_path, html)
   end
-  
+
+  def write_juan_copyright(work, juan_no)
+    args = {
+      source_desc: @source_desc,
+      canon: @canon,
+      canon_name: @canon_name,
+      work: work,
+      vol: @vol,
+      juan: juan_no,
+      title: @title,
+      publish: @publish_date,
+      updated_at: @updated_at,
+      contributors: @contributors,
+      format: :html
+    }
+    MyCbetaShare.cbeta_juan_declare(args)
+  end
+
   def zip_by_work(canon)
     folder = File.join(@out_root, @canon)
     Dir.entries(folder).each do |work|

@@ -1323,13 +1323,32 @@ class P5aToHTMLForUI
         body = @html_buf + body
         @html_buf = ''
       end
+      
       back = @back_buf + back unless @back_buf.empty?
-      copyright = cbeta_copyright(@canon, work, juan_no, @params[:publish])
+      copyright = write_juan_copyright(work, juan_no)
+
       fn = File.join(folder, "#{juan}.html")
       write_juan_file(fn, body, back, copyright)
       
       @back_buf = ''
     end
+  end
+
+  def write_juan_copyright(work, juan_no)
+    args = {
+      source_desc: @source_desc,
+      canon: @canon,
+      canon_name: @canon_name,
+      work: work,
+      vol: @vol,
+      juan: juan_no,
+      title: @title,
+      publish: @params[:publish],
+      updated_at: @updated_at,
+      contributors: @contributors,
+      format: :html
+    }
+    MyCbetaShare.cbeta_juan_declare(args)
   end
   
   def write_juan_file(fn, body, back, copyright)

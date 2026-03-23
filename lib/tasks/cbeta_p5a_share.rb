@@ -1,23 +1,6 @@
 require 'cbeta'
 
 module CbetaP5aShare
-  def cbeta_copyright(canon, work, juan, publish, format: :html)
-    args = {
-      source_desc: @source_desc,
-      canon: canon,
-      canon_name: @canon_name,
-      work: work,
-      vol: @vol,
-      juan: juan,
-      title: @title,
-      publish: publish,
-      updated_at: @updated_at,
-      contributors: @contributors,
-      format:
-    }
-    MyCbetaShare.cbeta_juan_declare(args)
-  end
-
   def each_canon(xml_root)
     Dir.entries(xml_root).sort.each do |c|
       next unless c.match(/^#{CBETA::CANON}$/)

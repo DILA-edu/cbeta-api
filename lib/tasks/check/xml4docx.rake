@@ -25,11 +25,14 @@ class CheckXMLForDocx
   def check(src)
     time_start = Time.now
     puts "check_xml4docx 檢查 XML 格式"
+    @errors = []
     Dir.glob("#{src}/**/*.xml", sort: true) do
       do_file(it)
     end
     puts
     check_as_text('T/T0099/T0099_001.xml', /<p rend="標題">雜阿含經<\/p>/m)
+    check_as_text('T/T0099/T0099_002.xml', /<p rend="license">【經文資訊】大正新脩大藏經 第 2 冊/m)
+    check_as_text('T/T0220/T0220_201.xml', /<p rend="license">【經文資訊】大正新脩大藏經 第 6 冊/m)
     check_as_text('T/T0261/T0261_002.xml', /<\/footnote>\)<\/seg>娜岸<!-- lb: 0873c26 -->/m)
     check_as_text('T/T0262/T0262_007.xml', /伏遇.*<lb\/>.*亡夫/m)
     check_as_text('T/T0293/T0293_001.xml', /0661a04.*<footnote>.*0661a05/m)
@@ -57,9 +60,16 @@ class CheckXMLForDocx
     check_as_text('T/T2154/T2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T2154/T2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)
     check_as_text('X/X0288/X0288_001.xml', /0006a13.*<footnote>真鑑曰.*0006a14/m)
+    check_as_text('X/X0714/X0714_003.xml', /【經文資訊】卍新纂大日本續藏經 第 39-40 冊/m) # 卷跨冊    
     
-    puts "\n未發現錯誤"
-    puts "花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
+    if @errors.empty?
+      puts "\n未發現錯誤".green
+      puts "花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
+    else
+      puts "\n-----\n發現錯誤".red
+      puts "-----"
+      puts @errors.join("-----\n")
+    end
   end
 
   private
@@ -73,29 +83,34 @@ class CheckXMLForDocx
     print "\rcheck: #{xml_path}  "
     text = File.read(xml_path)
     if text !~ regex
-      puts "Error: check_as_text"
-      puts "File: #{fn}"
-      puts "應該要 match pattern：#{regex.source}"
-      abort
+      @errors << <<~MSG
+        Error: check_as_text
+        File: #{fn}
+        應該要 match pattern：#{regex.source}
+      MSG
     end
   end
 
   def do_file(xml_path)
-    print "\rcheck_xml4docx #{File.basename(xml_path)}  "
+    bn = File.basename(xml_path)
+    print "\rcheck_xml4docx #{bn}  "
 
     @doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
     unless @doc.errors.empty?
-      abort "XML not well-form: #{@doc.errors}"
+      @errors << "#{bn} XML not well-form: #{@doc.errors}\n"
+      return
     end
 
     errors = @relaxng.validate(@doc)
     unless errors.empty?
-      abort "\nXML not valid ❌"
+      @errors << "#{bn} XML not valid ❌\n"
     end
 
     traverse(@doc.root)
 
-    abort "仍有 seg 包 seg" if @doc.at_xpath('//seg/seg')
+    if @doc.at_xpath('//seg/seg')
+      @errors << "#{bn} 有 seg 包 seg ❌\n"
+    end
   end
 
   def e_footnote(e)
