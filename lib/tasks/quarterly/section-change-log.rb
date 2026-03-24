@@ -40,13 +40,12 @@ module SectionChangeLog
 
       run_step 'HTML 轉 PDF版' do
         confirm <<~MSG
-          1. HTML 檔頭定義 style body { font-family: "Hanazono Mincho C Regular"; } 就可以正確顯示 Ext B, C, D
-          2. Ext E, F 要針對個別的字指定 { font-family: "Hanazono Mincho C Regular" } 才能正確顯示。
+          1. HTML 檔頭定義 style body { font-family: "CBETA Supplement"; } 就可以正確顯示 Ext B, C, D
+          2. Ext E, F 要針對個別的字指定 { font-family: "CBETA Supplement" } 才能正確顯示。
           3. Ext G 沒有字型，不能顯示，產生「變更紀錄」時不應使用 Ext G
           4. Windows 電腦安裝 Adobe Acrobat Pro，然後使用 Word 裡的「儲存為 Adobe PDF」功能。
         MSG
       end
-
     end
   end
 end

@@ -211,10 +211,7 @@ class DiffToHTML
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
       <style type="text/css"> 
         body { 
-          font-family: Helvetica, "Hanazono Mincho C Regular";
-        }
-        .hmc {
-          font-family: "Hanazono Mincho C Regular";
+          font-family: Helvetica, "CBETA Supplement";
         }
         del { 
           color: red;
