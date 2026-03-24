@@ -1,8 +1,13 @@
 require 'tempfile'
 class WordSegController < ApplicationController
-
   def index
     return unless params.key? :t
+    
+    if params[:t].size == 1
+      render plain: params[:t]
+      return
+    end
+
     r = WordSegService.new.run(params[:t])
     if r.success?
       render plain: r.result
@@ -22,6 +27,11 @@ class WordSegController < ApplicationController
       return
     end
 
+    if params[:payload].size == 1
+      render json: { segmented: [params[:payload]] }
+      return
+    end
+
     r = WordSegService.new.run(params[:payload])
     if r.success?
       puts r.result
@@ -33,5 +43,4 @@ class WordSegController < ApplicationController
       }
     end
   end
-
 end
