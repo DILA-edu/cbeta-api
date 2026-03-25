@@ -7,7 +7,7 @@ end
 
 class ImportSynonym
   def initialize
-    @folder = Rails.root.join('data-static')
+    @folder = File.join(Rails.configuration.cb.git, 'synonyms')
   end
   
   def import
@@ -66,6 +66,10 @@ class ImportSynonym
     doc = File.open(fn) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
 
+    doc.xpath('//def').remove
+    doc.xpath('//note').remove
+    doc.xpath('//orig').remove
+
     @groups = {}
     doc.root.xpath('sense').each do |sense|
       id = sense['id']
@@ -73,5 +77,4 @@ class ImportSynonym
       @groups[id] = terms
     end
   end
-  
 end
