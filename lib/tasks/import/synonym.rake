@@ -8,6 +8,11 @@ end
 class ImportSynonym
   def initialize
     @folder = File.join(Rails.configuration.cb.git, 'synonyms')
+    
+    Dir.chdir(@folder) do
+      puts "git pull in #{@folder}"
+      system('git pull')
+    end
   end
   
   def import
