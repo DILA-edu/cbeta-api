@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ChangesController < ApplicationController
   def index
     if params[:lb].blank? and params[:work].blank?
@@ -14,14 +16,35 @@ class ChangesController < ApplicationController
       end
     end
 
-    changes = Change.where(
+    @changes = Change.where(
         params.permit(:lb, :work, :juan)
-      ).select(:id, :work, :juan, :lb, :html, :ver)
+      ).select(:id, :work, :juan, :lb, :html, :ver).order(ver: :desc)
     
-      r = {
-        num_found: changes.size,
-        results: changes
+    request.format = "json" unless params[:format]
+    respond_to do |format|
+      format.html { index_html }
+      format.json { 
+        r = {
+          num_found: @changes.size,
+          results: @changes
+        }
+        my_render r
       }
-    my_render r
+    end
+  end
+
+  private
+
+  def index_html
+    ver = nil
+    html = +""
+    @changes.each do |c|
+      if ver != c.ver
+        html << "<h2>#{c.ver}</h2>\n"
+        ver = c.ver
+      end
+      html << "#{c.lb}║#{c.html}<br>\n"
+    end
+    render plain: html    
   end
 end

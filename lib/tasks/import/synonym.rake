@@ -8,10 +8,12 @@ end
 class ImportSynonym
   def initialize
     @folder = File.join(Rails.configuration.cb.git, 'synonyms')
-    
+
     Dir.chdir(@folder) do
+      puts '-' * 10
       puts "git pull in #{@folder}"
       system('git pull')
+      puts '-' * 10
     end
   end
   

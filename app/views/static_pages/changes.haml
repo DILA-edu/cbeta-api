@@ -3,6 +3,14 @@
   %li endpoint: /changes
   %li 標點修訂不記錄。
 
+%h2 Format
+%p 預設回傳 JSON 格式，若要回傳 HTML 格式：
+%p= link_to_url '/changes.html?work=T0026'
+%p 回傳的 HTML 中有如下標記：
+%ul
+  %li &ltspan class="del"> 刪除的文字
+  %li &ltspan class="ins"> 新增的文字
+
 %h2 Parameters
 %table.table
   %tr
