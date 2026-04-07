@@ -102,9 +102,11 @@ class P5aToHTMLForUI
     @note_star_count = Hash.new(0)
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
-    print "\rx2h_for_ui #{@sutra_no}   "
+    @tt_table = false
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     @updated_at = cb_xml_updated_at
+
+    print "\rx2h_for_ui #{@sutra_no}   "
 
     info = Work.get_info_by_id(@work_id)
     return false if info.nil?
@@ -588,8 +590,12 @@ class P5aToHTMLForUI
     r = +''
 
     node = HTMLNode.new('span')
-    node['class'] = +'lb'
-    node['class'] << ' honorific' if e['type'] == 'honorific'
+    classes = ['lb']
+    if e['type'] == 'honorific' or @tt_table
+      classes << 'honorific' 
+    end
+    node['class'] = classes.join(' ')
+
     node['id'] = line_head
     node['data-lr'] = @lb_r unless @lb_r.nil?
     node.content = line_head
@@ -608,7 +614,6 @@ class P5aToHTMLForUI
   end
 
   def e_lb_p(e)
-    r = ''
     p = e.at_xpath('ancestor::p')
     return '' if p.nil?
     return '' unless p.key? 'style'
@@ -739,6 +744,7 @@ class P5aToHTMLForUI
       @next_line_buf = +''
     end
 
+    @tt_table = false
     node.to_s + "\n"
   end
 
@@ -871,6 +877,7 @@ class P5aToHTMLForUI
 
     # 處理雙行對照
     # <tt type="tr"> 也是 雙行對照
+    @tt_table = true
     i = e.xpath('../t').index(e)
     case i
     when 0
@@ -1053,12 +1060,13 @@ class P5aToHTMLForUI
   def handle_chars(text, mode)
     r = +''
     text.each_char do |char|
-      if @us.level1?(char)
+      # "㉑" (U+3251) unicode 3.2 列為特例允許
+      if @us.level1?(char) or char == "㉑"
         r << char
       else
         gid = @gaijis.unicode_to_cb(char)
         if gid.nil?          
-          abort "#{__LINE__} gid is nil, char: #{char} (U+%X)" % char.ord
+          raise "gid is nil, char: #{char} (U+%X)" % char.ord
         end
         r << e_g_span(gid, mode, default: char)
       end
@@ -1176,6 +1184,39 @@ class P5aToHTMLForUI
     File.exist? path
   end
 
+  # 雙行對照的最後 lb 要在 p 裡面
+  # 例： T18n0859_p0178a18
+  def move_lb_in_tt_table(doc)
+    doc.root.xpath('//p[tt]').each do |p|
+      tt = p.at_xpath('tt')
+      
+      # 只處理 悉漢雙行對照的 tt
+      if tt['place'] == 'inline'
+        || tt['rend'] == 'normal' 
+        || %w[app single-line].include?(tt['type'])
+        next
+      end
+
+      # 如果 p 的最後一個 child 是 lb，就不處理了
+      next if p.last_element_child.name == 'lb'
+
+      # p 的下一個 sibling 是 lb，才處理
+      lb = p.next
+      next if lb.nil?
+
+      if lb.text?
+        next unless lb.text.strip.empty?
+        lb = lb.next
+      end
+
+      next if lb.nil? or lb.name != 'lb'
+
+      # T18n0859_p0178a18 這個 lb 應該 屬於 悉漢雙行對照的第二行
+      # 把它移到 p 裡面
+      p.add_child(lb.remove)
+    end
+  end
+
   def open_xml(fn)
     s = File.read(fn)
 
@@ -1192,6 +1233,9 @@ class P5aToHTMLForUI
 
     doc = Nokogiri::XML(s)
     doc.remove_namespaces!()
+
+    move_lb_in_tt_table(doc)
+
     doc
   end
   

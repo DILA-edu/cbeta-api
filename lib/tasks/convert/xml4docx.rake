@@ -3,9 +3,9 @@ namespace :convert do
   task :xml4docx => :environment do
     month = Date.today.strftime('%Y-%m')
     puts "xml4docx1"
-    Rake::Task["convert:xml4docx1"].invoke(month, 'T')
+    Rake::Task["convert:xml4docx1"].invoke(month)
     puts "xml4docx2"
-    Rake::Task["convert:xml4docx2"].invoke('T')
+    Rake::Task["convert:xml4docx2"].invoke
     puts "check:xml4docx"
     Rake::Task["check:xml4docx"].invoke
   end

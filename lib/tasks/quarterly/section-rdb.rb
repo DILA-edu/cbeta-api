@@ -31,7 +31,7 @@ module SectionRDB
 
       # 由 GitHub 上的 cbeta-metadata 匯入，
       # 需要: import:lines, import:work_info
-      run_step '匯入 部類目錄 (rake import:catelog)' do
+      run_step '匯入 部類目錄 (rake import:catalog)' do
         command 'rake import:catalog'
       end
 
