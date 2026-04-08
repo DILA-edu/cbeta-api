@@ -1396,21 +1396,21 @@ class P5aToHTMLForUI
   end
   
   def write_juan_file(fn, body, back, copyright)
-    text = <<eos
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>#{@title}</title>
-</head>
-<body>
-<div id='body' data-punc="#{@punc_resp}">#{body}</div>
-<div id='back'>
-  #{back}
-</div>
-#{copyright}
-</body></html>
-eos
-    File.write(fn, text)
+    html = <<~HTML
+      <html>
+      <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      <title>#{@title}</title>
+      </head>
+      <body>
+      <div id='body' data-punc="#{@punc_resp}">#{body}</div>
+      <div id='back'>
+        #{back}
+      </div>
+      #{copyright}
+      </body></html>    
+    HTML
+    File.write(fn, html)
   end
   
   include P5aToHtmlShare

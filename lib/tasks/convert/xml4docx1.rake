@@ -711,7 +711,7 @@ class XMLForDocx1
   def e_note(e, mode='xml')
     return '' if e['rend'] == 'hide'
     
-    if e["place"] == "inline"
+    if %w[inline interlinear].include?(e["place"])
       return e_note_inline(e, mode)
     end
   

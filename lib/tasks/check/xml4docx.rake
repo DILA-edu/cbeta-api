@@ -59,6 +59,7 @@ class CheckXMLForDocx
     check_as_text('T/T2149/T2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T2154/T2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T2154/T2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)
+    check_as_text('X/X0281/X0281_002.xml', /0716b05.*二、示見性主空無遷義二.*0716b06/m)
     check_as_text('X/X0288/X0288_001.xml', /0006a13.*<footnote>真鑑曰.*0006a14/m)
     check_as_text('X/X0714/X0714_003.xml', /【經文資訊】卍新纂大日本續藏經 第 39-40 冊/m) # 卷跨冊    
     
