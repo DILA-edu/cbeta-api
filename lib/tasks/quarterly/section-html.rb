@@ -20,9 +20,11 @@ module SectionHTML
   end
 
   def step_zip_html
+    t = Time.now.strftime('%Y-%m-%d-%H%M')
+    dest = Rails.root.join("public", "download", "html-#{t}.zip")
+
     # 變更目前目錄再做壓縮，否則壓縮檔內會含路徑
     Dir.chdir(@config[:data]) do
-      dest = Rails.root.join("public", "html.zip")
       # 先刪除舊檔, 否則 zip 裡的舊檔會保留
       FileUtils.remove_file(dest, force: true)
       command "zip -r #{dest} html"
@@ -31,9 +33,7 @@ module SectionHTML
     src = File.join(@config[:data], 'html.zip')
     confirm <<~MSG
       將 zip 檔提供給 heaven:
-        #{src}
-        =>
-        GoogleDrive/共用雲端硬碟/CBETA-季更新/html.zip
+        #{dest}
       因為 heaven 可能發現問題再修改 XML，
       所以等 heaven 比對完再進行後面的步驟。
     MSG

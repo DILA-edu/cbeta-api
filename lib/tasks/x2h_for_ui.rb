@@ -739,9 +739,10 @@ class P5aToHTMLForUI
     end
     
     node.content << traverse(e)
-    unless @next_line_buf.empty? || (mode == 'footnote')
-      node.content << @next_line_buf
-      @next_line_buf = +''
+
+    
+    unless @next_line_buf.empty?
+      raise "p 結束了，但 next_line_buf 不是空的, lb: #{@lb}".red
     end
 
     @tt_table = false
@@ -1186,6 +1187,8 @@ class P5aToHTMLForUI
 
   # 雙行對照的最後 lb 要在 p 裡面
   # 例： T18n0859_p0178a18
+  #   T18n0860_p0182c10 雙行對照的第二行，lb 在 div 外面
+  #   T18n0867_p0254b01 雙行對照的第二行 在下一頁
   def move_lb_in_tt_table(doc)
     doc.root.xpath('//p[tt]').each do |p|
       tt = p.at_xpath('tt')
@@ -1197,23 +1200,35 @@ class P5aToHTMLForUI
         next
       end
 
-      # 如果 p 的最後一個 child 是 lb，就不處理了
-      next if p.last_element_child.name == 'lb'
+      move_lb(p)
+    end
+  end
 
-      # p 的下一個 sibling 是 lb，才處理
-      lb = p.next
-      next if lb.nil?
+  def move_lb(p)
+    # 如果 p 的最後一個 child 是 lb，就不處理了
+    return if p.last_element_child.name == 'lb'
 
-      if lb.text?
-        next unless lb.text.strip.empty?
-        lb = lb.next
+    node = p
+    while node = node.at_xpath('following::node()[1]')
+      if node.text?
+        if node.text.strip.empty?
+          p.add_child(node.remove)
+        else
+          return
+        end
+      elsif node.element?
+        case node.name
+        when 'lb'
+          p.add_child(node.remove)
+          return
+        when 'pb'
+          p.add_child(node.remove)
+        else
+          return
+        end
+      else
+        p.add_child(node.remove)
       end
-
-      next if lb.nil? or lb.name != 'lb'
-
-      # T18n0859_p0178a18 這個 lb 應該 屬於 悉漢雙行對照的第二行
-      # 把它移到 p 裡面
-      p.add_child(lb.remove)
     end
   end
 
@@ -1227,15 +1242,10 @@ class P5aToHTMLForUI
       s.sub!(/(<\/note>)(\n<lb n="0206b29" ed="T"\/>)/, '\2\1')
     end
 
-    # 2018 Q3 開始 milestone 規則改變
-    # <milestone unit="juan"> 前面的 lb 屬於新的這一卷
-    #s.gsub!(%r{((?:<pb [^>]+>\n?)?(?:<lb [^>]+>\n?)+)(<milestone [^>]*unit="juan"[^/>]*/>)}, '\2\1')
-
     doc = Nokogiri::XML(s)
     doc.remove_namespaces!()
 
     move_lb_in_tt_table(doc)
-
     doc
   end
   
@@ -1415,5 +1425,4 @@ class P5aToHTMLForUI
   
   include P5aToHtmlShare
   include CbetaP5aShare
-
 end

@@ -224,12 +224,11 @@ module CbetaP5aShare
 
   def get_source_desc(doc)
     e = doc.at_xpath("//idno[@type='CBETA']")
-    abort "找不到 idno" if e.nil?
-    id = e.text.strip
+    raise "找不到 idno" if e.nil?
 
     e = doc.at_xpath("//sourceDesc/bibl/title[@level='s' and @lang='zh-Hant']")
     e = doc.at_xpath("//sourceDesc/bibl") if e.nil?
-    abort "找不到來源說明" if e.nil?
+    raise "找不到來源說明" if e.nil?
     traverse(e)
   end
 
