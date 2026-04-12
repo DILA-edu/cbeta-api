@@ -40,7 +40,7 @@ class XMLForDocx1
     time_start = Time.now
     if args[:canon].nil?
       each_canon(@xml_root) do |c|
-        next unless %w[T X].include?(c)
+        next unless %w[T].include?(c)
         @canon = c
         convert_canon(args)
       end
@@ -535,7 +535,9 @@ class XMLForDocx1
 
     r = +''
     r << "<lb/>\n" if br
-    r << "<!-- lb: #{@lb} -->"    
+
+    line_head = CBETA.get_linehead(@v_work, @lb)
+    r << "<!-- lb: #{line_head} -->"    
     r
   end
 

@@ -33,7 +33,7 @@ class CheckXMLForDocx
     check_as_text('T/T0099/T0099_001.xml', /<p rend="標題">雜阿含經<\/p>/m)
     check_as_text('T/T0099/T0099_002.xml', /<p rend="license">【經文資訊】大正新脩大藏經 第 2 冊/m)
     check_as_text('T/T0220/T0220_201.xml', /<p rend="license">【經文資訊】大正新脩大藏經 第 6 冊/m)
-    check_as_text('T/T0261/T0261_002.xml', /<\/footnote>\)<\/seg>娜岸<!-- lb: 0873c26 -->/m)
+    check_as_text('T/T0261/T0261_002.xml', /<\/footnote>\)<\/seg>娜岸<!-- lb: T08n0261_p0873c26 -->/m)
     check_as_text('T/T0262/T0262_007.xml', /伏遇.*<lb\/>.*亡夫/m)
     check_as_text('T/T0293/T0293_001.xml', /0661a04.*<footnote>.*0661a05/m)
     check_as_text('T/T0293/T0293_040.xml', /0851a17.*住持沙門如賢/m)
@@ -59,9 +59,9 @@ class CheckXMLForDocx
     check_as_text('T/T2149/T2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T2154/T2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T2154/T2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)
-    check_as_text('X/X0281/X0281_002.xml', /0716b05.*二、示見性主空無遷義二.*0716b06/m)
-    check_as_text('X/X0288/X0288_001.xml', /0006a13.*<footnote>真鑑曰.*0006a14/m)
-    check_as_text('X/X0714/X0714_003.xml', /【經文資訊】卍新纂大日本續藏經 第 39-40 冊/m) # 卷跨冊    
+    # check_as_text('X/X0281/X0281_002.xml', /0716b05.*二、示見性主空無遷義二.*0716b06/m)
+    # check_as_text('X/X0288/X0288_001.xml', /0006a13.*<footnote>真鑑曰.*0006a14/m)
+    # check_as_text('X/X0714/X0714_003.xml', /【經文資訊】卍新纂大日本續藏經 第 39-40 冊/m) # 卷跨冊    
     
     if @errors.empty?
       puts "\n未發現錯誤".green

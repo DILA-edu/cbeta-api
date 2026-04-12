@@ -78,7 +78,7 @@ class XMLForDocx2
 
     # 段落開頭的 "(" 要在 行號 之後
     # <p rend="inlinenote_p">(<!-- lb: 0388a16 -->
-    xml.gsub!(/(<p rend="inlinenote_p">)\((<!-- lb: \d+[a-z]\d+ -->)/, '\1\2(')
+    xml.gsub!(/(<p rend="inlinenote_p">)\((<!-- lb: \S+ -->)/, '\1\2(')
 
     xml
   end
