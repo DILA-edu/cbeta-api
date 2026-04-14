@@ -49,7 +49,7 @@ class XMLForDocx1
       convert_canon(args)
     end
     puts "\n花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
-  rescue => e
+  rescue
     puts "\n[#{__LINE__}] lb: #{@lb}"
     raise
   end
@@ -240,6 +240,7 @@ class XMLForDocx1
     @lg_type = [nil]
     @pre = [false]
     @seg = []
+    @t_buf = nil
     @works_xml[@work] << traverse(doc.root)
     @log.close
   end
@@ -726,7 +727,7 @@ class XMLForDocx1
       ""
     end
 
-    if mode == 'tt'
+    if mode == 'tt' && !@t_buf.nil?
       @t_buf[0] << r
       r = ''
     end
@@ -903,6 +904,7 @@ class XMLForDocx1
       traverse(e, 'tt')
       @t_buf.join("<lb/>\n") + "<lb/>\n"
     else
+      @t_buf = nil
       traverse(e, mode) + "<lb/>\n"
     end
   end
@@ -1021,6 +1023,11 @@ class XMLForDocx1
     r = +''
     s.each_char do
       r << handle_char(it)
+    end
+
+    if mode == 'tt' && !@t_buf.nil?
+      @t_buf[0] << r
+      return ''
     end
 
     r = "<p>#{r}</p>\n" if node.parent.name == 'div'

@@ -38,7 +38,10 @@ class CheckXMLForDocx
     check_as_text('T/T0293/T0293_001.xml', /0661a04.*<footnote>.*0661a05/m)
     check_as_text('T/T0293/T0293_040.xml', /0851a17.*住持沙門如賢/m)
     check_as_text('T/T0299/T0299_002.xml', /0892c09.*?<footnote><font name="sidd">先<\/font>\(ra\)【大】，<font name="sidd">刑<\/font>\(re\)【宋】【元】【明】<\/footnote><font name="sidd">先<\/font><lb\/>\n?\(ra\).*?0892c10/m)
+
+    check_as_text('T/T0860/T0860_001.xml', /「<font name="sidd">湡/m)    
     check_as_text('T/T0860/T0860_001.xml', /183b08.*<seg rend="corr"><font name="sidd">巧<\/font><\/seg><lb\/>\s*<seg rend="corr">\(na\)<\/seg>/m)
+
     check_as_text('T/T0864A/T0864A_001.xml', /0196a15.*部嚕唵.*0196a16/m)
     check_as_text('T/T0867/T0867_001.xml', /0254a29.*?怛.*?0254b02/m)
     check_as_text('T/T0868/T0868_002.xml', /0274b18.*』.*0274b19/m)
