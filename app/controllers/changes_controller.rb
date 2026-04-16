@@ -18,7 +18,9 @@ class ChangesController < ApplicationController
 
     @changes = Change.where(
         params.permit(:lb, :work, :juan)
-      ).select(:id, :work, :juan, :lb, :html, :ver).order(ver: :desc)
+      ).select(
+        :id, :work, :juan, :lb, :html, :ver, :del_chars, :ins_chars
+      ).order(ver: :desc)
     
     request.format = "json" unless params[:format]
     respond_to do |format|

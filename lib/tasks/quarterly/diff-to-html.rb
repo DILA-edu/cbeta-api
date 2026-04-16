@@ -210,8 +210,17 @@ class DiffToHTML
       <head>
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
       <style type="text/css"> 
+        @font-face {
+          font-family: "CBETASupplement";
+          src: local("CBETASupplement"),
+            url("https://cdn.jsdelivr.net/gh/cbeta-org/cbeta-fonts@main/CBETASupplement.ttf") 
+            format("truetype");
+        }
+        .cb-supp {
+          font-family: "CBETASupplement", "Hanazono Mincho C Regular", serif;
+        }
         body { 
-          font-family: Helvetica, "CBETA Supplement";
+          font-family: "CBETASupplement", "Georgia", serif;
         }
         del { 
           color: red;

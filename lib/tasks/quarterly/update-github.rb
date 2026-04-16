@@ -42,7 +42,7 @@ if ENV['RAILS_ENV'] == 'cn'
 else
   pull('cbeta-xml-p5a')
   pull('gaiji-CB') # https://github.com/cbeta-org/gaiji-CB
-  pull('ebook-covers') # 
+  #pull('ebook-covers') # epub 改由 heaven 產生
   pull('sd-gif') # https://github.com/cbeta-org/sd-gif
   pull('rj-gif') # https://github.com/cbeta-org/rj-gif
 end

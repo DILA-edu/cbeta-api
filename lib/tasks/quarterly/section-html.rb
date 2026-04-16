@@ -9,7 +9,7 @@ module SectionHTML
         command "rake import:layers"
       end
   
-      run_step 'check to html (rake check:html)' do
+      run_step 'check html (rake check:html)' do
         command 'rake check:html'
       end
 

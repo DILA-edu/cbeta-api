@@ -42,18 +42,40 @@ class ImportChangelog
       end
     end
 
+    deleted_count = Change.where(ver: ver).delete_all
+    puts "刪除既有筆數: #{number_with_delimiter(deleted_count)}"
+
     puts "新增筆數: #{number_with_delimiter(@inserts.size)}"
     Change.insert_all(@inserts)
     puts "Change 總筆數: #{number_with_delimiter(Change.count)}"
   end
 
   private
+
+  def count(html, type)
+    text.gsub!(/\[[^\]]+\]/, '一') # 組字式 取代為一個字元
+
+    r = 0
+    text.scan(%r{<span class="#{type}">([^<]*)</span>}) do |x|
+      r += x.size
+    end
+
+    r
+  end
   
   def insert_line(lb, html, ver)
+    html = html.clone
+    
+    # 指定字型的 span, 取代為 文字
+    html.gsub!(%r{<span class=['"](?:cb-supp|hmc)['"]>([^<]*)</span>}, '\1')
+
+    ins_chars = count(html, 'ins')
+    del_chars = count(html, 'del')
+
     html.gsub!(/(?:<span class="del">[^<]*<\/span>){2,}/) { merge_del(it) }
     abort "@work 是空的, lb: #{lb}" if @work.blank?
     abort "@juan 是空的" if @juan.blank?
-    @inserts << { lb:, html:, ver:, work: @work, juan: @juan }
+    @inserts << { lb:, html:, ver:, work: @work, juan: @juan, ins_chars:, del_chars: }
     @log.puts @inserts.last
   end
 
