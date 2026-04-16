@@ -26,7 +26,8 @@ class ImportChangelog
     fn = File.join(Rails.configuration.cb.changelog, "#{ver}-text.htm")
     abort "檔案不存在: #{fn}" unless File.exist?(fn)
 
-    body = File.read(fn).sub(/\A.*<body>(.*)<\/body>.*\z/m, '\1')
+    body = File.read(fn).sub(/\A.*<body>(.*)\z/m, '\1')
+    body.sub!(/\A(.*)<\/body>.*\z/m, '\1')
 
     body.split("\n") do |line|
       next if line.empty?
@@ -53,7 +54,7 @@ class ImportChangelog
   private
 
   def count(html, type)
-    text.gsub!(/\[[^\]]+\]/, '一') # 組字式 取代為一個字元
+    text = html.gsub(/\[[^\]]+\]/, '一') # 組字式 取代為一個字元
 
     r = 0
     text.scan(%r{<span class="#{type}">([^<]*)</span>}) do |x|
