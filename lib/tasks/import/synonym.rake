@@ -8,6 +8,7 @@ end
 class ImportSynonym
   def initialize
     @folder = File.join(Rails.configuration.cb.git, 'synonyms')
+    @xml_path = File.join(@folder, 'synonyms.xml')
 
     Dir.chdir(@folder) do
       puts '-' * 10
@@ -18,6 +19,9 @@ class ImportSynonym
   end
   
   def import
+    @log = File.open(Rails.root.join('log', 'import-synonym.log'), 'w')
+    validate
+
     $stderr.puts "清除舊資料"
     Term.delete_all
 
@@ -30,6 +34,7 @@ class ImportSynonym
     inserts = []
     @synonyms.each_pair do |term, synonyms|
       s = synonyms.to_a.join("\t")
+      @log.puts "#{__LINE__} #{term} => #{s}"
       inserts << { term:, synonyms: s }
     end
 
@@ -47,6 +52,7 @@ class ImportSynonym
   end
 
   def book_synonym(t1, t2)
+    @log.puts "book_synonym, t1: #{t1}, t2: #{t2}"
     @synonyms[t1] = Set.new unless @synonyms.key?(t1)
     @synonyms[t1] << t2
   end
@@ -68,9 +74,8 @@ class ImportSynonym
   end
 
   def read_synonyms
-    fn = File.join(@folder, 'synonyms.xml')
-    puts "read #{fn}"
-    doc = File.open(fn) { |f| Nokogiri::XML(f) }
+    puts "read #{@xml_path}"
+    doc = File.open(@xml_path) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
 
     doc.xpath('//def').remove
@@ -82,6 +87,22 @@ class ImportSynonym
       id = sense['id']
       terms = sense.xpath('form').to_a.map { it.text }
       @groups[id] = terms
+      @log.puts "#{__LINE__} group id: #{id}, terms: #{terms.inspect}"
+    end
+  end
+
+  def validate
+    xml = Nokogiri::XML(File.read(@xml_path))
+
+    fn = File.join(@folder, 'synonyms.rng')
+    rng = Nokogiri::XML::RelaxNG(File.read(fn))
+
+    errors = rng.validate(xml)
+
+    if errors.empty?
+      puts "xml file is valid.".green
+    else
+      raise 'synonyms.xml not valid'.red
     end
   end
 end
