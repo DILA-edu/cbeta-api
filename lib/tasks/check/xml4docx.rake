@@ -45,6 +45,7 @@ class CheckXMLForDocx
     check_as_text('T/T0864A/T0864A_001.xml', /0196a15.*部嚕唵.*0196a16/m)
     check_as_text('T/T0867/T0867_001.xml', /0254a29.*?怛.*?0254b02/m)
     check_as_text('T/T0868/T0868_002.xml', /0274b18.*』.*0274b19/m)
+    check_as_text('T/T0956/T0956_001.xml', /0316a10.*\(此是梵本一字之呪\).*0316a11/m)
     check_as_text('T/T1096/T1096_001.xml', /0420c26.*0420c27/m)
     check_as_text('T/T1168B/T1168B_001.xml', /0676c16.*?<cell>如<lb\/>\n?<font name="sidd">珫<\/font><lb\/>\n?\(e\)<\/cell>.*?0676c18/m)
     check_as_text('T/T1299/T1299_001.xml', /虛室奎胃畢參鬼星翼角氐心<\/p>/m)
@@ -56,9 +57,12 @@ class CheckXMLForDocx
     check_as_text('T/T2122/T2122_053.xml', /0683b02.*(?!\()爾時舍利弗.*0683b03/m)
     check_as_text('T/T2128/T2128_063.xml', /百一羯磨十卷.*0725a24/m)
     check_as_text('T/T2132/T2132_001.xml', /<font rend="corr" name="sidd">裶<\/font>/)
+
     check_as_text('T/T2133A/T2133A_001.xml', /<footnote>uparopara\?<\/footnote><font name="sidd">裶/)
     check_as_text('T/T2133A/T2133A_001.xml', /1190a22.*?<cell><font name="sidd">辱絞箌<\/font><lb\/>\n?\(sva\)\(rga\)<lb\/>\n?天<\/cell>.*?1190a24/m)
+    check_as_text('T/T2133A/T2133A_001.xml', /1190b09.*?\(（？）\).*?1190b10/m)
     check_as_text('T/T2133A/T2133A_001.xml', /1194c17.*?<font name="sidd">巴<\/font>\(ṭa\)〔<font name="sidd">一<\/font>\(ka\)〕/m)
+    
     check_as_text('T/T2149/T2149_005.xml', /0272b08.*0272b09/m)
     check_as_text('T/T2154/T2154_011.xml', /0592b06.*0592b07/m)
     check_as_text('T/T2154/T2154_013.xml', /0622a12.*\(出翻經圖單本.*0622a13/m)

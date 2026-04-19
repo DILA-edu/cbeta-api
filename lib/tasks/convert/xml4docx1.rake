@@ -714,18 +714,20 @@ class XMLForDocx1
   def e_note(e, mode='xml')
     return '' if e['rend'] == 'hide'
     
-    if %w[inline interlinear].include?(e["place"])
-      return e_note_inline(e, mode)
-    end
-  
-    r = case e["type"]
-    when "add", "mod"
-      e_note_add_mod(e, mode)
-    when "orig"
-      e_note_orig(e, mode)
-    else
-      ""
-    end
+    r = 
+      # 注意 悉漢雙行對照 裡也可能有夾注，如 T19n0956_p0316a10
+      if %w[inline interlinear].include?(e["place"])
+        e_note_inline(e, mode)
+      else
+        case e["type"]
+        when "add", "mod"
+          e_note_add_mod(e, mode)
+        when "orig"
+          e_note_orig(e, mode)
+        else
+          ''
+        end
+      end
 
     if mode == 'tt' && !@t_buf.nil?
       @t_buf[0] << r
