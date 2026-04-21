@@ -1,27 +1,37 @@
 module SectionConvert
   def run_section_convert
-    run_section "Convert (runbook-convert.rb)" do
-      run_step '作品內目次 轉為 一部作品一個 JSON 檔 (rake convert:toc)' do
-        command 'rake convert:toc'
-      end
-
-      run_step '產生供下載用的 HTML 檔 (rake convert:x2h4d)' do
-        command "rake convert:x2h4d[#{@config[:publish]}]"
-      end
-      
+    run_section "Convert (section-convert.rb)" do
+      step_import_changelog
+      step_convert_toc
+      step_convert_x2h4d      
       step_creators_list
       step_create_all_works_list
       step_create_scope_selector
       step_create_check_list_j
       step_t4d
       step_zip_text
-
-      run_step '產生供 DocuSky 使用的 DocuXML 檔 (16分鐘) (rake convert:docusky)' do
-        command 'rake convert:docusky'
-      end
+      step_convert_docusky
     end
   end
-  
+
+  def step_convert_docusky
+    run_step '產生供 DocuSky 使用的 DocuXML 檔 (16分鐘) (rake convert:docusky)' do
+      command 'rake convert:docusky'
+    end    
+  end
+
+  def step_convert_toc
+    run_step '作品內目次 轉為 一部作品一個 JSON 檔 (rake convert:toc)' do
+      command 'rake convert:toc'
+    end    
+  end
+
+  def step_convert_x2h4d
+    run_step '產生供下載用的 HTML 檔 (rake convert:x2h4d)' do
+      command "rake convert:x2h4d[#{@config[:publish]}]"
+    end    
+  end
+
   def step_create_all_works_list
     run_step '產生 全部佛典 卷列表' do
       puts '必須要在 import:work_info 之後執行'
@@ -48,6 +58,13 @@ module SectionConvert
       puts '要從 GitHub 更新 Authority-Databases (如果 Authority ID 有變動，Github 上的 Authority XML 也要請 Authority 管理人員更新)'
       command 'rake create:creators'
     end
+  end
+
+  def step_import_changelog
+    run_step '匯入 修訂紀錄' do
+      puts '必須要在 changelog 確認之後執行'
+      command "rake import:changelog"
+    end    
   end
 
   def step_t4d

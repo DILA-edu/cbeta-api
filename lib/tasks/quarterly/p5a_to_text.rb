@@ -6,6 +6,7 @@ require 'json'
 require 'nokogiri'
 require 'set'
 require_relative '../cbeta_p5a_share'
+require_relative '../cbeta-module'
 
 # Convert CBETA XML P5a to Text
 #
@@ -83,16 +84,18 @@ class P5aToText
         handle_vol(arg)
       end
     end
-    puts "完成"
   end
 
   private
 
   def convert_all
+    t1 = Time.now
+
     each_canon(@xml_root) do |c|
       handle_canon(c)
     end
-    puts "完成".green
+
+    puts "\n#{elapsed_time(t1)}"
   end
 
   def e_anchor(e)
@@ -404,4 +407,5 @@ class P5aToText
   end
 
   include CbetaP5aShare
+  include CBETAModule
 end

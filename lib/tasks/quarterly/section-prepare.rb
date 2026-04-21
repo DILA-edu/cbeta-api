@@ -6,19 +6,18 @@ module SectionPrepare
         step_copy_public
       end
 
-      run_step 'update_from_github (update-github.rb)' do
-        confirm "確認 git 路徑：#{@config[:git]}"
-        command "ruby update-github.rb #{@config[:git]}"
-      end
-
-      run_step 'check new canon (check-new-canon.rb)' do
-        command "ruby check-new-canon.rb #{@config[:git]}"
-      end
-
+      step_update_from_github
+      step_check_new_canon
       step_create_juanline
       step_import_juanline  # import:layers 要用到，所以提早做
       step_copy_help
     end
+  end
+
+  def step_check_new_canon
+    run_step 'check new canon (check-new-canon.rb)' do
+      command "ruby check-new-canon.rb #{@config[:git]}"
+    end    
   end
 
   def step_create_juanline
@@ -76,6 +75,13 @@ module SectionPrepare
   def step_import_juanline
     run_step '匯入 各卷起始行 (rake import:juanline)' do
       system 'bundle exec rake import:juanline'
+    end
+  end
+
+  def step_update_from_github
+    run_step 'update_from_github (update-github.rb)' do
+      confirm "確認 git 路徑：#{@config[:git]}"
+      command "ruby update-github.rb #{@config[:git]}"
     end
   end
 end

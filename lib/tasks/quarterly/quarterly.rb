@@ -120,5 +120,4 @@ class Quarterly
     abort if c == 'q'
     yield if c.empty?
   end
-
 end

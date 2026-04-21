@@ -220,7 +220,7 @@ class DiffToHTML
           font-family: "CBETASupplement", "Hanazono Mincho C Regular", serif;
         }
         body { 
-          font-family: "CBETASupplement", "Georgia", serif;
+          font-family: Helvetica, CBETASupplement;
         }
         del { 
           color: red;

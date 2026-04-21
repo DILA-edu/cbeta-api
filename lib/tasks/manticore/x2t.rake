@@ -16,7 +16,7 @@ namespace :manticore do
       
       # 為了要讓在 CBETA Online 看到什麼就可以搜得到
       # 所以缺字處理採用預設值，也就是優先使用通用字
-      x2t = P5aToText.new(src, dest, inline_notes:)
+      x2t = P5aToTextForManticore.new(src, dest, inline_notes:)
       x2t.convert(arg)
     end
 
@@ -31,7 +31,7 @@ require_relative '../cbeta_p5a_share'
 # Convert CBETA XML P5a to Text
 #
 # CBETA XML P5a 可由此取得: https://github.com/cbeta-git/xml-p5a
-class P5aToText
+class P5aToTextForManticore
   # 內容不輸出的元素
   PASS = %w(back graphic mulu rdg sic teiHeader)
   BLOCK_NODES = %w(byline cell docNumber figure head juan list p)
@@ -104,42 +104,6 @@ class P5aToText
   end
 
   private
-
-  # 跨行字詞移到下一行
-  def appify(text)
-    r = ''
-    i = 0
-    app = ''
-    text.each_line do |line|
-      line.chomp!
-      if line.match(/^(.*)║(.*)$/)
-        r << $1
-        t = $2
-        r << "(%02d)" % i
-        r << "║#{app}"
-        app = ''
-        i = 0
-        chars = t.chars
-        until chars.empty?
-          c = chars.pop
-          if c == "\t"
-            break
-          elsif ' 　：》」』、；，！？。'.include? c
-            chars << c
-            break
-          elsif '《「『'.include? c  # 這些標點移到下一行
-            app = c + app
-            break
-          else
-            app = c + app
-          end
-        end
-        r << chars.join.gsub(/\t/, '') + "\n"
-        i = app.size
-      end
-    end
-    r
-  end
 
   def convert_all
     each_canon(@xml_root) do |c|
