@@ -1,3 +1,5 @@
+require 'cbeta_p5a_share'
+
 require 'cgi'
 require 'colorize'
 require 'date'
@@ -5,8 +7,6 @@ require 'fileutils'
 require 'json'
 require 'nokogiri'
 require 'set'
-require_relative '../cbeta_p5a_share'
-require_relative '../cbeta-module'
 
 # Convert CBETA XML P5a to Text
 #
@@ -95,7 +95,7 @@ class P5aToText
       handle_canon(c)
     end
 
-    puts "\n#{elapsed_time(t1)}"
+    puts "\n花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
   end
 
   def e_anchor(e)
@@ -407,5 +407,4 @@ class P5aToText
   end
 
   include CbetaP5aShare
-  include CBETAModule
 end

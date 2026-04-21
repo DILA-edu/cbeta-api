@@ -1,3 +1,5 @@
+require 'cbeta_p5a_share'
+
 namespace :convert do  
   desc "XML 轉 目次 toc JSON 檔"
   task :toc, [:arg1] => :environment do |t, args|
@@ -5,8 +7,6 @@ namespace :convert do
     c.convert(args[:arg1])
   end
 end
-
-require_relative '../cbeta_p5a_share'
 
 class ConvertToc
   def initialize
@@ -16,11 +16,15 @@ class ConvertToc
   end
 
   def convert(arg)
+    t1 = Time.now
+
     if arg.nil?
       convert_all
     else
       convert_canon(arg)
     end
+
+    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
   end
   
   def convert_all

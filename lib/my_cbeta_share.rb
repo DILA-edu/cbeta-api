@@ -11,7 +11,7 @@ class MyCbetaShare
   def self.cbeta_juan_declare(args)
     args.with_defaults!(format: :text)
 
-    r = 
+    r =
       case args[:format]
       when :docx then +%(<p rend="license">)
       when :text then +"#%s\n" % ('-' * 70)
@@ -27,7 +27,7 @@ class MyCbetaShare
     # 處理 卷跨冊
     v = CBETA.work_juan_vol_range(args[:work], args[:juan])
     if v.nil?
-      v = args[:vol].sub(/^#{c}0*(.*)$/, '\1')    
+      v = args[:vol].sub(/^#{c}0*(.*)$/, '\1')
     else
       v = "#{v.first}-#{v.last}"
     end
@@ -44,8 +44,8 @@ class MyCbetaShare
       r << s
       r <<
         case args[:format]
-        when :docx then "<lb/>"
-        when :html then "<br>"
+        when :docx then '<lb/>'
+        when :html then '<br>'
         else ''
         end
       r << "\n"
@@ -62,7 +62,7 @@ class MyCbetaShare
       r << "#%s\n\n" % ('-' * 70)
     when :html
       r << "【其他事項】詳細說明請參閱【<a href='https://www.cbeta.org/copyright' target='_blank'>財團法人佛教電子佛典基金會資料庫版權宣告</a>】\n"
-      r << "</p></div><!-- end of cbeta-copyright -->\n"  
+      r << "</p></div><!-- end of cbeta-copyright -->\n"
     end
 
     r
@@ -74,14 +74,14 @@ class MyCbetaShare
     s = File.read(fn)
     JSON.parse(s)
   end
-  
+
   def self.get_cbeta_gaiji_skt
     folder = Rails.application.config.cbeta_gaiji
     fn = File.join(folder, 'cbeta_sanskrit.json')
     s = File.read(fn)
     JSON.parse(s)
   end
-  
+
   def self.get_work_categories
     r = {}
     folder = Rails.configuration.x.work_info
@@ -92,7 +92,7 @@ class MyCbetaShare
       end
     end
     r
-  end  
+  end
 
   def get_canon_name(id)
     @canons[id]['zh']

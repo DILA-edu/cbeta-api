@@ -18,6 +18,7 @@ class CreateCreatorsList
   end
   
   def create
+    t1 = Time.now
     read_contributors
 
     folder = Rails.configuration.cb.dl
@@ -36,6 +37,8 @@ class CreateCreatorsList
     fn1 = File.join(folder, 'scope-selector', 'creators-by-strokes-with-works.json')
     fn2 = File.join(folder, 'scope-selector', 'creators-by-strokes.json')
     output_by_strokes(fn1, fn2)
+    
+    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
   end
   
   private
@@ -214,6 +217,5 @@ class CreateCreatorsList
       title: long_title
     }
     @log.puts "stroke: #{stroke}, char: #{char}, creator_key: #{creator_key}, work_id: #{work_id}"
-  end  
-
+  end
 end

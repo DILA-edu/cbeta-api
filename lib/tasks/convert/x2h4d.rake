@@ -10,7 +10,6 @@ require 'chronic_duration'
 require_relative '../x2h_for_download'
 
 class ConvertX2hForDownload
-    
   def convert(publish, canon)
     t1 = Time.now
     xml_root = Rails.application.config.cbeta_xml
@@ -34,7 +33,6 @@ class ConvertX2hForDownload
     puts "move #{src} => #{dest}"
     FileUtils.mv src, dest
     
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
-  end
-  
+    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+  end  
 end

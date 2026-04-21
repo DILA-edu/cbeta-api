@@ -33,7 +33,6 @@ class ConvertDocusky
     puts "move #{src} => #{dest}"
     FileUtils.mv src, dest
     
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
+    puts "花費時間：" + ChronicDuration.output((Time.now - t1).round)
   end
-  
 end

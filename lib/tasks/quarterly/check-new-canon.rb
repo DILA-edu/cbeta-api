@@ -1,7 +1,8 @@
+require 'cbeta_p5a_share'
+
 require 'csv'
 require 'set'
 require 'yaml'
-require_relative '../cbeta_p5a_share'
 
 include CbetaP5aShare
 

@@ -1,11 +1,12 @@
+require 'cbeta_p5a_share'
+require 'my_cbeta_share'
+
 require 'cgi'
 require 'date'
 require 'fileutils'
 require 'json'
 require 'nokogiri'
 require 'set'
-require_relative 'share'
-require_relative 'cbeta_p5a_share'
 
 # Convert CBETA XML P5a to Text
 #

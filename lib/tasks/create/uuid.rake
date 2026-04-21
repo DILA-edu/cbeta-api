@@ -1,11 +1,11 @@
+require 'my_cbeta_share'
+
 namespace :create do
   desc "產生 UUID"
   task :uuid => :environment do
     CreateUuid.new.create
   end  
 end
-
-require_relative '../share'
 
 class CreateUuid
   def initialize

@@ -12,6 +12,7 @@ class ImportVars
   end
   
   def import
+    t1 = Time.now
     puts "清除舊資料"
     Variant.delete_all
     
@@ -24,6 +25,7 @@ class ImportVars
 
     puts "Variant records: #{number_with_delimiter(Variant.count)}"
     puts "total vars: #{number_with_delimiter(@total)}"
+    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
   end
   
   private

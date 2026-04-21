@@ -1,11 +1,11 @@
+require 'cbeta_p5a_share'
+
 namespace :check do
   desc "檢查 xml p5a 裡的缺字是否在 cbeta gem 之中都有缺字資訊"
   task :gaiji => :environment do
     CheckGaiji.new.check
   end
 end
-
-require_relative "../cbeta_p5a_share"
 
 class CheckGaiji
   def initialize

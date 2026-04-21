@@ -3,7 +3,7 @@ module SectionConvert
     run_section "Convert (section-convert.rb)" do
       step_import_changelog
       step_convert_toc
-      step_convert_x2h4d      
+      step_convert_x2h4d
       step_creators_list
       step_create_all_works_list
       step_create_scope_selector
@@ -69,6 +69,7 @@ module SectionConvert
 
   def step_t4d
     run_step '產生供下載用的 Text 檔' do
+      t1 = Time.now
       puts <<~MSG
         讀取 CBETA XML P5a, 每一卷都產生一個 Text 檔, 再壓縮為 zip 檔
         如果有圖檔，也會包在 zip 檔裡。
@@ -76,11 +77,13 @@ module SectionConvert
       MSG
       command "rake convert:x2t4d[#{@config[:publish]}]"
       command "rake convert:x2t4d2[#{@config[:publish]}]"
+      puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
     end
   end
 
   def step_zip_text
     run_step '全部 text 壓縮成一個 zip 檔' do
+      t1 = Time.now
       Dir.chdir(@config[:download]) do
         system "ln -sf text-for-asia-network cbeta-text"
         system "zip -r -X temp.zip cbeta-text"
@@ -89,7 +92,7 @@ module SectionConvert
         system "zip -r -X temp.zip cbeta-text-with-notes"
         system "mv temp.zip cbeta-text-with-notes.zip"
       end
+      puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
     end
   end
-
 end # end of module SectionConvert

@@ -1,10 +1,10 @@
+require 'cbeta_p5a_share'
+
 namespace :check do
   task :stat => :environment do
     CheckStat.new.check
   end
 end
-
-require_relative '../cbeta_p5a_share'
 
 class CheckStat
   def initialize

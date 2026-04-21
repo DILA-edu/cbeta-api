@@ -1,3 +1,5 @@
+require 'cbeta_p5a_share'
+
 namespace :import do  
   task :lines, [:arg1] => :environment do |t, args|
     importer = ImportLines.new
@@ -14,7 +16,6 @@ end
 #   * cbeta metadata gaijis
 
 require_relative '../html-node'
-require_relative '../cbeta_p5a_share'
 
 class ImportLines
   BLOCK_ELEMENTS = %w(byline cell head iterm juan lg p)

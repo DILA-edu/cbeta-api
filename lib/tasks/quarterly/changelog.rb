@@ -19,7 +19,7 @@ class Changelog
       return []
     end
 
-    r = []
+    r = Set.new
     File.foreach(fn) do |line|
       r << line.split.first
     end

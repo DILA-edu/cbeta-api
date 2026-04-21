@@ -20,6 +20,7 @@ class ImportChangelog
   end
 
   def import(ver)
+    ver ||= Rails.configuration.cb.r
     abort "ver 不能是空的" if ver.blank?
     @inserts = []
     

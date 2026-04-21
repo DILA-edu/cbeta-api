@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'cbeta_p5a_share'
+require 'my_cbeta_share'
+
 namespace :convert do
   desc "XML 轉 xml4docx 格式 Step 1"
     task :xml4docx1, [:publish, :canon, :vol] => :environment do |t, args|
@@ -11,9 +14,7 @@ end
 
 require_relative '../css_parser'
 require_relative '../cbeta-module'
-require_relative '../cbeta_p5a_share'
 require_relative '../html-node'
-require_relative '../share'
 
 # 將 CBETA XML 簡化為適合轉換成 docx 的 XML 格式 (xml4docx)
 class XMLForDocx1

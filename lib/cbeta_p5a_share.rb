@@ -8,17 +8,17 @@ module CbetaP5aShare
       a = Dir.children(File.join(xml_root, c))
       a.delete('.DS_Store')
       next if a.empty?
-      
+
       yield(c)
     end
   end
 
-  def ele_app(e, mode=nil)
-    if mode=='footnote' or not @params[:notes]
+  def ele_app(e, mode = nil)
+    if mode == 'footnote' or not @params[:notes]
       lem = e.at('lem')
       return traverse(lem, mode)
     end
-    
+
     r = ''
     if e['type'] == 'star'
       c = e['corresp'].delete_prefix('#')
@@ -40,6 +40,7 @@ module CbetaP5aShare
     e.xpath('note').each do |c|
       next unless c.key?('type')
       next unless c['type'].match(/^cf\d+$/)
+
       s = traverse(c, 'footnote')
       if @format == 'html' and s.match(/^T\d{2,3}n.{5}p[a-z\d]\d{3}[a-z]\d\d$/)
         s = "<span class='cbeta-linehead'>#{s}</span>"
@@ -55,6 +56,7 @@ module CbetaP5aShare
 
   def ele_milestone_juan
     return unless @params[:notes]
+
     @notes_mod[@juan] = {}
     @notes_add[@juan] = []
   end
@@ -62,18 +64,18 @@ module CbetaP5aShare
   def ele_note(e, mode)
     return ele_note_in_foot(e, mode) if mode == 'footnote'
     return '' if e['rend'] == 'hide'
-      
+
     n = e['n']
     if e.has_attribute?('type')
       t = e['type']
       case t
-      when 'authorial'  then return traverse(e, mode)
+      when 'authorial' then return traverse(e, mode)
       when 'equivalent' then return ''
-      when 'rest'       then return ''
-      when 'add'        then return ele_note_add(e, mode)
-      when 'orig'       then return ele_note_orig(e, mode)
-      when 'mod'        then return ele_note_mod(e, mode)
-      when 'star'       then return ele_note_star(e, mode)
+      when 'rest' then return ''
+      when 'add' then return ele_note_add(e, mode)
+      when 'orig' then return ele_note_orig(e, mode)
+      when 'mod' then return ele_note_mod(e, mode)
+      when 'star' then return ele_note_star(e, mode)
       else
         return '' if t.start_with?('cf')
       end
@@ -85,14 +87,14 @@ module CbetaP5aShare
 
     r = traverse(e, mode)
     return r unless e.has_attribute?('place')
-      
+
     c = case e['place']
-    when 'interlinear'       then 'inline-note interlinear-note'
-    when 'inline', 'inline2' then 'inline-note doube-line-note'
-    else
-      abort "未知的 note place 屬性：" + e['place']
-    end
-    
+        when 'interlinear' then 'inline-note interlinear-note'
+        when 'inline', 'inline2' then 'inline-note doube-line-note'
+        else
+          abort '未知的 note place 屬性：' + e['place']
+        end
+
     if @format == 'text'
       "(#{r})"
     else
@@ -133,6 +135,7 @@ module CbetaP5aShare
 
     lem = app.at_xpath('lem')
     return '' if lem.nil?
+
     ele_lem_cf(lem)
   end
 
@@ -166,25 +169,25 @@ module CbetaP5aShare
     # 如果 CBETA 沒有修訂，就跟底本的註一樣
     # 但是 CBETA 修訂後的編號，有時會加上 a, b
     # T01n0026, p. 506b07, 大正藏校勘 0506007, CBETA 拆為 0506007a, 0506007b
-    return '' if @mod_notes.include?(n) or @mod_notes.include?(n+'a')
+    return '' if @mod_notes.include?(n) or @mod_notes.include?(n + 'a')
 
     subtype = e['subtype']
     s = traverse(e, 'footnote')
     @notes_mod[@juan][n] = s
 
     label = case subtype
-    when 'biao' then " data-label='標#{n[-2..-1]}'"
-    when 'jie'  then " data-label='解#{n[-2..-1]}'"
-    when 'ke'   then " data-label='科#{n[-2..-1]}'"
-    else ''
-    end
+            when 'biao' then " data-label='標#{n[-2..-1]}'"
+            when 'jie' then " data-label='解#{n[-2..-1]}'"
+            when 'ke' then " data-label='科#{n[-2..-1]}'"
+            else ''
+            end
 
     if @format == 'text'
       label = n[-3..-1].sub(/^0+/, '') if label.empty?
       @block_notes << "[#{label}] #{s}"
       return "[#{label}]"
     end
-    
+
     "<a class='noteAnchor' href='#n#{n}'#{label}></a>"
   end
 
@@ -195,11 +198,11 @@ module CbetaP5aShare
 
     if @format == 'text'
       @block_notes << @notes_mod[@juan][n]
-      return "[＊]"
+      return '[＊]'
     end
 
     href = "n#{n}"
-    return "<a class='noteAnchor star' href='##{href}'></a>"
+    "<a class='noteAnchor star' href='##{href}'></a>"
   end
 
   def ele_note_in_foot(e, mode)
@@ -207,9 +210,9 @@ module CbetaP5aShare
     return '' unless e.key?('place')
 
     if %w(interlinear inline inline2).include? e['place']
-      return '(%s)' % traverse(e, mode)
+      '(%s)' % traverse(e, mode)
     else
-      return ''
+      ''
     end
   end
 
@@ -224,11 +227,12 @@ module CbetaP5aShare
 
   def get_source_desc(doc)
     e = doc.at_xpath("//idno[@type='CBETA']")
-    raise "找不到 idno" if e.nil?
+    raise '找不到 idno' if e.nil?
 
     e = doc.at_xpath("//sourceDesc/bibl/title[@level='s' and @lang='zh-Hant']")
-    e = doc.at_xpath("//sourceDesc/bibl") if e.nil?
-    raise "找不到來源說明" if e.nil?
+    e = doc.at_xpath('//sourceDesc/bibl') if e.nil?
+    raise '找不到來源說明' if e.nil?
+
     traverse(e)
   end
 

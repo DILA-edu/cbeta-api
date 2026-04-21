@@ -1,7 +1,8 @@
+require 'cbeta_p5a_share'
+
 require 'chronic_duration'
 require 'cbeta'
 require_relative 'cbeta_epub2'
-require_relative '../cbeta_p5a_share'
 
 class CbetaEbook
   def initialize(config)

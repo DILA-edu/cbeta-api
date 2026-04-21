@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'cbeta_p5a_share'
+require 'my_cbeta_share'
+
 require 'cgi'
 require 'date'
 require 'fileutils'
@@ -10,8 +13,6 @@ require 'cbeta'
 require_relative 'cbeta-module'
 require_relative 'html-node'
 require_relative 'x2h_share'
-require_relative 'cbeta_p5a_share'
-require_relative 'share'
 
 # Convert CBETA XML P5a to HTML for UI
 #

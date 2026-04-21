@@ -7,10 +7,12 @@ end
 
 class CreateCheckListJ
   def create
+    t1 = Time.now
     puts "read from model Work"
     works = Work.where('n like ?', "J%").order(:n)
     fn = File.join(Rails.configuration.cb.dl, 'check-list-J.csv')
     puts "write #{fn}"
+    
     CSV.open(fn, "wb") do |csv|
       csv << ["經號", "經名", "卷次"]
       works.each do |w|
@@ -20,5 +22,7 @@ class CreateCheckListJ
         end
       end
     end
+
+    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
   end
 end

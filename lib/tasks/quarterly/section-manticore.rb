@@ -67,10 +67,13 @@ module SectionManticore
         rake import:category
         rake import:time
       MSG
+      
+      t1 = Time.now
       command 'rake manticore:t2x'
       command 'rake manticore:notes'
       command 'rake manticore:titles'
       command 'rake manticore:chunks'
+      puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
     end
   end
 

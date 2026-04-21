@@ -7,6 +7,7 @@ end
 
 class CreateAllWorksList
   def create
+    t1 = Time.now
     puts "read model Work"
     r = []
     Work.order(:sort_order).each do |w|
@@ -27,5 +28,6 @@ class CreateAllWorksList
     fn = File.join(Rails.configuration.cb.dl, 'all-works.json')
     puts "write #{fn}"
     File.write(fn, JSON.pretty_generate(r))
+    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
   end
 end

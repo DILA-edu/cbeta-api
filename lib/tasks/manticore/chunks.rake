@@ -1,3 +1,5 @@
+require 'cbeta_p5a_share'
+
 namespace :manticore do  
   desc "轉出 xml for manticore search chunks"
   task :chunks => :environment do
@@ -7,7 +9,6 @@ end
 
 # 讀 CBETA XML，切塊，產生 xml 給 manticore 做 index
 
-require_relative '../cbeta_p5a_share'
 require_relative 'manticore-share'
 
 class ManticoreChunks

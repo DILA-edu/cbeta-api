@@ -1,3 +1,5 @@
+require 'cbeta_p5a_share'
+
 namespace :check do  
   desc "檢查 Authority"
   task :authority => :environment do
@@ -5,10 +7,7 @@ namespace :check do
   end
 end
 
-require_relative '../cbeta_p5a_share'
-
 class CheckAuthority
-
   def initialize
     @authority = AuthorityService.new
     @authority.read_catalog

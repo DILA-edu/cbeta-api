@@ -1,3 +1,6 @@
+require 'cbeta_p5a_share'
+require 'my_cbeta_share'
+
 require 'cgi'
 require 'date'
 require 'fileutils'
@@ -7,8 +10,6 @@ require 'set'
 require 'yaml'
 require 'zip'
 require_relative 'cbeta-module'
-require_relative 'share'
-require_relative 'cbeta_p5a_share'
 
 # Convert CBETA XML P5a to HTML
 #

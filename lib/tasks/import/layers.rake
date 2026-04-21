@@ -1,3 +1,5 @@
+require 'my_cbeta_share'
+
 namespace :import do  
   # 可以指定 某一部佛典
   # 例如： bundle exec rake 'import:layers[GA090n0089]'
@@ -6,8 +8,6 @@ namespace :import do
     importer.import args[:arg1]
   end
 end
-
-require_relative '../share'
 
 # Prerequisites:
 #   * GitHub: CBETA 缺字資料, 異體字資料
@@ -70,7 +70,7 @@ class ImportLayers
     
     @log.close
     puts @count
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
+    puts "花費時間：" + ChronicDuration.output((Time.now - t1).round)
   rescue CbetaError => e
     puts "Error code: #{e.code}"
     abort e.message
