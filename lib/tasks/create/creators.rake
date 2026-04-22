@@ -8,8 +8,6 @@ namespace :create do
   end
 end
 
-require "benchmark"
-
 class CreateCreatorsList
   def initialize
     read_person_authority
