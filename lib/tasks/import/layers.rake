@@ -70,7 +70,7 @@ class ImportLayers
     
     @log.close
     puts @count
-    puts "花費時間：" + ChronicDuration.output((Time.now - t1).round)
+    puts ElapsedTime.label(t1)
   rescue CbetaError => e
     puts "Error code: #{e.code}"
     abort e.message

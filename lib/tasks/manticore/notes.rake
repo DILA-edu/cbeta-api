@@ -4,7 +4,9 @@ require 'my_cbeta_share'
 namespace :manticore do  
   desc "將註解（校注、夾注）轉為 XML 供 Manticore 建 Index"
   task :notes, [:canon] => :environment do |t, args|
+    t1 = Time.now
     ManticoreNotes.new.convert(args[:canon])
+    puts ElapsedTime.label(t1)
   end
 end
 
@@ -35,7 +37,6 @@ class ManticoreNotes
   end
 
   def convert(target=nil)
-    t1 = Time.now
     @stat = Hash.new(0)
     @sphinx_doc_id = 0
 
@@ -67,7 +68,6 @@ class ManticoreNotes
       夾注數量：#{@stat[:inline]}
       註解總數：#{@stat.values.sum}
     MSG
-    msg << "花費時間：" + ChronicDuration.output(Time.now - t1)
     @log.puts msg
     puts msg
   end

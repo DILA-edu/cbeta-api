@@ -95,7 +95,7 @@ class P5aToText
       handle_canon(c)
     end
 
-    puts "\n花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+    puts "\n" + ElapsedTime.label(t1)
   end
 
   def e_anchor(e)

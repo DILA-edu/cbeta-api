@@ -7,7 +7,6 @@ namespace :convert do
   end
 end
 
-require 'chronic_duration'
 require_relative '../x2h_for_ui'
 
 class ConvertX2h    
@@ -48,7 +47,7 @@ class ConvertX2h
     $stderr.puts "move #{src} => #{dest}"
     FileUtils.mv src, dest
     
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
+    puts ElapsedTime.label(t1)
     puts "如果有更新到《佛寺志》，也要記得執行 rake import:layers"
   end
   

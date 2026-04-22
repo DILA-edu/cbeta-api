@@ -42,7 +42,7 @@ class ImportLines
     import_all
     
     puts "Line records: #{number_with_delimiter(Line.count)}"
-    $stderr.puts "花費時間：" + Time.diff(start_time, Time.now)[:diff]
+    $stderr.puts ElapsedTime.label(start_time)
   end
   
   private

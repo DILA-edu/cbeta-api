@@ -1,10 +1,14 @@
 namespace :create do
   desc "產生 含別名的 作譯者清單"
   task :creators => :environment do
+    t1 = Time.now
     c = CreateCreatorsList.new
     c.create
+    puts ElapsedTime.label(t1)
   end
 end
+
+require "benchmark"
 
 class CreateCreatorsList
   def initialize
@@ -18,9 +22,7 @@ class CreateCreatorsList
   end
   
   def create
-    t1 = Time.now
     read_contributors
-
     folder = Rails.configuration.cb.dl
     FileUtils.makedirs(folder)
 
@@ -37,8 +39,6 @@ class CreateCreatorsList
     fn1 = File.join(folder, 'scope-selector', 'creators-by-strokes-with-works.json')
     fn2 = File.join(folder, 'scope-selector', 'creators-by-strokes.json')
     output_by_strokes(fn1, fn2)
-    
-    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
   end
   
   private

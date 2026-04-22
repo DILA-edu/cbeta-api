@@ -77,7 +77,7 @@ module SectionConvert
       MSG
       command "rake convert:x2t4d[#{@config[:publish]}]"
       command "rake convert:x2t4d2[#{@config[:publish]}]"
-      puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+      puts ElapsedTime.label(t1)
     end
   end
 
@@ -92,7 +92,7 @@ module SectionConvert
         system "zip -r -X temp.zip cbeta-text-with-notes"
         system "mv temp.zip cbeta-text-with-notes.zip"
       end
-      puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+      puts ElapsedTime.label(t1)
     end
   end
 end # end of module SectionConvert

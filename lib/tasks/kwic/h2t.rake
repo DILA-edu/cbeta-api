@@ -37,7 +37,7 @@ class KwicHtml2Text
     puts "max offset: " + n2c(@max_offset)
 
     print "text-all 花費時間："
-    puts ChronicDuration.output(Time.now - t1)  
+    puts ElapsedTime.output(t1)
   end
   
 

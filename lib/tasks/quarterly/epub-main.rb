@@ -1,6 +1,5 @@
 require 'cbeta_p5a_share'
 
-require 'chronic_duration'
 require 'cbeta'
 require_relative 'cbeta_epub2'
 
@@ -50,7 +49,7 @@ class CbetaEbook
       convert_canon(arg)
     end
     print "產生 EPUB 花費時間："
-    puts ChronicDuration.output(Time.now - t1)  
+    puts ElapsedTime.output(t1)
   end
 
   private

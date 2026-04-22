@@ -28,6 +28,6 @@ class CreateAllWorksList
     fn = File.join(Rails.configuration.cb.dl, 'all-works.json')
     puts "write #{fn}"
     File.write(fn, JSON.pretty_generate(r))
-    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+    puts ElapsedTime.label(t1)
   end
 end

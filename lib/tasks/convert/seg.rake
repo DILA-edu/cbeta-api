@@ -6,7 +6,6 @@ namespace :convert do
   end
 end
 
-require 'chronic_duration'
 require 'tmpdir'
 require 'zip'
 
@@ -37,7 +36,7 @@ class ConvertSeg
         convert_file(f)
       end
     end
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
+    puts ElapsedTime.label(t1)
   end
 
   private

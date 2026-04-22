@@ -5,7 +5,6 @@ namespace :convert do
   end
 end
 
-require 'chronic_duration'
 require_relative '../x2t_for_download'
 
 class ConvertX2tForDownload
@@ -39,7 +38,7 @@ class ConvertX2tForDownload
     puts "move #{src} => #{dest}"
     FileUtils.mv src, dest
 
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
+    puts ElapsedTime.label(t1)
   end
   
 end

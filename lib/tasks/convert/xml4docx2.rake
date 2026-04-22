@@ -30,7 +30,7 @@ class XMLForDocx2
       do_file(it)
       @log.close if @log
     end
-    puts "\n花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
+    puts "\n" + ElapsedTime.label(time_start)
   end
 
   private

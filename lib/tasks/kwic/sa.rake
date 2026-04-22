@@ -1,7 +1,9 @@
 namespace :kwic do
   task :sa => :environment do
+    t1 = Time.now
     KwicSuffixArray.new.build('sa')
     KwicSuffixArray.new.build('sa-without-notes')
+    puts ElapsedTime.label(t1)
   end
 end
 
@@ -12,12 +14,8 @@ class KwicSuffixArray
   end
 
   def build(rel_path)
-    t1 = Time.now
     source = File.join(Rails.configuration.x.kwic.temp, rel_path)
     handle_folder(source)
-    
-    print "sa.rb 花費時間："
-    puts ChronicDuration.output(Time.now - t1)
   end
 
   def call_cpp(path)
@@ -37,7 +35,7 @@ class KwicSuffixArray
   
     spend_time = Time.now - t1
     if spend_time > 1
-      puts "花費時間：" + ChronicDuration.output(spend_time)
+      puts ElapsedTime.label(spend_time)
     end
   end
   

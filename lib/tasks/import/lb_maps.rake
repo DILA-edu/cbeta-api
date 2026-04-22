@@ -21,7 +21,7 @@ class ImportLbMaps
     import_all
     puts "LbMap records: #{number_with_delimiter(LbMap.count)}"
     
-    puts "花費時間：" + Time.diff(start_time, Time.now)[:diff]
+    puts ElapsedTime.label(start_time)
   end
   
   private

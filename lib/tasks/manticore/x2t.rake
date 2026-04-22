@@ -4,6 +4,6 @@ namespace :manticore do
     t1 = Time.now
     Manticore::ConvertXmlToText.call(inline_notes: true,  arg: args[:arg1])
     Manticore::ConvertXmlToText.call(inline_notes: false, arg: args[:arg1])
-    puts "花費時間：" + ChronicDuration.output((Time.now - t1).round)
+    puts ElapsedTime.label(t1)
   end
 end

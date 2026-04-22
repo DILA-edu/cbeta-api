@@ -12,10 +12,10 @@ class CreateScopeSelector
   end
 
   def create
-    t1 = Time.notw
+    t1 = Time.now
     create_scope_selector_by_category
     create_scope_selector_by_vol
-    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+    puts ElapsedTime.label(t1)
   end
 
   private

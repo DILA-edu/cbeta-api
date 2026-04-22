@@ -3,7 +3,9 @@ require 'cbeta_p5a_share'
 namespace :manticore do  
   desc "轉出 xml for manticore search chunks"
   task :chunks => :environment do
+    t1 = Time.now
     ManticoreChunks.new.convert
+    puts ElapsedTime.label(t1)
   end
 end
 
@@ -27,7 +29,6 @@ class ManticoreChunks
   end
 
   def convert
-    t1 = Time.now
     @count = 0
     folder = Rails.root.join('data', 'manticore-xml')
     FileUtils.mkpath(folder)
@@ -37,7 +38,6 @@ class ManticoreChunks
     convert_all  
     close_xml(@fo)
     msg = "\n總筆數： #{@count}"
-    msg << "花費時間：" + ChronicDuration.output(Time.now - t1)
     puts msg
     @log.puts msg
   end  

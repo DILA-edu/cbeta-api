@@ -24,7 +24,7 @@ class ConvertToc
       convert_canon(arg)
     end
 
-    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+    puts ElapsedTime.label(t1)
   end
   
   def convert_all

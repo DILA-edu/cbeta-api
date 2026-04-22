@@ -5,7 +5,6 @@ namespace :convert do
   end
 end
 
-require 'chronic_duration'
 require_relative '../x2t_for_download'
 
 # Convert XML to Text for Download (含校注)
@@ -39,7 +38,6 @@ class ConvertX2T4D2
     puts "move #{tmpdir} => #{dest}"
     FileUtils.mv tmpdir, dest
 
-    puts "花費時間：" + ChronicDuration.output(Time.now - t1)
-  end
-  
+    puts ElapsedTime.label(t1)
+  end  
 end

@@ -73,7 +73,7 @@ module SectionManticore
       command 'rake manticore:notes'
       command 'rake manticore:titles'
       command 'rake manticore:chunks'
-      puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+      puts ElapsedTime.label(t1)
     end
   end
 

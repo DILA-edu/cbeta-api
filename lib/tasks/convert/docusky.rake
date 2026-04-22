@@ -6,7 +6,6 @@ namespace :convert do
   end
 end
 
-require 'chronic_duration'
 require_relative '../x2x_for_docusky'
 
 class ConvertDocusky    
@@ -33,6 +32,6 @@ class ConvertDocusky
     puts "move #{src} => #{dest}"
     FileUtils.mv src, dest
     
-    puts "花費時間：" + ChronicDuration.output((Time.now - t1).round)
+    puts ElapsedTime.label(t1)
   end
 end

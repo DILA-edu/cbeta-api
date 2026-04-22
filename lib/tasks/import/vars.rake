@@ -25,7 +25,7 @@ class ImportVars
 
     puts "Variant records: #{number_with_delimiter(Variant.count)}"
     puts "total vars: #{number_with_delimiter(@total)}"
-    puts "花費時間: #{ChronicDuration.output((Time.now - t1).round)}"
+    puts ElapsedTime.label(t1)
   end
   
   private

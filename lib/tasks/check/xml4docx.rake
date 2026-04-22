@@ -72,7 +72,7 @@ class CheckXMLForDocx
     
     if @errors.empty?
       puts "\n未發現錯誤".green
-      puts "花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
+      puts ElapsedTime.label(time_start)
     else
       puts "\n-----\n發現錯誤".red
       puts "-----"

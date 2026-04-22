@@ -49,7 +49,7 @@ class XMLForDocx1
       @canon = args[:canon]
       convert_canon(args)
     end
-    puts "\n花費時間：" + ChronicDuration.output((Time.now - time_start).round(2))
+    puts "\n" + ElapsedTime.label(time_start)
   rescue
     puts "\n[#{__LINE__}] lb: #{@lb}"
     raise
