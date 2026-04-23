@@ -68,7 +68,7 @@ module SectionConvert
   end
 
   def step_t4d
-    run_step '產生供下載用的 Text 檔' do
+    run_step '產生供下載用的 Text 檔 (約 25 mins)' do
       t1 = Time.now
       puts <<~MSG
         讀取 CBETA XML P5a, 每一卷都產生一個 Text 檔, 再壓縮為 zip 檔
@@ -77,7 +77,7 @@ module SectionConvert
       MSG
       command "rake convert:x2t4d[#{@config[:publish]}]"
       command "rake convert:x2t4d2[#{@config[:publish]}]"
-      puts ElapsedTime.label(t1)
+      puts ElapsedTime.label(t1, prefix: "step t4d 花費時間: ")
     end
   end
 

@@ -1,16 +1,31 @@
 %h1 下載電子書
 - q = Rails.configuration.cb.r.downcase
+%ul
+  %li
+    = link_to "URL 說明", "#url"
+    %ul
+      %li= link_to "電子書格式", "#format"
+      %li= link_to "藏經代碼", "#canons"
+      %li= link_to "佛典編號", "#works"
+  %li= link_to "EPUB", "#epub"
+  %li
+    = link_to "PDF", "#pdf"
+    %ul
+      %li= link_to "下載的 PDF 裡有總目錄嗎？", "#pdf_catalog"
+      %li= link_to "PDF 檔名為什麼不是經名，而是編號呢？", "#pdf_filename"
+  %li= link_to "DOCX", "#docx"
+  %li= link_to "ODT", "#odt"
 
-%h2 URL 說明
+%h2#url URL 說明
 .ml-5
   %p URL: download/{電子書格式}/{藏經代碼}/{佛典編號}.{副檔名}
-  %h3 電子書格式
-  %p 可能值： epub, mobi, pdf, docx
-  %h3 藏經代碼
+  %h3#format 電子書格式
+  %p 可能值： epub, pdf, docx, odt
+  %h3#canons 藏經代碼
   %p 
     請參考： 
     =link_to nil, "https://www.cbeta.org/format/id.php"
-  %h3 佛典編號
+  %h3#works 佛典編號
   %p
     請參考：
     =link_to nil, "https://github.com/DILA-edu/cbeta-documentation/blob/master/xml/file-structure.md"
@@ -22,34 +37,17 @@
     全部下載：
     =link_to_url "/download/cbeta-epub.zip"
 
-%h2#mobi MOBI
-%ul
-  %li 單部佛典下載例： #{ link_to_url '/download/mobi/A/A1057.mobi' }
-  %li 
-    全部下載： 
-    =link_to_url "/download/cbeta-mobi.zip"
-
 %h2#pdf PDF
 %p 
   單部佛典下載例：
   =link_to_url '/download/pdf/A/A1057.pdf'
 %p 全部下載：
 %ul
-  - folder = Rails.root.join('data/download')
+  - folder = Rails.root.join('public/download')
   - Dir["#{folder}/cbeta-pdf-*.zip"].sort.each do |f|
     - b = File.basename(f)
     %li= link_to_url "/download/#{b}"
-
-%h2#docx DOCX
-%p DOCX 與其他格式的下載 URL 稍有不同。
-%p 
-  單卷佛典下載例：
-  =link_to_url '/download/docx/T/T02/T02n0099/T02n0099_001.docx'
-%p 
-  全部《大正藏》下載：
-  =link_to_url '/download/docx/T.zip'
-
-%h4 Q: 下載的 PDF 裡有總目錄嗎？
+%h4#pdf_catalog Q: 下載的 PDF 裡有總目錄嗎？
 %p
   如果您一次下載全部 pdf 的 zip 檔，解壓縮後裡面有個 
   = "filelist_#{Rails.configuration.cb.r}.txt"
@@ -63,7 +61,7 @@
     A1267 , 097-098 , 17 , 大唐開元釋教廣品歷章 , 唐 玄逸撰
     A1490 , 110 , 2 , 天聖釋教總錄 , 宋 惟淨等編修
 
-%h4 Q: PDF 檔名為什麼不是經名，而是編號呢？
+%h4#pdf_filename Q: PDF 檔名為什麼不是經名，而是編號呢？
 
 %p A: 早期我們都是用英文+數字，後來才嘗試改成經名。
 
@@ -72,3 +70,33 @@
 %p 因此還是恢復編號，才能讓最大多數人可以順利使用。
 
 %p 我們也同時提供了對照表，讓有需要的人可以進一步利用。
+
+%h2#docx DOCX
+%ul
+  %li 
+    單卷 佛典 下載
+    %ul
+      %li= link_to_url '/download/docx/T/T0099/T0099_001.docx'
+  %li 
+    單部 佛典 下載
+    %ul
+      %li= link_to_url '/download/docx/T/T0099.zip'
+  %li
+    全部 下載
+    %ul
+      %li= link_to_url '/download/cbeta-docx.zip'
+
+%h2#docx ODT
+%ul
+  %li 
+    單卷 佛典 下載
+    %ul
+      %li= link_to_url '/download/odt/T/T0099/T0099_001.odt'
+  %li 
+    單部 佛典 下載
+    %ul
+      %li= link_to_url '/download/odt/T/T0099.zip'
+  %li
+    全部 下載
+    %ul
+      %li= link_to_url '/download/cbeta-odt.zip'

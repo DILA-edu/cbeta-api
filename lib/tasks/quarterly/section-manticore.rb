@@ -46,10 +46,15 @@ module SectionManticore
     end
 
     run_step 'manticore index' do
+      t1 = Time.now
+      
       @indexes.each do |s|
         puts '-' * 10
         command "bundle exec rake manticore:build[#{s}]"
       end
+
+      print "step_manticore_index "
+      puts ElapsedTime.label(t1)
     end
 
     run_step 'manticore restart' do
@@ -69,10 +74,13 @@ module SectionManticore
       MSG
       
       t1 = Time.now
+
       command 'rake manticore:t2x'
       command 'rake manticore:notes'
       command 'rake manticore:titles'
       command 'rake manticore:chunks'
+
+      print "step_manticore_t2x "
       puts ElapsedTime.label(t1)
     end
   end
