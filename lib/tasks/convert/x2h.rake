@@ -12,6 +12,7 @@ require_relative '../x2h_for_ui'
 class ConvertX2h    
   def convert(publish, canon=nil)
     t1 = Time.now
+    publish ||= Date.today.strftime("%Y-%m")
 
     tmpdir = Rails.root.join('data', 'html-tmp')
     args = {

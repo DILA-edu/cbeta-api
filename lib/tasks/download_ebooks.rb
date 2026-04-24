@@ -1,3 +1,4 @@
+# https://archive.cbeta.org/download/ebooks.json
 class DownloadEbooks
   BASE = "https://archive.cbeta.org/download"
   

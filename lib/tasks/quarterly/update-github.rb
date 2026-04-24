@@ -1,5 +1,6 @@
 REPOS = {
   'CBR2X-figures' => 'git@github.com:cbeta-git/CBR2X-figures.git',
+  'cbwork-common-T2K' => 'git@github.com:cbeta-git/cbwork-common-T2K.git',
   'ebook-covers' => 'git@github.com:cbeta-org/ebook-covers.git',
   'gaiji-CB' => 'git@github.com:cbeta-org/gaiji-CB.git',
   'rj-gif' => 'git@github.com:cbeta-org/rj-gif.git',
@@ -33,6 +34,7 @@ $base = ARGV.first
 tag = ARGV[1]
 
 pull('Authority-Databases')
+pull('cbwork-common-T2K')
 pull('cbeta_gaiji')
 pull('cbeta-metadata')
 pull('CBR2X-figures') # https://github.com/cbeta-git/CBR2X-figures
