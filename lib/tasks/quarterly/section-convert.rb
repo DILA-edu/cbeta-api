@@ -33,16 +33,18 @@ module SectionConvert
   end
 
   def step_create_all_works_list
-    run_step '產生 全部佛典 卷列表' do
+    cmd = "rake create:all_works_list"
+    run_step "產生 全部佛典 卷列表 (#{cmd})" do
       puts '必須要在 import:work_info 之後執行'
-      command 'rake create:all_works_list'
+      command cmd
     end
   end
 
   def step_create_check_list_j
-    run_step '產生 嘉興藏檢查表' do
-      puts '必須要在 import:work_info 之後執行'
-      command 'rake create:check_list_j'
+    cmd = "rake create:check_list_j"
+    run_step "產生 嘉興藏檢查表 (#{cmd})" do
+      puts "必須要在 import:work_info 之後執行"
+      command cmd
     end
   end
 
@@ -61,10 +63,11 @@ module SectionConvert
   end
 
   def step_import_changelog
-    run_step '匯入 修訂紀錄' do
-      puts '必須要在 changelog 確認之後執行'
-      command "rake import:changelog"
-    end    
+    cmd = "rake import:changelog"
+    run_step "匯入 修訂紀錄 (#{cmd})" do
+      puts "必須要在 changelog 確認之後執行"
+      command cmd
+    end
   end
 
   def step_t4d

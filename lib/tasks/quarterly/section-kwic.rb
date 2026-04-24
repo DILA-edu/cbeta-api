@@ -8,7 +8,7 @@ module SectionKwic
         command "rake kwic:h2t" # simple html => txt, 全部做一次大約花 7 小時
         command "rake kwic:sa"       # suffix array, 約4小時
         
-        print("step_kwic_suffix_array ")
+        puts "step_kwic_suffix_array 完成時間: #{Time.now}"
         ElapsedTime.label(t1)
       end
 

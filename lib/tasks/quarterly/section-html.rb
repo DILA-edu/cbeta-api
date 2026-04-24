@@ -30,7 +30,6 @@ module SectionHTML
       command "zip -r #{dest} html"
     end
 
-    src = File.join(@config[:data], 'html.zip')
     confirm <<~MSG
       將 zip 檔提供給 heaven:
         #{dest}

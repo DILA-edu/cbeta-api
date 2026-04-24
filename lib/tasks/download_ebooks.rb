@@ -12,13 +12,12 @@ class DownloadEbooks
     @errors = ""
     Dir.chdir(Rails.configuration.cb.dl) do
       case type
-      when 'epub', 'mobi'
+      when 'epub'
         download_one_zip(type)
       when 'pdf'
         download_pdf
       else
         download_one_zip('epub')
-        download_one_zip('mobi')
         download_pdf
       end
     end

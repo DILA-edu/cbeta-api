@@ -94,9 +94,10 @@ module SectionManticore
   end
 
   def step_manticore_x2t
-    run_step '先把 XML P5a 轉為 text' do
+    cmd = "rake manticore:x2t"
+    run_step "先把 XML P5a 轉為 text (#{cmd})" do
       confirm "如果欄位有變更，要修改： /etc/#{@config[:manticore]}/manticore.conf"
-      command 'rake manticore:x2t'
+      command cmd
     end
   end
 end # end of module
