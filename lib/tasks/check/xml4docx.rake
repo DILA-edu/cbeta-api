@@ -1,6 +1,6 @@
 namespace :check do
   task :xml4docx do
-    dir = Rails.root.join('data', 'xml4docx2')
+    dir = Rails.root.join('data', 'xml4docx')
     CheckXMLForDocx.new.check(dir)
   end
 end
@@ -15,7 +15,7 @@ class CheckXMLForDocx
     @log = File.open(fn, 'w')
 
     rnc = Rails.root.join('data-static', 'schema', 'xml4docx.rnc')
-    rng = Rails.root.join('data', 'xml4docx2', 'xml4docx.rng')
+    rng = Rails.root.join('data', 'xml4docx', 'xml4docx.rng')
     cmd = "trang #{rnc} #{rng}"
     puts cmd
     system(cmd)
@@ -83,7 +83,7 @@ class CheckXMLForDocx
   private
 
   def check_as_text(fn, regex)    
-    xml_path = Rails.root.join('data', 'xml4docx2', fn)
+    xml_path = Rails.root.join('data', 'xml4docx', fn)
     unless File.exist?(xml_path)
       abort "檔案不存在: #{xml_path}"
     end

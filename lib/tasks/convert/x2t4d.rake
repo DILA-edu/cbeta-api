@@ -24,21 +24,12 @@ class ConvertX2tForDownload
     x2t = P5aToTextForDownload.new(args)
     x2t.convert(canon)
     
-    src = tmpdir
     dest = File.join(Rails.configuration.cb.dl, 'text')
-    FileUtils.mkdir_p(dest)
+    FileUtils.rmtree(dest)
     
-    # 備份舊資料
-    if Dir.exist? dest
-      bak = dest.to_s + '-' + Time.new.strftime("%Y-%m-%d-%H%M%S")
-      puts "move #{dest} => #{bak}"
-      FileUtils.mv dest, bak
-    end
-    
-    puts "move #{src} => #{dest}"
-    FileUtils.mv src, dest
+    puts "move #{tmpdir} => #{dest}"
+    FileUtils.mv tmpdir, dest
 
     puts ElapsedTime.label(t1)
   end
-  
 end

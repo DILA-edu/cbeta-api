@@ -3,7 +3,7 @@
 namespace :convert do
   task :xml4docx2, [:filter] => :environment do |t, args|
     dir1 = Rails.root.join('data', 'xml4docx1')
-    dir2 = Rails.root.join('data', 'xml4docx2')
+    dir2 = Rails.root.join('data', 'xml4docx')
     XMLForDocx2.new.convert(dir1, dir2, filter: args[:filter])
   end
 end

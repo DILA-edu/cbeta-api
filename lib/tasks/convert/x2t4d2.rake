@@ -26,14 +26,7 @@ class ConvertX2T4D2
     x2t.convert(canon)
     
     dest = File.join(Rails.configuration.cb.dl, 'text-with-notes')
-    FileUtils.mkdir_p(dest)
-    
-    # 備份舊資料
-    if Dir.exist? dest
-      bak = dest.to_s + '-' + Time.new.strftime("%Y-%m-%d-%H%M%S")
-      puts "move #{dest} => #{bak}"
-      FileUtils.mv dest, bak
-    end
+    FileUtils.rmtree(dest)
     
     puts "move #{tmpdir} => #{dest}"
     FileUtils.mv tmpdir, dest

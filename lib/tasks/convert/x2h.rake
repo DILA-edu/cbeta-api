@@ -38,18 +38,12 @@ class ConvertX2h
       dest = File.join(dest_root, canon)
       src = File.join(tmpdir, canon)
     end
-    
-    if Dir.exist? dest
-      bak = dest.to_s + '-' + Time.new.strftime("%Y-%m-%d-%H%M%S")
-      $stderr.puts "move #{dest} => #{bak}"
-      FileUtils.mv dest, bak
-    end
-    
+
     $stderr.puts "move #{src} => #{dest}"
+    FileUtils.rmtree(dest)
     FileUtils.mv src, dest
     
     puts ElapsedTime.label(t1)
     puts "如果有更新到《佛寺志》，也要記得執行 rake import:layers"
   end
-  
 end
