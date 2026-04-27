@@ -1,41 +1,8 @@
 %h1 Export
 %ul
-  %li= link_to '全部作譯者列表(含別名)', '#all_creators2'
   %li 
     Metadata for
     =link_to 'TextRef', 'https://textref.org/'
     %ul
       %li= link_to_url '/textref/meta.csv', 'MetaURL'
       %li= link_to_url '/textref/data.csv', 'DataURL'
-      
-%h2#all_creators2 全部作譯者列表(含別名)
-%p
-  URL: 
-  = link_to_url '/export/all_creators2'
-%p 回傳 JSON 例：
-%pre.ml-3
-  :preserve
-    {
-      "num_found": 2185,
-      "results": {
-        "A000001": {
-          "regular_name": "金總持",
-          "aliases_all": [
-            "金揔持",
-            "寶輪大師",
-            "明因妙善普濟法師"
-          ]
-        },
-        "A000002": {
-          "regular_name": "𧧌震",
-          "aliases_all": [
-            "仁山𧧌震",
-            "仁山大師",
-            "寂震",
-            "華頂震",
-            "仁叟"
-          ]
-        },
-        ...
-      }
-    }

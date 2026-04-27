@@ -12,8 +12,41 @@
   %li= link_to "校注", controller: 'static_pages', action: 'download_footnotes'
   %li= link_to_path '嘉興藏檢查表', 'download/check-list-J.csv'
   %li= link_to_path '全部作譯者列表', 'download/all-creators.json'
+  %li= link_to '全部作譯者列表 (含別名)', '#all_creators2'
   %li= link_to '範圍選擇清單', { controller: 'static_pages', action: 'scope_selector' }
   %li= link_to '全部佛典 卷列表', '#all_works'
+
+%h2#all_creators2 全部作譯者列表(含別名)
+%p
+  URL: 
+  = link_to_url '/download/all-creators-with-alias.json'
+%p 回傳 JSON 例：
+%pre.ml-3
+  :preserve
+    {
+      "num_found": 2185,
+      "results": {
+        "A000001": {
+          "regular_name": "金總持",
+          "aliases_all": [
+            "金揔持",
+            "寶輪大師",
+            "明因妙善普濟法師"
+          ]
+        },
+        "A000002": {
+          "regular_name": "𧧌震",
+          "aliases_all": [
+            "仁山𧧌震",
+            "仁山大師",
+            "寂震",
+            "華頂震",
+            "仁叟"
+          ]
+        },
+        ...
+      }
+    }
 
 %h2#all_works 全部佛典 卷列表
 %p
