@@ -119,6 +119,7 @@ class ImportCatalog
     
     data = { parent: parent }
     data[:n] = serial_no(parent, index)
+    data[:sort] = index
     data[:node_type] = type
     
     if args.key? :catalog_entry
@@ -277,11 +278,11 @@ div { margin-left: 1em; }
   end
   
   def traverse(e, parent)
-    i = 0
+    i = 1
     e.children.each do |c|
       next unless c.name == 'node'
       data = { parent: parent }
-      n = c['id'] || serial_no(parent, i+1)
+      n = c['id'] || serial_no(parent, i)
       get_category(parent, c['name']) if c.key? 'name'
       children_count = traverse(c, n)
       @log.puts "<p>children_count: #{children_count}</p>\n"
@@ -308,7 +309,7 @@ div { margin-left: 1em; }
         add_node(data)        
         i += 1
       elsif c.key? 'work'
-        i += add_works(parent, c, i+1)
+        i += add_works(parent, c, i)
       else
         $stderr.puts "待處理"
         $stderr.puts c
