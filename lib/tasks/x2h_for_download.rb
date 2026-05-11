@@ -129,12 +129,16 @@ class P5aToHTMLForDownload
   end
 
   def e_caesura(e, mode)
-    if e.key?('style')
-      e['style'].match(/text-indent:(\d+)em/) do
-        return '　' * ($1.to_i)
-      end
+    if @lg_type == 'regular'
+      return e.to_s
     else
-      return '　　'
+      if e.key?('style')
+        e['style'].match(/text-indent:(\d+)em/) do
+          return '　' * ($1.to_i)
+        end
+      else
+        return '　　'
+      end
     end
     ''
   end
@@ -637,7 +641,7 @@ class P5aToHTMLForDownload
     @canon = c
     @canon_name = @my_cbeta_share.get_canon_name(c)
 
-    $stderr.puts "x2h_for_download #{c}"
+    $stderr.puts "\nx2h_for_download #{c}"
     folder = File.join(@xml_root, @canon)
     Dir.entries(folder).sort.each { |vol|
       next if ['.', '..', '.DS_Store'].include? vol
@@ -754,7 +758,7 @@ class P5aToHTMLForDownload
   end
   
   def handle_vol(vol)
-    $stderr.puts "x2h_for_download #{vol}"
+    $stderr.puts "\nx2h_for_download #{vol}"
     canon = CBETA.get_canon_from_vol(vol)
     @orig = @cbeta.get_canon_abbr(canon)
     abort "未處理底本" if @orig.nil?
