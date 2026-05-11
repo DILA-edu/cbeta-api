@@ -15,22 +15,31 @@ class ApplicationController < ActionController::Base
   EMPTY_RESULT = { num_found: 0, results: [] }
   
   def filter_cn?(n: nil, id: nil)
-    r = Rails.configuration.cn_filter.join('|')
-    r = "(#{r})"
-
     unless n.nil?
-      return true if n.match?(/^Vol-#{r}$/)
+      r = Rails.configuration.cn_filter.join('|')
+      return true if n.match?(/^Vol-(#{r})$/)
     end
 
     unless id.nil?
-      return true if id.match?(/^#{r}/)
+      # YP 不屏蔽
+      if id =~ /^(#{CBETA::CANON})[\d ].*$/
+        canon = $1
+        return true if Rails.configuration.cn_filter.include?(canon)
+      else
+        return false
+      end
     end
   end
 
   def referer_cn?
-    return false if request.referer.nil?
-    host = request.referer.split('//').last.split('/').first
-    host.end_with?('.cn')
+    return true if Rails.env.development? and params[:cn] == "1"
+    host = 
+      if request.referer
+        request.referer.split('//').last.split('/').first
+      else
+        request.host
+      end
+    return true if host.end_with?('.cn')
   end
 
   def get_canon_from_work_id(id)
