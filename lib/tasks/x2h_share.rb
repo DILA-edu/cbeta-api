@@ -89,13 +89,14 @@ module P5aToHtmlShare
         r += "<div class='lg-cell'>#{v}</div>\n"
       end
     end
+    
     r
   end
 
   def e_lg(e, mode)
     return traverse(e, mode) if mode=='footnote'
 
-    @lg_type = e['type']
+    @lg_type = e['type'] || "regular"
 
     r = ''
 

@@ -199,7 +199,6 @@ class P5aToHTMLForDownload
   
   def e_g(e, mode)
     gid = e['ref'][1..-1]
-    @log.puts "#{__LINE__} e_g, gid: #{gid}"
     g = gid.start_with?('CB') ? @gaijis[gid] : @gaijis_skt[gid]
     abort "Line:#{__LINE__} 無缺字資料:#{gid}" if g.nil?
     
@@ -242,7 +241,6 @@ class P5aToHTMLForDownload
         nor = g['norm_uni_char'].clone
         if default.empty?
           default = nor.clone 
-          @log.puts "#{__LINE__} default: #{default}"
         end
       end
 
@@ -252,7 +250,6 @@ class P5aToHTMLForDownload
         nor << c
         if default.empty?
           default = c 
-          @log.puts "#{__LINE__} default: #{default}"
         end
       end
     end
@@ -322,6 +319,7 @@ class P5aToHTMLForDownload
     return '' if e['ed'] != @canon
 
     @lb = e['n']
+    @log.puts "sutra_no: #{@sutra_no}, lb: #{@lb}"
     
     r = ''
     r = "\n" if @pre.last
