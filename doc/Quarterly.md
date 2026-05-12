@@ -97,6 +97,12 @@ https://rubygems.org/gems/cbeta
   * cbdata-sub.conf
   * cbdata-cn.conf (cbetaonline.cn 會呼叫 api.cbetaonline.cn)
 
+更改項目：
+  * app path, 例： 
+    * `Define stable_path /var/www/cbapi1`
+  * ruby 版本, 例：
+    * `PassengerRuby /home/ray/.asdf/installs/ruby/4.0.1/bin/ruby`
+
 檢視 config/database.yml
 * production analytics database 應為 cb_analytics
 * cn 也要指向正確的 database
