@@ -5,7 +5,7 @@
   <style>
     @font-face {
       font-family: cbetarc;
-      src: url('cbetarc.woff2') format("woff2");
+      src: url('https://cbeta-org.github.io/cbeta-fonts/CBETASupplement.woff2') format("woff2");
     }
     body {
       font-family: Arial, 微軟正黑體, "Songti TC", "Times New Roman", cbetarc;
@@ -46,6 +46,19 @@
       padding-right: 1em;
     }
     div.lg-row { display: table-row; }
+
+    /* 手機版 偈頌 縮小間距 */
+    @media screen and (max-width: 768px) {
+      div.lg {
+        margin-left: 0 !important;
+      }
+      div.lg-cell { 
+        display: table-cell; 
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+      }
+    }
+
     div.div-orig { font-weight: bold;}
     li > p { text-indent: 0; }
     p { text-indent: 2em; }
