@@ -158,7 +158,17 @@ class JuansController < ApplicationController
     @vol = CBETA.normalize_vol(canon + @vol)
     
     line = Line.find_by_vol_params(opts)
-    work = @work_id || line.work
+
+    if @work_id
+      if @work_id != line.work
+        return {
+          error: { code: 400, message: "Word ID #{@work_id} 與 #{line.linehead} 不符" }
+        }
+      end
+      work = @work_id
+    else
+      work = line.work
+    end
     
     { 
       vol: @vol, 
