@@ -7,15 +7,6 @@
 如果有增修「藏經 ID」，要參考 <https://github.com/cbeta-git/xml-p5a/blob/master/canons.json>，
 編輯 `/canons.yml`。
 
-### catalog
-
-* 更新 部類目錄： catalog/cbeta.xml
-  * 參考 CBReader 使用的部類目錄:
-    * <https://github.com/cbeta-git/CBReader2X/tree/master/Bookcase/CBETA>
-      * bulei_nav.xhtml
-* 更新 原書目錄： catalog/orig.xml
-  * 參考 CBReader 的 advance_nav.xhtml
-
 ### textref
 
 執行 textref/convert.rb
