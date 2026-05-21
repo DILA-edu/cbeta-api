@@ -41,7 +41,7 @@ class XMLForDocx1
     time_start = Time.now
     if args[:canon].nil?
       each_canon(@xml_root) do |c|
-        next unless %w[T].include?(c)
+        next unless %w[T X].include?(c)
         @canon = c
         convert_canon(args)
       end

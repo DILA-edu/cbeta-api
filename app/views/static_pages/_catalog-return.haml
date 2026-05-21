@@ -13,7 +13,7 @@
       %p 如果 node_type 為 'alt' 表示 CBETA 未收錄此經全文，而是對應到其他藏經的全文。
       %p
         例如：
-        =link_to_path nil, '/catalog_entry', q: 'Vol-J.001'
+        =link_to_path nil, '/catalog_entry', q: 'orig-J.001'
         回傳：
         %pre
           :preserve
@@ -21,7 +21,7 @@
               "num_found": 42,
               "results": [
                 {
-                  "n": "Vol-J.001.001",
+                  "n": "orig-J.001.001",
                   "label": "JA001(=T0293) 大方廣佛華嚴經 (40卷)",
                   "node_type": "alt"
                 },...

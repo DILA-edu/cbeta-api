@@ -1,8 +1,8 @@
 namespace :import do
   desc "匯入部類目錄"
-  task :catalog, [:arg1] => :environment do |t, args|
+  task catalog: :environment do
     importer = ImportCatalog.new
-    importer.import args[:arg1]
+    importer.import
   end
 end
 
@@ -18,26 +18,87 @@ require 'cgi'
 require 'pp'
 
 class ImportCatalog
+  WORK_REGEX = /#{CBETA::CANON}(?:#{CBETA::WORK_PART})/ # T0001
+  VOL_REGEX = /#{CBETA::CANON}\d{2,3}/ # T01
+
+  # T0220_576
+  # T0310_017..018
+  JUAN_REGEX = /\A
+    (
+      #{CBETA::CANON}
+      (?:
+        #{CBETA::WORK_PART}
+      )
+    )
+    _(\d{3})
+    (?:\.\.(\d{3}))?
+  \z/x
+
   def initialize
-    @folder = File.join(Rails.application.config.cbeta_data, 'catalog')
+    @catalog_base = "https://raw.githubusercontent.com/heavenchou/cbwork-bin/refs/heads/master/cbreader2X"
     @xml_root = Rails.application.config.cbeta_xml
   end
   
-  def import(arg)
+  def import
     open_log
-    
-    if arg.nil?
-      import_all
-    else
-      CatalogEntry.where("parent like ?", "#{arg}%").delete_all
-      Dir["#{@folder}/*-#{arg.downcase}.xml"].each do |fn|
-        import_file(fn)
-      end
-    end
+    $stderr.puts "destroy old catalog entries"
+    CatalogEntry.delete_all
+    import_file("bulei/bulei.txt", "CBETA", label: "部類目錄")
+    import_file("nav/advance_nav.txt", "orig", label: "原書目錄")
   end
   
   private
   
+  def import_file(rel_path, id, label:)
+    @log.puts "<p>import_file: #{rel_path}</p>\n"
+    $stderr.puts "import #{rel_path}"
+    add_node(parent: "root", n: id, label:)
+
+    @catalog = id
+    @canon = nil
+    @category = nil
+    
+    catalog_url = File.join(@catalog_base, rel_path)
+    xml = read_catalog_text(catalog_url)
+    @doc = Nokogiri::XML(xml)
+    @level = 0
+    traverse(@doc.root, id)
+  end
+  
+  def read_catalog_text(catalog_url)
+    puts "Get #{catalog_url}"
+    response = Faraday.get(catalog_url)
+
+    if response.status == 200
+      bn = File.basename(catalog_url, ".*")
+      dest = Rails.root.join("log", "catalog-#{bn}.txt")
+      puts "write #{dest}"
+      File.write(dest, response.body)
+    else
+      raise "Failed to fetch file: #{catalog_url}, response status: #{response.status}"
+    end    
+
+    xml = "<root>"
+    @level = 0
+    response.body.lines.each do |line|
+      line.rstrip!
+      line =~ /\A(\t*)(.*)\z/
+      level = $1.size + 1
+      text = $2.gsub(/&(CB|M)\d+;/, '●')
+      xml << close_node(level)
+      prefix = "  " * level
+      xml << %(\n#{prefix}<node text="#{text}">)
+      @level += 1
+    end
+    xml << close_node(1)
+    xml << "</root>"
+
+    dest = Rails.root.join("log", "catalog-#{bn}.xml")
+    puts "write #{dest}"
+    File.write(dest, xml)
+    xml
+  end
+
   def add_alt(parent, alt, start)
     @log.puts "<p>add_alt, parent: #{parent}, alt: #{alt}, start: #{start}</p>"
     @log.puts "<blockquote>"
@@ -174,38 +235,8 @@ class ImportCatalog
     end
 
     @log.puts "</div>\n"
-  end
-  
-  def add_works(parent, node, start=1)
-    work = node['work']
-    
-    @log.puts "<h1>add_works: #{work}</h1>\n"
-    @log.puts "<div>"
-    data = { parent: parent }
-    i = 0
-    tokens = work.split(',')
-    tokens.each do |token|
-      if token.include? '..'
-        w1, w2 = token.split('..')
-        Work.where(n: w1..w2).order(:n).each do |w|
-          add_work(parent, start+i, w.n, work_object: w)
-          i += 1
-        end
-      else
-        add_work(parent, start+i, token, catalog_entry: node)
-        i += 1
-      end
-    end
-    @log.puts "</div>\n"
-    i
-  end
-    
-  def get_category(parent, name)
-    if parent=='CBETA'
-      @category = name.split[1]
-    end
-  end
-  
+  end  
+
   def get_title_from_xml_file(fn)
     if fn.match(/^(#{CBETA::CANON})(\d{2,3})n.*$/)
       canon = $1
@@ -226,35 +257,14 @@ class ImportCatalog
     s = node.text
     s.split.last
   end
-  
-  def import_all
-    $stderr.puts "destroy old catalog entries"
-    CatalogEntry.delete_all
-    Dir["#{@folder}/*.xml"].sort.each do |fn|
-      import_file(fn)
-    end
-  end
-  
-  def import_file(fn)
-    unless File.exist? fn
-      $stderr.puts "找不到 #{fn}"
-      return
-    end
-    @log.puts "<p>import_file: #{fn}</p>\n"
-    $stderr.puts "import #{fn}"
 
-    basename = File.basename(fn, '.*')
-    @canon = nil
-    if basename.match(/^cat-([a-z]+)$/)
-      @canon = $1.upcase
+  def close_node(level)
+    r = ""
+    while level <= @level
+      r << "</node>"
+      @level -= 1
     end
-
-    @category = nil
-    
-    @doc = File.open(fn) { |f| Nokogiri::XML(f) }
-    @doc.do_xinclude
-    @doc.remove_namespaces!
-    traverse(@doc.root, @doc.root['id'])
+    r
   end
   
   def open_log
@@ -272,49 +282,127 @@ div { margin-left: 1em; }
 <body>)
   end
   
-  def serial_no(parent, i)
-    # 要根據編號排序，所以要補零
-    "#{parent}.%03d" % i
+  def serial_no(parent, i, node: nil)
+    canon = nil
+
+    # 原書目錄 各藏 第一層 要用 Vol-T, Vol-X 等等
+    if node && @catalog == "orig" && @level < 4
+      if node["text"] =~ /^(#{CBETA::CANON}) /
+        canon = $1
+      end
+    end
+
+    if canon
+      "orig-#{canon}"
+    else
+      "#{parent}.%03d" % i  # 要根據編號排序，所以要補零
+    end
   end
   
   def traverse(e, parent)
+    @level += 1
     i = 1
     e.children.each do |c|
       next unless c.name == 'node'
-      data = { parent: parent }
-      n = c['id'] || serial_no(parent, i)
-      get_category(parent, c['name']) if c.key? 'name'
+      n = serial_no(parent, i, node: c)
+      @category = c["text"].split[1] if parent=='CBETA'
+
       children_count = traverse(c, n)
       @log.puts "<p>children_count: #{children_count}</p>\n"
-      if c.key? 'name'
-        @log.puts "<p>name: #{c['name']}</p>\n"
-        if c.key? 'catalog'
-          data[:n] = c['catalog']
-          data[:label] = c['name']
-          data[:sort] = i
-          add_node(data)
-          i += 1
-          next
-        elsif c.key? 'html'
-          data[:node_type] = 'html'
-          data[:file] = c['html']
-        elsif c.key? 'work'
-          add_works(n, c, 1)
-        else
-          next if children_count == 0
-        end
-        data[:n] = n
-        data[:label] = c['name']
-        data[:sort] = i
-        add_node(data)        
+
+      if c.children.size > 0
+        add_node(parent:, n:, label: c["text"], sort: i)
         i += 1
-      elsif c.key? 'work'
-        i += add_works(parent, c, i)
+        next
+      end
+
+      case c["text"]
+      when /^#{CBETA::CANON}$/
+        i += handle_canon_node(parent, node: c, start: i)
+      when / /
+        s1, _, s2 = c["text"].partition(/ /)
+        if s1.end_with?(".htm")
+          add_node(parent:, node_type: "html", file: s1, n:, label: s2, sort: i)
+        elsif s1 =~ JUAN_REGEX
+          handle_juan_node(parent, node: c, start: i)
+        end
+        i += 1
       else
-        $stderr.puts "待處理"
-        $stderr.puts c
+        i += handle_list(parent, node: c, start: i)
+      end
+    end
+    @level -= 1
+    i
+  end
+
+  def handle_canon_node(parent, node:, start:)
+    canon = node["text"]
+    i = 0
+    Work.where(canon:).order(:n).each do |w|
+      add_work(parent, start+i, w.n, work_object: w)
+      i += 1
+    end
+    i
+  end
+
+  def handle_juan_node(parent, node:, start:)
+    s1, _, label = node["text"].partition(/ /)
+
+    if s1 =~ JUAN_REGEX
+      work = $1
+      j1 = $2.to_i
+    else
+      raise "格式不符: #{node.to_xml}"
+    end
+
+    add_node(
+      parent:,
+      n: serial_no(parent, start),
+      label:,
+      work:,
+      juan_start: j1,
+      sort: start
+    )
+  end
+
+  def handle_list(parent, node:, start:)
+    list = node["text"].split(",")
+    i = 0
+    list.each do |item|
+      p1 = item
+      p1, p2 = item.split("..") if item.include?("..") # 範圍
+      if p1 =~ WORK_REGEX # T0262..T0277
+        i += work_range(parent, p1, p2, start: start+i)
+      elsif p1 =~ VOL_REGEX
+        i += vol_range(parent, p1, p2, start: start+i)
+      else
+        raise "未知格式: #{p1}"
       end
     end
     i
-  end  
+  end
+
+  def vol_range(parent, v1, v2, start:)
+    i = 0
+    v2 = v1 if v2.nil?
+
+    Work.where(vol: v1..v2).order(:n).each do |w|
+      add_work(parent, start+i, w.n, work_object: w)
+      i += 1
+    end
+
+    i
+  end
+
+  def work_range(parent, w1, w2, start:)
+    i = 0
+    w2 = w1 if w2.nil?
+
+    Work.where(n: w1..w2).order(:n).each do |w|
+      add_work(parent, start+i, w.n, work_object: w)
+      i += 1
+    end
+
+    i
+  end
 end
