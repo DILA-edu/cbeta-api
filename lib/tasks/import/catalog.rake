@@ -345,6 +345,8 @@ div { margin-left: 1em; }
     i
   end
 
+  # T0220_576 T0220 (卷576) 大般若波羅蜜多經第8會那伽室利分
+  # T0310_017..018 T0310 (卷17-18) 大寶積經無量壽如來會第五
   def handle_juan_node(parent, node:, start:)
     s1, _, label = node["text"].partition(/ /)
 

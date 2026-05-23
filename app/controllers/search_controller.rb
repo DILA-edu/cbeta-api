@@ -464,29 +464,6 @@ class SearchController < ApplicationController
   ensure
     @mysql_client.close
   end
-
-  def downsize_vars_array(vars)
-    log_debug "downsize_vars_array, vars: #{vars}"
-    return vars if vars.size < 5
-    vars2 = vars.clone
-    r = []
-    until vars2.empty?
-      p = 1
-      a = []
-      while (p * vars2.first.size) < 60 # 組合數小於 100
-        a << vars2.shift
-        p *= a.last.size
-        break if vars2.empty?
-      end
-      if vars2.size == 1
-        a << vars2.shift
-      end
-      log_debug "downsize_vars_array, a: #{a}"
-      r << expand_vars_array(a, true)
-    end
-    log_debug "downsize_vars_array, r: #{r}"
-    r
-  end
   
   def empty_result
     {
@@ -548,44 +525,24 @@ class SearchController < ApplicationController
   
   def exist_in_cbeta(q)
     log_debug "exist_in_cbeta, q: #{q}"
-    if params[:scope] == 'title'
-      index = Rails.configuration.x.se.index_titles
-      r = exist_in_index(q, index)
-      log_debug "exist_in_cbeta: #{r}"
-      r
-    end
 
     r = exist_in_index(q, Rails.configuration.x.se.index_text)
-    return true if r
+      || exist_in_index(q, Rails.configuration.x.se.index_notes)
+    return r if r
+    
+    # title 最長 57, query 太長就不必搜了
+    if q.size < 58
+      r = exist_in_index(q, Rails.configuration.x.se.index_titles)
+    end
 
-    r = exist_in_index(q, Rails.configuration.x.se.index_notes)
-    return true if r
-
-    r = exist_in_index(q, Rails.configuration.x.se.index_titles)
-    return true if r
+    r
   end
   
   def exist_in_index(q, index)
+    log_debug "exist_in_index, index: #{index}, q: #{q}"
     select = %(SELECT id FROM #{index} WHERE MATCH('"#{q}"') LIMIT 0, 1)
     result = manticore_query(select)
     result.size > 0
-  end
-
-  def expand_vars_array(vars, chk_exist)
-    log_debug "expand_vars_array, vars: #{vars}, chk_exist: #{chk_exist}"
-    t1 = Time.now
-    #vars = downsize_vars_array(vars) if vars.size > 4
-    args = vars[1..-1]
-    a = vars[0].product(*args) # 各種可能組合
-    a.map! { |x| x.join } # 合成字串
-    return a unless chk_exist
-    
-    r = []
-    a.each do |s|
-      r << s if exist_in_cbeta(s)
-    end
-    log_debug "#{__LINE__} expand_vars_array result: %s" % r.inspect
-    r
   end
   
   # 參考 http://sphinxsearch.com/blog/2013/06/21/faceted-search-with-sphinx/
@@ -667,21 +624,6 @@ class SearchController < ApplicationController
     end
   end
   
-  def get_query_variants(q)
-    log_debug "get_query_variants, q: #{q}"
-    remove_puncs_from_query
-    vars = []
-    q.each_char do |c|
-      v = Variant.find_by(k: c)
-      vars << Set[c]
-      unless v.nil?
-        vars[-1].merge(v.vars.split(','))
-      end
-      vars[-1] = vars[-1].to_a
-    end
-    vars = downsize_vars_array(vars)
-    return expand_vars_array(vars, true)
-  end
   
   def get_hit_count(where)
     select = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
@@ -1500,19 +1442,12 @@ class SearchController < ApplicationController
   #   * 大比丘三千威儀
   #   * 阿耨多羅三藐三菩提
   def variants_sub
-    log_debug "scope: #{params[:scope]}"
+    log_debug "variants_sub, scope: #{params[:scope]}"
     t1 = Time.now
     remove_puncs_from_query
     log_debug "variants_sub, q: #{@q}"
     q_ary = get_query_variants(@q)
-    
-    if @q.include? '菩薩'
-      q = @q.gsub('菩薩', '𦬇')
-      a = get_query_variants(q)
-      a.delete_if {|s| s.include? '菩薩' } # 去除重複
-      q_ary += a
-    end
-    
+        
     results = []
     q_ary.each do |q|
       next if q == @q
@@ -1533,6 +1468,49 @@ class SearchController < ApplicationController
     }
   end
 
+  def get_query_variants(q)
+    log_debug "get_query_variants, q: #{q}"
+    remove_puncs_from_query
+    vars = []
+    q = q.gsub('菩薩', '𦬇')
+    q.each_char do |c|
+      if c == '𦬇'
+        vars << ['𦬇', '菩薩']
+      else
+        v = Variant.find_by(k: c)
+        vars << Set[c]
+        unless v.nil?
+          vars[-1].merge(v.vars.split(','))
+        end
+        vars[-1] = vars[-1].to_a
+      end
+    end
+    return expand_vars_array(vars, true)
+  end
+
+  # @param vars [Array] example: [["又", "叹"], ["道", "噵", "衜", "衟", "𨕥"], ["未"]]
+  def expand_vars_array(vars, chk_exist)
+    log_debug "expand_vars_array, vars: #{vars}, chk_exist: #{chk_exist}"
+    return [] if vars.blank?
+
+    r = [""]
+    until vars.empty?
+      a1 = r
+      a2 = vars.shift
+      r = []
+      a1.each do |s1|
+        a2.each do |s2|
+          s = s1 + s2
+          r << s if exist_in_cbeta(s)
+        end
+      end
+      break if r.empty? # 已經搜不到了，就不必再往下找了
+    end
+
+    log_debug "#{__LINE__} expand_vars_array result: %s" % r.inspect
+    r
+  end
+
   def error_handler(e)
     logger.fatal $!
     logger.fatal "environment: #{Rails.env}"
@@ -1551,7 +1529,6 @@ class SearchController < ApplicationController
 
     r = empty_result
     r[:select] = @select unless @select.nil?
-    #r[:code] = e.code
     r[:error] = e.message
     r[:backtrace] = e.backtrace
     my_render r

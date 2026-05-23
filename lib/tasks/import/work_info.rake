@@ -345,68 +345,68 @@ class ImportWorkInfo
     Person.insert_all(@people, unique_by: :id2)
   end
 
-  def update_contributors(w, v)
-    return unless v.key?(:contributors)
+  def update_contributors(work, info)
+    return unless info.key?(:contributors)
 
-    v[:contributors].each do |x|
+    info[:contributors].each do |x|
       @people << { id2: x[:id], name: x[:name] } unless x[:id].blank?
     end
 
-    a = v[:contributors].map { |x| x[:name] }
-    w.creators = a.join(',')
+    a = info[:contributors].map { |x| x[:name] }
+    work.creators = a.join(',')
 
-    a = v[:contributors].select { |x| x.key?(:id) }
+    a = info[:contributors].select { |x| x.key?(:id) }
     a.map! { |x| "#{x[:name]}(#{x[:id]})" }
-    w.creators_with_id = a.join(';')
+    work.creators_with_id = a.join(';')
   end
 
-  def update_dynasty(w, v, title)
+  def update_dynasty(work, info, title)
     work_h = {
-      key: w.n,
+      key: work.n,
       title: title
     }
 
-    if v.key?(:dynasty)
-      d = v[:dynasty]
-      w.time_dynasty = d      
+    if info.key?(:dynasty)
+      d = info[:dynasty]
+      work.time_dynasty = d
       @works_dynasty[d] << work_h
     else
-      w.time_dynasty = 'unknown'
+      work.time_dynasty = 'unknown'
       @works_no_dynasty << work_h
     end
   end
 
-  def update_work_from_authority(w, v)
-    w.canon     = @canon
-    w.vol       = v[:vol]
-    w.title     = v[:title]
-    w.juan      = v[:juans]
-    w.byline    = v[:byline]
-    w.work_type = v[:type] || 'textbody' # 預設：正文
+  def update_work_from_authority(work, info)
+    work.canon     = @canon
+    work.vol       = info[:vol]
+    work.title     = info[:title]
+    work.juan      = info[:juans]
+    work.byline    = info[:byline]
+    work.work_type = info[:type] || 'textbody' # 預設：正文
 
-    title = v[:title]
-    long_title = +"#{w.n} #{title}"
+    title = info[:title]
+    long_title = +"#{work.n} #{title}"
     unless %w(N Y ZS ZW).include? @canon
-      long_title << " (#{v[:juans]}卷)"
+      long_title << " (#{info[:juans]}卷)"
     end
-    long_title << "【#{v[:byline]}】" if v.key?(:byline)
+    long_title << "【#{info[:byline]}】" if info.key?(:byline)
 
-    update_contributors(w, v)
-    update_dynasty(w, v, long_title)
-    update_category(w, v)
-    update_places(w, v[:places])
+    update_contributors(work, info)
+    update_dynasty(work, info, long_title)
+    update_category(work, info)
+    update_places(work, info[:places])
 
-    w.time_from = v[:time_from] if v.key?(:time_from)
-    w.time_to   = v[:time_to]   if v.key?(:time_to)
+    work.time_from = info[:time_from] if info.key?(:time_from)
+    work.time_to   = info[:time_to]   if info.key?(:time_to)
 
-    if v.key?(:alt)
+    if info.key?(:alt)
       # 例 B0130 因為 CBETA 也有選錄部份為 B23n0130, 所以不把 B0130 當做 alt
-      unless v[:alt].include? '選錄'        
-        w.alt = v[:alt]
+      unless info[:alt].include? '選錄'
+        work.alt = info[:alt]
       end
     end
 
-    w.save
+    work.save
   end
   
   def import_vol_from_xml(path)
@@ -564,13 +564,13 @@ class ImportWorkInfo
     JSON.parse(s)
   end
 
-  def update_category(w, v)
-    w.orig_category = v[:orig_category] if v.key?(:orig_category)
+  def update_category(work, info)
+    work.orig_category = info[:orig_category] if info.key?(:orig_category)
 
-    return unless v.key?(:category)
+    return unless info.key?(:category)
 
-    names = v[:category]
-    w.category = names
+    names = info[:category]
+    work.category = names
 
     # 一部佛典可能屬於多個部類，例如 T2732
     a = names.split(',').map do |name|
@@ -580,7 +580,7 @@ class ImportWorkInfo
         abort "#{__LINE__} category name 不存在： #{name}"
       end
     end
-    w.category_ids = a.join(',')
+    work.category_ids = a.join(',')
   end
 
   def update_work(data)
@@ -599,17 +599,17 @@ class ImportWorkInfo
     end
   end
 
-  def update_places(w, places)
+  def update_places(work, places)
     return if places.nil?
 
-    w.places.delete_all
+    work.places.delete_all
     places.each do |h|
       place = Place.find_or_create_by(auth_id: h[:id]) do |p|
         p.name = h[:name]
         p.longitude = h[:long]
         p.latitude = h[:lat]
       end
-      w.places << place
+      work.places << place
     end
   end
 

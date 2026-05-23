@@ -16,6 +16,7 @@ class ManticoreTitles
     fn = Rails.root.join(folder, 'titles.xml')
     @fo = open_xml(fn)
     
+    max = 0
     Work.find_each do |w|
       # 如果有 替代佛典
       unless w.alt.blank?
@@ -26,6 +27,7 @@ class ManticoreTitles
       end
 
       @id += 1
+      max = [max, w.title.size].max
       data = {
         work: w.n,
         content: w.title,
@@ -34,6 +36,7 @@ class ManticoreTitles
       }
       write_xml(@fo, data)
     end
+    puts "title 最長: #{max}"
     
     close_xml(@fo)
     puts "output file: #{fn}"
