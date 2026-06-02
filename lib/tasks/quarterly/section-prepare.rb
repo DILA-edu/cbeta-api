@@ -37,8 +37,8 @@ module SectionPrepare
     end
 
     run_step '從上一季複製 download 資料夾' do
-      src  = File.join(@config[:old_data],  'download')
-      dest = File.join(@config[:data],      'download')
+      src  = File.join(@config[:old],  'public', 'download')
+      dest = File.join(@config[:download])
       confirm "請確認將由 #{src} 複製資料到 #{dest}"
       copy_folder(src, dest, ['cbeta-text'])
 
