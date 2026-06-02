@@ -56,7 +56,7 @@ tables 建好後，再把 analytics 加回 database.yml。
 
 ## manticore
 
-/etc/manticoresearch/manticore.conf
+/etc/manticore3/manticore.conf
 
 ## Runbook
 
