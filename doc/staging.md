@@ -12,8 +12,6 @@
 
 * /var/www/cbapi?/shared/config
   * database.yml
-  * cb.yml
-    * ver 版本號
 
 cap staging deploy
 
