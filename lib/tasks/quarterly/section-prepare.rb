@@ -52,10 +52,9 @@ module SectionPrepare
     return nil unless Dir.exist?(@config[:old])
 
     run_step '從上一季複製 public 資料夾' do
-      %w[help].each do |fn|
+      %w[download help].each do |fn|
         src = File.join(@config[:old], "public", fn)
         dest = File.join(@config[:public], fn)
-
         copy_folder(src, dest)
       end
     end
