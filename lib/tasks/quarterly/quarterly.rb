@@ -39,7 +39,7 @@ class Quarterly
     end
   end
 
-  def copy_folder(src, dest, exclude=[], verbose: true)
+  def copy_folder(src, dest, exclude: [], verbose: true)
     return if File.symlink?(src)
 
     puts "[#{Time.now}] copy folder #{src} => #{dest}" if verbose
