@@ -1,6 +1,6 @@
 namespace :manticore do
   task :build, [:name] => :environment do |t, args|
-    manticore = Rails.configuration.cb.manticore
+    manticore = Rails.configuration.cb.manticore.container
     v = Rails.configuration.cb.v
     s = args[:name]
 
