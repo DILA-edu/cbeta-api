@@ -16,7 +16,7 @@ module SectionPrepare
 
   def step_check_new_canon
     run_step 'check new canon (check-new-canon.rb)' do
-      command "ruby check-new-canon.rb #{@config[:git]}"
+      command 'rake check:new_canon'
     end    
   end
 
