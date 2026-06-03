@@ -15,7 +15,7 @@ class Quarterly
     puts "Environment: #{Rails.env}"
     confirm("請先確認 Rails 環境 是否正確")
 
-    @data_dir = '/var/lib/manticore'
+    @data_dir = Rails.configuration.cb.manticore[:data]
     @work_dir = Rails.root.join('lib', 'tasks', 'quarterly')
     @section_count = 0
     @step_count = 0
