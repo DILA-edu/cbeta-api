@@ -12,6 +12,7 @@ module SectionManticore
 
   def step_manticore_create_folder
     run_step 'manticore 建資料夾' do
+      puts "data_dir: #{@data_dir}"
       Dir.chdir(@data_dir) do
         @indexes.each do |s|
           dir = "r#{@config[:v]}-#{s}"
