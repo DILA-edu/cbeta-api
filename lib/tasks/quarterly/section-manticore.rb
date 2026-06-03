@@ -25,7 +25,7 @@ module SectionManticore
   end
 
   def step_manticore_config
-    conf_dir = Rails.configuration.cb.manticore.conf
+    conf_dir = Rails.configuration.cb.manticore[:conf]
     run_step 'manticore configuration' do
       command "bundle exec rake manticore:conf"
       puts "可以手動清除 #{conf_dir} 資料夾下的舊資料"
@@ -59,9 +59,9 @@ module SectionManticore
     end
 
     run_step 'manticore restart' do
-      container_name = Rails.configuration.cb.manticore.container
+      container_name = Rails.configuration.cb.manticore[:container]
       command "docker compose -f /home/ray/#{container_name}/compose.yaml restart"
-      data_dir = Rails.configuration.cb.manticore.data
+      data_dir = Rails.configuration.cb.manticore[:data]
       puts "可手動清除舊版 Index: #{data_dir}"
       puts "注意 #{data_dir}/data 不能刪。"
     end
@@ -98,7 +98,7 @@ module SectionManticore
   def step_manticore_x2t
     cmd = "rake manticore:x2t"
     run_step "先把 XML P5a 轉為 text (#{cmd})" do
-      conf_dir = Rails.configuration.cb.manticore.conf
+      conf_dir = Rails.configuration.cb.manticore[:conf]
       confirm "如果欄位有變更，要修改： #{conf_dir}/manticore.conf"
       command cmd
     end
