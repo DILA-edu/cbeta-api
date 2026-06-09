@@ -5,3 +5,18 @@
     :escaped
       <span class="lb" id="T01n0001_p0001a01">T01n0001_p0001a01</span>
 %p 行號本來不應該在本文中出現，這裡將行號包在 span 裡，方便 UI 控制是否顯示行號。
+
+%h3 卍續藏
+%p 如果是《卍新纂大日本續藏經》(canon id: X)，會多一個 data-lr 屬性供 UI 在引用複製時使用，例如 X1022 第1卷： #{link_to_url '/juans?work=X1022&juan=1'}
+.code
+  %pre
+    :escaped
+      <span class="lb" id="X58n1022_p0620a09" data-lr="R095.0996.a06">X58n1022_p0620a09</span>
+
+%p UI 可以根據此資訊，在引用複製時提供，例如：
+%blockquote.cite
+  《五相智識頌》卷1：「大華嚴藏，流出無邊萬行」(CBETA 2026.R1, X58, no. 1022, p. 620a4-6 // R95, p. 996a1-3 // Z 1:95, p. 498c1-3)
+
+%p= "參考〈#{link_to "卍續藏三種版本及其對照說明", "https://cbeta.org/xuzang-three-editions"}〉"
+
+%p 需要注意的是，不是每一個 X 行號 都會有對應的 R 行號。

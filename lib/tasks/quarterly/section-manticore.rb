@@ -29,9 +29,8 @@ module SectionManticore
     run_step 'manticore configuration' do
       command "bundle exec rake manticore:conf"
       puts "可以手動清除 #{conf_dir} 資料夾下的舊資料"
+      confirm "檢查 #{conf_dir}/manticore.conf"
     end
-
-    confirm "檢查 #{conf_dir}/manticore.conf"
   end
 
   def step_manticore_index    

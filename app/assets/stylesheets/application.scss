@@ -17,6 +17,12 @@
 a {
   text-decoration: none;
 }
+
+blockquote.cite {
+  padding: 16px;
+  background-color: #f6f8fa;
+}
+
 div.chapter {
   margin-left: 2rem;
 }
@@ -31,6 +37,34 @@ div.code pre {
 
 div.section {
   margin-left: 2rem;
+}
+
+/* H1：頁面標題，最大、最重 */
+h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  border-bottom: 3px solid #0d6efd;
+  padding-bottom: .4rem;
+  margin-bottom: 1.5rem;
+}
+
+/* H2：大章節，明顯縮小，加底線輔助 */
+h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: .3rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* H3：小節，不加底線，改用顏色降調 */
+h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #495057;
+  margin-top: 1.75rem;
+  margin-bottom: .75rem;
 }
 
 table.table {
