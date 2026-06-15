@@ -88,7 +88,9 @@ module Mcp
     def handle_tools_list
       {
         tools: @tools.map do |t|
-          { name: t.name, description: t.description, inputSchema: t.input_schema }
+          entry = { name: t.name, description: t.description, inputSchema: t.input_schema }
+          entry[:outputSchema] = t.output_schema if t.respond_to?(:output_schema)
+          entry
         end
       }
     end

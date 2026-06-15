@@ -19,7 +19,7 @@ class McpTest < ActionDispatch::IntegrationTest
     assert_equal 'cbeta-mcp', body.dig('result', 'serverInfo', 'name')
   end
 
-  test 'tools/list exposes find_passages with an input schema' do
+  test 'tools/list exposes find_passages with input and output schemas' do
     post_mcp(jsonrpc: '2.0', id: 2, method: 'tools/list')
 
     assert_response :success
@@ -27,8 +27,10 @@ class McpTest < ActionDispatch::IntegrationTest
     names = tools.map { |t| t['name'] }
     assert_includes names, 'find_passages'
 
-    schema = tools.find { |t| t['name'] == 'find_passages' }['inputSchema']
-    assert_includes schema['required'], 'q'
+    tool = tools.find { |t| t['name'] == 'find_passages' }
+    assert_includes tool['inputSchema']['required'], 'q'
+    assert_equal 'object', tool.dig('outputSchema', 'type')
+    assert tool.dig('outputSchema', 'properties', 'results'), 'outputSchema missing results'
   end
 
   test 'tools/call dispatches in-process and returns a well-formed result' do

@@ -102,6 +102,68 @@ module Mcp
       }
     end
 
+    # JSON Schema describing the +structuredContent+ returned by +call+, i.e. the
+    # +data+ hash from the tool envelope. Mirrors the openapi.json response schema.
+    def output_schema
+      {
+        type: 'object',
+        properties: {
+          query_string:     { type: 'string' },
+          num_found:        { type: 'integer' },
+          total_term_hits:  { type: 'integer' },
+          cache_key:        { type: 'string' },
+          results: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id:                { type: 'integer' },
+                term_hits:         { type: 'integer' },
+                canon:             { type: 'string' },
+                category:          { type: 'string' },
+                file:              { type: 'string' },
+                work:              { type: 'string' },
+                juan:              { type: 'integer' },
+                title:             { type: 'string' },
+                byline:            { type: 'string' },
+                creators:          { type: 'string' },
+                creators_with_id:  { type: 'string' },
+                time_dynasty:      { type: 'string' },
+                time_from:         { type: 'integer' },
+                time_to:           { type: 'integer' },
+                juan_list:         { type: 'string' },
+                kwics: {
+                  type: 'object',
+                  properties: {
+                    num_found:  { type: 'integer' },
+                    returned:   { type: 'integer' },
+                    truncated:  { type: 'boolean' },
+                    results: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          vol:                        { type: 'string' },
+                          offset_in_text_with_punc:   { type: 'integer' },
+                          lb:                         { type: 'string' },
+                          kwic:                       { type: 'string' },
+                          linehead:                   { type: 'string' }
+                        },
+                        additionalProperties: true
+                      }
+                    }
+                  },
+                  additionalProperties: true
+                }
+              },
+              additionalProperties: true
+            }
+          }
+        },
+        additionalProperties: true
+      }
+    end
+
     def call(arguments)
       build_result(parse_json(dispatch(arguments)))
     rescue StandardError => e
