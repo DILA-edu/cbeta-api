@@ -31,6 +31,19 @@ class McpTest < ActionDispatch::IntegrationTest
     assert_includes schema['required'], 'q'
   end
 
+  test 'tools/call dispatches in-process and returns a well-formed result' do
+    # Does not assert isError, since that depends on whether the search backend
+    # (Manticore) is reachable in the running environment. Asserts the envelope
+    # shape only.
+    post_mcp(jsonrpc: '2.0', id: 7, method: 'tools/call',
+             params: { name: 'find_passages', arguments: { q: '佛', rows: 1 } })
+
+    assert_response :success
+    result = JSON.parse(response.body).fetch('result')
+    assert_kind_of Array, result['content']
+    assert_includes [true, false], result['isError']
+  end
+
   test 'notification gets a 202 with no body' do
     post_mcp(jsonrpc: '2.0', method: 'notifications/initialized')
 

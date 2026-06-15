@@ -21,33 +21,28 @@ POST /mcp
 
 ## 架構
 
-MCP server 是一層薄的 client:收到 `tools/call` 後,把 arguments 原封不動轉成 JSON body
-`POST` 給上游的 `/v1/tools/find_passages`,再把回傳的 tool envelope 重新包成 MCP tool result。
+MCP server 收到 `tools/call` 後,**不走網路**,而是用 Rails 內建的 controller dispatch
+機制(`Controller.action(:name).call(env)`,即 router 本身使用的進入點)直接 in-process
+呼叫 `V1::ToolsController#find_passages`,完整重用既有的搜尋機制(`init` → `all_in_one`
+→ KWIC / facet)與 normalized tool envelope,再把回傳的 envelope 重新包成 MCP tool result。
 
 ```
 MCP client ──POST /mcp──▶ McpController ──▶ Mcp::Server ──▶ Mcp::FindPassagesTool
                                                                    │
-                                                  Faraday POST /v1/tools/find_passages
+                                       V1::ToolsController.action(:find_passages).call(env)
                                                                    ▼
-                                                            CBETA search 引擎
+                                                 SearchController#all_in_one (CBETA search 引擎)
 ```
+
+因為是同一個 process 內直接 dispatch,所以不需要另外啟動 server、不需要網路連線、
+也沒有任何 base URL / 後端位址要設定。
 
 相關檔案:
 
 * `app/controllers/mcp_controller.rb` — transport 層(JSON-RPC over HTTP)
 * `app/services/mcp/server.rb` — JSON-RPC 2.0 訊息分派(`initialize` / `tools/list` / `tools/call` / `ping`)
-* `app/services/mcp/find_passages_tool.rb` — `find_passages` 工具,呼叫上游 HTTP endpoint
+* `app/services/mcp/find_passages_tool.rb` — `find_passages` 工具,in-process 呼叫 `V1::ToolsController`
 * `app/services/mcp/error.rb` — JSON-RPC 錯誤
-
-## 設定
-
-上游 CBETA API 的 base URL 由環境變數設定:
-
-| 環境變數 | 預設值 | 說明 |
-|----------|--------|------|
-| `CBETA_API_BASE_URL` | `http://localhost:3000` | MCP server 呼叫 `/v1/tools/find_passages` 的 base URL |
-
-部署在同一台機器時,維持預設(呼叫自己的 `localhost`)即可。
 
 ## 提供的工具
 
@@ -57,8 +52,8 @@ CBETA 佛典全文檢索。參數與 `/v1/tools/find_passages` 完全一致(inpu
 `public/openapi.json` 的 requestBody),必填參數為 `q`。回傳:
 
 * `content`:文字摘要 + 完整結果的 JSON(供只讀 text 的 client)
-* `structuredContent`:完整搜尋結果(對應上游回傳的 `data`)
-* `isError`:上游回報錯誤或連線失敗時為 `true`
+* `structuredContent`:完整搜尋結果(對應 envelope 的 `data`)
+* `isError`:搜尋回報錯誤(如後端搜尋引擎不可用)時為 `true`
 
 ## 連線範例
 

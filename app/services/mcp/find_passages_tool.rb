@@ -1,21 +1,20 @@
 # frozen_string_literal: true
 
-require 'faraday'
+require 'rack/mock'
 require 'json'
 
 module Mcp
-  # MCP tool wrapping the +POST /v1/tools/find_passages+ HTTP endpoint.
+  # MCP tool wrapping the +POST /v1/tools/find_passages+ tool surface.
   #
-  # The tool is a thin client: it forwards the given arguments as the JSON body
-  # to the upstream CBETA API (base URL configurable via the CBETA_API_BASE_URL
-  # environment variable) and re-packages the normalized tool envelope into an
-  # MCP tool result (text content + structuredContent).
+  # Instead of making a network round-trip, it dispatches the request in-process
+  # straight to V1::ToolsController through Rails' own controller entry point
+  # (the same mechanism the router uses), reusing the full search machinery
+  # (init -> all_in_one -> KWIC/facet) and the normalized tool envelope. The
+  # controller's response body (the envelope) is then re-packaged as an MCP tool
+  # result (text content + structuredContent).
   class FindPassagesTool
     NAME = 'find_passages'
     PATH = '/v1/tools/find_passages'
-    DEFAULT_BASE_URL = 'http://localhost:3000'
-    DEFAULT_TIMEOUT = 60
-    DEFAULT_OPEN_TIMEOUT = 10
 
     def name
       NAME
@@ -104,28 +103,36 @@ module Mcp
     end
 
     def call(arguments)
-      response = connection.post(PATH) do |req|
-        req.headers['Content-Type'] = 'application/json'
-        req.headers['Accept'] = 'application/json'
-        req.body = JSON.generate(arguments)
-      end
-
-      build_result(parse_json(response.body))
-    rescue Faraday::Error => e
-      tool_error("無法連線 CBETA API (#{base_url}): #{e.message}")
+      build_result(parse_json(dispatch(arguments)))
+    rescue StandardError => e
+      Rails.logger.error("[MCP] find_passages dispatch failed: #{e.class}: #{e.message}")
+      tool_error("find_passages 執行失敗: #{e.message}")
     end
 
     private
 
-    def connection
-      @connection ||= Faraday.new(url: base_url) do |f|
-        f.options.timeout = DEFAULT_TIMEOUT
-        f.options.open_timeout = DEFAULT_OPEN_TIMEOUT
-      end
+    # Dispatch in-process to V1::ToolsController and return the raw response body
+    # (the tool envelope JSON string).
+    def dispatch(arguments)
+      env = Rack::MockRequest.env_for(
+        PATH,
+        method: 'POST',
+        input: JSON.generate(arguments),
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_ACCEPT' => 'application/json',
+        'HTTP_USER_AGENT' => 'cbeta-mcp'
+      )
+
+      _status, _headers, body = V1::ToolsController.action(:find_passages).call(env)
+      read_body(body)
     end
 
-    def base_url
-      ENV.fetch('CBETA_API_BASE_URL', DEFAULT_BASE_URL)
+    def read_body(body)
+      buffer = +''
+      body.each { |chunk| buffer << chunk }
+      buffer
+    ensure
+      body.close if body.respond_to?(:close)
     end
 
     def parse_json(body)
@@ -135,7 +142,7 @@ module Mcp
     end
 
     def build_result(payload)
-      return tool_error('CBETA API 回傳非預期的內容 (無法解析為 JSON)') if payload.nil?
+      return tool_error('find_passages 回傳非預期的內容 (無法解析為 JSON)') if payload.nil?
 
       if payload['ok']
         data = payload['data'] || {}
@@ -148,7 +155,7 @@ module Mcp
           isError: false
         }
       else
-        message = payload['message'] || 'CBETA API 回報錯誤'
+        message = payload['message'] || 'find_passages 回報錯誤'
         tool_error(message, structured: payload)
       end
     end
