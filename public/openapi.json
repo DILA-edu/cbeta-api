@@ -1,0 +1,213 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CBETA Tools",
+    "version": "0.1.0",
+    "description": "CBETA tool service exposing thin HTTP adapter and MCP surfaces."
+  },
+  "servers": [
+    {
+      "url": "https://cbdata.dila.edu.tw/stable",
+      "description": "Stable API"
+    }
+    {
+      "url": "https://cbdata.dila.edu.tw/dev",
+      "description": "Development API"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Service health check",
+        "responses": {
+          "200": {"description": "Health status"}
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "getOpenApi",
+        "summary": "OpenAPI contract document",
+        "responses": {
+          "200": {"description": "OpenAPI document"}
+        }
+      }
+    },
+    "/v1/tools/find_passages": {
+      "post": {
+        "operationId": "find_passages",
+        "summary": "Full-text passage search across CBETA",
+        "description": "Search the CBETA canon full text using the official extended query grammar (AND = space-separated quoted terms, OR = |, NOT = !, NEAR = NEAR/n). Returns matching passages with surrounding context.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["q"],
+                "additionalProperties": false,
+                "properties": {
+                  "q": {
+                    "type": "string",
+                    "description": "Query expression in official extended search grammar. Passed byte-for-byte to upstream; do not normalize."
+                  },
+                  "rows": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20,
+                    "description": "Number of results to return."
+                  },
+                  "around": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 50,
+                    "description": "Context characters around each hit."
+                  },
+                  "canon": {
+                    "type": "string",
+                    "description": "Comma-separated CBETA canon ids (e.g. \"T\" or \"T,X\"). Allowed: A, AC, B, C, CC, D, F, G, GA, GB, GJ, I, J, JM, JT, K, KZ, L, LC, M, N, P, PN, Q, QC, R, S, SS, SX, SZ, T, TW, TX, U, X, Y, YN, YP, Z, ZS, ZW."
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Official category expression using a,b+c,d grammar where + is AND and , is OR. Values must come from the official category vocabulary (e.g. 阿含部類, 般若部類, 律部類)."
+                  },
+                  "creator": {
+                    "type": "string",
+                    "description": "Creator (author/translator) IDs, not display names. Each id matches [A-Z] followed by six digits (e.g. A000420). Supports a,b+c,d grammar."
+                  },
+                  "dynasty": {
+                    "type": "string",
+                    "description": "Dynasty filter."
+                  },
+                  "time": {
+                    "type": "string",
+                    "description": "Single year (e.g. \"800\") or an inclusive range using .. (e.g. \"800..900\")."
+                  },
+                  "work": {
+                    "type": "string",
+                    "description": "Single work id."
+                  },
+                  "works": {
+                    "type": "string",
+                    "description": "Comma-separated work ids."
+                  },
+                  "work_type": {
+                    "type": "string",
+                    "enum": [
+                      "textbody",
+                      "non-textbody"
+                    ],
+                    "description": "Restrict to scripture body or non-body works."
+                  },
+                  "start": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Result offset for pagination."
+                  },
+                  "facet": {
+                    "type": "string",
+                    "description": "Optional facet specifier."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "query_string": {"type": "string"},
+                        "num_found": {"type": "integer"},
+                        "total_term_hits": {"type": "integer"},
+                        "cache_key": {"type": "string"},
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "term_hits": {"type": "integer"},
+                              "canon": {"type": "string"},
+                              "category": {"type": "string"},
+                              "file": {"type": "string"},
+                              "work": {"type": "string"},
+                              "juan": {"type": "integer"},
+                              "title": {"type": "string"},
+                              "byline": {"type": "string"},
+                              "creators": {"type": "string"},
+                              "creators_with_id": {"type": "string"},
+                              "time_dynasty": {"type": "string"},
+                              "time_from": {"type": "integer"},
+                              "time_to": {"type": "integer"},
+                              "juan_list": {"type": "string"},
+                              "kwics": {
+                                "type": "object",
+                                "properties": {
+                                  "num_found": {"type": "integer"},
+                                  "returned": {"type": "integer"},
+                                  "truncated": {"type": "boolean"},
+                                  "results": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "vol": {"type": "string"},
+                                        "offset_in_text_with_punc": {"type": "integer"},
+                                        "lb": {"type": "string"},
+                                        "kwic": {"type": "string"},
+                                        "linehead": {"type": "string"}
+                                      },
+                                      "additionalProperties": true
+                                    }
+                                  }
+                                },
+                                "additionalProperties": true
+                              }
+                            },
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

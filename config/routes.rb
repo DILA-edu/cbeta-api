@@ -33,6 +33,11 @@ Rails.application.routes.draw do
   match 'report/url',     to: 'report#url',     as: :report_url,     via: [:get, :post]
   match 'report/referer', to: 'report#referer', as: :report_referer, via: [:get, :post]
 
+  # v1 tool surface (see public/openapi.json)
+  namespace :v1 do
+    post 'tools/find_passages', to: 'tools#find_passages'
+  end
+
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
   match 'search/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
