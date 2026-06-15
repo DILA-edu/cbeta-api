@@ -18,6 +18,10 @@
 
 參考 doc/new-version.md
 
+## MCP Server
+
+把 v1 tool surface 包裝成 MCP (Model Context Protocol) Server,參考 [doc/mcp.md](doc/mcp.md)
+
 ## 資料夾
 
 * data: 不放上 git 的資料

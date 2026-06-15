@@ -9,7 +9,7 @@
     {
       "url": "https://cbdata.dila.edu.tw/stable",
       "description": "Stable API"
-    }
+    },
     {
       "url": "https://cbdata.dila.edu.tw/dev",
       "description": "Development API"

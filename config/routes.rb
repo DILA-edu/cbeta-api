@@ -38,6 +38,10 @@ Rails.application.routes.draw do
     post 'tools/find_passages', to: 'tools#find_passages'
   end
 
+  # MCP (Model Context Protocol) Streamable HTTP endpoint.
+  # Wraps the v1 tool surface as MCP tools (see app/controllers/mcp_controller.rb).
+  match '/mcp', to: 'mcp#handle', via: [:get, :post, :delete]
+
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
   match 'search/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
