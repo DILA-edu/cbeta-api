@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CBETA Tools",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "CBETA tool service exposing thin HTTP adapter and MCP surfaces."
   },
   "servers": [
@@ -907,6 +907,232 @@
                         }
                       },
                       "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/search": {
+      "post": {
+        "operationId": "search",
+        "summary": "Platform-friendly search surface",
+        "description": "Simplified search returning normalized result items. Wraps find_passages and accepts the same official filter scope.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "additionalProperties": false,
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "Search query string."
+                  },
+                  "canon": {
+                    "type": "string",
+                    "description": "Comma-separated CBETA canon ids (e.g. \"T\" or \"T,X\"). Allowed: A, AC, B, C, CC, D, F, G, GA, GB, GJ, I, J, JM, JT, K, KZ, L, LC, M, N, P, PN, Q, QC, R, S, SS, SX, SZ, T, TW, TX, U, X, Y, YN, YP, Z, ZS, ZW."
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Official category expression using a,b+c,d grammar where + is AND and , is OR. Values must come from the official category vocabulary (e.g. 阿含部類, 般若部類, 律部類)."
+                  },
+                  "creator": {
+                    "type": "string",
+                    "description": "Creator (author/translator) IDs, not display names. Each id matches [A-Z] followed by six digits (e.g. A000420). Supports a,b+c,d grammar."
+                  },
+                  "dynasty": {
+                    "type": "string",
+                    "description": "Dynasty filter."
+                  },
+                  "time": {
+                    "type": "string",
+                    "description": "Single year (e.g. \"800\") or an inclusive range using .. (e.g. \"800..900\")."
+                  },
+                  "work": {
+                    "type": "string",
+                    "description": "Single work id."
+                  },
+                  "works": {
+                    "type": "string",
+                    "description": "Comma-separated work ids."
+                  },
+                  "work_type": {
+                    "type": "string",
+                    "enum": [
+                      "textbody",
+                      "non-textbody"
+                    ],
+                    "description": "Restrict to scripture body or non-body works."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "string"},
+                              "title": {"type": "string"},
+                              "url": {"type": "string"},
+                              "metadata": {
+                                "type": "object",
+                                "properties": {
+                                  "canon": {"type": "string"},
+                                  "category": {"type": "string"},
+                                  "work": {"type": "string"},
+                                  "file": {"type": "string"},
+                                  "juan": {"type": "integer"},
+                                  "byline": {"type": "string"},
+                                  "term_hits": {"type": "integer"},
+                                  "kwic": {"type": "string"},
+                                  "lb": {"type": "string"},
+                                  "vol": {"type": "string"}
+                                },
+                                "additionalProperties": true
+                              }
+                            },
+                            "additionalProperties": true,
+                            "required": [
+                              "id",
+                              "title",
+                              "url"
+                            ]
+                          }
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": ["results"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/fetch": {
+      "post": {
+        "operationId": "fetch",
+        "summary": "Platform-friendly fetch surface",
+        "description": "Fetch a single document/passage by id (linehead), composing citation resolution and context.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Document/passage id, typically a CBETA linehead."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "string"},
+                        "title": {"type": "string"},
+                        "text": {"type": "string"},
+                        "url": {"type": "string"},
+                        "metadata": {
+                          "type": "object",
+                          "properties": {
+                            "work": {"type": "string"},
+                            "file": {"type": "string"},
+                            "juan": {"type": "integer"},
+                            "vol": {"type": "string"},
+                            "lb": {"type": "string"},
+                            "linehead": {"type": "string"},
+                            "line_count": {"type": "integer"},
+                            "notes_present": {"type": "boolean"}
+                          },
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "id",
+                        "title",
+                        "text",
+                        "url"
+                      ]
                     }
                   }
                 }

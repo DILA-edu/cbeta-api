@@ -11,6 +11,8 @@
 # and TOOLS below). Each MCP tool dispatches in-process to its V1 controller.
 class McpController < ApplicationController
   TOOLS = [
+    Mcp::SearchTool,
+    Mcp::FetchTool,
     Mcp::FindPassagesTool,
     Mcp::SearchNotesTool,
     Mcp::ExpandVariantsTool,

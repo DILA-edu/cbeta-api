@@ -41,6 +41,8 @@ Rails.application.routes.draw do
     post 'tools/expand_synonyms',     to: 'tools#expand_synonyms'
     post 'tools/convert_simplified',  to: 'tools#convert_simplified'
     post 'tools/search_similar',      to: 'tools#search_similar'
+    post 'tools/search',               to: 'tools#search'
+    post 'tools/fetch',                to: 'fetch#fetch'
     post 'tools/resolve_citation',    to: 'citations#resolve_citation'
     post 'tools/get_context',         to: 'contexts#get_context'
   end

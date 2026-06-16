@@ -21,6 +21,7 @@ module V1
     # V1 tool name -> underlying SearchController action method.
     UNDERLYING_ACTIONS = {
       'find_passages'       => :all_in_one,
+      'search'              => :all_in_one,
       'search_notes'        => :notes,
       'expand_variants'     => :variants,
       'expand_synonyms'     => :synonym,
@@ -35,6 +36,15 @@ module V1
 
     UNDERLYING_ACTIONS.each do |tool, underlying|
       define_method(tool) { send(underlying) }
+    end
+
+    # Normalize the raw all_in_one payload into flat result items for the
+    # platform-friendly /search surface, then delegate to ToolEnvelope.
+    def my_render(data)
+      if @_v1_tool_name == 'search' && !(data.is_a?(Hash) && data[:error])
+        data = normalize_search_result(data)
+      end
+      super
     end
 
     private
@@ -58,6 +68,11 @@ module V1
         # openapi.json documents around's default as 50 (SearchController#init
         # otherwise falls back to 10).
         params[:around] = 50 unless params.key?(:around)
+      when 'search'
+        # Platform-friendly surface: accepts `query` instead of `q`.
+        return tool_error(code: 400, message: 'Missing required parameter: query') if params[:query].to_s.strip.empty?
+        params[:q] = params[:query]
+        params[:around] = 50 unless params.key?(:around)
       when 'expand_variants', 'expand_synonyms', 'convert_simplified'
         missing_q?
       when 'search_similar'
@@ -79,6 +94,47 @@ module V1
     # raw error hash through my_render. Override to render the envelope.
     def error_handler(e)
       tool_error_handler(e)
+    end
+
+    # Flatten all_in_one results (one row per juan) into one item per kwic hit.
+    # Each item carries the linehead as id so it can be passed directly to fetch.
+    def normalize_search_result(raw)
+      return { results: [] } unless raw.is_a?(Hash)
+
+      items = []
+      (raw[:results] || []).each do |juan|
+        kwics = juan[:kwics]
+        next unless kwics.is_a?(Hash)
+
+        (kwics[:results] || []).each do |kwic|
+          linehead = kwic[:linehead].to_s
+          next if linehead.empty?
+
+          items << {
+            id: linehead,
+            title: juan[:title].to_s,
+            url: cbeta_online_url(juan[:work], juan[:juan]),
+            metadata: {
+              canon:     juan[:canon],
+              category:  juan[:category],
+              work:      juan[:work],
+              file:      juan[:file],
+              juan:      juan[:juan],
+              byline:    juan[:byline],
+              term_hits: juan[:term_hits],
+              kwic:      kwic[:kwic],
+              lb:        kwic[:lb],
+              vol:       kwic[:vol]
+            }.compact
+          }
+        end
+      end
+
+      { results: items }
+    end
+
+    def cbeta_online_url(work, juan)
+      "https://cbetaonline.dila.edu.tw/#{work}_%03d" % juan.to_i
     end
   end
 end
