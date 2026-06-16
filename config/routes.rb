@@ -35,7 +35,14 @@ Rails.application.routes.draw do
 
   # v1 tool surface (see public/openapi.json)
   namespace :v1 do
-    post 'tools/find_passages', to: 'tools#find_passages'
+    post 'tools/find_passages',       to: 'tools#find_passages'
+    post 'tools/search_notes',        to: 'tools#search_notes'
+    post 'tools/expand_variants',     to: 'tools#expand_variants'
+    post 'tools/expand_synonyms',     to: 'tools#expand_synonyms'
+    post 'tools/convert_simplified',  to: 'tools#convert_simplified'
+    post 'tools/search_similar',      to: 'tools#search_similar'
+    post 'tools/resolve_citation',    to: 'citations#resolve_citation'
+    post 'tools/get_context',         to: 'contexts#get_context'
   end
 
   # MCP (Model Context Protocol) Streamable HTTP endpoint.

@@ -7,9 +7,20 @@
 # returns a single JSON response (application/json) and no session id is
 # assigned. The server does not open an SSE stream, so GET/DELETE return 405.
 #
-# The exposed tool surface is find_passages, which proxies the existing
-# /v1/tools/find_passages HTTP endpoint (see public/openapi.json).
+# The exposed tools mirror the /v1/tools/* HTTP surface (see public/openapi.json
+# and TOOLS below). Each MCP tool dispatches in-process to its V1 controller.
 class McpController < ApplicationController
+  TOOLS = [
+    Mcp::FindPassagesTool,
+    Mcp::SearchNotesTool,
+    Mcp::ExpandVariantsTool,
+    Mcp::ExpandSynonymsTool,
+    Mcp::ConvertSimplifiedTool,
+    Mcp::SearchSimilarTool,
+    Mcp::ResolveCitationTool,
+    Mcp::GetContextTool
+  ].freeze
+
   # When the body is sent as application/json, Rails parses params in middleware
   # before the action runs, so a malformed body raises here. Turn it into a
   # JSON-RPC parse error rather than the default 400 HTML page.
@@ -48,6 +59,6 @@ class McpController < ApplicationController
   end
 
   def mcp_server
-    @mcp_server ||= Mcp::Server.new(tools: [Mcp::FindPassagesTool.new])
+    @mcp_server ||= Mcp::Server.new(tools: TOOLS.map(&:new))
   end
 end

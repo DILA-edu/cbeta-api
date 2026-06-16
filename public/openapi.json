@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CBETA Tools",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "CBETA tool service exposing thin HTTP adapter and MCP surfaces."
   },
   "servers": [
@@ -176,6 +176,731 @@
                                 },
                                 "additionalProperties": true
                               }
+                            },
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/search_notes": {
+      "post": {
+        "operationId": "search_notes",
+        "summary": "Search annotations and collation notes",
+        "description": "Search CBETA注釋與校勘記 (notes and variant/collation records) by full text.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["q"],
+                "additionalProperties": false,
+                "properties": {
+                  "q": {
+                    "type": "string",
+                    "description": "Query expression in official extended search grammar."
+                  },
+                  "rows": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20,
+                    "description": "Number of results to return."
+                  },
+                  "around": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 50,
+                    "description": "Context characters around each hit."
+                  },
+                  "start": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Result offset for pagination."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "query_string": {"type": "string"},
+                        "SQL": {"type": "string"},
+                        "time": {"type": "number"},
+                        "num_found": {"type": "integer"},
+                        "total_term_hits": {"type": "integer"},
+                        "cache_key": {"type": "string"},
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "note_place": {"type": "string"},
+                              "canon": {"type": "string"},
+                              "category": {"type": "string"},
+                              "vol": {"type": "string"},
+                              "file": {"type": "string"},
+                              "work": {"type": "string"},
+                              "title": {"type": "string"},
+                              "juan": {"type": "integer"},
+                              "lb": {"type": "string"},
+                              "n": {"type": "string"},
+                              "content": {"type": "string"},
+                              "highlight": {"type": "string"}
+                            },
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/resolve_citation": {
+      "post": {
+        "operationId": "resolve_citation",
+        "summary": "Resolve a citation to a CBETA location",
+        "description": "Resolve a free-text linehead or structured citation fields to a canonical CBETA location.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Provide either linehead, or all of canon, work, page, col, line.",
+                "properties": {
+                  "linehead": {
+                    "type": "string",
+                    "description": "CBETA linehead anchor."
+                  },
+                  "canon": {
+                    "type": "string",
+                    "description": "Comma-separated CBETA canon ids (e.g. \"T\" or \"T,X\"). Allowed: A, AC, B, C, CC, D, F, G, GA, GB, GJ, I, J, JM, JT, K, KZ, L, LC, M, N, P, PN, Q, QC, R, S, SS, SX, SZ, T, TW, TX, U, X, Y, YN, YP, Z, ZS, ZW."
+                  },
+                  "work": {
+                    "type": "string",
+                    "description": "Work id (e.g. 0001)."
+                  },
+                  "juan": {
+                    "type": "string",
+                    "description": "Juan (卷) number."
+                  },
+                  "page": {
+                    "type": "string",
+                    "description": "Page number."
+                  },
+                  "col": {
+                    "type": "string",
+                    "enum": [
+                      "a",
+                      "b",
+                      "c"
+                    ],
+                    "description": "Column: a, b, or c."
+                  },
+                  "line": {
+                    "type": "string",
+                    "description": "Line number."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "num_found": {"type": "integer"},
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "vol": {"type": "string"},
+                              "lb": {"type": "string"},
+                              "work": {"type": "string"},
+                              "file": {"type": "string"},
+                              "juan": {"type": "integer"},
+                              "linehead": {"type": "string"},
+                              "title": {"type": "string"}
+                            },
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/get_context": {
+      "post": {
+        "operationId": "get_context",
+        "summary": "Retrieve context lines around a linehead",
+        "description": "Return surrounding text lines for a CBETA linehead anchor, or for a linehead_start/linehead_end range.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Provide either linehead, or both linehead_start and linehead_end.",
+                "properties": {
+                  "linehead": {
+                    "type": "string",
+                    "description": "Single CBETA linehead anchor (e.g. T01n0001_p0001a01)."
+                  },
+                  "linehead_start": {
+                    "type": "string",
+                    "description": "Range start linehead. Requires linehead_end."
+                  },
+                  "linehead_end": {
+                    "type": "string",
+                    "description": "Range end linehead. Requires linehead_start."
+                  },
+                  "before": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 5,
+                    "description": "Lines of context before the anchor."
+                  },
+                  "after": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 5,
+                    "description": "Lines of context after the anchor."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "num_found": {"type": "integer"},
+                        "time": {"type": "number"},
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "linehead": {"type": "string"},
+                              "html": {"type": "string"},
+                              "notes": {
+                                "type": "object",
+                                "additionalProperties": {"type": "string"}
+                              }
+                            },
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/expand_variants": {
+      "post": {
+        "operationId": "expand_variants",
+        "summary": "Expand glyph variants for a query",
+        "description": "Return字形變體 (character/glyph variants) for the given query string.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["q"],
+                "additionalProperties": false,
+                "properties": {
+                  "q": {
+                    "type": "string",
+                    "description": "Term to expand into glyph variants."
+                  },
+                  "scope": {
+                    "type": "string",
+                    "description": "Optional scope restricting variant expansion."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "time": {"type": "number"},
+                        "num_found": {"type": "integer"},
+                        "cache_key": {"type": "string"},
+                        "possibility": {"type": "integer"},
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "q": {"type": "string"},
+                              "hits": {"type": "integer"}
+                            },
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/expand_synonyms": {
+      "post": {
+        "operationId": "expand_synonyms",
+        "summary": "Expand near-synonyms for a query",
+        "description": "Return近義詞 (near-synonym) expansions for the given query string.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["q"],
+                "additionalProperties": false,
+                "properties": {
+                  "q": {
+                    "type": "string",
+                    "description": "Term to expand into synonyms."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "time": {"type": "number"},
+                        "num_found": {"type": "integer"},
+                        "results": {
+                          "type": "array",
+                          "items": {"type": "string"}
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/convert_simplified": {
+      "post": {
+        "operationId": "convert_simplified",
+        "summary": "Convert simplified Chinese to traditional",
+        "description": "Convert simplified Chinese input (簡體) to traditional Chinese (正體).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["q"],
+                "additionalProperties": false,
+                "properties": {
+                  "q": {
+                    "type": "string",
+                    "description": "Simplified Chinese text to convert."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "time": {"type": "number"},
+                        "q": {"type": "string"},
+                        "hits": {"type": "integer"}
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "error_code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "retryable": {"type": "boolean"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    
+    "/v1/tools/search_similar": {
+      "post": {
+        "operationId": "search_similar",
+        "summary": "Semantic similar-passage search",
+        "description": "Find passages semantically similar to a short query (recommended 6–50 characters). Supports the same filter scope as full-text search.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["q"],
+                "additionalProperties": false,
+                "properties": {
+                  "q": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 50,
+                    "description": "Query text, 6–50 characters."
+                  },
+                  "k": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 500,
+                    "description": "Candidate pool size."
+                  },
+                  "gain": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 2,
+                    "description": "Match gain weight."
+                  },
+                  "penalty": {
+                    "type": "number",
+                    "maximum": 0,
+                    "default": -1,
+                    "description": "Mismatch penalty weight (<= 0)."
+                  },
+                  "score_min": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 16,
+                    "description": "Minimum score threshold."
+                  },
+                  "canon": {
+                    "type": "string",
+                    "description": "Comma-separated CBETA canon ids (e.g. \"T\" or \"T,X\"). Allowed: A, AC, B, C, CC, D, F, G, GA, GB, GJ, I, J, JM, JT, K, KZ, L, LC, M, N, P, PN, Q, QC, R, S, SS, SX, SZ, T, TW, TX, U, X, Y, YN, YP, Z, ZS, ZW."
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Official category expression using a,b+c,d grammar where + is AND and , is OR. Values must come from the official category vocabulary (e.g. 阿含部類, 般若部類, 律部類)."
+                  },
+                  "creator": {
+                    "type": "string",
+                    "description": "Creator (author/translator) IDs, not display names. Each id matches [A-Z] followed by six digits (e.g. A000420). Supports a,b+c,d grammar."
+                  },
+                  "dynasty": {
+                    "type": "string",
+                    "description": "Dynasty filter."
+                  },
+                  "time": {
+                    "type": "string",
+                    "description": "Single year (e.g. \"800\") or an inclusive range using .. (e.g. \"800..900\")."
+                  },
+                  "work": {
+                    "type": "string",
+                    "description": "Single work id."
+                  },
+                  "works": {
+                    "type": "string",
+                    "description": "Comma-separated work ids."
+                  },
+                  "work_type": {
+                    "type": "string",
+                    "enum": [
+                      "textbody",
+                      "non-textbody"
+                    ],
+                    "description": "Restrict to scripture body or non-body works."
+                  },
+                  "facet": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "Facet flag (0 or 1)."
+                  },
+                  "cache": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "description": "Cache flag (0 or 1)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized tool response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {"type": "boolean"},
+                    "tool": {"type": "string"},
+                    "request_id": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "query_string": {"type": "string"},
+                        "SQL": {"type": "string"},
+                        "time": {"type": "number"},
+                        "num_found": {"type": "integer"},
+                        "cache_key": {"type": "string"},
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "canon": {"type": "string"},
+                              "category": {"type": "string"},
+                              "work": {"type": "string"},
+                              "title": {"type": "string"},
+                              "juan": {"type": "integer"},
+                              "creators_with_id": {"type": "string"},
+                              "dynasty": {"type": "string"},
+                              "linehead": {"type": "string"},
+                              "content": {"type": "string"},
+                              "score": {"type": "integer"},
+                              "highlight": {"type": "string"}
                             },
                             "additionalProperties": true
                           }
