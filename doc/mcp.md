@@ -94,6 +94,28 @@ claude mcp add --transport http cbeta https://cbdata.dila.edu.tw/stable/mcp
 
 ## 測試
 
+### Unit / integration tests
+
 ```bash
 bin/rails test test/services/mcp/server_test.rb test/integration/mcp_test.rb
 ```
+
+### Smoke test（對 live server）
+
+部署後可用 `bin/smoke_mcp` 對真實 server 跑一輪完整的 smoke test:
+
+```bash
+bin/smoke_mcp                                # 預設打 staging (cbdata.dila.edu.tw/dev)
+bin/smoke_mcp https://cbdata.dila.edu.tw/stable  # production
+bin/smoke_mcp http://localhost:3000              # 本機開發
+```
+
+測試項目:
+
+* `initialize` handshake 與 protocol version
+* `tools/list` — 確認全部 10 個 tools 都有列出
+* `tools/call` happy path — 每個 tool 打一次實際請求,確認 `isError: false`
+* validation — 缺必填參數時應回 `isError: true`
+* protocol edge cases — notification 回 202、未知 tool 回 -32602、壞 JSON 回 -32700
+
+全部通過時 exit 0,有任何失敗時 exit 1(可直接用在 CI / deploy hook)。

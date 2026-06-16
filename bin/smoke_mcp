@@ -1,0 +1,173 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Smoke-test the /mcp endpoint on a live server.
+#
+# Usage:
+#   bin/smoke_mcp [BASE_URL]
+#
+# Examples:
+#   bin/smoke_mcp                                  # defaults to staging (cbdata.dila.edu.tw/dev)
+#   bin/smoke_mcp https://cbdata.dila.edu.tw       # production
+#   bin/smoke_mcp http://localhost:3000            # local dev
+
+require 'net/http'
+require 'json'
+require 'uri'
+
+BASE = ARGV[0] || 'https://cbdata.dila.edu.tw/dev'
+
+pass_count = 0
+fail_count = 0
+
+# ── colour helpers ──────────────────────────────────────────────────────────
+def green(msg) = "\033[32m#{msg}\033[0m"
+def red(msg)   = "\033[31m#{msg}\033[0m"
+def bold(msg)  = "\033[1m#{msg}\033[0m"
+
+# ── HTTP helper ─────────────────────────────────────────────────────────────
+def mcp_post(payload)
+  uri = URI("#{BASE}/mcp")
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = uri.scheme == 'https'
+  http.open_timeout = 10
+  http.read_timeout = 30
+
+  req = Net::HTTP::Post.new(uri.path)
+  req['Content-Type'] = 'application/json'
+  req['User-Agent']   = 'cbeta-smoke-test'
+  req.body = JSON.generate(payload)
+
+  res = http.request(req)
+  { status: res.code.to_i, body: (JSON.parse(res.body) rescue nil), raw: res.body }
+end
+
+# ── assertion helpers ────────────────────────────────────────────────────────
+def pass(label)
+  puts green("  ✓ #{label}")
+  $pass_count += 1
+end
+
+def fail(label, detail = nil)
+  msg = detail ? "#{label}  (#{detail})" : label
+  puts red("  ✗ #{msg}")
+  $fail_count += 1
+end
+
+$pass_count = 0
+$fail_count = 0
+
+def assert_eq(label, actual, expected)
+  if actual == expected
+    pass(label)
+  else
+    fail(label, "expected: #{expected.inspect}  got: #{actual.inspect}")
+  end
+end
+
+def call_tool(label, name, arguments)
+  r = mcp_post(jsonrpc: '2.0', id: rand(1000), method: 'tools/call',
+               params: { name: name, arguments: arguments })
+  is_error = r.dig(:body, 'result', 'isError')
+  if is_error == false
+    pass(label)
+  else
+    msg = r.dig(:body, 'result', 'content', 0, 'text') ||
+          r.dig(:body, 'error', 'message') || 'no message'
+    fail(label, msg)
+  end
+end
+
+def call_invalid(label, name, arguments)
+  r = mcp_post(jsonrpc: '2.0', id: rand(1000), method: 'tools/call',
+               params: { name: name, arguments: arguments })
+  if r.dig(:body, 'result', 'isError') == true
+    pass(label)
+  else
+    fail(label, 'expected isError:true')
+  end
+end
+
+# ── run tests ────────────────────────────────────────────────────────────────
+puts bold("Target: #{BASE}")
+puts
+
+puts bold('=== initialize ===')
+r = mcp_post(jsonrpc: '2.0', id: 1, method: 'initialize',
+             params: { protocolVersion: '2025-06-18' })
+assert_eq 'server name',      r.dig(:body, 'result', 'serverInfo', 'name'),   'cbeta-mcp'
+assert_eq 'protocol version', r.dig(:body, 'result', 'protocolVersion'),       '2025-06-18'
+puts
+
+puts bold('=== tools/list ===')
+r = mcp_post(jsonrpc: '2.0', id: 2, method: 'tools/list')
+listed = (r.dig(:body, 'result', 'tools') || []).map { |t| t['name'] }
+%w[
+  search fetch find_passages search_notes
+  expand_variants expand_synonyms convert_simplified
+  search_similar resolve_citation get_context
+].each do |name|
+  if listed.include?(name)
+    pass("tool listed: #{name}")
+  else
+    fail("tool listed: #{name}")
+  end
+end
+puts
+
+puts bold('=== tools/call (happy path – expects isError:false) ===')
+call_tool 'search',             'search',             query: '佛', rows: 1
+call_tool 'fetch',              'fetch',              id: 'T01n0001_p0001a01'
+call_tool 'find_passages',      'find_passages',      q: '佛', rows: 1
+call_tool 'search_notes',       'search_notes',       q: '佛', rows: 1
+call_tool 'expand_variants',    'expand_variants',    q: '佛'
+call_tool 'expand_synonyms',    'expand_synonyms',    q: '佛'
+call_tool 'convert_simplified', 'convert_simplified', q: '佛'
+call_tool 'search_similar',     'search_similar',     q: '一切眾生皆有佛性', k: 1
+call_tool 'resolve_citation',   'resolve_citation',   linehead: 'T01n0001_p0001a01'
+call_tool 'get_context',        'get_context',        linehead: 'T01n0001_p0001a01', before: 0, after: 0
+puts
+
+puts bold('=== tools/call (validation – expects isError:true) ===')
+call_invalid 'find_passages without q',       'find_passages',    {}
+call_invalid 'resolve_citation without args', 'resolve_citation', {}
+call_invalid 'get_context without args',      'get_context',      {}
+puts
+
+puts bold('=== protocol edge cases ===')
+
+# notification → 202 no body
+r = mcp_post(jsonrpc: '2.0', method: 'notifications/initialized')
+assert_eq 'notification returns 202', r[:status], 202
+
+# unknown tool → JSON-RPC error -32602
+r = mcp_post(jsonrpc: '2.0', id: 40, method: 'tools/call',
+             params: { name: 'no_such_tool', arguments: {} })
+assert_eq 'unknown tool → -32602', r.dig(:body, 'error', 'code'), -32602
+
+# malformed JSON → parse error -32700
+begin
+  uri = URI("#{BASE}/mcp")
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = uri.scheme == 'https'
+  req = Net::HTTP::Post.new(uri.path)
+  req['Content-Type'] = 'application/json'
+  req['User-Agent']   = 'cbeta-smoke-test'
+  req.body = '{not json'
+  res = http.request(req)
+  body = JSON.parse(res.body) rescue nil
+  assert_eq 'malformed JSON → -32700', body&.dig('error', 'code'), -32700
+rescue StandardError => e
+  fail('malformed JSON → -32700', e.message)
+end
+puts
+
+# ── summary ──────────────────────────────────────────────────────────────────
+puts bold('=== Results ===')
+if $fail_count.zero?
+  puts green("All #{$pass_count} tests passed.")
+  exit 0
+else
+  puts red("#{$fail_count} failed, #{$pass_count} passed.")
+  exit 1
+end
