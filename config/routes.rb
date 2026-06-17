@@ -2,19 +2,30 @@ Rails.application.routes.draw do
   root 'static_pages#home'
   get '/health', to: proc { [200, {}, ['success']] }
 
-  # OAuth 2.0 Authorization Server (for MCP remote connectors, e.g. claude.ai)
+  # OAuth 2.0 Authorization Server (Doorkeeper)。
+  #
+  # /mcp 刻意維持 PUBLIC / authless（未帶 token 也回 200），讓 OpenAI
+  # (chatgpt.com, ChatGPT, Codex) 與 Anthropic (claude.ai, Claude, Cowork)
+  # 的 remote-MCP client 都能連線。
+  #
+  # 因此我們「不」對外廣告 OAuth：以下停用 RFC 8414 / RFC 9728 的 well-known
+  # discovery endpoint 與 RFC 7591 的 dynamic client registration endpoint。
+  # 先前有提供這些 metadata 時，claude.ai 會偵測到並強制走 OAuth，但 /mcp
+  # 根本不需認證，於是 register 失敗（"Couldn't register with ... sign-in
+  # service"）。移除 discovery 後，client 會把 /mcp 當成公開 connector 直連。
+  #
+  # Doorkeeper 仍保留掛載（但不廣告），日後若要改用 pre-registered client
+  # 走 OAuth 仍可重新啟用。
   use_doorkeeper do
     skip_controllers :applications, :authorized_applications
   end
-  match '/oauth/register', to: 'oauth/registrations#create',  via: [:post]
-  match '/oauth/register', to: 'oauth/registrations#options', via: [:options]
-  # RFC 8414 / RFC 9728 well-known discovery — wildcard paths support path-based discovery
-  # e.g. /.well-known/oauth-authorization-server/dev
-  #      /.well-known/oauth-protected-resource/dev/mcp
-  get '/.well-known/oauth-authorization-server',       to: 'well_known#oauth_authorization_server'
-  get '/.well-known/oauth-authorization-server/*path', to: 'well_known#oauth_authorization_server'
-  get '/.well-known/oauth-protected-resource',         to: 'well_known#oauth_protected_resource'
-  get '/.well-known/oauth-protected-resource/*path',   to: 'well_known#oauth_protected_resource'
+  # --- 已停用 OAuth 廣告（原因見上方說明）---
+  # match '/oauth/register', to: 'oauth/registrations#create',  via: [:post]
+  # match '/oauth/register', to: 'oauth/registrations#options', via: [:options]
+  # get '/.well-known/oauth-authorization-server',       to: 'well_known#oauth_authorization_server'
+  # get '/.well-known/oauth-authorization-server/*path', to: 'well_known#oauth_authorization_server'
+  # get '/.well-known/oauth-protected-resource',         to: 'well_known#oauth_protected_resource'
+  # get '/.well-known/oauth-protected-resource/*path',   to: 'well_known#oauth_protected_resource'
 
   match 'catalog_entry', to: 'catalog_entry#index', via: [:get, :post]
 
