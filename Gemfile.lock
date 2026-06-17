@@ -141,6 +141,8 @@ GEM
       tilt
     date (3.5.1)
     diff-lcs (2.0.0)
+    doorkeeper (5.9.3)
+      railties (>= 5)
     drb (2.2.3)
     erb (6.0.4)
     erubi (1.13.1)
@@ -394,7 +396,6 @@ PLATFORMS
   riscv64-linux-android
   riscv64-linux-gnu
   riscv64-linux-musl
-  ruby
   x86_64-linux-android
 
 DEPENDENCIES
@@ -414,6 +415,7 @@ DEPENDENCIES
   dalli
   dartsass-sprockets
   diff-lcs
+  doorkeeper (~> 5.8)
   faraday
   git (~> 3.0)
   haml-rails
@@ -485,6 +487,7 @@ CHECKSUMS
   dartsass-sprockets (3.2.1) sha256=5163c59d155bfb834e2554bec00e2ff9ab97ad3ea82545cbacf650cf0469f3c3
   date (3.5.1) sha256=750d06384d7b9c15d562c76291407d89e368dda4d4fff957eb94962d325a0dc0
   diff-lcs (2.0.0) sha256=708a5d52ec2945b50f8f53a181174aa1ef2c496edf81c05957fe956dabb363d5
+  doorkeeper (5.9.3)
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
   erb (6.0.4) sha256=38e3803694be357fe2bfe312487c74beaf9fb4e5beb3e22498952fe1645b95d9
   erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9

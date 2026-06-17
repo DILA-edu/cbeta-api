@@ -2,6 +2,19 @@ Rails.application.routes.draw do
   root 'static_pages#home'
   get '/health', to: proc { [200, {}, ['success']] }
 
+  # OAuth 2.0 Authorization Server (for MCP remote connectors, e.g. claude.ai)
+  use_doorkeeper do
+    skip_controllers :applications, :authorized_applications
+  end
+  post '/oauth/register', to: 'oauth/registrations#create'
+  # RFC 8414 / RFC 9728 well-known discovery — wildcard paths support path-based discovery
+  # e.g. /.well-known/oauth-authorization-server/dev
+  #      /.well-known/oauth-protected-resource/dev/mcp
+  get '/.well-known/oauth-authorization-server',       to: 'well_known#oauth_authorization_server'
+  get '/.well-known/oauth-authorization-server/*path', to: 'well_known#oauth_authorization_server'
+  get '/.well-known/oauth-protected-resource',         to: 'well_known#oauth_protected_resource'
+  get '/.well-known/oauth-protected-resource/*path',   to: 'well_known#oauth_protected_resource'
+
   match 'catalog_entry', to: 'catalog_entry#index', via: [:get, :post]
 
   match 'api/collections', to: 'canons#index', via: [:get, :post]

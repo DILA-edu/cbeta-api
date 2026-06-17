@@ -5,6 +5,7 @@ ruby '4.0.4'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 8.1.2'
+gem 'doorkeeper', '~> 5.8'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3', '~> 2.7', '>= 2.7.2'
 # Use Puma as the app server

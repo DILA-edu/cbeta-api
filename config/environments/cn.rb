@@ -97,4 +97,6 @@ Rails.application.configure do
 
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
+
+  config.x.app_base_url = 'https://api.cbetaonline.cn'
 end
