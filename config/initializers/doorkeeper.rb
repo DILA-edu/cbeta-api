@@ -12,6 +12,12 @@ Doorkeeper.configure do
   # Auto-approve all authorization requests (no approval screen shown to the user).
   skip_authorization { true }
 
+  # Provide a default scope so clients that omit `scope` (e.g. claude.ai) still
+  # pass pre-authorization. Without a configured default, Doorkeeper rejects a
+  # missing scope as "Missing required parameter: scope", which renders the
+  # authorization error page and 500s the OAuth flow.
+  default_scopes :mcp
+
   grant_flows %w[authorization_code]
 
   access_token_expires_in 7200 # 2 hours
