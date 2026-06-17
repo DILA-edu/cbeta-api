@@ -10,6 +10,8 @@
 # The exposed tools mirror the /v1/tools/* HTTP surface (see public/openapi.json
 # and TOOLS below). Each MCP tool dispatches in-process to its V1 controller.
 class McpController < ApplicationController
+  before_action :set_cors_headers
+
   TOOLS = [
     Mcp::SearchTool,
     Mcp::FetchTool,
@@ -34,6 +36,8 @@ class McpController < ApplicationController
     case request.request_method
     when 'POST'
       handle_post
+    when 'OPTIONS'
+      head :no_content
     else
       # No server-initiated SSE stream / session to manage in stateless mode.
       head :method_not_allowed
@@ -62,5 +66,11 @@ class McpController < ApplicationController
 
   def mcp_server
     @mcp_server ||= Mcp::Server.new(tools: TOOLS.map(&:new))
+  end
+
+  def set_cors_headers
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
   end
 end

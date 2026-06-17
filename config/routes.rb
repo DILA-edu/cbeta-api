@@ -49,7 +49,7 @@ Rails.application.routes.draw do
 
   # MCP (Model Context Protocol) Streamable HTTP endpoint.
   # Wraps the v1 tool surface as MCP tools (see app/controllers/mcp_controller.rb).
-  match '/mcp', to: 'mcp#handle', via: [:get, :post, :delete]
+  match '/mcp', to: 'mcp#handle', via: [:get, :post, :delete, :options]
 
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
