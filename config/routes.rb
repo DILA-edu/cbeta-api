@@ -6,7 +6,8 @@ Rails.application.routes.draw do
   use_doorkeeper do
     skip_controllers :applications, :authorized_applications
   end
-  post '/oauth/register', to: 'oauth/registrations#create'
+  match '/oauth/register', to: 'oauth/registrations#create',  via: [:post]
+  match '/oauth/register', to: 'oauth/registrations#options', via: [:options]
   # RFC 8414 / RFC 9728 well-known discovery — wildcard paths support path-based discovery
   # e.g. /.well-known/oauth-authorization-server/dev
   #      /.well-known/oauth-protected-resource/dev/mcp

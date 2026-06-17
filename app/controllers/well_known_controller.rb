@@ -9,6 +9,8 @@
 # trailing path component is simply ignored — the correct metadata is returned based
 # on the Rails environment via config.x.app_base_url.
 class WellKnownController < ApplicationController
+  before_action :set_cors_headers
+
   def oauth_authorization_server
     base = Rails.application.config.x.app_base_url
     render json: {
@@ -31,5 +33,11 @@ class WellKnownController < ApplicationController
       bearer_methods_supported: %w[header],
       scopes_supported:         []
     }
+  end
+
+  private
+
+  def set_cors_headers
+    response.headers['Access-Control-Allow-Origin'] = '*'
   end
 end

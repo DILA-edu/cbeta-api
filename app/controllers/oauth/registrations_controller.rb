@@ -4,6 +4,12 @@
 # Allows MCP clients (e.g. claude.ai) to register as an OAuth application on the fly.
 module Oauth
   class RegistrationsController < ApplicationController
+    before_action :set_cors_headers
+
+    def options
+      head :no_content
+    end
+
     def create
       app = Doorkeeper::Application.new(
         name:         params[:client_name].presence || "MCP Client #{SecureRandom.hex(4)}",
@@ -29,6 +35,14 @@ module Oauth
           error_description: app.errors.full_messages.join(", ")
         }, status: :bad_request
       end
+    end
+
+    private
+
+    def set_cors_headers
+      response.headers['Access-Control-Allow-Origin']  = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     end
   end
 end
