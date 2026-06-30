@@ -46,7 +46,8 @@
                 "properties": {
                   "q": {
                     "type": "string",
-                    "description": "Query expression in official extended search grammar. Passed byte-for-byte to upstream; do not normalize."
+                    "maxLength": 80,
+                    "description": "Query expression in official extended search grammar. Passed byte-for-byte to upstream; do not normalize. Maximum 80 characters."
                   },
                   "rows": {
                     "type": "integer",
@@ -221,7 +222,8 @@
                 "properties": {
                   "q": {
                     "type": "string",
-                    "description": "Query expression in official extended search grammar."
+                    "maxLength": 80,
+                    "description": "Query expression in official extended search grammar. Maximum 80 characters."
                   },
                   "rows": {
                     "type": "integer",
@@ -548,7 +550,8 @@
                 "properties": {
                   "q": {
                     "type": "string",
-                    "description": "Term to expand into glyph variants."
+                    "maxLength": 80,
+                    "description": "Term to expand into glyph variants. Maximum 80 characters."
                   },
                   "scope": {
                     "type": "string",
@@ -633,7 +636,8 @@
                 "properties": {
                   "q": {
                     "type": "string",
-                    "description": "Term to expand into synonyms."
+                    "maxLength": 80,
+                    "description": "Term to expand into synonyms. Maximum 80 characters."
                   }
                 }
               }
@@ -705,7 +709,8 @@
                 "properties": {
                   "q": {
                     "type": "string",
-                    "description": "Simplified Chinese text to convert."
+                    "maxLength": 50,
+                    "description": "Simplified Chinese text to convert. Maximum 50 characters."
                   }
                 }
               }
@@ -946,7 +951,8 @@
                 "properties": {
                   "query": {
                     "type": "string",
-                    "description": "Search query string."
+                    "maxLength": 80,
+                    "description": "Search query string. Maximum 80 characters."
                   },
                   "canon": {
                     "type": "string",
