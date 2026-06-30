@@ -14,7 +14,9 @@
   %tr
     %td q
     %th 必要
-    %td 要搜尋的字串。不含標點。建議長度在 6~50 字之間。
+    %td
+      要搜尋的字串。不含標點。建議長度在 6~50 字之間。
+      =render partial: 'q-length-limit'
   %tr
     %td k
     %td 選項

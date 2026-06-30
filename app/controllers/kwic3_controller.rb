@@ -8,6 +8,12 @@ class Kwic3Controller < ApplicationController
     raise CbetaError.new(400), "缺少 q 參數" if params[:q].blank?
     @q = Gaiji.replace_zzs_with_pua(params[:q])
 
+    # 限制查詢字串長度（組字式已轉為 PUA，以實際字數計算）
+    if query_too_long?(@q)
+      my_render(success: false, num_found: 0, results: [], error: query_length_error)
+      return
+    end
+
     # NEAR/7 語法，允許 數字
     # 允許半形逗點，例： 法鼓,聖嚴
     @q = CbetaString.new(allow_digit: true, allow_comma: true).remove_puncs(@q)

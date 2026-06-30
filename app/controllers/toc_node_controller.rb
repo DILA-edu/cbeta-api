@@ -2,6 +2,12 @@ class TocNodeController < ApplicationController
   include TocNodeHelper
 
   def index
+    # 限制查詢字串長度（字數）
+    if query_too_long?(params[:q])
+      my_render(num_found: 0, results: [], error: query_length_error)
+      return
+    end
+
     start = Time.now
     result = search_by_query_term
     result = [] if result.nil?

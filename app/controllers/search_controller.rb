@@ -652,7 +652,11 @@ class SearchController < ApplicationController
       render plain: 'q 參數不能是空的'
       return false
     end
-    
+
+    # 限制查詢字串長度（組字式已轉為 PUA，以實際字數計算），
+    # 避免過長的 query 造成全文檢索後端負擔。
+    raise CbetaError.new(400), query_length_error if query_too_long?(@q)
+
     @mode = 'normal'
     @use_cache = params.key?(:cache) ? (params[:cache]=='1') : true
     @start  = params.key?(:start)  ? params[:start].to_i  : 0

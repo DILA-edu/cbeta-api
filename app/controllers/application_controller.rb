@@ -13,7 +13,9 @@ class ApplicationController < ActionController::Base
   skip_before_action :verify_authenticity_token # 整個 Controller 關閉檢查
 
   EMPTY_RESULT = { num_found: 0, results: [] }
-  
+
+  MAX_QUERY_LENGTH = 80 # 全文檢索 q 參數長度上限（字數）
+
   def filter_cn?(n: nil, id: nil)
     unless n.nil?
       r = Rails.configuration.cn_filter.join('|')
@@ -280,6 +282,16 @@ class ApplicationController < ActionController::Base
     unless params[k] =~ /\A\d+\z/
       raise CbetaError.new(400), "#{k.to_s} 必須是數字"
     end
+  end
+
+  # 全文檢索 q 參數是否超過長度上限（字數）
+  def query_too_long?(q)
+    q.to_s.size > MAX_QUERY_LENGTH
+  end
+
+  # q 超過長度上限時統一使用的錯誤訊息
+  def query_length_error
+    "q 參數長度不得大於 #{MAX_QUERY_LENGTH} 字"
   end
 
   private

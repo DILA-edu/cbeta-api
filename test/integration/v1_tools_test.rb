@@ -65,6 +65,21 @@ class V1ToolsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # --- Query string length limit (400) -------------------------------------
+  #
+  # SearchController#init rejects a q longer than MAX_QUERY_LENGTH characters
+  # before any backend call, so this is verifiable without the search backend.
+  # convert_simplified has its own stricter 50-char limit (params[:q].size > 50,
+  # checked in SearchController#sc), so it is excluded here.
+  (TOOLS_REQUIRING_Q - %w[convert_simplified]).each do |tool|
+    test "POST /v1/tools/#{tool} with over-long q returns 400 envelope" do
+      post_tool(tool, { q: '佛' * (SearchController::MAX_QUERY_LENGTH + 1) })
+      assert_response :bad_request
+      assert_error_envelope(tool)
+      assert_equal 'invalid_request', JSON.parse(response.body)['error_code']
+    end
+  end
+
   test 'POST /v1/tools/resolve_citation without linehead or canon returns 400' do
     post_tool('resolve_citation', {})
     assert_response :bad_request
