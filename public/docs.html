@@ -15,8 +15,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
     <script>
       Scalar.createApiReference('#app', {
-        // 指向本站靜態提供的 OpenAPI 文件
-        url: '/openapi.json',
+        // 指向本站靜態提供的 OpenAPI 文件。
+        // 用相對路徑(不加開頭斜線),才能同時相容於掛在路徑前綴下的
+        // 部署(例如 https://cbdata.dila.edu.tw/dev/docs → /dev/openapi.json)
+        // 與本機根目錄(http://127.0.0.1:3000/docs → /openapi.json)。
+        url: 'openapi.json',
         // 深色/淺色由系統偏好決定
         theme: 'default',
       })
