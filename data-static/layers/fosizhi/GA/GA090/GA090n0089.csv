@@ -1645,10 +1645,10 @@ lb,position,tag,type,key,name
 0747a01,20,place,end,PL14717,石橋
 0747a01,23,place,start,PL14782,萬年
 0747a01,24,place,end,PL14782,萬年
-0747a02,19,person,start,A018591,道逵
-0747a02,20,person,end,A018591,道逵
-0747a02,23,place,start,PL12386,甯海縣
-0747a02,25,place,end,PL12386,甯海縣
+0747a02,21,person,start,A018591,道逵
+0747a02,22,person,end,A018591,道逵
+0747a02,25,place,start,PL12386,甯海縣
+0747a02,27,place,end,PL12386,甯海縣
 0747a03,6,person,start,A018591,逵
 0747a03,6,person,end,A018591,逵
 0747a03,13,person,start,A018592,妙詮

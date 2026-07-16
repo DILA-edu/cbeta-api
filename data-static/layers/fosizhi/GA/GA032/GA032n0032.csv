@@ -2509,10 +2509,10 @@ lb,position,tag,type,key,name
 0674a09,8,place,end,PL11772,徑山
 0674a09,12,person,start,A004218,國一
 0674a09,13,person,end,A004218,國一
-0675a02,3,place,start,PL11772,徑山
-0675a02,4,place,end,PL11772,徑山
-0675a02,11,person,start,A004218,國一
-0675a02,12,person,end,A004218,國一
+0675a02,6,place,start,PL11772,徑山
+0675a02,7,place,end,PL11772,徑山
+0675a02,14,person,start,A004218,國一
+0675a02,15,person,end,A004218,國一
 0675a03,19,person,start,A022620,師能
 0675a03,20,person,end,A022620,師能
 0675a05,6,person,start,A022620,能

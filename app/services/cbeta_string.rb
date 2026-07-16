@@ -30,6 +30,12 @@ class CbetaString
     s.match?(@regexp2)
   end
 
+  # 判斷單一字元(或字串)是否屬於要剝除的標點。
+  # 供逐字計算字位時使用：符合者不佔字位。
+  def punc?(s)
+    s.match?(@regexp)
+  end
+
   def remove_puncs(s)
     s.gsub(@regexp, '')
   end

@@ -3157,10 +3157,10 @@ lb,position,tag,type,key,name
 0169a03,10,person,end,A018813,通乾
 0169a03,11,person,start,A018814,達曇
 0169a03,12,person,end,A018814,達曇
-0169a03,22,person,start,A007274,燈
-0169a03,22,person,end,A007274,燈
-0169a03,24,person,start,A000964,百松
-0169a03,25,person,end,A000964,百松
+0169a03,23,person,start,A007274,燈
+0169a03,23,person,end,A007274,燈
+0169a03,25,person,start,A000964,百松
+0169a03,26,person,end,A000964,百松
 0169a04,4,place,start,PL14717,方廣
 0169a04,5,place,end,PL14717,方廣
 0169a05,11,person,start,A013496,佛樹禪師

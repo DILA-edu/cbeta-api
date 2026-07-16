@@ -3843,10 +3843,10 @@ lb,position,tag,type,key,name
 0342a02,1,person,end,A002397,笈多
 0342a04,15,person,start,A017996,后稷
 0342a04,16,person,end,A017996,后稷
-0342a05,1,person,start,A006100,神農
-0342a05,2,person,end,A006100,神農
-0342a05,6,person,start,A010289,燧人
-0342a05,7,person,end,A010289,燧人
+0342a05,2,person,start,A006100,神農
+0342a05,3,person,end,A006100,神農
+0342a05,7,person,start,A010289,燧人
+0342a05,8,person,end,A010289,燧人
 0342a07,5,person,start,A002867,維摩
 0342a07,6,person,end,A002867,維摩
 0342a07,9,person,start,A002402,舍利

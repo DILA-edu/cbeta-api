@@ -20,14 +20,6 @@ class ImportLayers
   }
   LOG = Rails.root.join('log', 'import-layers-log.htm')
 
-  PUNCS = /
-  [
-    \n\r
-    ,\.\(\)\[\]\x20
-    。．，、；？！：（）「」『』《》＜＞〈〉〔〕［］【】〖〗…—　▆■□○―→←△
-  ]
-  /x
-
   def initialize
     @layers = Rails.root.join('data-static', 'layers')
     @html_base = Rails.root.join('data', 'html')
@@ -36,6 +28,10 @@ class ImportLayers
 
     FileUtils.rm_rf(@out_base)
     FileUtils.makedirs(@out_base)
+
+    # 字位規則:依 CBETA 2025-07-24 決議,「□」「▆」視為一般文字(佔字位),
+    # 與 HTML span.t 的 w 屬性(cbeta gem)一致。標點/全形空格不佔字位。
+    @cs = CbetaString.new
 
     read_vars
     @gaijis = MyCbetaShare.get_cbeta_gaiji
@@ -185,63 +181,18 @@ class ImportLayers
     end
   end
 
+  # 「□」(U+25A1)「▆」(U+2586) 表示原書此處應有字但缺字或難以辨識,
+  # 校對名稱與內文時視為 wildcard,可匹配任何字元。
+  UNCLEAR_CHARS = ['□', '▆'].freeze
+
   def check_var(c1, c2)
     return true if c1 == c2
+    return true if UNCLEAR_CHARS.include?(c1) || UNCLEAR_CHARS.include?(c2)
     return false unless @vars.key?(c1)
     vars = @vars[c1].gsub(/CB\d+/) do
       CBETA.pua($&)
     end
     vars.include?(c2)
-  end
-
-  def e_g(e)
-    id = e['ref'].sub(/^#/, '')
-    r = '●'
-    if @gaijis.key? id
-      g = @gaijis[id]
-      if g.key? 'uni_char'
-        r = g['uni_char']
-      elsif g.key? 'norm_uni_char'
-        r = g['norm_uni_char']
-      elsif g.key? 'norm_big5_char'
-        r = g['norm_big5_char']
-      end
-    end
-    @cbeta_lines[@lb] << r
-  end
-
-  def e_lb(e)
-    @lb = e['n']
-    @cbeta_lines[@lb] = ''
-  end
-
-  def e_note(e)
-    return if e['type'] == 'add'
-    return if e['type'] == 'orig'
-    return if e.key?('type') and e['type'].match(/^cf\d+$/)
-    traverse(e)
-  end
-
-  def handle_node(e)
-    return '' if e.comment?
-    return handle_text(e) if e.text?
-    case e.name
-    when 'mulu', 'rdg'
-    when 'g'    then e_g(e)
-    when 'lb'   then e_lb(e)
-    when 'note' then e_note(e)
-    else traverse(e)
-    end
-  end
-
-  def handle_text(e)
-    return if @lb.nil?
-    s = e.content().chomp
-    return '' if s.empty?
-    return '' if e.parent.name == 'app'
-
-    s.gsub!(PUNCS, '')
-    @cbeta_lines[@lb] << s
   end
 
   def import_canon(parent_folder)
@@ -444,15 +395,13 @@ class ImportLayers
       abort
     end
 
-    # 逐字元計算字位：PUNCS(標點與全形/半形空格)不佔字位，
-    # 與 CBETA 字位編號(span 的 w 屬性)一致。
-    # 早期版本以 text.size 計長度，把空格/標點也算進去，
-    # 導致同一行內目標字位前若有空格或標點，anchor 會偏移一格。
+    # 逐字元計算字位：標點與全形空格不佔字位(依 CbetaString),
+    # 「□」「▆」「○」等則視為一般文字佔字位，與 span 的 w 屬性一致。
     # 找到對應 @layer_pos 的字元後，start 標記插在該字之前、end 插在該字之後。
     pos = @html_pos
     split = nil
     text.each_char.with_index do |ch, idx|
-      next if ch.match?(PUNCS)
+      next if @cs.punc?(ch)
       pos += 1
       if pos == @layer_pos
         split = (@row['type'] == 'end') ? idx + 1 : idx
@@ -491,13 +440,11 @@ class ImportLayers
   end
 
   def read_cbeta_lines
-    @cbeta_lines = {}
-    @lb = nil
     fn = File.join(@xml_base, @canon, @vol, "#{@basename}.xml")
     puts "read #{fn}"
-    doc = File.open(fn) { |f| Nokogiri::XML(f) }
-    doc.remove_namespaces!
-    traverse(doc.root)
+    raw = CbetaLineReader.new(@gaijis).read(fn)
+    # raw 行文字保留標點,這裡才依 CbetaString 剝除標點得到字位用文字。
+    @cbeta_lines = raw.transform_values { |s| @cs.remove_puncs(s) }
   end
 
   def read_vars
@@ -521,11 +468,5 @@ class ImportLayers
     puts "write file #{@html_out}"
     FileUtils.makedirs(File.dirname(@html_out))
     File.write(@html_out, @html_doc.to_html)
-  end
-
-  def traverse(e)
-    e.children.each { |c| 
-      handle_node(c)
-    }
   end
 end

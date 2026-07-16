@@ -1699,8 +1699,8 @@ a071a03,14,person,start,A018979,章美
 a071a03,15,person,end,A018979,章美
 a071a03,19,person,start,A018329,明五
 a071a03,20,person,end,A018329,明五
-a071a06,1,person,start,A018451,張
-a071a06,1,person,end,A018451,張
+a071a06,3,person,start,A018451,張
+a071a06,3,person,end,A018451,張
 a071a09,4,person,start,A018452,文太史
 a071a09,6,person,end,A018452,文太史
 a071a10,1,place,start,PL20277,濟南
@@ -1713,10 +1713,10 @@ a072a05,1,person,start,A001834,聚沙居士錢謙益
 a072a05,7,person,end,A001834,聚沙居士錢謙益
 a072a06,3,person,start,A018450,姚
 a072a06,3,person,end,A018450,姚
-a072a07,20,place,start,PL9978,寒山
-a072a07,21,place,end,PL9978,寒山
-a072a09,19,person,start,A004095,韋馱
-a072a09,20,person,end,A004095,韋馱
+a072a07,21,place,start,PL9978,寒山
+a072a07,22,place,end,PL9978,寒山
+a072a09,20,person,start,A004095,韋馱
+a072a09,21,person,end,A004095,韋馱
 a072a10,1,person,start,A004100,伽藍
 a072a10,2,person,end,A004100,伽藍
 a073a01,3,person,start,A004865,魯公
@@ -1757,7 +1757,7 @@ a074a09,1,person,start,A018480,梁同書
 a074a09,3,person,end,A018480,梁同書
 a075a02,1,person,start,A018480,梁同書
 a075a02,3,person,end,A018480,梁同書
-a075a04,21,person,start,A018480,山舟
+a075a04,22,person,start,A018480,山舟
 a075a05,1,person,end,A018480,山舟
 a075a06,1,person,start,A018980,王應春
 a075a06,3,person,end,A018980,王應春
