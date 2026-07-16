@@ -414,12 +414,11 @@ class ImportLayers
   end
 
   def import_row_gaiji(e)
-    text = e.text
-    i = @html_pos + text.size
-
-    if i < @layer_pos
-      @html_pos = i
-      @line_text << text
+    # 一個 gaijiAnchor(缺字)在字位系統裡只佔一個字位，與其顯示字串長度無關。
+    # 早期版本以 text.size 計長度，顯示為組字式(多字元)或空字元的缺字會造成字位偏移。
+    if @html_pos + 1 < @layer_pos
+      @html_pos += 1
+      @line_text << e.text
       return false
     end
 
@@ -436,33 +435,43 @@ class ImportLayers
   def import_row_text(e)
     text = e.text
     @log_buf[:text] << "import_row_text, text: #{text}<br>\n"
-    i = @html_pos + text.size
 
-    if i < @layer_pos
-      @html_pos = i
+    # 本 span 起始字位若已超過目標字位，表示資料異常
+    if @html_pos >= @layer_pos
+      puts "[#{__LINE__}] html_pos 已超過 layer_pos"
+      puts @basename
+      puts @row.to_s
+      abort
+    end
+
+    # 逐字元計算字位：PUNCS(標點與全形/半形空格)不佔字位，
+    # 與 CBETA 字位編號(span 的 w 屬性)一致。
+    # 早期版本以 text.size 計長度，把空格/標點也算進去，
+    # 導致同一行內目標字位前若有空格或標點，anchor 會偏移一格。
+    # 找到對應 @layer_pos 的字元後，start 標記插在該字之前、end 插在該字之後。
+    pos = @html_pos
+    split = nil
+    text.each_char.with_index do |ch, idx|
+      next if ch.match?(PUNCS)
+      pos += 1
+      if pos == @layer_pos
+        split = (@row['type'] == 'end') ? idx + 1 : idx
+        break
+      end
+    end
+
+    # @layer_pos 不在此 text node，累積文字後往下一個 node 繼續
+    if split.nil?
+      @html_pos = pos
       @line_text << text
       return false
     end
 
-    @html_pos += 1
-    if @layer_pos < @html_pos
-      puts "[#{__LINE__}] html_pos 已超過 layer_pos"
-      puts @basename
-      puts @row.to_s
-      abort 
-    end
-    i = @layer_pos - @html_pos
-    i += 1 if @row['type'] == 'end' # 如果是結束標記，要放在文字後面
-    s = text[0, i]
-    if s.nil?
-      puts "[Line: #{__LINE__}]"
-      puts @row.to_s
-      abort
-    end
+    s = text[0, split]
     @line_text << s
     check_text(@line_text, @row)
     s << @anchor
-    s << text[i..-1] if text.size > i
+    s << text[split..-1] if text.size > split
     e.add_previous_sibling(s)
     e.remove
     true
