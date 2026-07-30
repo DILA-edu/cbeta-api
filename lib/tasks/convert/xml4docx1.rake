@@ -1304,7 +1304,7 @@ class XMLForDocx1
 
     @juan_styles[work][juan].each do |k|
       s = @predefined_styles[k]
-      abort "[#{__LINE__}] style 未定義: #{k.inspect}, lb: #{@style_lb[k]}" if s.nil?
+      raise "style 未定義: #{k.inspect}, lb: #{@style_lb[k]}" if s.nil?
       r << "#{indent}<style name=\"#{k}\">#{s}</style>"
     end
 

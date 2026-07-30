@@ -43,6 +43,7 @@ lg_m2: color:#008040;margin-left:2em
 lg_note1: color:#008040;font-size:10
 lg_note1_m2: color:#008040;font-size:10;margin-left:2em
 lg_note2: color:#008040;font-size:10
+lg_small: color:#008040;font-size:10
 license: background-color:#f0f0f0
 m0: margin-left:0
 m1: margin-left:1em
