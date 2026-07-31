@@ -54,7 +54,7 @@ module SectionHTML
     Dir.chdir(@config[:data]) do
       # 先刪除舊檔, 否則 zip 裡的舊檔會保留
       FileUtils.remove_file(dest, force: true)
-      command "zip -r #{dest} html"
+      command "zip -r #{dest} xml4docx"
     end
 
     confirm "將 zip 檔提供給 heaven 比對: #{dest}"
