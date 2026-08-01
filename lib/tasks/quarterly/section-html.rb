@@ -29,7 +29,8 @@ module SectionHTML
 
   def step_zip_html
     t = Time.now.strftime('%Y-%m-%d-%H%M')
-    dest = Rails.root.join("public", "download", "html-#{t}.zip")
+    bn = "html-#{t}.zip"
+    dest = Rails.root.join("public", "download", bn)
 
     # 變更目前目錄再做壓縮，否則壓縮檔內會含路徑
     Dir.chdir(@config[:data]) do
@@ -38,9 +39,10 @@ module SectionHTML
       command "zip -r #{dest} html"
     end
 
+    url = "https://cbdata.dila.edu.tw/dev/download/#{bn}"
     confirm <<~MSG
       將 zip 檔提供給 heaven:
-        #{dest}
+        #{url}
       因為 heaven 可能發現問題再修改 XML，
       所以等 heaven 比對完再進行後面的步驟。
     MSG
@@ -48,7 +50,8 @@ module SectionHTML
 
   def step_zip_xml4docx
     t = Time.now.strftime('%Y-%m-%d-%H%M')
-    dest = Rails.root.join("public", "download", "xml4docx-#{t}.zip")
+    bn = "xml4docx-#{t}.zip"
+    dest = Rails.root.join("public", "download", bn)
 
     # 變更目前目錄再做壓縮，否則壓縮檔內會含路徑
     Dir.chdir(@config[:data]) do
@@ -57,6 +60,7 @@ module SectionHTML
       command "zip -r #{dest} xml4docx"
     end
 
-    confirm "將 zip 檔提供給 heaven 比對: #{dest}"
+    url = "https://cbdata.dila.edu.tw/dev/download/#{bn}"
+    confirm "將 zip 檔提供給 heaven 比對: #{url}"
   end
 end # end of module
