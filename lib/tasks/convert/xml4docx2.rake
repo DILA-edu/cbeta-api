@@ -160,11 +160,18 @@ class XMLForDocx2
     traverse(e)
   end
   
+  # <lg subtype="note1"> 、 <lg subtype="note2"> 也是小字夾注
+  # ex: X09n0243_p0343b16 、 X18n0332_p0067b20
+  LG_NOTE_SUBTYPES = %w[note1 note2].freeze
+
   def inlinenote?(e)
     return false if e.nil?
     return false if e.name !='p'
     return false unless e.key?('rend')
-    e['rend'].include?('inlinenote')
+    return true if e['rend'].include?('inlinenote')
+
+    rends = e['rend'].split('_')
+    rends.include?('lg') and rends.intersect?(LG_NOTE_SUBTYPES)
   end
 
   def e_p(e)
