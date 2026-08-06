@@ -18,18 +18,16 @@ require 'cgi'
 require 'pp'
 
 class ImportCatalog
-  WORK_REGEX = /#{CBETA::CANON}(?:#{CBETA::WORK_PART})/ # T0001
-  VOL_REGEX = /#{CBETA::CANON}\d{2,3}/ # T01
+  # CBETA::CANON 是 alternation, 沒有包 group, 必須自己包 (?:...) 才能正確組合
+  WORK_REGEX = /(?:#{CBETA::CANON})(?:#{CBETA::WORK_PART})/ # T0001
+  VOL_REGEX = /(?:#{CBETA::CANON})\d{2,3}/ # T01
+
+  WORK_ID_REGEX = /\A#{WORK_REGEX}\z/ # 單一 work 編號, ex: T0001
 
   # T0220_576
   # T0310_017..018
   JUAN_REGEX = /\A
-    (
-      #{CBETA::CANON}
-      (?:
-        #{CBETA::WORK_PART}
-      )
-    )
+    (#{WORK_REGEX})
     _(\d{3})
     (?:\.\.(\d{3}))?
   \z/x
@@ -175,7 +173,12 @@ class ImportCatalog
     else
       w = Work.find_by n: work_id
     end
-    $stderr.puts "#{__LINE__} works table 找不到此編號：#{work_id}" if w.nil?
+    if w.nil?
+      $stderr.puts "#{__LINE__} works table 找不到此編號：#{work_id}"
+      @log.puts "<p>works table 找不到此編號：#{work_id}</p>"
+      @log.puts "</div>\n"
+      return
+    end
     type = w.alt.nil? ? 'work' : 'alt'
     
     data = { parent: parent }
@@ -321,10 +324,15 @@ div { margin-left: 1em; }
         i += handle_canon_node(parent, node: c, start: i)
       when / /
         s1, _, s2 = c["text"].partition(/ /)
-        if s1.end_with?(".htm")
+        if s1.match?(/\.html?\z/)
           add_node(parent:, node_type: "html", file: s1, n:, label: s2, sort: i)
         elsif s1 =~ JUAN_REGEX
           handle_juan_node(parent, node: c, start: i)
+        elsif s1.match?(WORK_ID_REGEX)
+          # ex: T0002 七佛經1卷
+          add_work(parent, i, s1, {})
+        else
+          raise "未知格式: #{c['text']}"
         end
         i += 1
       else
