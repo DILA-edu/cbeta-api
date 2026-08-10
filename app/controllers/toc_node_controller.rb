@@ -86,7 +86,7 @@ class TocNodeController < ApplicationController
       row = { type: 'work' }
       row.merge! w.to_hash
       result = [row]
-    elsif q.match(/^#{CBETA::CANON}[AB\d]\d{3}[a-zA-Z]?$/) # ex: T0001, JB271
+    elsif q.match(CBETA::WORK_ID) # ex: T0001, JB271, ZWa073
       works = Work.where("n LIKE ?", "#{q}%")
       result = []
       works.each do |w|

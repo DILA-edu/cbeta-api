@@ -4,7 +4,7 @@ class WorksController < ApplicationController
 
   def index
     if params.key? :work and not params[:work].empty?
-      unless params[:work] =~ /^#{CBETA::CANON}(\d{4}|[AB]\d{3})[a-zA-Z]?$/
+      unless params[:work] =~ CBETA::WORK_ID
         raise CbetaError.new(400), "work 參數 格式錯誤"
       end
       if referer_cn? and filter_cn?(id: params[:work])
