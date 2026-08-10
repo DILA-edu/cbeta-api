@@ -23,6 +23,7 @@ class ImportCatalog
   VOL_REGEX = /(?:#{CBETA::CANON})\d{2,3}/ # T01
 
   WORK_ID_REGEX = /\A#{WORK_REGEX}\z/ # 單一 work 編號, ex: T0001
+  CANON_ID_REGEX = /\A(?:#{CBETA::CANON})\z/ # 單一藏經編號, ex: T, ZS
 
   # T0220_576
   # T0310_017..018
@@ -320,7 +321,7 @@ div { margin-left: 1em; }
       end
 
       case c["text"]
-      when /^#{CBETA::CANON}$/
+      when CANON_ID_REGEX
         i += handle_canon_node(parent, node: c, start: i)
       when / /
         s1, _, s2 = c["text"].partition(/ /)
