@@ -1,11 +1,19 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-# This model initially had no columns defined.  If you add columns to the
-# model remove the '{}' from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-#  column: value
+# 樣本資料:T01n0001 長阿含經(卷 1)。
+# 測試不使用真實的 CBETA 資料庫,只需最小可辨識的一筆。
+t0001:
+  n: T0001
+  canon: T
+  vol: T01
+  title: 長阿含經
+  byline: 後秦 佛陀耶舍共竺佛念譯
+  category: 阿含部類
+  orig_category: 阿含部
+  time_dynasty: 後秦
+  time_from: 384
+  time_to: 417
+  juan: 22
+  juan_start: 1
+  juan_list: 1-22
+  sort_order: T0001
+  work_type: 一般
+  uuid: 00000000-0000-0000-0000-000000000001

@@ -1,11 +1,24 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# 樣本資料:T01n0001 卷 1 的前兩行。
+t01n0001_p0001a01:
+  linehead: T01n0001_p0001a01
+  work: T0001
+  vol: T01
+  juan: 1
+  page: '0001'
+  col: a
+  line: '01'
+  ser_no: 1
+  html: '<span class="lb" id="T01n0001_p0001a01">T01n0001_p0001a01</span><span class="t">長阿含經</span>'
+  notes: ''
 
-one:
-  linehead: MyString
-  html: MyText
-  notes: MyText
-
-two:
-  linehead: MyString
-  html: MyText
-  notes: MyText
+t01n0001_p0001a02:
+  linehead: T01n0001_p0001a02
+  work: T0001
+  vol: T01
+  juan: 1
+  page: '0001'
+  col: a
+  line: '02'
+  ser_no: 2
+  html: '<span class="lb" id="T01n0001_p0001a02">T01n0001_p0001a02</span><span class="t">後秦弘始年佛陀耶舍共竺佛念譯</span>'
+  notes: ''

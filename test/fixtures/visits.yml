@@ -1,0 +1,12 @@
+# analytics 資料庫(AnalyticsRecord)的瀏覽統計,供 report controller 測試使用。
+day1:
+  url: /
+  referer: ''
+  accessed_at: 2026-01-01
+  count: 10
+
+day2:
+  url: /
+  referer: ''
+  accessed_at: 2026-01-02
+  count: 20

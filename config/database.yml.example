@@ -1,0 +1,71 @@
+# config/database.yml 範本
+#
+# config/database.yml 不納入版控(見 .gitignore),每台機器自行維護。
+# 複製本檔為 config/database.yml 後,依該機器的實際情況調整。
+#
+#   cp config/database.yml.example config/database.yml
+#
+# 本專案使用兩個 database:
+#   * primary   —— CBETA 經文資料(works / lines / toc_nodes ...)
+#   * analytics —— 瀏覽統計與異動記錄(visits / changes),migration 放在
+#                  db/analytics_migrate,schema 為 db/analytics_schema.rb
+#
+# ⚠️ test 環境務必使用獨立的 database,不可指向 development 的檔案。
+#    `bin/rails test` 會執行 db:test:prepare(db:test:purge → load_schema),
+#    若 test 指向 db/development.sqlite3,整個 development 資料庫會被清空。
+#    (Rails 的 ActiveRecord::EnvironmentMismatchError 正是在擋這件事,
+#     出現該錯誤時請檢查本檔的 test 段,不要照錯誤訊息去跑
+#     `db:environment:set RAILS_ENV=test`。)
+#
+# 需要在真實 CBETA 資料上驗證時,請用 test_remote/(rake remote:test),
+# 那組測試打的是實際部署的 API,與 `bin/rails test` 完全分離。
+
+development:
+  primary:
+    adapter: sqlite3
+    pool: 5
+    timeout: 5000
+    database: db/development.sqlite3
+  analytics:
+    adapter: sqlite3
+    pool: 5
+    timeout: 5000
+    database: db/dev-analytics.sqlite3
+    migrations_paths: db/analytics_migrate
+
+# test 使用獨立的 sqlite3 檔與 test/fixtures/*.yml 的樣本資料,
+# 不需要、也不應該掛上真實的 CBETA 資料庫。
+test:
+  primary:
+    adapter: sqlite3
+    pool: 5
+    timeout: 5000
+    database: db/test.sqlite3
+  analytics:
+    adapter: sqlite3
+    pool: 5
+    timeout: 5000
+    database: db/test-analytics.sqlite3
+    migrations_paths: db/analytics_migrate
+
+production:
+  primary:
+    adapter: postgresql
+    encoding: unicode
+    database: cbdata14
+    host: localhost
+    pool: 5
+    username: pg_cbdata
+    password: <%= ENV['CBDATA_DB_PASSWORD'] %>
+  analytics:
+    adapter: postgresql
+    encoding: unicode
+    database: cb_analytics
+    host: localhost
+    pool: 5
+    username: pg_cbdata
+    password: <%= ENV['CBDATA_DB_PASSWORD'] %>
+    migrations_paths: db/analytics_migrate
+
+# staging / cn 等其他部署環境(config/environments/ 下另有設定檔)
+# 請依該機器的資料庫比照 production 段自行增加。

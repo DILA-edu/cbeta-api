@@ -1,9 +1,4 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  abbr: MyString
-  ref: MyString
-
-two:
-  abbr: MyString
-  ref: MyString
+# 引用縮寫對照:abbr → ref(CBETA 冊別/經號)。
+t:
+  abbr: 大
+  ref: T

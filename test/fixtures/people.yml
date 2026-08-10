@@ -1,9 +1,8 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# id2 為 CBETA 人名權威檔編號。
+mengjue:
+  id2: A009490
+  name: 夢覺
 
-one:
-  id2: MyString
-  name: MyString
-
-two:
-  id2: MyString
-  name: MyString
+fotuoyeshe:
+  id2: A000397
+  name: 佛陀耶舍

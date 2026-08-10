@@ -1,11 +1,22 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# 樣本資料:T0001 目次的根節點與一個子節點。
+t0001_root:
+  canon: T
+  work: T0001
+  file: T01n0001
+  n: T0001
+  label: 長阿含經
+  juan: 1
+  lb: 0001a01
+  parent: ''
+  sort_order: T0001
 
-one:
-  'n': MyString
-  label: MyString
-  parent: MyString
-
-two:
-  'n': MyString
-  label: MyString
-  parent: MyString
+t0001_child:
+  canon: T
+  work: T0001
+  file: T01n0001
+  n: T0001.1
+  label: 第一分初大本經第一
+  juan: 1
+  lb: 0001a02
+  parent: T0001
+  sort_order: T0001.1

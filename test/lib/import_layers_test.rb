@@ -108,6 +108,9 @@ class ImportLayersTest < ActiveSupport::TestCase
     obj.instance_variable_set(:@work, 'GA079n0081')
     obj.instance_variable_set(:@log_buf, { dirty: false, text: +'' })
 
+    # 字位規則的單一來源,與 ImportLayers#initialize 一致。
+    obj.instance_variable_set(:@cs, CbetaString.new)
+
     # check_text 會用整行(去 PUNCS)的文字驗證字位。
     obj.instance_variable_set(:@cbeta_lines, { row['lb'] => cbeta_line })
 

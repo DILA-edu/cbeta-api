@@ -1,13 +1,9 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  vol: MyString
-  work: MyString
+# 樣本資料:T0001 卷 1 的起訖行號。
+t0001_juan1:
+  work: T0001
+  vol: T01
   juan: 1
-  lb: MyString
-
-two:
-  vol: MyString
-  work: MyString2
-  juan: 1
-  lb: MyString2
+  lb: 0001a01
+  lb_end: 0001a02
+  uuid: 10000000-0000-0000-0000-000000000001
+  content_uuid: 20000000-0000-0000-0000-000000000001

@@ -1,9 +1,5 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  cb: MyString
-  zzs: MyString
-
-two:
-  cb: MyString2
-  zzs: MyString2
+# 缺字:cb 為 CBETA 編號,zzs 為組字式,pua 為 PUA 字元。
+cb00023:
+  cb: CB00023
+  zzs: "[得-彳]"
+  pua: ""

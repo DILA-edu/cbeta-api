@@ -1,9 +1,4 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  k: MyString
-  vars: MyString
-
-two:
-  k: MyString
-  vars: MyString
+# 異體字:k 為正字,vars 為異體字集合。
+fo:
+  k: 眾
+  vars: 衆
