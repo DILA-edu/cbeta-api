@@ -6,7 +6,7 @@ class TestAlternate < Minitest::Test
   def test_alternate    
     params = { q: 'orig-X.001.001.002'}
     r = get_json(@url, params)
-    assert_includes(r['results'][0]['label'], 'X0002(=T0320)')
+    assert_match(/X0002 ?\(=T0320\)/, r['results'][0]['label'])
   end
 
   def test_juan_start
