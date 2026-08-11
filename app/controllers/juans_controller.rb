@@ -40,17 +40,13 @@ class JuansController < ApplicationController
     if params.key? :linehead
       result = goto_linehead params
     elsif params.key? :canon
-      if params.key?(:work)
-        w = Work.normalize_no(params[:work])
-        @work_id = params[:canon] + w
-      end  
-      result = 
+      result =
         if referer_cn? and filter_cn?(id: params[:canon])
           EMPTY_RESULT
         elsif params.key? :vol
-          goto_by_vol params
+          goto_service.by_vol params
         elsif params.key? :work
-          goto_by_work params
+          goto_service.by_work params
         end
     end
     
@@ -150,138 +146,6 @@ class JuansController < ApplicationController
   end
 
   private
-    
-  # goto 書本結構
-  def goto_by_vol(opts)
-    canon = opts[:canon]
-    @vol = opts[:vol]
-    @vol = CBETA.normalize_vol(canon + @vol)
-    
-    line = Line.find_by_vol_params(opts)
-
-    if @work_id
-      if @work_id != line.work
-        return {
-          error: { code: 400, message: "Word ID #{@work_id} 與 #{line.linehead} 不符" }
-        }
-      end
-      work = @work_id
-    else
-      work = line.work
-    end
-    
-    { 
-      vol: @vol, 
-      work: work, 
-      file: Work.first_file_in_vol(work, @vol),
-      juan: line.juan, 
-      lb: line.page + line.col + line.line,
-      linehead: line.linehead 
-    }
-  end
-  
-  # goto 經卷結構
-  def goto_by_work(params)
-    canon = params[:canon]
-    
-    work = Work.find_by n: @work_id
-    if work.nil?
-      return { 
-        error: { code: 404, message: "Work ID (佛典編號) not found: #{@work_id}" }
-      }
-    end
-    
-    file = work.first_file
-    @vol = file.sub(/^(.*?)n.*$/, '\1')
-    
-    if params.key? :juan
-      @juan = params[:juan].to_i
-    else
-      @juan = work.juan_start
-    end
-    
-    if params.key? :page
-      unless params.key?(:vol)
-        params[:vol] = @vol.delete_prefix(canon).to_i.to_s
-      end
-      line = Line.find_by_vol_params(params)
-      @juan = line.juan unless params.key?(:juan)
-    else
-      #@vol, lb = JuanLine.get_first_lb_by_work_juan(@work_id, @juan)
-      line = Line.find_by(work: @work_id, juan: @juan)
-      if line.nil?
-        s = "Line record 不存在: work: #{@work_id}, juan: #{@juan}"
-        raise CbetaError.new(404), s
-      end  
-      @vol = line.vol
-    end
-    
-    { 
-      vol: @vol, 
-      work: @work_id, 
-      file: , 
-      juan: @juan, 
-      lb: line.page + line.col + line.line, 
-      linehead: line.linehead
-    }
-  end
-  
-  def lb_from_params(params)
-    logger.debug 'lb_from_params'
-    logger.debug "page: #{params[:page]}"
-
-    page = params[:page]
-    if page.match(/^([a-z])(\d+)$/)
-      page = $1 + $2.rjust(3, '0')
-    elsif page.match(/^\d+$/)
-      page = page.rjust(4, '0')
-    else
-      raise CbetaError.new(400), "頁碼格式錯誤：#{params[:page]}"
-    end
-
-    if @work_id.nil? or @juan.nil?
-    else
-      vol, start_lb = JuanLine.get_first_lb_by_work_juan(@work_id, @juan)
-      start_page = start_lb.sub(/^(\d{4}).*$/, '\1')
-      if page < start_page
-        raise CbetaError.new(400), "頁碼小於起始頁碼, 佛典編號: #{@work_id}, 卷號: #{@juan}, 起始頁碼: #{start_lb}, 要求頁碼: #{page}" 
-      end
-    end
-
-    logger.debug "page: #{page}"
-    lb = page
-    if params[:col].nil?
-      lb += 'a01'
-    else
-      col = params[:col]
-      unless col.match(/^[a-z]$/)
-        raise CbetaError.new(400), "欄號格式錯誤: #{col}"
-      end
-      lb += col
-      if params[:line].nil?
-        lb += '01'
-        if not params.key?(:vol) or params[:vol] == vol
-          lb = start_lb if lb < start_lb
-        end
-      else
-        line = params[:line]
-        unless line.match(/^\d+$/)
-          raise CbetaError.new(400), "行號格式錯誤: #{line}"
-        end
-        lb += line.rjust(2, '0')
-      end
-    end
-    logger.debug "juans_controller.rb, Line: #{__LINE__}, lb: #{lb}"
-
-    unless @vol.nil? or @work_id.nil?
-      juan = JuanLine.get_juan_by_vol_work_lb(@vol, @work_id, lb)
-      if juan.nil?
-        raise CbetaError.new(400), "冊號、典籍編號、行號 不符: vol: #{@vol}, work: #{@work_id}, lb: #{lb}" 
-      end
-    end
-
-    lb
-  end
 
   def accept_all_params
     params.permit!

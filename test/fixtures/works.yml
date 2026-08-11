@@ -17,3 +17,23 @@ t0001:
   sort_order: T0001
   work_type: 一般
   uuid: 00000000-0000-0000-0000-000000000001
+
+# 樣本資料:T09n0262 妙法蓮華經(7 卷)。
+# 用於 catalog 匯入「行首資訊節點」的測試。
+t0262:
+  n: T0262
+  canon: T
+  vol: T09
+  title: 妙法蓮華經
+  byline: 姚秦 鳩摩羅什譯
+  category: 法華部類
+  orig_category: 法華部
+  time_dynasty: 姚秦
+  time_from: 384
+  time_to: 417
+  juan: 7
+  juan_start: 1
+  juan_list: 1-7
+  sort_order: T0262
+  work_type: 一般
+  uuid: 00000000-0000-0000-0000-000000000262

@@ -22,3 +22,16 @@ t01n0001_p0001a02:
   ser_no: 2
   html: '<span class="lb" id="T01n0001_p0001a02">T01n0001_p0001a02</span><span class="t">後秦弘始年佛陀耶舍共竺佛念譯</span>'
   notes: ''
+
+# 樣本資料:T0262 卷 7〈觀世音菩薩普門品〉的起始行。
+t09n0262_p0056c02:
+  linehead: T09n0262_p0056c02
+  work: T0262
+  vol: T09
+  juan: 7
+  page: '0056'
+  col: c
+  line: '02'
+  ser_no: 3
+  html: '<span class="lb" id="T09n0262_p0056c02">T09n0262_p0056c02</span><span class="t">觀世音菩薩普門品第二十五</span>'
+  notes: ''

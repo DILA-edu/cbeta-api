@@ -4,3 +4,10 @@ t01n0001:
   file: T01n0001
   juan_start: 1
   juans: 22
+
+t09n0262:
+  work: T0262
+  vol: T09
+  file: T09n0262
+  juan_start: 1
+  juans: 7
