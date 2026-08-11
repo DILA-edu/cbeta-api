@@ -30,6 +30,10 @@ class ImportCatalog
     (?:\.\.(\d{3}))?
   \z/x
 
+  # cbeta 行首資訊, ex: T09n0262_p0056c02
+  # 與 GotoService#linehead 接受的格式一致
+  LINEHEAD_REGEX = /\A#{CBETA::CANON}\d{2,3}n.{5}p[a-z\d]\d{3}[a-z]\d+\z/
+
   def initialize
     @catalog_base = "https://raw.githubusercontent.com/heavenchou/cbwork-bin/refs/heads/master/cbreader2X"
     @xml_root = Rails.application.config.cbeta_xml
@@ -326,6 +330,8 @@ div { margin-left: 1em; }
           add_node(parent:, node_type: "html", file: s1, n:, label: s2, sort: i)
         elsif s1 =~ JUAN_REGEX
           handle_juan_node(parent, node: c, start: i)
+        elsif s1.match?(LINEHEAD_REGEX)
+          handle_linehead_node(parent, node: c, start: i)
         elsif s1.match?(CBETA::WORK_ID)
           # ex: T0002 七佛經1卷
           add_work(parent, i, s1, {})
@@ -369,6 +375,34 @@ div { margin-left: 1em; }
       label:,
       work:,
       juan_start: j1,
+      sort: start
+    )
+  end
+
+  # 節點開頭是 cbeta 行首資訊, 例:
+  # T09n0262_p0056c02 T0262 (卷7) 妙法蓮華經觀世音菩薩普門品
+  #
+  # node_type 用 'work', 與同層其他節點 (走 add_work) 一致,
+  # 否則 catalog_entry API 不會輸出 work/category/creators,
+  # scope_selector 也會把它當成沒有子節點的分類節點而略過。
+  def handle_linehead_node(parent, node:, start:)
+    linehead, _, label = node["text"].partition(/ /)
+
+    r = GotoService.new.linehead(linehead:)
+    if r.key?(:error)
+      raise "#{linehead} #{r.dig(:error, :message)}"
+    end
+
+    add_node(
+      parent:,
+      n: serial_no(parent, start),
+      label:,
+      node_type: 'work',
+      work: r[:work],
+      file: r[:file],
+      lb: r[:lb],
+      juan_start: r[:juan],
+      juan_end: r[:juan],
       sort: start
     )
   end
