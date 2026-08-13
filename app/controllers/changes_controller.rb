@@ -19,7 +19,8 @@ class ChangesController < ApplicationController
     @changes = Change.where(
         params.permit(:lb, :work, :juan)
       ).select(
-        :id, :work, :juan, :lb, :html, :ver, :del_chars, :ins_chars
+        # 不回傳 id，因為它只是 RDB 流水號，不保證永久性
+        :work, :juan, :lb, :html, :ver, :del_chars, :ins_chars
       ).order(ver: :desc)
     
     request.format = "json" unless params[:format]
@@ -28,7 +29,8 @@ class ChangesController < ApplicationController
       format.json { 
         r = {
           num_found: @changes.size,
-          results: @changes
+          # id 只是 RDB 流水號，不保證永久性，不對外回傳
+          results: @changes.as_json(except: :id)
         }
         my_render r
       }
