@@ -23,12 +23,12 @@ xml4docx 可以轉成 docx 與 odt 兩種格式，兩者都是純 Ruby 直接產
 ```
 rake 'convert:docx[,10]'   # 輸出 public/download/docx
 rake 'convert:odt[,10]'    # 輸出 public/download/odt
-rake zip:docx              # 一經一個 zip
+rake zip:docx              # 一經一個 zip, 另外產生全套的 cbeta-docx.zip
 rake zip:odt               # 一經一個 zip, 另外產生全套的 cbeta-odt.zip
 ```
 
-`zip:odt` 產生的 `public/download/cbeta-odt.zip` 內部路徑為
-`odt/<canon>/<work>/<檔名>.odt`。兩個 task 都是每次重建，可以重複執行。
+全套打包檔在 `public/download/cbeta-<format>.zip`，內部路徑為
+`<format>/<canon>/<work>/<檔名>`。兩個 task 都是每次重建，可以重複執行。
 
 參數是 `[filter,workers]`，filter 會比對來源路徑（例如 `T01`），
 省略則全部重轉並先清空輸出目錄；workers 預設為 CPU 核心數。

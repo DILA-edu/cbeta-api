@@ -59,22 +59,37 @@ class DownloadZipperTest < ActiveSupport::TestCase
     end
   end
 
+  test "docx 只打包 docx, 不會撈到同層的 odt" do
+    with_download_dir(:docx) do |dir|
+      # 同一個 download 目錄下兩種格式並存
+      with_files(dir, :odt)
+      DownloadZipper.new(:docx, bundle: true, download_dir: dir).zip
+
+      assert_equal %w[docx/T/T0001/T0001_001.docx docx/T/T0001/T0001_002.docx docx/X/X1600/X1600_001.docx],
+                   entries(dir, 'cbeta-docx.zip')
+      assert_not dir.join('cbeta-odt.zip').exist?
+    end
+  end
+
   private
 
-  def with_download_dir
+  def with_download_dir(format = :odt)
     Dir.mktmpdir do |dir|
       root = Pathname.new(dir)
-      {
-        'odt/T/T0001/T0001_001.odt' => '甲',
-        'odt/T/T0001/T0001_002.odt' => '乙',
-        'odt/X/X1600/X1600_001.odt' => '丙'
-      }.each do |path, content|
-        file = root.join(path)
-        file.dirname.mkpath
-        file.write(content)
-      end
-
+      with_files(root, format)
       yield root
+    end
+  end
+
+  def with_files(root, format)
+    {
+      "#{format}/T/T0001/T0001_001.#{format}" => '甲',
+      "#{format}/T/T0001/T0001_002.#{format}" => '乙',
+      "#{format}/X/X1600/X1600_001.#{format}" => '丙'
+    }.each do |path, content|
+      file = root.join(path)
+      file.dirname.mkpath
+      file.write(content)
     end
   end
 
