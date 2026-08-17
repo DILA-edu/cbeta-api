@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <settings>
+    <title>圖片測試</title>
+    <byline>測試</byline>
+    <footer>第 {Page} 頁／共 {NumPages} 頁</footer>
+    <styles>
+      <style name="default">font-family:新細明體;font-size:12</style>
+    </styles>
+  </settings>
+  <body>
+    <p>本文的圖:<graphic url="T/sample.gif"/></p>
+    <p>同一張圖再用一次:<graphic url="T/sample.gif"/></p>
+    <p>註腳裡的圖<footnote>註腳內容<graphic url="T/sample.gif"/></footnote></p>
+    <p>找不到的圖:<graphic url="T/missing.gif"/></p>
+  </body>
+</document>
