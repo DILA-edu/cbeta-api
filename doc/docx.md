@@ -14,3 +14,25 @@
    檢查 xml4docx 正確性
    rake check:xml4docx
 4. 給 heven 比對 text 正確性
+
+## 產生下載檔
+
+xml4docx 可以轉成 docx 與 odt 兩種格式，兩者都是純 Ruby 直接產生，
+不需要 Word 或 LibreOffice：
+
+```
+rake 'convert:docx[,10]'   # 輸出 public/download/docx
+rake 'convert:odt[,10]'    # 輸出 public/download/odt
+rake zip:docx              # 一經一個 zip
+rake zip:odt
+```
+
+參數是 `[filter,workers]`，filter 會比對來源路徑（例如 `T01`），
+省略則全部重轉並先清空輸出目錄；workers 預設為 CPU 核心數。
+全量 14047 檔在 10 個 process 下約 20 秒。
+
+轉檔邏輯：
+
+* `XmlToDocxConverter` — 產生 OOXML
+* `XmlToOdtConverter` — 產生 ODF
+* `Xml4docxSupport` — 兩者共用的 style 解析、table 跨欄跨列計算、圖片讀取

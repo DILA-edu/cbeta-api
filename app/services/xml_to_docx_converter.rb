@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'cgi/escape'
 require 'nokogiri'
 require 'time'
 
@@ -10,6 +9,8 @@ require 'time'
 #
 # figures_dir 是 CBR2X-figures 的路徑; 未指定時 <graphic> 會退回文字佔位符。
 class XmlToDocxConverter
+  include Xml4docxSupport
+
   W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
   R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
   PKG_REL_NS = 'http://schemas.openxmlformats.org/package/2006/relationships'
@@ -28,17 +29,6 @@ class XmlToDocxConverter
   # 高度留 10% 餘裕, 否則整頁高的圖會把同段落的文字擠到上一頁, 留下大片空白
   MAX_IMAGE_WIDTH_EMU = (PAGE_WIDTH_TWIPS - (PAGE_MARGIN_TWIPS * 2)) * EMU_PER_TWIP
   MAX_IMAGE_HEIGHT_EMU = ((PAGE_HEIGHT_TWIPS - (PAGE_MARGIN_TWIPS * 2)) * EMU_PER_TWIP * 0.9).round
-
-  GIF_SIGNATURES = ['GIF87a'.b, 'GIF89a'.b].freeze
-  PNG_SIGNATURE = "\x89PNG\r\n\x1a\n".b.freeze
-  JPEG_SIGNATURE = "\xff\xd8".b.freeze
-
-  IMAGE_CONTENT_TYPES = {
-    'gif' => 'image/gif',
-    'png' => 'image/png',
-    'jpg' => 'image/jpeg',
-    'jpeg' => 'image/jpeg'
-  }.freeze
 
   # relationship id 前綴, 每個 part 各自一組 relationship
   IMAGE_REL_PREFIXES = { document: 'rIdImg', footnotes: 'rIdFnImg' }.freeze
@@ -59,7 +49,7 @@ class XmlToDocxConverter
   end
 
   def convert(output_path)
-    ZipWriter.write(output_path, package_parts)
+    OfficeZipWriter.write(output_path, package_parts)
     @warnings.uniq
   end
 
@@ -86,12 +76,6 @@ class XmlToDocxConverter
     parts['word/_rels/footnotes.xml.rels'] = footnotes_relationships_xml if image_rels(:footnotes).any?
     @media.each_value { |media| parts["word/#{media[:name]}"] = media[:data] }
     parts
-  end
-
-  def read_styles
-    @xml.xpath('/document/settings/styles/style').each_with_object({}) do |style_node, styles|
-      styles[style_node['name'].to_s] = parse_style(style_node.text)
-    end
   end
 
   def document_xml
@@ -128,8 +112,7 @@ class XmlToDocxConverter
 
   def paragraph_xml(node, list_context: nil, prefix: nil, inherited_style: nil)
     style = merge_styles(inherited_style, style_for(node))
-    rend = node['rend'].to_s.strip
-    pstyle_name = @styles.key?(rend) ? rend : rend.split(/\s+/).find { |part| @styles.key?(part) }
+    pstyle_name = paragraph_style_name(node)
     style = style.merge('_pstyle' => pstyle_name) if pstyle_name
     runs = +''
     runs << run_xml(prefix, style) if prefix
@@ -178,17 +161,6 @@ class XmlToDocxConverter
     end.join
   end
 
-  def list_marker(type, index)
-    case type
-    when 'none'
-      nil
-    when 'decimal', 'number', 'ordered'
-      "#{index + 1}. "
-    else
-      "• "
-    end
-  end
-
   def table_xml(node, inherited_style: nil)
     style = merge_styles(inherited_style, style_for(node))
     rows = node.xpath('./row').to_a
@@ -218,51 +190,6 @@ class XmlToDocxConverter
         #{table_rows_xml(rows, style)}
       </w:tbl>
     XML
-  end
-
-  def table_column_count(node, rows)
-    explicit = positive_integer(node['cols'], 0)
-    inferred = inferred_table_column_count(rows)
-
-    [explicit, inferred, 1].max
-  end
-
-  def inferred_table_column_count(rows)
-    active_spans = {}
-
-    rows.map do |row|
-      measure_row_column_count(row, active_spans)
-    end.max || 1
-  end
-
-  def measure_row_column_count(node, active_spans)
-    source_cells = node.xpath('./cell').to_a
-    cell_index = 0
-    column = 0
-
-    while cell_index < source_cells.length || active_span_at_or_after?(active_spans, column)
-      if (span = active_spans[column])
-        span[:remaining_rows] -= 1
-        active_spans.delete(column) if span[:remaining_rows].zero?
-        column += span[:cols]
-        next
-      end
-
-      if cell_index < source_cells.length
-        cell = source_cells[cell_index]
-        cols = positive_integer(cell['cols'], 1)
-        rows = positive_integer(cell['rows'], 1)
-
-        active_spans[column] = { cols: cols, remaining_rows: rows - 1 } if rows > 1
-        column += cols
-        cell_index += 1
-        next
-      end
-
-      column += 1
-    end
-
-    column
   end
 
   def table_grid_xml(column_count)
@@ -309,10 +236,6 @@ class XmlToDocxConverter
     end
 
     "<w:tr>#{cells}</w:tr>"
-  end
-
-  def active_span_at_or_after?(active_spans, column)
-    active_spans.keys.any? { |active_column| active_column >= column }
   end
 
   def cell_xml(node, table_style)
@@ -440,64 +363,6 @@ class XmlToDocxConverter
     return run_xml("[image: #{url}]", inherited_style) if image.nil?
 
     drawing_xml(url, image)
-  end
-
-  # 讀不到的圖片也快取為 nil, 避免同一份 XML 重複讀檔
-  def image_for(url)
-    return @images[url] if @images.key?(url)
-
-    @images[url] = read_image(url)
-  end
-
-  def read_image(url)
-    if @figures_dir.nil?
-      warn_once('figures_dir is not set; graphics are rendered as text placeholders.')
-      return nil
-    end
-
-    path = File.join(@figures_dir, url)
-    unless File.file?(path)
-      warn_once("Missing image file: #{url}")
-      return nil
-    end
-
-    data = File.binread(path)
-    size = image_pixel_size(data)
-    extension = File.extname(url).downcase.delete_prefix('.')
-    unless size && IMAGE_CONTENT_TYPES.key?(extension)
-      warn_once("Unsupported image format: #{url}")
-      return nil
-    end
-
-    { data: data, width: size[0], height: size[1], extension: extension }
-  end
-
-  def image_pixel_size(data)
-    if GIF_SIGNATURES.any? { |signature| data.start_with?(signature) }
-      data[6, 4].unpack('v2')
-    elsif data.start_with?(PNG_SIGNATURE)
-      data[16, 8].unpack('N2')
-    elsif data.start_with?(JPEG_SIGNATURE)
-      jpeg_pixel_size(data)
-    end
-  end
-
-  # 掃 JPEG 的 SOFn marker 取得尺寸
-  def jpeg_pixel_size(data)
-    offset = 2
-
-    while offset < data.bytesize - 9
-      break unless data.getbyte(offset) == 0xff
-
-      marker = data.getbyte(offset + 1)
-      length = data[offset + 2, 2].unpack1('n').to_i
-      # SOF0..SOF15, 但不含 DHT(c4) / JPGA(c8) / DAC(cc)
-      return data[offset + 5, 4].unpack('n2').reverse if (0xc0..0xcf).cover?(marker) && ![0xc4, 0xc8, 0xcc].include?(marker)
-
-      offset += 2 + length
-    end
-
-    nil
   end
 
   def drawing_xml(url, image)
@@ -836,12 +701,6 @@ class XmlToDocxConverter
     xml_decl("<w:fonts xmlns:w=\"#{W_NS}\">#{entries}</w:fonts>")
   end
 
-  def collect_fonts
-    fonts = @styles.values.filter_map { |style| style['font-family'] }
-    fonts += @xml.xpath('//font[@name]').map { |node| node['name'] }
-    fonts.uniq
-  end
-
   def content_types_xml
     image_defaults = media_extensions.map do |extension|
       %(<Default Extension="#{extension}" ContentType="#{IMAGE_CONTENT_TYPES.fetch(extension)}"/>)
@@ -937,76 +796,9 @@ class XmlToDocxConverter
     )
   end
 
-  def style_for(node)
-    merge_styles(named_style(node['rend']), parse_style(node['style']))
-  end
-
-  def named_style(name)
-    return {} if name.nil? || name.empty?
-    return @styles[name] if @styles.key?(name)
-
-    name.split(/\s+/).each_with_object({}) do |part, style|
-      style.merge!(@styles[part]) if @styles.key?(part)
-    end
-  end
-
-  def parse_style(value)
-    value.to_s.split(';').each_with_object({}) do |declaration, style|
-      key, property_value = declaration.split(':', 2).map { |part| part&.strip }
-      next if key.nil? || key.empty? || property_value.nil? || property_value.empty?
-
-      style[key.downcase] = property_value
-    end
-  end
-
-  def merge_styles(*styles)
-    styles.compact.each_with_object({}) { |style, merged| merged.merge!(style) }
-  end
-
-  def normalize_text(text)
-    text.gsub(/\r?\n[ \t]*/, '')
-  end
-
-  def text_at(xpath)
-    @xml.at_xpath(xpath)&.text.to_s
-  end
-
-  def positive_integer(value, fallback)
-    integer = value.to_i
-    integer.positive? ? integer : fallback
-  end
-
-  def alignment_value(value)
-    case value.to_s.downcase
-    when 'center', 'centre'
-      'center'
-    when 'right', 'end'
-      'right'
-    when 'left', 'start'
-      'left'
-    end
-  end
-
   def half_points(value)
-    return nil if value.nil? || value.empty?
-
-    points = Float(value)
-    return nil unless points.positive?
-
-    (points * 2).round
-  rescue ArgumentError
-    nil
-  end
-
-  def bold?(value)
-    %w[bold 700 800 900].include?(value.to_s.downcase)
-  end
-
-  def color_value(value)
-    color = value.to_s.strip.delete_prefix('#')
-    return nil unless color.match?(/\A[0-9a-fA-F]{6}\z/)
-
-    color.upcase
+    points = font_size_points(value)
+    points && (points * 2).round
   end
 
   def width_xml(value, tag)
@@ -1018,25 +810,7 @@ class XmlToDocxConverter
   end
 
   def percentage_to_ooxml(value)
-    return nil unless value.to_s.end_with?('%')
-
-    pct = Float(value.to_s.chomp('%'))
-    return nil unless pct >= 0
-
-    (pct * 50).round
-  rescue ArgumentError
-    nil
-  end
-
-  def escape_xml(value)
-    CGI.escapeHTML(value.to_s)
-  end
-
-  def xml_decl(body)
-    %(<?xml version="1.0" encoding="UTF-8"?>\n#{body})
-  end
-
-  def warn_once(message)
-    @warnings << message
+    pct = percentage_value(value)
+    pct && (pct * 50).round
   end
 end
