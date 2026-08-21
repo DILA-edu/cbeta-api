@@ -13,8 +13,7 @@
 | 項目 | 設計 | 實作 | 理由 |
 |---|---|---|---|
 | Origin 白名單位置 | `config/environments/*.rb`，納入版控 | `config/cb.yml`，不進版控 | **2026-08-21 主管指示**（見 3.3） |
-| `config/environments/cn.rb` 與 Gemfile `group :production, :cn` | 評估刪除 | **保留** | `api.cbetaonline.cn` 走阿里雲 CDN 回源到 sakya，該 vhost 的 `PassengerAppEnv` 是 `cn`，`cn.rb` 用 postgresql 與 mem_cache_store。cn 環境是活的（7.3） |
-| `config/deploy/cn.rb` | 刪除 | **保留**（未刪） | 刪除動作被工具權限攔下；且 cn 環境既然是活的，保留較保險 |
+| `config/environments/cn.rb` | 評估刪除 | **刪除** | 2026-08-21 確認 `api.cbetaonline.cn` 廢棄不用，`cn` 環境整組退場（7.3） |
 | `api_keys` 欄位 | 無前綴欄位 | 多一個 `token_hint` | 5.4 要求帳號頁「只顯示前綴」，但 digest 無法反推前綴（4.3） |
 | `ReportController` | 整個 controller 限 admin | `index` 例外開放 | `report#index` 是「字數統計」的欄位說明頁，不含流量資料，且從公開頁面連過去。7.4 本身已預留個別報表開放的空間 |
 | `origin_stats` 計數位置 | 塞進 `log_action_start` | 另開 `record_origin` | `log_action_start` 是純 logging；6.4 本身就警告不要動壞它（fail2ban 靠它的 log 格式） |
@@ -593,10 +592,12 @@ Define dev_path    /var/www/cbeta-api-staging
 - 代價：「現在誰是 production」在版控裡看不到。因此要
   (a) 加一支 cap task 印出 `readlink -f`，(b) 在 `doc/` 放一份年度輪替 checklist。
 
-同時要做的清理：
+同時要做的清理（已全部完成）：
 - 刪除 `config/deploy/sakya.rb`、`config/deploy/cn.rb`
 - Gemfile 的 `group :production, :cn` 改為 `group :production`
-- 評估是否刪除 `config/environments/cn.rb`
+- 刪除 `config/environments/cn.rb` —— 2026-08-21 確認 `api.cbetaonline.cn`
+  廢棄不用，`cn` 環境整組退場：另一併移除 `doc/cn.md`、
+  `test_remote` 的 `cn` target、`lib/tasks/quarterly` 的 `cn` 分支。
 - **不要動** `filter_cn?` / `referer_cn?` 邏輯（`app/controllers/application_controller.rb`）
   與 `config.cn_filter`（`config/application.rb:31`）—— 那是判斷來源 referer 是否
   `.cn` 結尾以決定內容過濾，與部署環境無關，主站仍需要。

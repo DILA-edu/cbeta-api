@@ -102,7 +102,7 @@ production:
     password: <%= ENV['CBDATA_DB_PASSWORD'] %>
     migrations_paths: db/accounts_migrate
 
-# staging / cn 等其他部署環境(config/environments/ 下另有設定檔)
+# staging 等其他部署環境(config/environments/ 下另有設定檔)
 # 請依該機器的資料庫比照 production 段自行增加。
 #
 # staging 的 accounts 用 accounts_dev(不可指向 cb_accounts,

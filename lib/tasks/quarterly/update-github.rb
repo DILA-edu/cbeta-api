@@ -31,20 +31,14 @@ def pull(repo, tag=nil)
 end
 
 $base = ARGV.first
-tag = ARGV[1]
 
 pull('Authority-Databases')
 pull('cbwork-common-T2K')
 pull('cbeta_gaiji')
 pull('cbeta-metadata')
 pull('CBR2X-figures') # https://github.com/cbeta-git/CBR2X-figures
-
-if ENV['RAILS_ENV'] == 'cn'
-  pull('cbeta-xml-p5a', tag)
-else
-  pull('cbeta-xml-p5a')
-  pull('gaiji-CB') # https://github.com/cbeta-org/gaiji-CB
-  #pull('ebook-covers') # epub 改由 heaven 產生
-  pull('sd-gif') # https://github.com/cbeta-org/sd-gif
-  pull('rj-gif') # https://github.com/cbeta-org/rj-gif
-end
+pull('cbeta-xml-p5a')
+pull('gaiji-CB') # https://github.com/cbeta-org/gaiji-CB
+#pull('ebook-covers') # epub 改由 heaven 產生
+pull('sd-gif') # https://github.com/cbeta-org/sd-gif
+pull('rj-gif') # https://github.com/cbeta-org/rj-gif

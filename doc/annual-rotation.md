@@ -98,8 +98,7 @@ accounts DB**，固定為：
 
 - Capistrano 的 `deploy_to` 指向 symlink 完全正常，`releases/` 與 `shared/`
   都建在實體目錄內。
-- `cbdata-cn.conf`（`api.cbetaonline.cn`，`PassengerAppEnv cn`）目前直接寫
-  slot 路徑 `/var/www/cbapi1/current/public`，輪替時**要另外確認這一份**。
-  見 doc/cn.md。
+- `api.cbetaonline.cn` 已於 2026-08-21 廢棄（`cn` 環境與 `cbdata-cn.conf`
+  一併退場），輪替時不必再確認那一份 vhost。
 - 代價：「現在誰是 production」在版控裡看不到，只能問伺服器
   （`cap production slot:which`）。這是刻意的取捨 —— 換來的是輪替時不必改版控。

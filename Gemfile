@@ -66,11 +66,7 @@ gem 'time_diff'
 gem 'chronic_duration'
 gem 'mysql2'
 
-# :cn 仍保留 —— api.cbetaonline.cn 走阿里雲 CDN 回源到 sakya,
-# 該 vhost (cbdata-cn.conf) 的 PassengerAppEnv 是 cn,
-# config/environments/cn.rb 用 postgresql 與 mem_cache_store,兩個 gem 都需要。
-# 見 doc/cn.md。
-group :production, :cn do
+group :production do
   gem 'pg'
   gem "dalli" # for memcached
 end

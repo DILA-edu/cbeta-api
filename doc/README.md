@@ -27,6 +27,3 @@
 
 參考 remove-old.md
 
-## cn mirror
-
-等正式版上線後再更新 cn mirror, 參考 cn.md.

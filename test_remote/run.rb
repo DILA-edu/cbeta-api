@@ -83,7 +83,6 @@ end
 $env = ARGV.first
 $api = case $env
 when 'stable' then 'https://cbdata.dila.edu.tw/stable'
-when 'cn'     then 'https://api.cbetaonline.cn'
 when 'local'  then 'http://localhost:3000'
 when 'test'   then 'http://cbdata.dila.edu.tw/test'
 else 

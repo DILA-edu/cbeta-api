@@ -30,8 +30,6 @@ module Config
       r[:root]          = "/Users/ray/git-repos/cbeta-api"
       r[:change_log]    = '/Users/ray/Documents/Projects/cbeta/changelog'
       r[:ebook_convert] = '/Applications/calibre.app/Contents/MacOS/ebook-convert'
-    when 'cn'
-      r[:root] = "/mnt/CBETAOnline/cbdata/shared"
     end
 
     r[:data]     = File.join(r[:root], 'data')
