@@ -42,8 +42,51 @@ module ApiKeyAuthentication
   # （含 dotted path,例如 window.foo）
   SAFE_CALLBACK = /\A[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*\z/
 
+  # --- rate limit（見設計文件 6）---
+  #
+  # 「api key 控管」若沒有配額,key 只是身分標籤。且過渡期「未帶 key 就放行」
+  # 意味著防護等於零: 濫用者只要不帶 key 就完全不受限,正常使用者反而要多做事,
+  # 沒有任何動機申請 key。因此帶 key 享有明顯較高的額度。
+  RATE_LIMIT_WINDOW = 1.minute
+  ANONYMOUS_LIMIT = 60  # per IP
+  KEYED_LIMIT = 300     # per user
+
+  # Rails 的 rate_limit 在 include 時就把 store 收進 closure,無法在
+  # runtime 替換。這層薄殼把它延後到 request 時才解析 Rails.cache,
+  # 好處是測試能換成 MemoryStore 實測 429
+  # （test 環境的 cache_store 是 null_store,increment 回 nil，
+  #  rate limit 形同停用，否則整個測試套件都會受 60/min 的限制影響）。
+  RATE_LIMIT_STORE = Object.new
+  def RATE_LIMIT_STORE.increment(name, amount = 1, **options)
+    Rails.cache.increment(name, amount, **options)
+  end
+
   included do
     before_action :authenticate_api_key!
+
+    # rate limit 宣告在 authenticate_api_key! 之後,才能用 current_api_key
+    # 判斷該套哪一個額度。
+    #
+    # scope 明確指定,讓額度跨 controller 共用 —— 預設的 scope 是
+    # controller_path,那會變成「每個 controller 各有 60/min」,
+    # 等於總額度乘以 controller 數量。
+    #
+    # 額度設計與 fail2ban 的分工見設計文件 6.2: cbeta-api-r3 jail 的實際上限
+    # 約 540 req/min 且懲罰是 ban 整個 IP 一小時,所以 Rails 的 per-user 上限
+    # 訂在它之下 (300),429 會先發生,fail2ban 退居最後一道防線。
+    rate_limit to: ANONYMOUS_LIMIT, within: RATE_LIMIT_WINDOW,
+               by: -> { request.remote_ip },
+               with: -> { reject_rate_limited },
+               store: RATE_LIMIT_STORE,
+               scope: 'cbeta-api-anonymous',
+               unless: :api_key_used?
+
+    rate_limit to: KEYED_LIMIT, within: RATE_LIMIT_WINDOW,
+               by: -> { "user-#{current_api_key.user_id}" },
+               with: -> { reject_rate_limited },
+               store: RATE_LIMIT_STORE,
+               scope: 'cbeta-api-user',
+               if: :api_key_used?
   end
 
   private
@@ -68,6 +111,10 @@ module ApiKeyAuthentication
   # 目前這個 request 使用的 key（沒帶 key 就是 nil）
   def current_api_key
     @current_api_key
+  end
+
+  def api_key_used?
+    current_api_key.present?
   end
 
   def bearer_token
@@ -113,6 +160,20 @@ module ApiKeyAuthentication
 
   def reject_missing_key
     render_api_key_error(:unauthorized, '本 API 需要 API key。請在 HTTP header 帶 Authorization: Bearer <api_key>')
+  end
+
+  def reject_rate_limited
+    limit = api_key_used? ? KEYED_LIMIT : ANONYMOUS_LIMIT
+    retry_after = RATE_LIMIT_WINDOW.to_i
+
+    # 讓 client 知道要退讓多久（fail2ban 的懲罰是直接 ban IP 一小時,
+    # 429 + Retry-After 溫和得多,所以要讓 429 先發生）
+    response.headers['Retry-After'] = retry_after.to_s
+
+    message = "超過流量限制（每分鐘 #{limit} 次）。請於 #{retry_after} 秒後重試"
+    message += '。帶有效的 API key 可享有較高額度' unless api_key_used?
+
+    render_api_key_error(:too_many_requests, message)
   end
 
   # 不走 ApplicationController#my_render_error —— 那個 method 沒有帶 HTTP
