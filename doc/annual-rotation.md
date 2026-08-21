@@ -53,6 +53,10 @@ Define dev_path    /var/www/cbeta-api-staging
 3. 準備新的 staging slot（cbapi3）：
    - `mkdir -p /var/www/cbapi3/shared/config`
    - 放 `database.yml`、`cb.yml`、`master.key`（見 doc/staging.md）
+   - ⚠️ `cb.yml` 必須含 `api_origin_allowlist`（Origin 白名單不進版控）。
+     漏了在過渡期內不會有症狀，但過渡期一結束前端就全站 401。
+     部署後跑 `cap staging rake api_key:config`（或在機器上
+     `RAILS_ENV=staging bundle exec rake api_key:config`）確認。
    - `database.yml` 的 `staging:` 區塊：內容 DB 指新的（如 `cbdata3`）、
      analytics 指 `analytics_dev`、**accounts 指 `accounts_dev`**
    - `database.yml` 的 `production:` 區塊：analytics 指 `cb_analytics`、

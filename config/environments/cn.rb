@@ -100,8 +100,8 @@ Rails.application.configure do
 
   config.x.app_base_url = 'https://api.cbetaonline.cn'
 
-  # ⚠️ API key: 目前沿用 config/application.rb 的預設值 ——
-  # api_origin_allowlist 為空、api_key_required 為 false（過渡期全部放行）。
+  # ⚠️ API key: api_key_required 沿用預設值 false（過渡期全部放行）。
+  # Origin 白名單讀 config/cb.yml 的 cn: 區塊（不進版控）。
   #
   # 過渡期結束前必須決定 cn 站要怎麼辦: 它是純網頁前端，要求它帶 key 等於要求
   # 把 key 公開寫在 JS 裡（正是本設計否決的做法），實務上只有「加進 Origin

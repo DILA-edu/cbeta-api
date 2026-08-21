@@ -124,9 +124,6 @@ Rails.application.configure do
 
   config.x.app_base_url = 'https://cbdata.dila.edu.tw/dev'
 
-  # 未帶 API key 也放行的 Origin。理由與注意事項同 production.rb。
-  config.api_origin_allowlist = %w[
-    https://cbetaonline.dila.edu.tw
-    https://cbetaonline-dev.dila.edu.tw
-  ]
+  # 未帶 API key 也放行的 Origin 白名單放 config/cb.yml 的 staging: 區塊，
+  # 不進版控（2026-08-21 主管指示）。見 doc/api-key-design.md 3.3。
 end

@@ -89,19 +89,6 @@ Rails.application.configure do
 
   config.x.app_base_url = 'https://cbdata.dila.edu.tw/stable'
 
-  # 未帶 API key 也放行的 Origin（主管指示，本次只放行 cbetaonline 兩站）。
-  #
-  # 網頁前端刻意「不帶 key」—— 前端無法保護 key（寫在 JS 裡等於公開），
-  # key 只發給程式化 client。
-  #
-  # 已知 Origin 可被偽造（curl -H "Origin: ..."），此為主管指示的既定方針。
-  #
-  # 注意 Apache 的 CORS 白名單（cbdata-sub.conf）另含 cbeta.org、
-  # cbetaonline.cn、docusky.org.tw、mrmyhuang.github.io、syda.dila.edu.tw、
-  # http://localhost:8000 共 6 個來源。那 6 個站台過渡期結束後會拿到 401
-  # （CORS 過得了，但沒有 key），需在過渡期結束前定案（設計文件 11.1）。
-  config.api_origin_allowlist = %w[
-    https://cbetaonline.dila.edu.tw
-    https://cbetaonline-dev.dila.edu.tw
-  ]
+  # 未帶 API key 也放行的 Origin 白名單放 config/cb.yml 的 production: 區塊，
+  # 不進版控（2026-08-21 主管指示）。見 doc/api-key-design.md 3.3。
 end

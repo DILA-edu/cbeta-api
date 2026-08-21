@@ -186,15 +186,42 @@ https://cbetaonline.dila.edu.tw
 https://cbetaonline-dev.dila.edu.tw
 ```
 
-- 放在 `config/environments/production.rb` 與 `config/environments/staging.rb`
-  （`config.api_origin_allowlist`），**納入版控**。
-- 不放 `config/cb.yml`（該檔 gitignored、每台機器一份），理由：白名單屬安全設定，
-  放版控才能 review 與追歷史；且它本來就需要 per-environment 不同。
-- **白名單不是機密**：任何人開 cbetaonline 用 DevTools 即可看到 Origin；更直接的是
-  伺服器會把命中的 Origin echo 回 `Access-Control-Allow-Origin`，可用探測法列舉。
-  且 Origin 本身可任意偽造，保密與否對防偽造毫無差別（Kerckhoffs 原則）。
-  故不需為此把 repo 改為 private。
 - 比對時只比 Origin 完整字串（scheme + host [+ port]），不做 subdomain 模糊比對。
+
+#### 放在哪裡：**2026-08-21 主管指示改為不進版控**（已推翻原設計）
+
+放 `config/cb.yml`（該檔 gitignored、每台機器一份），各環境用自己的區塊：
+
+```yaml
+production:
+  api_origin_allowlist:
+    - 'https://cbetaonline.dila.edu.tw'
+    - 'https://cbetaonline-dev.dila.edu.tw'
+staging:
+  api_origin_allowlist:
+    - ...
+```
+
+`config/application.rb` 以 `Array(config.cb.api_origin_allowlist)` 讀入。
+
+原設計主張放 `config/environments/*.rb` 納入版控，理由是：白名單屬安全設定，
+放版控才能 review 與追歷史；且白名單本非機密（任何人開 cbetaonline 用 DevTools
+即可看到 Origin；更直接的是伺服器會把命中的 Origin echo 回
+`Access-Control-Allow-Origin`，可用探測法列舉；且 Origin 本身可任意偽造，
+保密與否對防偽造毫無差別 —— Kerckhoffs 原則）。
+
+**主管於 2026-08-21 指示不進版控，依指示辦理。**
+
+因此原設計靠 code review 擋住的風險改用以下方式補償：
+
+1. `rake api_key:config` 印出生效的白名單、過渡期開關與額度。
+   **每台機器部署後、以及過渡期結束前，都要跑這個確認。**
+2. `test/lib/api_origin_allowlist_config_test.rb` 測試 cb.yml → config 的接線，
+   避免接錯時靜默變成空陣列。
+3. ⚠️ 新機器（或年度輪替的新 slot）的 `shared/config/cb.yml` **必須補上這個 key**。
+   漏了在過渡期內不會有症狀（未帶 key 照樣放行），但 `api_key_required` 一改成
+   `true` 就會讓 cbetaonline 前端**全站 401**。輪替 checklist 見
+   `doc/annual-rotation.md`。
 
 ### 3.4 錯誤回應
 
@@ -640,6 +667,6 @@ Define dev_path    /var/www/cbeta-api-staging
 | 不自動合併 Google/GitHub 同 email 帳號 | GitHub email 可能 private 或 nil，不可靠（4.2） |
 | 不修改 `my_render_error` | 會改變既有 client 看到的 HTTP status（3.4） |
 | 不動 `filter_cn?` / `referer_cn?` | 判斷 referer 是否 `.cn`，與部署環境無關（7.3） |
-| 不為 Origin 白名單把 repo 改 private | 白名單可被探測列舉，且 Origin 本可偽造，保密無實質效益（3.3） |
+| ~~Origin 白名單納入版控~~ | **已推翻**：2026-08-21 主管指示不進版控，改放 `config/cb.yml`（3.3） |
 | 不修改 fail2ban 設定 | 改 Rails 上限即可讓 429 先於 ban 發生，成本最低（6.2） |
 | 不依環境區分 `set :application` | 專案中無任何 `fetch(:application)`，寫 slot 編號只會過期誤導（7.3） |

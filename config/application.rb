@@ -34,13 +34,14 @@ module CbData
     #
     # 未帶 key 也放行的 Origin 白名單。比對 Origin 完整字串
     # （scheme + host [+ port]），不做 subdomain 模糊比對。
-    # 各部署環境在 config/environments/*.rb 覆寫。
     #
-    # 白名單納入版控（不放 config/cb.yml）: 它屬安全設定，放版控才能 review
-    # 與追歷史；而且白名單不是機密 —— 伺服器會把命中的 Origin echo 回
-    # Access-Control-Allow-Origin，可用探測法列舉，且 Origin 本身可任意偽造，
-    # 保密與否對防偽造毫無差別（Kerckhoffs 原則）。
-    config.api_origin_allowlist = []
+    # 白名單放 config/cb.yml（該檔 gitignored、每台機器一份），不進版控 ——
+    # 2026-08-21 主管指示。因此每台機器要自己維護，見 doc/api-key-design.md 3.3。
+    #
+    # ⚠️ cb.yml 沒有這個 key 時就是空陣列。過渡期內空陣列不會有事（未帶 key
+    #    照樣放行），但過渡期結束後（api_key_required = true）會讓 cbetaonline
+    #    前端全站拿到 401。上線前務必用 rake api_key:config 確認。
+    config.api_origin_allowlist = Array(config.cb.api_origin_allowlist)
 
     # 過渡期: false = 未帶 key 也放行（但帶了無效 key 一律 401）。
     # 過渡期結束時改為 true，未帶 key 即回 401。
