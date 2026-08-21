@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CBETA Tools",
-    "version": "4.6.0",
-    "description": "CBETA tool service exposing thin HTTP adapter and MCP surfaces."
+    "version": "4.7.0",
+    "description": "CBETA tool service exposing a thin HTTP adapter over the CBETA canon.\n\nAuthentication: send your API key as `Authorization: Bearer <api_key>`. Get one by signing in at /login with a Google or GitHub account.\n\nThe API key is currently OPTIONAL — this is a transition period and requests without a key are still served. It WILL become mandatory; the cut-over date will be announced. Programmatic clients (scripts, third-party apps, server-to-server) should start sending a key now. Browser front-ends do not need one: a key cannot be protected in client-side JavaScript, so allow-listed web origins are served without a key instead.\n\nDuring the transition, a response carrying the header `X-CBETA-API-Key: recommended` means the request was served WITHOUT a key and will start failing once the key becomes mandatory.\n\nNote: if you send an `Authorization: Bearer` header it is always validated — an invalid or revoked key returns 401 even during the transition period, and even from an allow-listed origin. The key must be sent in the header; it is not accepted as a query parameter (a query string would leave the key in plain text in server access logs).\n\nRate limits: 60 requests/minute per IP without a key, 300 requests/minute per user with a valid key. Exceeding the limit returns 429 with a `Retry-After` header."
   },
   "servers": [
     {
@@ -11,11 +11,69 @@
       "description": "Development API"
     }
   ],
+  "security": [
+    {},
+    {"bearerAuth": []}
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "CBETA API key, obtained at /login. Optional during the transition period (see the description above); it will become mandatory."
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "API key missing (after the transition period) or invalid/revoked.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {"type": "string"},
+            "description": "Bearer realm=\"CBETA API\""
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {"$ref": "#/components/schemas/Error"}
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Rate limit exceeded.",
+        "headers": {
+          "Retry-After": {
+            "schema": {"type": "integer"},
+            "description": "Seconds to wait before retrying."
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {"$ref": "#/components/schemas/Error"}
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {"type": "integer"},
+              "message": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  },
   "paths": {
     "/health": {
       "get": {
         "operationId": "getHealth",
         "summary": "Service health check",
+        "security": [],
         "responses": {
           "200": {"description": "Health status"}
         }
@@ -25,6 +83,7 @@
       "get": {
         "operationId": "getOpenApi",
         "summary": "OpenAPI contract document",
+        "security": [],
         "responses": {
           "200": {"description": "OpenAPI document"}
         }
@@ -185,6 +244,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -298,6 +359,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -410,6 +473,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -513,6 +578,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -599,6 +666,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -672,6 +741,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -742,6 +813,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -914,6 +987,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -1051,6 +1126,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {
@@ -1141,6 +1218,8 @@
               }
             }
           },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "429": {"$ref": "#/components/responses/TooManyRequests"},
           "400": {
             "description": "Invalid request",
             "content": {

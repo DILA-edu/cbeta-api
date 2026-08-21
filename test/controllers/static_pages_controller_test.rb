@@ -30,4 +30,24 @@ class StaticPagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, '長度上限為 50 字'
   end
+
+  # API key 說明頁的額度數字必須跟實際生效的常數一致，
+  # 否則調整額度時說明頁會靜默過期。
+  test 'static_pages/api_key 顯示的額度與實際設定一致' do
+    get '/static_pages/api_key'
+    assert_response :success
+    assert_includes response.body, ApiKeyAuthentication::ANONYMOUS_LIMIT.to_s
+    assert_includes response.body, ApiKeyAuthentication::KEYED_LIMIT.to_s
+    assert_includes response.body, 'Authorization: Bearer'
+  end
+
+  test 'static_pages/api_key 不需要 API key 就能看' do
+    original = Rails.configuration.api_key_required
+    Rails.configuration.api_key_required = true
+
+    get '/static_pages/api_key'
+    assert_response :success
+  ensure
+    Rails.configuration.api_key_required = original
+  end
 end

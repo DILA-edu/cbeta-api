@@ -75,6 +75,7 @@ Rails.application.routes.draw do
   match 'search/variants',        to: 'search#variants',   via: [:get, :post]
   match 'search',                 to: 'search#index',      via: [:get, :post]
 
+  get 'static_pages/api_key'
   get 'static_pages/chinese_tools'
   get 'static_pages/catalog_index'
   get 'static_pages/catalog'

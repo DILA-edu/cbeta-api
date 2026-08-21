@@ -1,0 +1,163 @@
+%h1 API key
+
+%p
+  呼叫 CBETA API 時，請在 HTTP header 帶上您的 API key：
+
+%pre.bg-light.p-3.border.rounded
+  %code Authorization: Bearer &lt;api_key&gt;
+
+%p
+  = link_to '登入取得 API key', login_path
+  （用 Google 或 GitHub 帳號登入即可）。
+
+.alert.alert-info
+  %h5 目前是過渡期
+  %ul.mb-0
+    %li <strong>沒帶 key 仍然可以呼叫 API</strong>，既有程式不會壞掉。
+    %li
+      過渡期結束後，沒帶 key 就會收到 <code>401</code>。
+      <strong>結束日期會另行公告</strong>，請及早改成帶 key。
+    %li
+      過渡期內若您的回應帶有 <code>X-CBETA-API-Key: recommended</code> 這個 header，
+      表示這次呼叫<strong>沒有帶 key</strong>，過渡期結束後就會失敗。
+      這是最可靠的自我檢查方式。
+    %li
+      ⚠️ 但如果您<strong>帶了 key</strong>，就一定會被驗證。
+      key 無效或已撤銷時<strong>現在就會</strong>收到 <code>401</code>，不會靜默放行
+      —— 這樣才不會讓您誤以為 key 設定正確，等過渡期結束才一次爆掉。
+
+%h2 誰需要 API key？
+
+%table.table
+  %thead
+    %tr
+      %th 呼叫方式
+      %th 需要 key？
+      %th 說明
+  %tbody
+    %tr
+      %td 研究者的程式或腳本（Python、R、Ruby…）
+      %td ✅ 需要
+      %td 請登入取得
+    %tr
+      %td 第三方 app、server-to-server 呼叫
+      %td ✅ 需要
+      %td 請登入取得
+    %tr
+      %td 網頁前端（瀏覽器裡的 JavaScript）
+      %td ❌ 不需要
+      %td
+        前端無法保護 key（寫在 JS 裡等於公開），因此我們不發給前端。
+        已登記的網站來源（Origin）不帶 key 也放行。
+        若您的網站需要登記，請來信。
+
+%h2 使用方式
+
+%h3 curl
+
+%pre.bg-light.p-3.border.rounded
+  %code
+    :preserve
+      curl -H "Authorization: Bearer $CBETA_API_KEY" \
+        "https://cbdata.dila.edu.tw/stable/search?q=%E7%84%A1%E5%B8%B8"
+
+%h3 Python
+
+%pre.bg-light.p-3.border.rounded
+  %code
+    :preserve
+      import os, requests
+
+      r = requests.get(
+          "https://cbdata.dila.edu.tw/stable/search",
+          params={"q": "無常"},
+          headers={"Authorization": f"Bearer {os.environ['CBETA_API_KEY']}"},
+      )
+      r.raise_for_status()
+
+%h3 Ruby
+
+%pre.bg-light.p-3.border.rounded
+  %code
+    :preserve
+      require 'faraday'
+
+      res = Faraday.get('https://cbdata.dila.edu.tw/stable/search',
+                        { q: '無常' },
+                        { 'Authorization' => "Bearer \#{ENV.fetch('CBETA_API_KEY')}" })
+
+.alert.alert-warning
+  %h5 只能放在 header
+  %p.mb-0
+    <strong>不接受</strong>用 query string 傳 key（例如 <code>?api_key=…</code>）。
+    query string 會被寫進伺服器的 access log、Rails log 與存取統計，
+    等於在多個地方留下 key 的明文。
+
+%h2 額度
+
+%table.table{ style: 'max-width: 40em' }
+  %thead
+    %tr
+      %th
+      %th 額度
+  %tbody
+    %tr
+      %td 沒帶 key
+      %td 每分鐘 60 次（依 IP 計算）
+    %tr
+      %td 帶有效的 key
+      %td 每分鐘 300 次（依帳號計算）
+
+%p
+  超過額度會收到 <code>429</code>，並帶 <code>Retry-After</code> header
+  告知要等幾秒。請依照它退讓重試，不要持續重打。
+
+%h2 管理您的 key
+
+%p
+  到
+  = link_to '我的帳號', login_path
+  可以：
+
+%ul
+  %li 查看目前有效的 key（顯示前綴、建立時間、最後使用時間）。
+  %li 產生新的 key。<strong>明文只在產生的當下顯示一次</strong>，請立刻複製保存。
+  %li 撤銷 key（<strong>立即生效</strong>）。
+  %li 查看自己每日的呼叫次數。
+
+%h3 懷疑 key 外流時
+
+%ol
+  %li 到帳號頁看「最後使用」時間。若那不是您使用的時間，key 很可能已外流。
+  %li 立刻撤銷該把 key —— 撤銷是立即生效的，不會有快取延遲。
+  %li 產生新的 key，更新您的程式。
+
+%p.text-muted
+  每個帳號同時最多可以有 2 把有效的 key。保留兩把是為了讓您能<strong>無縫更換</strong>：
+  先產生新的 → 把用到舊 key 的程式都改過來 → 再撤銷舊的，中間不會斷線。
+
+%h2 安全性
+
+%ul
+  %li 本站<strong>不儲存 key 的明文</strong>，只存單向雜湊值（SHA-256）。忘記了只能重新產生。
+  %li key 的格式是 <code>cbeta_</code> 加上 32 bytes 的隨機值。
+  %li 請把 key 當成密碼：放環境變數，不要 commit 進版控、不要寫在前端 JS 裡。
+  %li 撤銷是軟刪除，我們會保留撤銷紀錄以供稽核，但該 key 立即失效。
+
+%h2 錯誤回應
+
+%table.table
+  %thead
+    %tr
+      %th HTTP status
+      %th 意思
+      %th 怎麼處理
+  %tbody
+    %tr
+      %td %code 401
+      %td key 無效、已撤銷，或（過渡期結束後）沒帶 key
+      %td 檢查 header 拼寫，或到帳號頁確認 key 還有效
+    %tr
+      %td %code 429
+      %td 超過額度
+      %td 依 <code>Retry-After</code> 等待後重試
