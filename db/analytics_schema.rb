@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_16_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_21_120000) do
   create_table "changes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "del_chars"
@@ -23,6 +23,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_000000) do
     t.string "work"
     t.index ["lb", "ver"], name: "index_changes_on_lb_and_ver", unique: true
     t.index ["work", "juan"], name: "index_changes_on_work_and_juan"
+  end
+
+  create_table "origin_stats", force: :cascade do |t|
+    t.integer "count", default: 0, null: false
+    t.string "origin", null: false
+    t.date "used_on", null: false
+    t.index ["origin", "used_on"], name: "index_origin_stats_on_origin_and_used_on", unique: true
   end
 
   create_table "visits", force: :cascade do |t|
