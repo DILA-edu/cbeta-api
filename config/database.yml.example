@@ -5,10 +5,24 @@
 #
 #   cp config/database.yml.example config/database.yml
 #
-# 本專案使用兩個 database:
+# 本專案使用三個 database:
 #   * primary   —— CBETA 經文資料(works / lines / toc_nodes ...)
-#   * analytics —— 瀏覽統計與異動記錄(visits / changes),migration 放在
-#                  db/analytics_migrate,schema 為 db/analytics_schema.rb
+#   * analytics —— 瀏覽統計與異動記錄(visits / changes / origin_stats),
+#                  migration 放在 db/analytics_migrate,
+#                  schema 為 db/analytics_schema.rb
+#   * accounts  —— 使用者與 API key(users / api_keys / api_key_usages),
+#                  migration 放在 db/accounts_migrate,
+#                  schema 為 db/accounts_schema.rb
+#
+# ⚠️ primary 每年隨 CBETA 資料更新清掉重建 2~3 次,
+#    因此使用者資料絕對不能放 primary,也不放 analytics
+#    (語意不符,且備份策略不同: analytics 掉了可以重跑統計,
+#     users / api_keys 掉了所有人的 key 立即失效)。
+#
+# ⚠️ accounts DB 不隨年度輪替搬移: 每個 slot 的 shared/config/database.yml 中,
+#    production: 區塊的 accounts 一律指 cb_accounts、
+#    staging: 區塊一律指 accounts_dev。切換 PassengerAppEnv 時自動換過去。
+#    見 doc/annual-rotation.md。
 #
 # ⚠️ test 環境務必使用獨立的 database,不可指向 development 的檔案。
 #    `bin/rails test` 會執行 db:test:prepare(db:test:purge → load_schema),
@@ -32,6 +46,12 @@ development:
     timeout: 5000
     database: db/dev-analytics.sqlite3
     migrations_paths: db/analytics_migrate
+  accounts:
+    adapter: sqlite3
+    pool: 5
+    timeout: 5000
+    database: db/development-accounts.sqlite3
+    migrations_paths: db/accounts_migrate
 
 # test 使用獨立的 sqlite3 檔與 test/fixtures/*.yml 的樣本資料,
 # 不需要、也不應該掛上真實的 CBETA 資料庫。
@@ -47,6 +67,12 @@ test:
     timeout: 5000
     database: db/test-analytics.sqlite3
     migrations_paths: db/analytics_migrate
+  accounts:
+    adapter: sqlite3
+    pool: 5
+    timeout: 5000
+    database: db/test-accounts.sqlite3
+    migrations_paths: db/accounts_migrate
 
 production:
   primary:
@@ -66,6 +92,18 @@ production:
     username: pg_cbdata
     password: <%= ENV['CBDATA_DB_PASSWORD'] %>
     migrations_paths: db/analytics_migrate
+  accounts:
+    adapter: postgresql
+    encoding: unicode
+    database: cb_accounts
+    host: localhost
+    pool: 5
+    username: pg_cbdata
+    password: <%= ENV['CBDATA_DB_PASSWORD'] %>
+    migrations_paths: db/accounts_migrate
 
 # staging / cn 等其他部署環境(config/environments/ 下另有設定檔)
 # 請依該機器的資料庫比照 production 段自行增加。
+#
+# staging 的 accounts 用 accounts_dev(不可指向 cb_accounts,
+# 否則測試期間產生的帳號會汙染 production)。
