@@ -2,8 +2,31 @@
 
 - 建立日期：2026-08-21
 - Branch：`feature/api-key-management`（從 `dev` 開出）
-- 狀態：設計已定案，尚未實作。實作預計在另一個 session 進行。
-- 預計版本：VERSION 由 4.6.0 → **4.7.0**（新增功能，過渡期不破壞相容）
+- 狀態：**已實作**（2026-08-21）。VERSION 4.6.0 → 4.7.0。
+  尚待處理的事項見第 11 節「待主管回覆／待討論」與下方「實作與設計的差異」。
+- 版本：VERSION **4.7.0**（新增功能，過渡期不破壞相容）
+
+## 0. 實作與設計的差異
+
+實作時查證後做的調整，理由都寫在對應 commit 訊息裡：
+
+| 項目 | 設計 | 實作 | 理由 |
+|---|---|---|---|
+| Origin 白名單位置 | `config/environments/*.rb`，納入版控 | `config/cb.yml`，不進版控 | **2026-08-21 主管指示**（見 3.3） |
+| `config/environments/cn.rb` 與 Gemfile `group :production, :cn` | 評估刪除 | **保留** | `api.cbetaonline.cn` 走阿里雲 CDN 回源到 sakya，該 vhost 的 `PassengerAppEnv` 是 `cn`，`cn.rb` 用 postgresql 與 mem_cache_store。cn 環境是活的（7.3） |
+| `config/deploy/cn.rb` | 刪除 | **保留**（未刪） | 刪除動作被工具權限攔下；且 cn 環境既然是活的，保留較保險 |
+| `api_keys` 欄位 | 無前綴欄位 | 多一個 `token_hint` | 5.4 要求帳號頁「只顯示前綴」，但 digest 無法反推前綴（4.3） |
+| `ReportController` | 整個 controller 限 admin | `index` 例外開放 | `report#index` 是「字數統計」的欄位說明頁，不含流量資料，且從公開頁面連過去。7.4 本身已預留個別報表開放的空間 |
+| `origin_stats` 計數位置 | 塞進 `log_action_start` | 另開 `record_origin` | `log_action_start` 是純 logging；6.4 本身就警告不要動壞它（fail2ban 靠它的 log 格式） |
+| rate limit 的 cache store | 另設 Redis | 沿用各環境的 `config.cache_store` | production 的 memcached 與 staging 的 Redis，`increment` 都支援 `expires_in`，不需另設（6.3） |
+
+額外補上的東西（設計未提，實作時認為必要）：
+
+- `rake api_key:config` —— 白名單不進版控後，必須有辦法在機器上查生效設定。
+- `rake origin:report[days]` —— 4.5 的埋點若沒有讀取工具就是唯寫資料。
+- `rake user:list` / `user:grant_admin` / `user:revoke_admin` —— 4.2 的 admin 開通。
+- `doc/annual-rotation.md` —— 7.3 要求的年度輪替 checklist。
+- `static_pages/api_key` 說明頁（9）。
 
 ---
 
@@ -615,24 +638,54 @@ Define dev_path    /var/www/cbeta-api-staging
 
 ---
 
-## 10. 實作順序（commit 拆分）
+## 10. 實作順序（commit 拆分）—— 已完成
 
-拆成獨立 commit，任何一項有問題都能單獨回退：
+實際的 commit（`16f60d9` 之後，新到舊）：
 
-1. **移除 doorkeeper**（7.1）
-2. **移除 `/mcp`**（7.2）
-3. **deploy 設定重整**（7.3）
-4. **report 限管理者**（7.4）—— 依賴 commit 5 的 `WebController` 與 `users`，
-   實作時可調整順序，或與 commit 5 合併後再拆
-5. **API key 機制本體** —— 份量最大，再拆為：
-   5.1 accounts DB 設定 + `AccountsRecord` + users/api_keys/api_key_usages migration
-   5.2 `WebController` + OmniAuth 登入
-   5.3 帳號頁與 key 管理（產生／撤銷／自己的統計）
-   5.4 API 端驗證 concern + Origin 白名單 + 401/429
-   5.5 rate limit
-   5.6 `origin_stats` 埋點
-   5.7 OPTIONS 預檢 route
-   5.8 openapi.json + VERSION + 說明頁
+| commit | 內容 | 對應章節 |
+|---|---|---|
+| `96dd205` | Origin 白名單改放 `config/cb.yml`，不進版控 | 3.3（主管指示） |
+| `5543002` | openapi.json 加 bearerAuth、VERSION 4.7.0、說明頁 | 9 |
+| `7b0b396` | OPTIONS 預檢 route，回 204 | 2.3、8 |
+| `351cd2f` | `origin_stats` 過渡期埋點 | 4.5 |
+| `2de6d93` | rate limit（60/min/IP、300/min/user） | 6 |
+| `f1a78cf` | API 端驗證 concern + Origin 白名單 + 401 | 3 |
+| `a5a51e8` | 流量報表限管理者 | 7.4 |
+| `0e99fc2` | OmniAuth 登入 + 帳號頁與 key 管理 | 5 |
+| `97bbba2` | accounts DB 與 users / api_keys / api_key_usages | 4.1~4.4 |
+| `33fc1a2` | deploy 設定重整（角色 symlink） | 7.3 |
+| `8454cdc` | 移除 `/mcp` | 7.2 |
+| `f3346de` | 移除 doorkeeper | 7.1 |
+
+`bin/rails test`：215 runs, 777 assertions, 0 failures, 0 errors。
+
+原計畫的 5.2 與 5.3 合併為一個 commit（`0e99fc2`）—— 登入頁若沒有帳號頁可去，
+`SessionsController` 就沒有可導向的目標，兩者無法各自獨立運作。
+
+## 10.1 上線前尚待實機驗證
+
+以下是這個 branch 無法在 local 驗證、必須在伺服器上做的事：
+
+1. **Google / GitHub 的 OAuth credentials**（5.3）。
+   `bin/rails credentials:edit` 填入 `google:` / `github:` 的
+   `client_id` 與 `client_secret`，並在兩邊的 console 註冊各環境的 callback URL
+   （注意 sub-URI 前綴）。**這是登入能不能用的前提。**
+2. **`shared/config/cb.yml` 補上 `api_origin_allowlist`**（3.3）。
+   部署後跑 `rake api_key:config` 確認。
+3. **accounts DB 建立**：`cb_accounts`（production）、`accounts_dev`（staging），
+   並在 `shared/config/database.yml` 補 `accounts:` 區塊，然後
+   `RAILS_ENV=... rake db:migrate`。
+4. **CORS 預檢實測**（8）：從 `cbetaonline-dev.dila.edu.tw` 用 `fetch` 帶
+   `Authorization` header 呼叫 API，確認預檢通過且回應可讀。
+5. **rate limit 實測**：production 的 cache store 是 memcached、staging 是 Redis。
+   確認 429 真的會發生（若 cache store 掛了，`increment` 回 `nil`，
+   rate limit 會**靜默失效**）。
+6. **角色 symlink 建立**（7.3）：
+   `ln -sfn /var/www/cbapi? /var/www/cbeta-api-production` 等兩條，
+   並同步 Apache 的 `Define stable_path` / `dev_path`。見 `doc/annual-rotation.md`。
+7. **首批 admin 開通**：`rake user:grant_admin[email]`（該人需先登入過一次）。
+8. **過渡期埋點判讀**（4.5）：上線一段時間後跑 `rake origin:report[30]`，
+   確認 cbetaonline 的流量是落在白名單還是 `(none)`。**這是決定過渡期能不能結束的依據。**
 
 ---
 
