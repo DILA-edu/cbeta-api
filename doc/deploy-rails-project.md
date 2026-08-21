@@ -1,9 +1,20 @@
 # Deploy Rails Project
 
-在 server 上建立 project folder
+## deploy 目標路徑
 
-    mkdir /var/www/cbdata14
-    chown ray:www-data /var/www/cbdata14
+`config/deploy/production.rb` 與 `config/deploy/staging.rb` 的 `deploy_to`
+指向「角色 symlink」而非 slot 編號：
+
+    /var/www/cbeta-api-production -> /var/www/cbapi?
+    /var/www/cbeta-api-staging    -> /var/www/cbapi?
+
+年度輪替時只改這兩條 symlink，版控裡不用動。目前的對應關係用
+`cap production slot:which` 查詢。詳見 [doc/annual-rotation.md](annual-rotation.md)。
+
+在 server 上建立 project folder（新的 slot）
+
+    mkdir /var/www/cbapi3
+    chown ray:www-data /var/www/cbapi3
 
 在 local 端 project root 下執行
 
