@@ -100,6 +100,13 @@ gem "rack-timeout"
 gem "redis"
 gem 'connection_pool', '~> 2.4', '< 3'
 
+# API key 的登入。omniauth-rails_csrf_protection 必裝,
+# 否則 OmniAuth 的 request phase 有 login CSRF 漏洞。
+gem 'omniauth'
+gem 'omniauth-google-oauth2'
+gem 'omniauth-github'
+gem 'omniauth-rails_csrf_protection'
+
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false
 gem 'net-imap', require: false

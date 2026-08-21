@@ -2,6 +2,21 @@ Rails.application.routes.draw do
   root 'static_pages#home'
   get '/health', to: proc { [200, {}, ['success']] }
 
+  # --- 登入（OmniAuth）---
+  # request phase 只收 POST（OmniAuth 2 的預設，防 login CSRF），
+  # 登入頁用 button_to 送出。
+  get  '/login',  to: 'sessions#new',     as: :login
+  post '/logout', to: 'sessions#destroy', as: :logout
+  post '/auth/:provider',          to: 'sessions#create', as: :auth
+  get  '/auth/:provider/callback', to: 'sessions#create'
+  post '/auth/:provider/callback', to: 'sessions#create'
+  get  '/auth/failure',            to: 'sessions#failure'
+
+  # --- 帳號與 API key 管理 ---
+  get    '/account', to: 'accounts#show', as: :account
+  post   '/account/api_keys',            to: 'api_keys#create',  as: :account_api_keys
+  delete '/account/api_keys/:id',        to: 'api_keys#destroy', as: :account_api_key
+
   match 'catalog_entry', to: 'catalog_entry#index', via: [:get, :post]
 
   match 'api/collections', to: 'canons#index', via: [:get, :post]

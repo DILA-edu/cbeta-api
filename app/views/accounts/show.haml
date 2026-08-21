@@ -1,0 +1,100 @@
+.row.justify-content-center
+  .col-lg-10
+    .d-flex.justify-content-between.align-items-center
+      %h1 我的帳號
+      = button_to '登出', logout_path, class: 'btn btn-outline-secondary btn-sm'
+
+    %p.text-muted
+      = current_user.display_name
+      %span.badge.bg-secondary= current_user.provider
+      - if current_user.admin?
+        %span.badge.bg-danger admin
+
+    - if flash[:new_api_key]
+      .alert.alert-success
+        %h5 您的新 API key
+        %p.mb-2
+          %strong 這是唯一一次顯示明文的機會
+          ，請立刻複製保存。本站只存雜湊值，離開此頁後無法再取得。
+        %pre.bg-light.p-3.border.rounded.mb-2
+          %code= flash[:new_api_key]
+        %p.mb-0.small
+          呼叫 API 時放在 HTTP header：
+          %code Authorization: Bearer &lt;api_key&gt;
+
+    %h3.mt-4 有效的 API key
+    - if @api_keys.any?
+      %table.table.table-striped
+        %thead
+          %tr
+            %th 前綴
+            %th 建立時間
+            %th 最後使用
+            %th
+        %tbody
+          - @api_keys.each do |key|
+            %tr
+              %td
+                %code= "#{key.token_hint}…"
+              %td= key.created_at.strftime('%Y-%m-%d %H:%M')
+              %td
+                - if key.last_used_at
+                  = key.last_used_at.strftime('%Y-%m-%d %H:%M')
+                - else
+                  %span.text-muted 尚未使用
+              %td
+                -# confirm 由 app/assets/javascripts/accounts.js 掛在
+                -# form[data-confirm] 上（CSP 不允許 inline handler）
+                = button_to '撤銷', account_api_key_path(key), method: :delete,
+                  class: 'btn btn-outline-danger btn-sm',
+                  form: { data: { confirm: '撤銷後立即失效，且無法復原。確定要撤銷嗎？' } }
+      %p.text-muted.small
+        「最後使用」的時間為節流寫入（每小時最多更新一次），因此可能落後實際使用時間最多一小時。
+        <strong>若您看到不是自己使用的時間，代表 key 可能已外流，請立刻撤銷並產生新的。</strong>
+    - else
+      %p.text-muted 目前沒有有效的 API key。
+
+    - if current_user.can_create_api_key?
+      = button_to '產生新的 API key', account_api_keys_path, class: 'btn btn-primary'
+      %p.text-muted.small.mt-2
+        每個帳號同時最多 #{User::MAX_ACTIVE_API_KEYS} 把有效的 key。
+        保留兩把是為了讓您能無縫更換：先產生新的 → 把用到舊 key 的程式都改過來 → 再撤銷舊的。
+    - else
+      .alert.alert-warning.mb-0
+        已達上限（#{User::MAX_ACTIVE_API_KEYS} 把有效的 key），請先撤銷不用的那把。
+
+    %h3.mt-5 我的使用統計
+    %p
+      最近 #{AccountsController::USAGE_DAYS} 天共
+      %strong= number_with_delimiter(@usage_total)
+      次呼叫（只有帶 API key 的呼叫會計入）。
+    - if @usages.any?
+      %table.table.table-sm.table-striped{ style: 'max-width: 24em' }
+        %thead
+          %tr
+            %th 日期
+            %th.text-end 次數
+        %tbody
+          - @usages.each do |used_on, count|
+            %tr
+              %td= used_on
+              %td.text-end= number_with_delimiter(count)
+    - else
+      %p.text-muted 還沒有帶 key 的呼叫紀錄。
+
+    - if @revoked_api_keys.any?
+      %h3.mt-5 已撤銷的 API key
+      %table.table.table-sm{ style: 'max-width: 40em' }
+        %thead
+          %tr
+            %th 前綴
+            %th 建立時間
+            %th 撤銷時間
+        %tbody
+          - @revoked_api_keys.each do |key|
+            %tr.text-muted
+              %td
+                %code= "#{key.token_hint}…"
+              %td= key.created_at.strftime('%Y-%m-%d')
+              %td= key.revoked_at.strftime('%Y-%m-%d %H:%M')
+      %p.text-muted.small 已撤銷的 key 保留紀錄以供稽核，無法復原使用。

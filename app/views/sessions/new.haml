@@ -1,0 +1,56 @@
+.row.justify-content-center
+  .col-lg-8
+    %h1 登入 CBETA API
+
+    %p
+      登入之後可以取得 <strong>API key</strong>，用於呼叫 CBETA API。
+      key 用來識別呼叫來源、提供較高的流量額度，並在懷疑外流時可自行撤銷、重新產生。
+
+    .alert.alert-info
+      %h5 誰需要 API key？
+      %ul.mb-0
+        %li
+          <strong>程式化的 client</strong>（研究者的腳本、第三方 app、server-to-server 呼叫）
+          —— 需要，請在此登入取得。
+        %li
+          <strong>網頁前端</strong>（在瀏覽器裡用 JavaScript 呼叫）—— 不需要。
+          前端無法保護 key（寫在 JS 裡等於公開），因此我們不發給前端。
+
+    .card.my-4
+      .card-body
+        %h5.card-title 選擇登入方式
+        %p.card-text.text-muted
+          用 Google 或 GitHub 帳號登入，本站不儲存您的密碼。
+        .d-flex.gap-2
+          = button_to '用 Google 登入', auth_path(:google_oauth2), class: 'btn btn-primary'
+          = button_to '用 GitHub 登入', auth_path(:github), class: 'btn btn-dark'
+        %p.text-muted.small.mt-3.mb-0
+          Google 與 GitHub 視為兩個獨立帳號，不會自動合併。
+          用哪一個登入取得 key，之後就用同一個登入來管理。
+
+    %h4 隱私權告知
+    %p 登入時本站會向 Google / GitHub 取得並保存以下資料：
+    %table.table.table-sm
+      %thead
+        %tr
+          %th 資料
+          %th 用途
+      %tbody
+        %tr
+          %td provider 與 uid（provider 端的帳號識別碼）
+          %td 辨識您是同一個人，以便管理您的 API key
+        %tr
+          %td email
+          %td 必要時聯絡您（例如 key 有異常使用、服務變更通知）
+        %tr
+          %td 顯示名稱
+          %td 在帳號頁顯示，方便您確認登入的是哪個帳號
+    %p 另外會保存 API key 的使用紀錄（每把 key 每日的呼叫次數與最後使用時間），用途是：
+    %ul
+      %li 讓您在帳號頁查看自己的使用情形，據以判斷 key 是否外流。
+      %li 站方掌握整體使用量以規劃服務。
+    %p.text-muted.small
+      本站<strong>不儲存 API key 明文</strong>，只存單向雜湊值；明文僅在產生的當下顯示一次。
+      不需要 API key 時可自行撤銷。如需刪除帳號，請來信
+      = succeed '。' do
+        = mail_to 'ray@dila.edu.tw'
