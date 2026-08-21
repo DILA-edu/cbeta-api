@@ -7,9 +7,9 @@ class OriginStatsTest < ActionDispatch::IntegrationTest
   ENDPOINT = '/changes'
 
   test '帶 Origin 的 request 有記下來' do
-    get ENDPOINT, headers: { 'Origin' => 'https://cbetaonline.dila.edu.tw' }
+    get ENDPOINT, headers: { 'Origin' => 'https://a.example.com' }
 
-    stat = OriginStat.find_by(origin: 'https://cbetaonline.dila.edu.tw',
+    stat = OriginStat.find_by(origin: 'https://a.example.com',
                               used_on: Date.current)
     assert_equal 1, stat.count
   end

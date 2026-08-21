@@ -9,7 +9,7 @@ require 'test_helper'
 class CorsPreflightTest < ActionDispatch::IntegrationTest
   test 'OPTIONS 到 API endpoint 回 204' do
     process :options, '/search', headers: {
-      'Origin' => 'https://cbetaonline-dev.dila.edu.tw',
+      'Origin' => 'https://allowed.example.com',
       'Access-Control-Request-Method' => 'GET',
       'Access-Control-Request-Headers' => 'Authorization'
     }

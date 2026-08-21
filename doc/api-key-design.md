@@ -35,7 +35,8 @@
 2. 呼叫 API 時傳送 API key。
 3. 懷疑 key 外流時，可撤銷並重新產生。
 4. **過渡期**：未帶 key 仍可使用 API；若帶了 key，則必須是有效的 key 才能使用。
-5. request 的 Origin 若為 `cbetaonline.dila.edu.tw` 或 `cbetaonline-dev.dila.edu.tw`，例外放行。
+5. request 的 Origin 若命中白名單，例外放行。
+   - **白名單的實際內容不寫在版控裡**（見 3.3），只放在各機器的 `config/cb.yml`。
    - 已知 Origin 可被偽造（`curl -H "Origin: ..."`），此為主管指示的既定方針。
    - 網頁前端（cbetaonline）**不帶 key** —— 因為前端無法保護 key。key 只發給程式化 client（研究者腳本、第三方 app、server-to-server）。
 
@@ -75,7 +76,8 @@
 `cbdata-sub.conf` 的 `/stable` 與 `/dev` 兩個 `<Location>` 內都已設定：
 
 ```apache
-SetEnvIf Origin "^(https://(cbeta\.org|cbetaonline-dev\.dila\.edu\.tw|cbetaonline\.dila\.edu\.tw|cbetaonline\.cn|docusky\.org\.tw|mrmyhuang\.github\.io|syda\.dila\.edu\.tw)|http://localhost:8000)$" AccessControlAllowOrigin=$0
+# 實際的來源清單見伺服器上的 cbdata-sub.conf，此處不轉錄
+SetEnvIf Origin "^(https://(...|...)|http://...)$" AccessControlAllowOrigin=$0
 Header always set Access-Control-Allow-Origin  "%{AccessControlAllowOrigin}e" env=AccessControlAllowOrigin
 Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
 Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
@@ -91,9 +93,9 @@ Header always set Vary "Origin"
    `via: [:get, :post]`，OPTIONS 會回 404，而預檢必須是 2xx 才通過。
    目前之所以沒問題，是因為既有前端不帶自訂 header（屬簡單請求，不觸發預檢）；
    一旦有 client 帶 `Authorization` 就會遇到。
-3. Apache 白名單有 **8 個來源**，比本次要放行的 2 個多出：
-   `cbeta.org`、`cbetaonline.cn`、`docusky.org.tw`、`mrmyhuang.github.io`、
-   `syda.dila.edu.tw`、`http://localhost:8000`。詳見第 11 節「待主管回覆」。
+3. Apache 白名單有 **8 個來源**，比本次 Rails 要放行的 2 個多出 6 個
+   （合作單位的網站與一個 localhost）。清單見伺服器上的 `cbdata-sub.conf`，
+   本文件不轉錄。詳見第 11 節「待主管回覆」。
 
 ### 2.4 doorkeeper 實質未使用
 
@@ -201,30 +203,19 @@ Authorization: Bearer <api_key>
 
 ### 3.3 Origin 白名單
 
-本次只放行 2 個（主管指示）：
-
-```
-https://cbetaonline.dila.edu.tw
-https://cbetaonline-dev.dila.edu.tw
-```
+本次放行的是 cbetaonline 的正式站與測試站（主管指示，數量 2 個）。
+**實際的 Origin 字串不寫在本文件、也不寫在任何版控檔案裡** —— 見下方。
 
 - 比對時只比 Origin 完整字串（scheme + host [+ port]），不做 subdomain 模糊比對。
 
-#### 放在哪裡：**2026-08-21 主管指示改為不進版控**（已推翻原設計）
+#### 放在哪裡：**2026-08-21 主管指示不進版控**（已推翻原設計）
 
-放 `config/cb.yml`（該檔 gitignored、每台機器一份），各環境用自己的區塊：
-
-```yaml
-production:
-  api_origin_allowlist:
-    - 'https://cbetaonline.dila.edu.tw'
-    - 'https://cbetaonline-dev.dila.edu.tw'
-staging:
-  api_origin_allowlist:
-    - ...
-```
+放 `config/cb.yml`（該檔 gitignored、每台機器一份），各環境用自己的區塊，
+key 名為 `api_origin_allowlist`，值是 Origin 字串的 array。
+格式範例見該機器上的 `config/cb.yml` 本身。
 
 `config/application.rb` 以 `Array(config.cb.api_origin_allowlist)` 讀入。
+生效內容用 `rake api_key:config` 查（那是唯一該看到實際值的地方）。
 
 原設計主張放 `config/environments/*.rb` 納入版控，理由是：白名單屬安全設定，
 放版控才能 review 與追歷史；且白名單本非機密（任何人開 cbetaonline 用 DevTools
@@ -621,7 +612,7 @@ Define dev_path    /var/www/cbeta-api-staging
 - **不引入 `rack-cors`**（理由見 2.3）。
 - 在 `config/routes.rb` 加一條 catch-all OPTIONS route，回 **204 No Content**，
   讓預檢能通過。CORS 的回應 header 由 Apache 提供。
-- 實作後需實測：從 `cbetaonline-dev.dila.edu.tw` 用 `fetch` 帶
+- 實作後需實測：從 cbetaonline 測試站用 `fetch` 帶
   `Authorization` header 呼叫 API，確認預檢通過且回應可讀。
 
 ---
@@ -676,7 +667,7 @@ Define dev_path    /var/www/cbeta-api-staging
 3. **accounts DB 建立**：`cb_accounts`（production）、`accounts_dev`（staging），
    並在 `shared/config/database.yml` 補 `accounts:` 區塊，然後
    `RAILS_ENV=... rake db:migrate`。
-4. **CORS 預檢實測**（8）：從 `cbetaonline-dev.dila.edu.tw` 用 `fetch` 帶
+4. **CORS 預檢實測**（8）：從 cbetaonline 測試站用 `fetch` 帶
    `Authorization` header 呼叫 API，確認預檢通過且回應可讀。
 5. **rate limit 實測**：production 的 cache store 是 memcached、staging 是 Redis。
    確認 429 真的會發生（若 cache store 掛了，`increment` 回 `nil`，
@@ -692,21 +683,20 @@ Define dev_path    /var/www/cbeta-api-staging
 
 ## 11. 待主管回覆／待討論
 
-1. **其餘 5 個 Origin 的處理**（已詢問主管，等回覆）。
-   Apache 白名單另含 `cbeta.org`、`cbetaonline.cn`、`docusky.org.tw`、
-   `mrmyhuang.github.io`、`syda.dila.edu.tw`、`http://localhost:8000`。
-   本次 Rails 只放行 cbetaonline 兩個站，因此過渡期結束後這 5 個站台會拿到 401
-   （CORS 過得了，但沒有 key）。
-   而它們看起來都是**純網頁前端**（`mrmyhuang.github.io` 尤其確定），要求它們申請 key
-   等於要求把 key 公開寫在 JS 裡 —— 正是本設計一開始就否決的做法。
+1. **其餘 5 個合作單位 Origin 的處理**（已詢問主管，等回覆）。
+   Apache 的 CORS 白名單比本次 Rails 要放行的 2 個多出 6 個（5 個合作單位的網站
+   加一個 localhost）。清單見伺服器上的 `cbdata-sub.conf`，本文件不轉錄。
+
+   過渡期結束後這 5 個站台會拿到 401（CORS 過得了，但沒有 key）。
+   而它們看起來都是**純網頁前端**（其中一個是 GitHub Pages，尤其確定），
+   要求它們申請 key 等於要求把 key 公開寫在 JS 裡 —— 正是本設計一開始就否決的做法。
    實務上這 5 個站台只有三條路：加進 Origin 白名單、自己架後端代理、或斷掉。
    **需在過渡期結束前定案**，否則會有 5 個合作單位同時受影響。
-   白名單實作為 config 陣列，日後增減是改一行。
+   白名單是 `cb.yml` 的一個 array，日後增減是改一行（改完要 restart）。
 2. **過渡期時程**（待與主管、同仁討論）。需明訂結束條件與日期，避免永久停在過渡期。
 3. **rate limit 具體數字**（建議起始值見第 6 節）。
-4. **`mcp.dila.edu.tw` 那個獨立 MCP 服務是否提供同樣 10 個工具**
-   —— 若沒有，移除本 repo 的 `/mcp` 就是單純失去該能力。
-   （使用者已 disconnect claude.ai 上的 connector，移除本身不再有中斷風險。）
+4. ~~`mcp.dila.edu.tw` 那個獨立 MCP 服務是否提供同樣 10 個工具~~
+   —— **2026-08-21 結案：不用管它。** 即使它沒有提供同樣的工具也沒關係。
 
 ---
 

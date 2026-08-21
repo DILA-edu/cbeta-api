@@ -4,10 +4,10 @@ require 'test_helper'
 
 class OriginStatTest < ActiveSupport::TestCase
   test 'record! 首次建立一列' do
-    OriginStat.record!('https://cbetaonline.dila.edu.tw')
+    OriginStat.record!('https://a.example.com')
 
     stat = OriginStat.sole
-    assert_equal 'https://cbetaonline.dila.edu.tw', stat.origin
+    assert_equal 'https://a.example.com', stat.origin
     assert_equal Date.current, stat.used_on
     assert_equal 1, stat.count
   end

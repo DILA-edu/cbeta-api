@@ -8,7 +8,9 @@ require 'test_helper'
 # 回應簡單。
 class ApiKeyAuthenticationTest < ActionDispatch::IntegrationTest
   ENDPOINT = '/chinese_tools/sc2tc'
-  ALLOWED_ORIGIN = 'https://cbetaonline.dila.edu.tw'
+  # 用假的 Origin —— 測試本來就會覆寫 config.api_origin_allowlist，
+  # 而真實的白名單不進版控（見 doc/api-key-design.md 3.3）。
+  ALLOWED_ORIGIN = 'https://allowed.example.com'
 
   setup do
     @user = User.create!(provider: 'github', uid: '1')
@@ -101,13 +103,13 @@ class ApiKeyAuthenticationTest < ActionDispatch::IntegrationTest
   test 'Origin 比對是完整字串,不做 subdomain 模糊比對' do
     end_transition!
     get ENDPOINT, params: { q: '简' },
-                  headers: { 'Origin' => 'https://evil.cbetaonline.dila.edu.tw' }
+                  headers: { 'Origin' => 'https://evil.allowed.example.com' }
     assert_response :unauthorized
   end
 
   test 'Origin 比對含 scheme —— http 不等於 https' do
     end_transition!
-    get ENDPOINT, params: { q: '简' }, headers: { 'Origin' => 'http://cbetaonline.dila.edu.tw' }
+    get ENDPOINT, params: { q: '简' }, headers: { 'Origin' => 'http://allowed.example.com' }
     assert_response :unauthorized
   end
 
