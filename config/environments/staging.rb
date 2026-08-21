@@ -123,4 +123,10 @@ Rails.application.configure do
   # config.active_record.database_resolver_context = ActiveRecord::Middleware::DatabaseSelector::Resolver::Session
 
   config.x.app_base_url = 'https://cbdata.dila.edu.tw/dev'
+
+  # 未帶 API key 也放行的 Origin。理由與注意事項同 production.rb。
+  config.api_origin_allowlist = %w[
+    https://cbetaonline.dila.edu.tw
+    https://cbetaonline-dev.dila.edu.tw
+  ]
 end

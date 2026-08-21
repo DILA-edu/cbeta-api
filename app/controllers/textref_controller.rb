@@ -3,6 +3,8 @@
 #   將 metadata 的書目顯示給使用者看，讓使用者選擇要下載哪些經書。
 #   透過 CBETA API 下載經書的 DocuXml
 class TextrefController < ApplicationController
+  include ApiKeyAuthentication
+
   def meta
   end
 

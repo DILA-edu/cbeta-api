@@ -99,4 +99,13 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   config.x.app_base_url = 'https://api.cbetaonline.cn'
+
+  # ⚠️ API key: 目前沿用 config/application.rb 的預設值 ——
+  # api_origin_allowlist 為空、api_key_required 為 false（過渡期全部放行）。
+  #
+  # 過渡期結束前必須決定 cn 站要怎麼辦: 它是純網頁前端，要求它帶 key 等於要求
+  # 把 key 公開寫在 JS 裡（正是本設計否決的做法），實務上只有「加進 Origin
+  # 白名單」或「自己架後端代理」兩條路。
+  # 另外 cn 走阿里雲 CDN 回源，CDN 是否原樣轉送 Origin header 也需實測。
+  # 見 doc/api-key-design.md 11.1、doc/cn.md。
 end

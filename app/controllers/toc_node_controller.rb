@@ -1,4 +1,5 @@
 class TocNodeController < ApplicationController  
+  include ApiKeyAuthentication
   include TocNodeHelper
 
   def index

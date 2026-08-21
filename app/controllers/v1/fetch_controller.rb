@@ -10,6 +10,9 @@
 #   3. Strip HTML to plain text and return the normalized fetch envelope.
 module V1
   class FetchController < ApplicationController
+    # 其餘 v1 controller 繼承 Juans/Lines/SearchController，
+    # 由那邊 include 而來；只有這一支直接繼承 ApplicationController。
+    include ApiKeyAuthentication
     include ToolEnvelope
 
     rescue_from StandardError, with: :tool_error_handler

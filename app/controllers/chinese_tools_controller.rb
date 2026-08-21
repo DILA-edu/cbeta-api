@@ -1,5 +1,7 @@
 require 'open3'
 class ChineseToolsController < ApplicationController
+  include ApiKeyAuthentication
+
   def sc2tc
     cmd = 'opencc -c s2tw'
     a = Open3.capture2(cmd, stdin_data: params[:q])

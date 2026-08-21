@@ -28,7 +28,24 @@ module CbData
 
     # 版號單一來源:根目錄的 VERSION 檔(方便人工與 script 讀寫)
     config.x.ver = Rails.root.join('VERSION').read.strip
-    config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽  
+    config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽
+
+    # --- API key 控管（見 doc/api-key-design.md 3）---
+    #
+    # 未帶 key 也放行的 Origin 白名單。比對 Origin 完整字串
+    # （scheme + host [+ port]），不做 subdomain 模糊比對。
+    # 各部署環境在 config/environments/*.rb 覆寫。
+    #
+    # 白名單納入版控（不放 config/cb.yml）: 它屬安全設定，放版控才能 review
+    # 與追歷史；而且白名單不是機密 —— 伺服器會把命中的 Origin echo 回
+    # Access-Control-Allow-Origin，可用探測法列舉，且 Origin 本身可任意偽造，
+    # 保密與否對防偽造毫無差別（Kerckhoffs 原則）。
+    config.api_origin_allowlist = []
+
+    # 過渡期: false = 未帶 key 也放行（但帶了無效 key 一律 401）。
+    # 過渡期結束時改為 true，未帶 key 即回 401。
+    # 結束日期待與主管、同仁討論確定（設計文件 11.2）。
+    config.api_key_required = false
     config.x.figure_url = 'https://raw.githubusercontent.com/cbeta-git/CBR2X-figures/master'
     config.time_zone = 'Taipei'
 

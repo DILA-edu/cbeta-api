@@ -1,4 +1,5 @@
 class JuansController < ApplicationController
+  include ApiKeyAuthentication
   include TocNodeHelper
   include WorksHelper
   

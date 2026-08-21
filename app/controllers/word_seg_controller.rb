@@ -1,5 +1,7 @@
 require 'tempfile'
 class WordSegController < ApplicationController
+  include ApiKeyAuthentication
+
   def index
     return unless params.key? :t
     
