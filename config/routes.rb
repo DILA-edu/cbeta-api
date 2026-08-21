@@ -133,4 +133,24 @@ Rails.application.routes.draw do
   match 'works/toc', via: [:get, :post]
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works', to: 'works#index', via: [:get, :post]
+
+  # --- CORS 預檢 ---
+  #
+  # CORS 的回應 header 由 Apache 提供（cbdata-sub.conf 的 /stable 與 /dev
+  # 兩個 <Location> 內都已設定 Access-Control-Allow-Origin / -Methods /
+  # -Headers 與 Vary: Origin），所以「不」引入 rack-cors —— 兩層會出現重複
+  # header 的問題。
+  #
+  # 但 Apache 的 `Header always set` 只補回應 header，OPTIONS 請求本身還是
+  # 會進到 Rails。上面所有 route 都只註冊 via: [:get, :post]，OPTIONS 會回
+  # 404，而預檢必須是 2xx 才通過。
+  #
+  # 目前之所以沒問題，是因為既有前端不帶自訂 header（屬簡單請求，不觸發
+  # 預檢）；一旦有 client 帶 Authorization 就會遇到。
+  #
+  # 這條放在最後，且只吃 OPTIONS，不會影響任何既有 route。
+  #
+  # 見 doc/api-key-design.md 2.3、8
+  match '/',      to: proc { [204, {}, []] }, via: :options
+  match '*path',  to: proc { [204, {}, []] }, via: :options, format: false
 end
