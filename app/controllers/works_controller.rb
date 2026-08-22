@@ -189,22 +189,34 @@ class WorksController < ApplicationController
   
   def search_by_work_range
     c = params[:canon]
-    w1 = work_nor(c, params[:work_start])
-    puts w1
-    
-    if params.key? :work_end
-      w2 = work_nor(c, params[:work_end])
-      raise CbetaError.new(400), "work_end 格式錯誤" if w2.nil?
-    else
-      w2 = w1
+    unless c.to_s.match?(CBETA::CANON_ID)
+      raise CbetaError.new(400), "canon 參數 格式錯誤"
     end
-    
+
+    w1 = work_range_bound(c, :work_start)
+    w2 = params.key?(:work_end) ? work_range_bound(c, :work_end) : w1
+
     works = Work.where(n: w1..w2).order(:n)
     r = []
     works.each do |w|
       r << w.to_hash
     end
     r
+  end
+
+  # 把 work_start / work_end 參數正規化成完整的典籍編號,
+  # 例如 canon=T, work_start=1 => "T0001"。
+  #
+  # work_nor 只負責字串組裝, 組出來的結果不保證是合法的典籍編號, 所以再用
+  # CBETA::WORK_ID 驗證。若少了這道檢查, 格式錯誤的參數會靜默回傳錯誤範圍的
+  # 資料: 例如誤傳完整編號 work_start=T0001 (未帶 canon) 會組成 "T001",
+  # 字串比較下 "T0001" < "T001", 於是 T0001~T0009 全被排除在範圍之外。
+  def work_range_bound(canon, param)
+    n = work_nor(canon, params[param].to_s)
+    unless n&.match?(CBETA::WORK_ID)
+      raise CbetaError.new(400), "#{param} 格式錯誤"
+    end
+    n
   end
 
   def work_nor(canon, n)
