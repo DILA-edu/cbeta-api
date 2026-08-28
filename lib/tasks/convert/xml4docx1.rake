@@ -67,6 +67,7 @@ class XMLForDocx1
 
     @works_xml = Hash.new { |h, k| h[k] = +"" }
     @juan_styles = Hash.new { |h, k| h[k] = Hash.new }
+    @style_lb = {}
     @works_title = {}
 
     src = File.join(@xml_root, @canon)
@@ -88,7 +89,7 @@ class XMLForDocx1
     return if @juan.nil?
 
     if @juan_styles[@work].key?(@juan)
-      @style_lb[style] = @lb
+      @style_lb[style] = "#{@v_work}, lb: #{@lb}"
       @juan_styles[@work][@juan] << style
     else
       abort "Error##{__LINE__}: @juan_styles 無 @juan: #{@juan.inspect}, work: #{@work}, style: #{style}, lb: #{@lb}"
@@ -212,7 +213,6 @@ class XMLForDocx1
     src = File.join(@xml_root, @canon, @vol, fn)
     @works[@work]["updated_at"] = cb_xml_updated_at(path: src)
 
-    @style_lb = {}
     xml = before_parse(src)
     doc = Nokogiri::XML(xml)
     doc.remove_namespaces!
@@ -1304,7 +1304,7 @@ class XMLForDocx1
 
     @juan_styles[work][juan].each do |k|
       s = @predefined_styles[k]
-      raise "style 未定義: #{k.inspect}, lb: #{@style_lb[k]}" if s.nil?
+      raise "style 未定義: #{k.inspect}, 出處: #{@style_lb[k]}" if s.nil?
       r << "#{indent}<style name=\"#{k}\">#{s}</style>"
     end
 
