@@ -1216,9 +1216,15 @@ class XMLForDocx1
     end
   end
 
+  # 這些元素的子元素之間的換行縮排, 只是原書 XML 的排版, 不是內容
+  # ex: T08n0261_p0873c25 app 下的 lem 是空的, 若不略過空白, 校勘後面會多出空白
+  IGNORE_BLANK_TEXT = %w[app lg list row table tt].freeze
+
   def traverse(node, mode='xml')
+    ignore_blank = IGNORE_BLANK_TEXT.include?(node.name)
     r = +""
     node.children.each do |c|
+      next if ignore_blank and c.text? and c.text.match?(/\A\s*\z/m)
       r << handle_node(c, mode)
     end
     r

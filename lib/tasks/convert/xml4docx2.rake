@@ -156,8 +156,11 @@ class XMLForDocx2
   end
 
   def e_list(e)
-    e.remove if e.children.empty?
     traverse(e)
+
+    # list 下如果沒有 item, 不符合 schema, 移除
+    # ex: T51n2087_p0910c06 原書只有 <head>, item 是空的
+    e.remove if e.at_xpath('item').nil?
   end
   
   # <lg subtype="note1"> 、 <lg subtype="note2"> 也是小字夾注
