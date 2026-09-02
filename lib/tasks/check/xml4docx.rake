@@ -51,7 +51,7 @@ class CheckXMLForDocx
     check_as_text('T/T1299/T1299_001.xml', /虛室奎胃畢參鬼星翼角氐心<\/p>/m)
     check_as_text('T/T1299/T1299_001.xml', /0388a16.*\(新演如左.*0388a17/m)
     check_as_text('T/T1431/T1431_001.xml', /及法比丘僧，.*<lb\/>.*今演毘尼法/m)
-    check_as_text('T/T2023/T2023_010.xml', /群生得光輝，<lb\/>\n?一萬八千土/m)    
+    check_as_text('T/T2023/T2023_010.xml', /群生得光輝。<lb\/>\n?一萬八千土/m)    
     check_as_text('T/T2122/T2122_053.xml', /\(如四分律云/m)
     check_as_text('T/T2122/T2122_053.xml', /\(故佛本行經云/m)
     check_as_text('T/T2122/T2122_053.xml', /0683b02.*(?<!\()爾時舍利弗.*0683b03/m)
