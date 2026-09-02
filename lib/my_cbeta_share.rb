@@ -53,10 +53,7 @@ class MyCbetaShare
 
     case args[:format]
     when :docx
-      r << <<~HTML
-        【版權宣告】https://cbeta.org/copyright<lb/>
-        【製作說明】感謝志工黃訓慶先生將本佛典轉換至 DOCX 格式。</p>
-        HTML
+      r << "【版權宣告】https://cbeta.org/copyright</p>\n"
     when :text
       r << "#【其他事項】本資料庫可自由免費流通，詳細內容請參閱【財團法人佛教電子佛典基金會資料庫版權宣告】\n"
       r << "#%s\n\n" % ('-' * 70)
