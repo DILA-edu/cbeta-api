@@ -19,6 +19,9 @@ class XmlToDocxConverter
   A_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main'
   PIC_NS = 'http://schemas.openxmlformats.org/drawingml/2006/picture'
 
+  # 中文字型只套在 eastAsia, 西文另外指定, 否則英文與羅馬轉寫會被中文字型撐開字距
+  WESTERN_FONT = 'Times New Roman'
+
   # 圖片以 96 DPI 換算 EMU
   EMU_PER_PIXEL = 9525
   EMU_PER_TWIP = 635
@@ -558,23 +561,28 @@ class XmlToDocxConverter
     props.empty? ? '' : "<w:pPr>#{props.join}</w:pPr>"
   end
 
-  def run_properties_xml(style)
+  # extra 是額外的 rPr 子元素, 由呼叫端負責放在符合 CT_RPr 順序的位置
+  def run_properties_xml(style, extra: nil)
     effective = merge_styles(@default_style, style)
+    # 子元素順序依 CT_RPr 的 schema sequence
     props = []
 
     if (font = effective['font-family'])
-      escaped = escape_xml(font)
-      props << "<w:rFonts w:ascii=\"#{escaped}\" w:hAnsi=\"#{escaped}\" w:eastAsia=\"#{escaped}\" w:cs=\"#{escaped}\"/>"
-    end
-
-    if (size = half_points(effective['font-size']))
-      props << "<w:sz w:val=\"#{size}\"/><w:szCs w:val=\"#{size}\"/>"
+      east_asia = escape_xml(font)
+      western = escape_xml(font.match?(/\p{Han}/) ? WESTERN_FONT : font)
+      props << "<w:rFonts w:ascii=\"#{western}\" w:hAnsi=\"#{western}\" w:eastAsia=\"#{east_asia}\" w:cs=\"#{western}\"/>"
     end
 
     props << '<w:b/><w:bCs/>' if bold?(effective['font-weight'])
 
+    props << extra if extra
+
     if (color = color_value(effective['color']))
       props << "<w:color w:val=\"#{color}\"/>"
+    end
+
+    if (size = half_points(effective['font-size']))
+      props << "<w:sz w:val=\"#{size}\"/><w:szCs w:val=\"#{size}\"/>"
     end
 
     if (fill = color_value(effective['background-color']))
@@ -652,7 +660,7 @@ class XmlToDocxConverter
       <<~XML
         <w:styles xmlns:w="#{W_NS}">
           <w:docDefaults>
-            <w:rPrDefault>#{run_properties_xml(@default_style)}</w:rPrDefault>
+            <w:rPrDefault>#{run_properties_xml(@default_style, extra: '<w:noProof/>')}</w:rPrDefault>
             <w:pPrDefault><w:pPr><w:spacing w:after="120"/></w:pPr></w:pPrDefault>
           </w:docDefaults>
           <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
@@ -680,15 +688,20 @@ class XmlToDocxConverter
     xml_decl(
       <<~XML
         <w:settings xmlns:w="#{W_NS}">
+          <w:hideSpellingErrors/>
+          <w:hideGrammaticalErrors/>
           <w:defaultTabStop w:val="720"/>
           <w:characterSpacingControl w:val="doNotCompress"/>
+          <w:compat>
+            <w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/>
+          </w:compat>
         </w:settings>
       XML
     )
   end
 
   def font_table_xml
-    fonts = collect_fonts
+    fonts = (collect_fonts + [WESTERN_FONT]).uniq
     entries = fonts.map do |font|
       <<~XML
         <w:font w:name="#{escape_xml(font)}">

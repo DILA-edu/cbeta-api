@@ -52,6 +52,13 @@ class XmlToOdtConverter
   TABLE_BORDER = '0.5pt solid #808080'
   TABLE_CELL_PADDING_CM = 0.141
 
+  # 中文字型只套在 asian, 西文另外指定, 否則英文與羅馬轉寫會被中文字型撐開字距
+  WESTERN_FONT = 'Times New Roman'
+  # 語言標成 zxx (無語言內容), LibreOffice 就不會對內文做拼字與文法檢查
+  NO_PROOFING_ATTRIBUTES = 'fo:language="zxx" fo:country="none" ' \
+                           'style:language-asian="zxx" style:country-asian="none" ' \
+                           'style:language-complex="zxx" style:country-complex="none"'
+
   DEFAULT_PARAGRAPH_STYLE = 'Standard'
   FOOTNOTE_PARAGRAPH_STYLE = 'Footnote'
   # LibreOffice 內建 character style 的名稱, 空白編碼成 _20_
@@ -529,12 +536,14 @@ class XmlToOdtConverter
   end
 
   # ODF 的西文/中日韓/複雜文種字型與大小是分開的屬性, 三者都要設才會一致
-  def text_properties_xml(style)
+  # extra 是額外的 text-properties 屬性字串
+  def text_properties_xml(style, extra: nil)
     attributes = []
 
     if (font = style['font-family'])
-      family = escape_xml(quote_font_family(font))
-      attributes << %(fo:font-family="#{family}" style:font-family-asian="#{family}" style:font-family-complex="#{family}")
+      asian = escape_xml(quote_font_family(font))
+      western = escape_xml(quote_font_family(font.match?(/\p{Han}/) ? WESTERN_FONT : font))
+      attributes << %(fo:font-family="#{western}" style:font-family-asian="#{asian}" style:font-family-complex="#{western}")
     end
 
     if (points = font_size_points(style['font-size']))
@@ -548,6 +557,8 @@ class XmlToOdtConverter
 
     attributes << %(fo:color="#{odf_color(style['color'])}") if odf_color(style['color'])
     attributes << %(fo:background-color="#{odf_color(style['background-color'])}") if odf_color(style['background-color'])
+
+    attributes << extra if extra
 
     attributes.empty? ? '' : %(<style:text-properties #{attributes.join(' ')}/>)
   end
@@ -595,7 +606,7 @@ class XmlToOdtConverter
     <<~XML
       <style:default-style style:family="paragraph">
         <style:paragraph-properties fo:margin-bottom="#{format_length(PARAGRAPH_SPACING_CM)}cm" style:writing-mode="lr-tb"/>
-        #{@default_text_properties}
+        #{text_properties_xml(@default_style, extra: NO_PROOFING_ATTRIBUTES)}
       </style:default-style>
     XML
   end

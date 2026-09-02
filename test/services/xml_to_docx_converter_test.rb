@@ -21,6 +21,51 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "中文字型只套用在 eastAsia, 西文用 Times New Roman" do
+    with_docx(SAMPLE_XML, figures_dir: FIGURES) do |docx, _warnings|
+      assert_includes docx['word/styles.xml'],
+                      '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" ' \
+                      'w:eastAsia="新細明體" w:cs="Times New Roman"/>'
+      # 西文字型也要進 fontTable
+      assert_includes docx['word/fontTable.xml'], '<w:font w:name="Times New Roman">'
+    end
+  end
+
+  test "非中文字型維持原字型, 不改成 Times New Roman" do
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'input.xml')
+      File.write(path, <<~XML)
+        <?xml version="1.0" encoding="UTF-8"?>
+        <document>
+          <settings><styles><style name="default">font-family:Arial;font-size:12</style></styles></settings>
+          <body><p>test</p></body>
+        </document>
+      XML
+
+      with_docx(path) do |docx, _warnings|
+        assert_includes docx['word/styles.xml'],
+                        '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/>'
+      end
+    end
+  end
+
+  test "關閉拼字與文法檢查, 避免 Word 畫紅色波浪線" do
+    with_docx(SAMPLE_XML, figures_dir: FIGURES) do |docx, _warnings|
+      assert_includes docx['word/settings.xml'], '<w:hideSpellingErrors/>'
+      assert_includes docx['word/settings.xml'], '<w:hideGrammaticalErrors/>'
+      # docDefaults 一次關掉全文的校訂標記
+      assert_includes docx['word/styles.xml'], '<w:noProof/>'
+    end
+  end
+
+  test "settings.xml 標明 compatibilityMode 15, Word 才不會用相容模式開啟" do
+    with_docx(SAMPLE_XML, figures_dir: FIGURES) do |docx, _warnings|
+      assert_includes docx['word/settings.xml'],
+                      '<w:compatSetting w:name="compatibilityMode" ' \
+                      'w:uri="http://schemas.microsoft.com/office/word" w:val="15"/>'
+    end
+  end
+
   test "註腳裡的圖用 footnotes.xml 自己的 relationship" do
     with_docx(SAMPLE_XML, figures_dir: FIGURES) do |docx, _warnings|
       assert_includes docx['word/_rels/footnotes.xml.rels'], 'Id="rIdFnImg1"'
@@ -124,7 +169,14 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
       path = File.join(dir, 'out.docx')
       warnings = XmlToDocxConverter.new(xml_path, figures_dir: figures_dir).convert(path)
       parts = {}
-      Zip::File.open(path) { |zip| zip.each { parts[it.name] = it.get_input_stream.read } }
+      Zip::File.open(path) do |zip|
+        zip.each do |entry|
+          data = entry.get_input_stream.read
+          # zip 讀出來是 BINARY, 要比對中文字串的 xml part 先標回 UTF-8
+          data.force_encoding('UTF-8') if entry.name.end_with?('.xml', '.rels')
+          parts[entry.name] = data
+        end
+      end
       yield parts, warnings
     end
   end

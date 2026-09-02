@@ -221,6 +221,42 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
   private
 
   # 轉出 odt 並把 zip 內容讀成 { part 名稱 => 內容 }
+  test "中文字型只套用在 asian, 西文用 Times New Roman" do
+    with_odt(SAMPLE_XML, figures_dir: FIGURES) do |odt, _warnings|
+      assert_includes odt['styles.xml'],
+                      %(fo:font-family="&#39;Times New Roman&#39;" style:font-family-asian="新細明體" ) +
+                      %(style:font-family-complex="&#39;Times New Roman&#39;")
+    end
+  end
+
+  test "非中文字型維持原字型, 不改成 Times New Roman" do
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'input.xml')
+      File.write(path, <<~XML)
+        <?xml version="1.0" encoding="UTF-8"?>
+        <document>
+          <settings><styles><style name="default">font-family:Arial;font-size:12</style></styles></settings>
+          <body><p>test</p></body>
+        </document>
+      XML
+
+      with_odt(path) do |odt, _warnings|
+        assert_includes odt['styles.xml'],
+                        %(fo:font-family="Arial" style:font-family-asian="Arial" style:font-family-complex="Arial")
+      end
+    end
+  end
+
+  test "語言標成 zxx, LibreOffice 就不會做拼字與文法檢查" do
+    with_odt(SAMPLE_XML, figures_dir: FIGURES) do |odt, _warnings|
+      assert_includes odt['styles.xml'], 'fo:language="zxx" fo:country="none"'
+      assert_includes odt['styles.xml'], 'style:language-asian="zxx" style:country-asian="none"'
+      assert_includes odt['styles.xml'], 'style:language-complex="zxx" style:country-complex="none"'
+      # 只設在 default-style, 不該汙染每個 run 的 automatic style
+      assert_not_includes odt['content.xml'], 'fo:language="zxx"'
+    end
+  end
+
   def with_odt(xml_path, figures_dir: nil)
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'out.odt')
