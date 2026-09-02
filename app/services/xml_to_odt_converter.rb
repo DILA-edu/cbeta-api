@@ -339,7 +339,7 @@ class XmlToOdtConverter
       style = merge_styles(style, 'font-family' => font_name_for(node['name'])) if node['name'].present?
       inline_content_xml(node.children, style)
     when 'footnote'
-      footnote_xml(node)
+      footnote_xml(node, inherited_style)
     when 'graphic'
       graphic_xml(node, inherited_style)
     else
@@ -349,7 +349,11 @@ class XmlToOdtConverter
   end
 
   def span_xml(text, style)
-    content = escape_text(text)
+    styled_span_xml(escape_text(text), style)
+  end
+
+  # content 已是 ODF 標記, 只負責套字元樣式
+  def styled_span_xml(content, style)
     name = text_style_name(style)
     return content if name.nil?
 
@@ -365,14 +369,17 @@ class XmlToOdtConverter
   # --- 註腳 ---
 
   # ODF 的註腳就地展開, 不需要獨立的 part, 圖片也直接沿用 Pictures/
-  def footnote_xml(node)
+  def footnote_xml(node, inherited_style)
     @footnote_count += 1
     style = merge_styles(@default_style, 'font-size' => '10')
 
-    "<text:note text:id=\"ftn#{@footnote_count}\" text:note-class=\"footnote\">" \
-      "<text:note-citation>#{@footnote_count}</text:note-citation>" \
-      "<text:note-body>#{footnote_blocks_xml(node, style)}</text:note-body>" \
-      '</text:note>'
+    note = "<text:note text:id=\"ftn#{@footnote_count}\" text:note-class=\"footnote\">" \
+           "<text:note-citation>#{@footnote_count}</text:note-citation>" \
+           "<text:note-body>#{footnote_blocks_xml(node, style)}</text:note-body>" \
+           '</text:note>'
+
+    # 注標跟著被注內容的字級, 否則夾注小字的注標會被段落標題的大字撐大
+    styled_span_xml(note, footnote_reference_style(node, inherited_style))
   end
 
   # 註腳通常只有一段文字, 但可能夾雜 table; table 不能包在 text:p 裡, 必須拆成多個 block

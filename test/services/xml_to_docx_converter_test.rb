@@ -162,6 +162,20 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "注標的字級跟著後面被注的內容" do
+    Dir.mktmpdir do |dir|
+      body = '<p style="font-size:24"><footnote>註一</footnote>標題' \
+             '<footnote>註二</footnote><lb/><seg style="font-size:10">(夾注)</seg></p>'
+      path = write_xml(dir, body)
+
+      with_docx(path) do |docx, _warnings|
+        document = Nokogiri::XML(docx['word/document.xml'])
+        assert_equal '48', footnote_reference_size(document, 1)
+        assert_equal '20', footnote_reference_size(document, 2)
+      end
+    end
+  end
+
   test "package 各 part 都是合法 XML" do
     with_docx(SAMPLE_XML, figures_dir: FIGURES) do |docx, _warnings|
       docx.each do |name, content|
@@ -191,6 +205,12 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
       end
       yield parts, warnings
     end
+  end
+
+  # 注標所在 run 的字級 (half-point)
+  def footnote_reference_size(document, id)
+    run = document.at_xpath("//w:r[w:footnoteReference[@w:id=\'#{id}\']]")
+    run.at_xpath('./w:rPr/w:sz').attribute('val').value
   end
 
   # 只要 header 正確就能讀出尺寸, 測縮放不需要完整的圖片資料

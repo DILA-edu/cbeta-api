@@ -230,6 +230,20 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "注標的字級跟著後面被注的內容" do
+    Dir.mktmpdir do |dir|
+      body = '<p style="font-size:24"><footnote>註一</footnote>標題' \
+             '<footnote>註二</footnote><lb/><seg style="font-size:10">(夾注)</seg></p>'
+      path = write_xml(dir, body)
+
+      with_odt(path) do |odt, _warnings|
+        content = Nokogiri::XML(odt['content.xml'])
+        assert_equal '24pt', footnote_citation_size(content, 'ftn1')
+        assert_equal '10pt', footnote_citation_size(content, 'ftn2')
+      end
+    end
+  end
+
   private
 
   # 轉出 odt 並把 zip 內容讀成 { part 名稱 => 內容 }
@@ -283,6 +297,14 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
       end
       yield parts, warnings
     end
+  end
+
+  # 包住註腳的 text:span 所用的字級
+  def footnote_citation_size(content, note_id)
+    span = content.at_xpath("//text:span[text:note[@text:id='#{note_id}']]")
+    name = span.attribute('style-name').value
+    style = content.at_xpath("//style:style[@style:name='#{name}']/style:text-properties")
+    style.attribute('font-size').value
   end
 
   # 只要 header 正確就能讀出尺寸, 測縮放不需要完整的圖片資料

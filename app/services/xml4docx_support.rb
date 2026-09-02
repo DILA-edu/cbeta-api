@@ -182,6 +182,30 @@ module Xml4docxSupport
     nil
   end
 
+  # --- 註腳 ---
+
+  # CBETA 的註腳錨點放在被注內容之前, 注標的字級/字型跟著後面的內容走,
+  # 否則夾注小字的注標會被段落標題的大字撐大
+  def footnote_reference_style(node, inherited_style)
+    sibling = node.next_sibling
+    sibling = sibling.next_sibling while skip_before_footnote_reference?(sibling)
+    return inherited_style unless sibling&.element?
+
+    style = merge_styles(inherited_style, style_for(sibling))
+    return style unless sibling.name == 'font' && sibling['name'].present?
+
+    merge_styles(style, 'font-family' => font_name_for(sibling['name']))
+  end
+
+  # 找被注內容時跳過 comment、空白、換行, 以及連續的註腳
+  def skip_before_footnote_reference?(node)
+    return false if node.nil?
+    return true if node.comment? || node.processing_instruction?
+    return true if node.text? && normalize_text(node.text).strip.empty?
+
+    node.element? && %w[footnote lb].include?(node.name)
+  end
+
   # --- list ---
 
   def list_marker(type, index)

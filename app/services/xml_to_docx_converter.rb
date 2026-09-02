@@ -343,7 +343,7 @@ class XmlToDocxConverter
     when 'p'
       inline_content_xml(node.children, merge_styles(inherited_style, style_for(node)))
     when 'footnote'
-      footnote_reference_xml(add_footnote(node))
+      footnote_reference_xml(add_footnote(node), footnote_reference_style(node, inherited_style))
     when 'graphic'
       graphic_xml(node, inherited_style)
     else
@@ -443,10 +443,10 @@ class XmlToDocxConverter
     "<w:r>#{run_properties_xml(style)}<w:br/></w:r>"
   end
 
-  def footnote_reference_xml(id)
+  def footnote_reference_xml(id, style)
     <<~XML.delete("\n")
       <w:r>
-        <w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr>
+        #{run_properties_xml(style, rstyle: 'FootnoteReference')}
         <w:footnoteReference w:id="#{id}"/>
       </w:r>
     XML
@@ -562,10 +562,12 @@ class XmlToDocxConverter
   end
 
   # extra 是額外的 rPr 子元素, 由呼叫端負責放在符合 CT_RPr 順序的位置
-  def run_properties_xml(style, extra: nil)
+  def run_properties_xml(style, extra: nil, rstyle: nil)
     effective = merge_styles(@default_style, style)
     # 子元素順序依 CT_RPr 的 schema sequence
     props = []
+
+    props << "<w:rStyle w:val=\"#{escape_xml(rstyle)}\"/>" if rstyle
 
     if (font = effective['font-family'])
       east_asia = escape_xml(font)
