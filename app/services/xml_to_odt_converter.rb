@@ -336,7 +336,7 @@ class XmlToOdtConverter
       inline_content_xml(node.children, merge_styles(inherited_style, style_for(node)))
     when 'font'
       style = merge_styles(inherited_style, style_for(node))
-      style = merge_styles(style, 'font-family' => node['name']) if node['name'] && !node['name'].empty?
+      style = merge_styles(style, 'font-family' => font_name_for(node['name'])) if node['name'].present?
       inline_content_xml(node.children, style)
     when 'footnote'
       footnote_xml(node)

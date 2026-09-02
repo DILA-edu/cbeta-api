@@ -49,6 +49,18 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "font name 簡稱換成實際字型名稱" do
+    Dir.mktmpdir do |dir|
+      path = write_xml(dir, %(<p><font name="cbeta">\u{20001}</font></p>))
+
+      with_docx(path) do |docx, _warnings|
+        assert_includes docx['word/document.xml'], 'w:eastAsia="CBETA Supplement"'
+        assert_includes docx['word/fontTable.xml'], '<w:font w:name="CBETA Supplement">'
+        assert_not_includes docx['word/fontTable.xml'], 'w:name="cbeta"'
+      end
+    end
+  end
+
   test "關閉拼字與文法檢查, 避免 Word 畫紅色波浪線" do
     with_docx(SAMPLE_XML, figures_dir: FIGURES) do |docx, _warnings|
       assert_includes docx['word/settings.xml'], '<w:hideSpellingErrors/>'

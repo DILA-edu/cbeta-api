@@ -218,6 +218,18 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "font name 簡稱換成實際字型名稱" do
+    Dir.mktmpdir do |dir|
+      path = write_xml(dir, %(<p><font name="cbeta">\u{20001}</font></p>))
+
+      with_odt(path) do |odt, _warnings|
+        # 含空白的字型名稱要加單引號, 單引號在 XML attribute 裡是 &#39;
+        assert_includes odt['content.xml'], 'style:font-family-asian="&#39;CBETA Supplement&#39;"'
+        assert_not_includes odt['content.xml'], 'cbeta'
+      end
+    end
+  end
+
   private
 
   # 轉出 odt 並把 zip 內容讀成 { part 名稱 => 內容 }

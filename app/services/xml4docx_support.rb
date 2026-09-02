@@ -19,6 +19,14 @@ module Xml4docxSupport
     'jpeg' => 'image/jpeg'
   }.freeze
 
+  # xml4docx 中間格式的 <font name> 是簡稱, 對應實際字型名稱
+  # 簡稱由 lib/tasks/convert/xml4docx1.rake 產生
+  FONT_NAME_MAP = {
+    'cbeta' => 'CBETA Supplement',
+    'sidd' => 'Siddam',
+    'ranj' => 'Ranjana'
+  }.freeze
+
   private
 
   # --- style ---
@@ -245,8 +253,12 @@ module Xml4docxSupport
 
   def collect_fonts
     fonts = @styles.values.filter_map { |style| style['font-family'] }
-    fonts += @xml.xpath('//font[@name]').map { |node| node['name'] }
+    fonts += @xml.xpath('//font[@name]').map { |node| font_name_for(node['name']) }
     fonts.uniq
+  end
+
+  def font_name_for(name)
+    FONT_NAME_MAP.fetch(name, name)
   end
 
   def escape_xml(value)

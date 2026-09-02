@@ -387,9 +387,7 @@ class XMLForDocx1
     node.content = g['char']
     node['rend'] = 'corr' if @in_corr.last
 
-    # font name sidd 對應 font-family: Siddam
-    # font name ranj 對應 font-family: Ranjana
-    # 在 xml4docx 轉 docx 的程式裡指定
+    # font name 是簡稱, 實際字型名稱對應表: Xml4docxSupport::FONT_NAME_MAP
     node['name'] = id.match?(/^SD/) ? "sidd" : "ranj"
 
     if mode == 'tt'
@@ -961,8 +959,7 @@ class XMLForDocx1
     node['rend'] = 'corr' if @in_corr.last
     case code
     when 0x1F780..0x1F7FF, 0x20000..0x2A6DF, 0x2A700..0x2FFFF
-      # font name cbeta 對應 font-family: "CBETA Supplement"
-      # 在 xml4docx 轉 docx 的程式裡指定
+      # font name 是簡稱, 實際字型名稱對應表: Xml4docxSupport::FONT_NAME_MAP
       node['name'] = 'cbeta' 
       node.to_s
     when 0x30000..0x3134F
