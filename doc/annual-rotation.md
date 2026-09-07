@@ -61,6 +61,15 @@ Define dev_path    /var/www/cbeta-api-staging
      analytics 指 `analytics_dev`、**accounts 指 `accounts_dev`**
    - `database.yml` 的 `production:` 區塊：analytics 指 `cb_analytics`、
      **accounts 指 `cb_accounts`**
+   - ⚠️ `Capfile` 有 `capistrano/rails/migrations`，deploy 會跑 `db:migrate`，
+     多 DB 下**任何一個 DB 連不上就整個 deploy 失敗**。確認 accounts DB 已存在：
+
+     ```bash
+     psql -U pgcbapi -h localhost -d postgres -c 'CREATE DATABASE accounts_dev OWNER pgcbapi;'
+     ```
+
+   - `.envrc` 設 `export RAILS_ENV=staging`，然後 `direnv allow`
+     （舊 slot 卸任前是 production，這一行一定要改）
 4. 切換角色 symlink：
 
    ```bash
@@ -102,3 +111,10 @@ accounts DB**，固定為：
   一併退場），輪替時不必再確認那一份 vhost。
 - 代價：「現在誰是 production」在版控裡看不到，只能問伺服器
   （`cap production slot:which`）。這是刻意的取捨 —— 換來的是輪替時不必改版控。
+
+## 沿革
+
+- 2026-09-07：本方案**首次實際套用**於伺服器。在此之前 `/var/www` 上並沒有
+  角色 symlink，Apache 的 `stable_path` / `dev_path` 都直接寫 `cbapi2`。
+  這次建立兩條 symlink（production → cbapi2、staging → cbapi3）、把 Apache
+  改成引用 symlink，並把 cbapi3 準備為 2026R3 測試環境。

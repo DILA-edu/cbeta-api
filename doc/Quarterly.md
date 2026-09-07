@@ -7,12 +7,14 @@ CBETA XML 新一季定案後執行。
 ## 編輯 config 參數
 
 * config
-  * cb.yml (server 端)
-  * deploy
-    * staging.rb
-    * production.rb
+  * cb.yml (server 端，每個 slot 的 shared/config 各一份)
+    * git, v, r, r_prev, pub, manticore
+    * ⚠️ api_origin_allowlist 不進版控，新 slot 容易漏掉
 * app/views/static_pages
   * log.haml
+
+`config/deploy/staging.rb`、`production.rb` **不用改**，deploy target 是角色
+symlink，換 slot 只改伺服器上的 symlink，見 [annual-rotation.md](annual-rotation.md)。
 
 ## 從 GitHub 更新資料
 

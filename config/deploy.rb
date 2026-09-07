@@ -57,8 +57,14 @@ namespace :slot do
   desc '顯示本 stage 的角色 symlink 實際指向哪一個 slot'
   task :which do
     on roles(:app) do
-      real = capture(:readlink, '-f', fetch(:deploy_to)).strip
-      info "#{fetch(:stage)}: #{fetch(:deploy_to)} -> #{real}"
+      # readlink -e 在目標不存在時回傳空字串，不會像 -f 那樣把路徑本身吐回來，
+      # 誤導成「symlink 已存在」。
+      real = capture(:readlink, '-e', fetch(:deploy_to), raise_on_non_zero_exit: false).strip
+      if real.empty?
+        warn "#{fetch(:stage)}: #{fetch(:deploy_to)} 不存在或不是有效的 symlink"
+      else
+        info "#{fetch(:stage)}: #{fetch(:deploy_to)} -> #{real}"
+      end
     end
   end
 end
