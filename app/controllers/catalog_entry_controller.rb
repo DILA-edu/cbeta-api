@@ -1,4 +1,6 @@
 class CatalogEntryController < ApplicationController
+  include ApiKeyAuthentication
+
   def index
     if params[:vol]
       results = get_entries_by_vol(params[:vol])

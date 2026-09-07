@@ -95,17 +95,17 @@ https://rubygems.org/gems/cbeta
 
 修改 server 上的 /etc/apache2/sites-available
   * cbdata-sub.conf
-  * cbdata-cn.conf (cbetaonline.cn 會呼叫 api.cbetaonline.cn)
 
 更改項目：
   * app path, 例： 
     * `Define stable_path /var/www/cbapi1`
+    * 改用角色 symlink 後這一項不必再改，見 [annual-rotation.md](annual-rotation.md)
   * ruby 版本, 例：
     * `PassengerRuby /home/ray/.asdf/installs/ruby/4.0.1/bin/ruby`
 
 檢視 config/database.yml
 * production analytics database 應為 cb_analytics
-* cn 也要指向正確的 database
+* production accounts database 應為 cb_accounts (使用者與 API key，不隨輪替搬移)
 
 使用 direnv 管理 環境變數, 編輯 /var/www/cbapi?/.envrc
     export RAILS_ENV=production

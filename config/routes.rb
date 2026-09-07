@@ -2,30 +2,20 @@ Rails.application.routes.draw do
   root 'static_pages#home'
   get '/health', to: proc { [200, {}, ['success']] }
 
-  # OAuth 2.0 Authorization Server (Doorkeeper)。
-  #
-  # /mcp 刻意維持 PUBLIC / authless（未帶 token 也回 200），讓 OpenAI
-  # (chatgpt.com, ChatGPT, Codex) 與 Anthropic (claude.ai, Claude, Cowork)
-  # 的 remote-MCP client 都能連線。
-  #
-  # 因此我們「不」對外廣告 OAuth：以下停用 RFC 8414 / RFC 9728 的 well-known
-  # discovery endpoint 與 RFC 7591 的 dynamic client registration endpoint。
-  # 先前有提供這些 metadata 時，claude.ai 會偵測到並強制走 OAuth，但 /mcp
-  # 根本不需認證，於是 register 失敗（"Couldn't register with ... sign-in
-  # service"）。移除 discovery 後，client 會把 /mcp 當成公開 connector 直連。
-  #
-  # Doorkeeper 仍保留掛載（但不廣告），日後若要改用 pre-registered client
-  # 走 OAuth 仍可重新啟用。
-  use_doorkeeper do
-    skip_controllers :applications, :authorized_applications
-  end
-  # --- 已停用 OAuth 廣告（原因見上方說明）---
-  # match '/oauth/register', to: 'oauth/registrations#create',  via: [:post]
-  # match '/oauth/register', to: 'oauth/registrations#options', via: [:options]
-  # get '/.well-known/oauth-authorization-server',       to: 'well_known#oauth_authorization_server'
-  # get '/.well-known/oauth-authorization-server/*path', to: 'well_known#oauth_authorization_server'
-  # get '/.well-known/oauth-protected-resource',         to: 'well_known#oauth_protected_resource'
-  # get '/.well-known/oauth-protected-resource/*path',   to: 'well_known#oauth_protected_resource'
+  # --- 登入（OmniAuth）---
+  # request phase 只收 POST（OmniAuth 2 的預設，防 login CSRF），
+  # 登入頁用 button_to 送出。
+  get  '/login',  to: 'sessions#new',     as: :login
+  post '/logout', to: 'sessions#destroy', as: :logout
+  post '/auth/:provider',          to: 'sessions#create', as: :auth
+  get  '/auth/:provider/callback', to: 'sessions#create'
+  post '/auth/:provider/callback', to: 'sessions#create'
+  get  '/auth/failure',            to: 'sessions#failure'
+
+  # --- 帳號與 API key 管理 ---
+  get    '/account', to: 'accounts#show', as: :account
+  post   '/account/api_keys',            to: 'api_keys#create',  as: :account_api_keys
+  delete '/account/api_keys/:id',        to: 'api_keys#destroy', as: :account_api_key
 
   match 'catalog_entry', to: 'catalog_entry#index', via: [:get, :post]
 
@@ -72,10 +62,6 @@ Rails.application.routes.draw do
     post 'tools/get_context',         to: 'contexts#get_context'
   end
 
-  # MCP (Model Context Protocol) Streamable HTTP endpoint.
-  # Wraps the v1 tool surface as MCP tools (see app/controllers/mcp_controller.rb).
-  match '/mcp', to: 'mcp#handle', via: [:get, :post, :delete, :options]
-
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
   match 'search/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
@@ -89,6 +75,7 @@ Rails.application.routes.draw do
   match 'search/variants',        to: 'search#variants',   via: [:get, :post]
   match 'search',                 to: 'search#index',      via: [:get, :post]
 
+  get 'static_pages/api_key'
   get 'static_pages/chinese_tools'
   get 'static_pages/catalog_index'
   get 'static_pages/catalog'
@@ -147,4 +134,24 @@ Rails.application.routes.draw do
   match 'works/toc', via: [:get, :post]
   match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works', to: 'works#index', via: [:get, :post]
+
+  # --- CORS 預檢 ---
+  #
+  # CORS 的回應 header 由 Apache 提供（cbdata-sub.conf 的 /stable 與 /dev
+  # 兩個 <Location> 內都已設定 Access-Control-Allow-Origin / -Methods /
+  # -Headers 與 Vary: Origin），所以「不」引入 rack-cors —— 兩層會出現重複
+  # header 的問題。
+  #
+  # 但 Apache 的 `Header always set` 只補回應 header，OPTIONS 請求本身還是
+  # 會進到 Rails。上面所有 route 都只註冊 via: [:get, :post]，OPTIONS 會回
+  # 404，而預檢必須是 2xx 才通過。
+  #
+  # 目前之所以沒問題，是因為既有前端不帶自訂 header（屬簡單請求，不觸發
+  # 預檢）；一旦有 client 帶 Authorization 就會遇到。
+  #
+  # 這條放在最後，且只吃 OPTIONS，不會影響任何既有 route。
+  #
+  # 見 doc/api-key-design.md 2.3、8
+  match '/',      to: proc { [204, {}, []] }, via: :options
+  match '*path',  to: proc { [204, {}, []] }, via: :options, format: false
 end

@@ -3,6 +3,10 @@ lock '3.20.1'
 
 set :repo_url, 'git@github.com:DILA-edu/cbeta-api.git'
 
+# 應用程式名稱不隨環境變化，故放在共用檔。
+# 環境的區分由 stage 名稱（cap production / cap staging）與 deploy_to 表達。
+set :application, 'cbeta-api'
+
 # deploy current branch
 # 參考: https://stackoverflow.com/questions/1524204/using-capistrano-to-deploy-from-different-git-branches
 set :branch, proc { `git rev-parse --abbrev-ref HEAD`.chomp }
@@ -40,6 +44,21 @@ namespace :deploy do
   task :restart do
     on roles(:web), in: :sequence do
       execute :touch, release_path.join('tmp/restart.txt')
+    end
+  end
+end
+
+# deploy_to 指向角色 symlink，「現在誰是 production」在版控裡看不到，
+# 所以提供一支 task 直接問伺服器。見 doc/annual-rotation.md。
+#
+#   cap production slot:which
+#   cap staging slot:which
+namespace :slot do
+  desc '顯示本 stage 的角色 symlink 實際指向哪一個 slot'
+  task :which do
+    on roles(:app) do
+      real = capture(:readlink, '-f', fetch(:deploy_to)).strip
+      info "#{fetch(:stage)}: #{fetch(:deploy_to)} -> #{real}"
     end
   end
 end

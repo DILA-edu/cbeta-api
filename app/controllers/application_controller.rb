@@ -4,6 +4,7 @@ class ApplicationController < ActionController::Base
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_request_timeout
   before_action :log_action_start
   before_action :record_visit
+  before_action :record_origin
   after_action  :log_action_end
 
   # Prevent CSRF attacks by raising an exception.
@@ -98,6 +99,21 @@ class ApplicationController < ActionController::Base
     )
   end
   
+  # 過渡期埋點: 記錄每個 Origin 每天的 request 數。
+  #
+  # 用途是在過渡期結束前確認 cbetaonline 的流量落在「命中白名單」還是
+  # 「Origin 為 nil」—— 若全部落在 nil,過渡期一結束前端就會全站掛掉,
+  # 必須提前發現,不能等前端工程師回覆。
+  #
+  # 埋點不該讓 API 呼叫失敗,因此吞掉例外只寫 log。
+  #
+  # 見 doc/api-key-design.md 4.5
+  def record_origin
+    OriginStat.record!(request.origin)
+  rescue StandardError => e
+    logger.warn "記錄 Origin 統計失敗: #{e.class}: #{e.message}"
+  end
+
   def my_render(data)
     if data.nil?
       data = {

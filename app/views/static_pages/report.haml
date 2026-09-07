@@ -27,6 +27,11 @@
       %li CSV 欄位： category, chars, chars_no_spaces, cjk_chars, en_words
 
 %h2 存取紀錄
+%p.text-muted
+  以下報表<strong>限管理者</strong>檢視（需先登入）。
+  API key 使用者要查自己的使用統計，請到
+  = succeed '。' do
+    = link_to '我的帳號', login_path
 %ul
   %li= link_to "日統計表", controller: 'report', action: 'daily'
   %li= link_to "URL 統計表", controller: 'report', action: 'url'

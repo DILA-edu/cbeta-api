@@ -26,7 +26,6 @@ ruby test_remote/run.rb dev search
 | `dev` (預設) | https://cbdata.dila.edu.tw/dev |
 | `stable` | https://cbdata.dila.edu.tw/stable |
 | `test` | http://cbdata.dila.edu.tw/test |
-| `cn` | https://api.cbetaonline.cn |
 | `local` | http://localhost:3000 |
 
 ## 環境變數

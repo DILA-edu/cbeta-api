@@ -1,4 +1,6 @@
 class LinesController < ApplicationController  
+  include ApiKeyAuthentication
+
   def index
     t1 = Time.now
 

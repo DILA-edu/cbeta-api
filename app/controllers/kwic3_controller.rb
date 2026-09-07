@@ -1,4 +1,6 @@
 class Kwic3Controller < ApplicationController
+  include ApiKeyAuthentication
+
   before_action :init
   
   def init

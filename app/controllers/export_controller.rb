@@ -1,4 +1,6 @@
 class ExportController < ApplicationController
+  include ApiKeyAuthentication
+
   before_action :init
 
   def init

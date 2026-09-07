@@ -19,10 +19,11 @@
 * fix bug 直接改正式版 (git branch: master)
   * merge 到 dev branch
 
+## 年度輪替 (app slot 輪替)
+
+參考 annual-rotation.md
+
 ## 移除舊版
 
 參考 remove-old.md
 
-## cn mirror
-
-等正式版上線後再更新 cn mirror, 參考 cn.md.

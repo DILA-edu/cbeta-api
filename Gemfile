@@ -5,7 +5,6 @@ ruby '4.0.4'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 8.1.2'
-gem 'doorkeeper', '~> 5.8'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3', '~> 2.7', '>= 2.7.2'
 # Use Puma as the app server
@@ -67,7 +66,7 @@ gem 'time_diff'
 gem 'chronic_duration'
 gem 'mysql2'
 
-group :production, :cn do
+group :production do
   gem 'pg'
   gem "dalli" # for memcached
 end
@@ -96,6 +95,13 @@ gem "useragent"
 gem "rack-timeout"
 gem "redis"
 gem 'connection_pool', '~> 2.4', '< 3'
+
+# API key 的登入。omniauth-rails_csrf_protection 必裝,
+# 否則 OmniAuth 的 request phase 有 login CSRF 漏洞。
+gem 'omniauth'
+gem 'omniauth-google-oauth2'
+gem 'omniauth-github'
+gem 'omniauth-rails_csrf_protection'
 
 # fix error: cannot load such file -- net/smtp
 gem 'net-smtp', require: false

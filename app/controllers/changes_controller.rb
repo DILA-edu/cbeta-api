@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class ChangesController < ApplicationController
+  include ApiKeyAuthentication
+
   def index
     if params[:lb].blank? and params[:work].blank?
       my_render(error: "lb 參數 與 work 參數 不能都是空的。")

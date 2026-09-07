@@ -88,4 +88,7 @@ Rails.application.configure do
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
   config.x.app_base_url = 'https://cbdata.dila.edu.tw/stable'
+
+  # 未帶 API key 也放行的 Origin 白名單放 config/cb.yml 的 production: 區塊，
+  # 不進版控（2026-08-21 主管指示）。見 doc/api-key-design.md 3.3。
 end

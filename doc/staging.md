@@ -2,9 +2,9 @@
 
 ## Config
 
-* config/deploy/staging.rb
-  * set :application
-  * deploy_to
+`config/deploy/staging.rb` 的 `deploy_to` 固定為 `/var/www/cbeta-api-staging`
+（角色 symlink），**不需要依 slot 修改**。
+要換 slot 是改伺服器上的 symlink，見 [doc/annual-rotation.md](annual-rotation.md)。
 
 ## Deploy
 

@@ -1,4 +1,6 @@
 class CanonsController < ApplicationController
+  include ApiKeyAuthentication
+
   def index
     r = []
     Canon.all.order(:id2).each do |c|

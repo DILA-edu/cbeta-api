@@ -1,4 +1,5 @@
 class WorksController < ApplicationController
+  include ApiKeyAuthentication
   include TocNodeHelper
   include WorksHelper
 
