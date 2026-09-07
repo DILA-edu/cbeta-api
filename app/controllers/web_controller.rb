@@ -15,6 +15,12 @@
 class WebController < ActionController::Base
   protect_from_forgery with: :exception
 
+  # implied layout 來自 class 名稱: 這支直接繼承 ActionController::Base,
+  # 鏈上找不到 layouts/web,也不會走到 ApplicationController 的
+  # layouts/application,結果是「完全沒有 layout」(連 <html> 都沒有)。
+  # 因此明確指定,網頁端才有 sidebar、Bootstrap 與 flash 顯示區。
+  layout 'application'
+
   helper_method :current_user, :signed_in?
 
   private

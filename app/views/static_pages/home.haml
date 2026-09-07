@@ -1,4 +1,17 @@
 %h1= "CBETA API #{Rails.configuration.x.ver}"
+
+.alert.alert-primary.d-flex.flex-wrap.align-items-center.gap-3
+  %div
+    %strong 新功能：API key
+    %br/
+    現在可以登入取得 API key。過渡期內<strong>沒帶 key 仍可正常呼叫</strong>，過渡期結束日期另行公告。
+    = link_to '詳細說明', { controller: 'static_pages', action: 'api_key' }, class: 'alert-link'
+  .ms-auto
+    - if signed_in_user
+      = link_to '我的帳號 / API key', account_path, class: 'btn btn-primary'
+    - else
+      = link_to '登入取得 API key', login_path, class: 'btn btn-primary'
+
 %ul
   %li= "資料版本: #{Rails.configuration.cb.r}"
   %li

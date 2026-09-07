@@ -45,11 +45,13 @@
       %td 請登入取得
     %tr
       %td 網頁前端（瀏覽器裡的 JavaScript）
-      %td ❌ 不需要
+      %td ❌ 不支援
       %td
-        前端無法保護 key（寫在 JS 裡等於公開），因此我們不發給前端。
-        已登記的網站來源（Origin）不帶 key 也放行。
-        若您的網站需要登記，請來信。
+        key 寫在前端 JS 裡等於公開，無法保護，
+        因此<strong>瀏覽器前端不能直接呼叫本 API</strong>，
+        我們也<strong>不接受網站來源（Origin）登記申請</strong>。
+        過渡期結束後，這類呼叫會收到 <code>401</code>。
+        請改由您自己的後端帶 key 呼叫，前端再向您的後端取資料。
 
 %h2 使用方式
 
@@ -116,7 +118,7 @@
 
 %p
   到
-  = link_to '我的帳號', login_path
+  = link_to '我的帳號', account_path
   可以：
 
 %ul

@@ -13,8 +13,10 @@
           <strong>程式化的 client</strong>（研究者的腳本、第三方 app、server-to-server 呼叫）
           —— 需要，請在此登入取得。
         %li
-          <strong>網頁前端</strong>（在瀏覽器裡用 JavaScript 呼叫）—— 不需要。
-          前端無法保護 key（寫在 JS 裡等於公開），因此我們不發給前端。
+          <strong>網頁前端</strong>（在瀏覽器裡用 JavaScript 呼叫）—— <strong>不支援</strong>。
+          key 寫在前端 JS 裡等於公開，無法保護，因此瀏覽器前端不能直接呼叫本 API，
+          我們也不接受網站來源（Origin）登記申請。請改由您自己的後端帶 key 呼叫。
+          = link_to '詳見 API key 說明', { controller: 'static_pages', action: 'api_key' }
 
     .card.my-4
       .card-body

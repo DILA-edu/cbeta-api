@@ -4,6 +4,12 @@
       CBETA API
       =Rails.configuration.x.ver
   %hr/
+  %ul.nav.nav-pills.flex-column
+    - if signed_in_user
+      %li= link_to '我的帳號 / API key', account_path, class: 'nav-link text-white'
+    - else
+      %li= link_to '登入取得 API key', login_path, class: 'nav-link active fw-bold'
+  %hr/
   %ul.nav.nav-pills.flex-column.mb-auto
     %li= link_to 'Home', { controller: 'static_pages', action: 'home'}, class: 'nav-link text-white'
     %li= link_to 'Catalog', { controller: 'static_pages', action: 'catalog_index'}, class: 'nav-link text-white'
@@ -19,11 +25,6 @@
     %li= link_to '統計報表', { controller: 'static_pages', action: 'report'}, class: 'nav-link text-white'
     %li= link_to '更新紀錄', { controller: 'static_pages', action: 'log'}, class: 'nav-link text-white'
   %hr/
-  %ul.nav.nav-pills.flex-column
-    - if signed_in_user
-      %li= link_to '我的帳號 / API key', account_path, class: 'nav-link text-white'
-    - else
-      %li= link_to '登入取得 API key', login_path, class: 'nav-link text-white'
   %p.text-center
     =link_to 'DILA', 'https://www.dila.edu.tw', class: 'link-info', target: '_blank'
     2016/2026
