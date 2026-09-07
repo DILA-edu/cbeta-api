@@ -41,3 +41,4 @@
 * 非官方 2代 CBETA 電子佛典閱讀器
   * UI: <https://mrmyhuang.github.io/>
   * 使用說明與程式原始碼: <https://github.com/MrMYHuang/cbetar2>
+* [RuShiWoWen 如是我闻](https://rushiwowen.co/)：公開的 CBETA 漢文佛典閱讀與全文檢索平台
