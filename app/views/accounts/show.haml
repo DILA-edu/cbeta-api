@@ -17,7 +17,12 @@
           %strong 這是唯一一次顯示明文的機會
           ，請立刻複製保存。本站只存雜湊值，離開此頁後無法再取得。
         %pre.bg-light.p-3.border.rounded.mb-2
-          %code= flash[:new_api_key]
+          %code#new-api-key= flash[:new_api_key]
+        -# 複製行為由 app/assets/javascripts/accounts.js 掛在
+        -# [data-copy-target] 上（CSP 不允許 inline handler）
+        %button.btn.btn-outline-secondary.btn-sm.mb-3{ type: 'button',
+          data: { copy_target: 'new-api-key', copied_label: '已複製' } }
+          複製
         %p.mb-0.small
           呼叫 API 時放在 HTTP header：
           %code Authorization: Bearer &lt;api_key&gt;

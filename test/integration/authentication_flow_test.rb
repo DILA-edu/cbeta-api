@@ -91,6 +91,7 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
     token = flash[:new_api_key]
     assert token.start_with?(ApiKey::TOKEN_PREFIX)
     assert_match token, response.body
+    assert_select 'button[data-copy-target=?]', 'new-api-key'
 
     # 再開一次帳號頁就看不到明文了
     get account_path
