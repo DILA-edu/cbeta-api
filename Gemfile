@@ -66,6 +66,11 @@ gem 'time_diff'
 gem 'chronic_duration'
 gem 'mysql2'
 
+# Elasticsearch: 2026 年起取代 Manticore 作為全文檢索後端。
+# 過渡期兩個後端並存（text index 走 ES，notes/titles/chunks 仍走 Manticore），
+# 見 doc/elasticsearch-migration.md。
+gem 'elasticsearch', '~> 9.4'
+
 group :production do
   gem 'pg'
   gem "dalli" # for memcached

@@ -1,0 +1,897 @@
+{
+  "basic_phrase": {
+    "num_found": 1106,
+    "total_term_hits": 1582,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 1,
+        "term_hits": 31
+      },
+      {
+        "work": "T0270",
+        "juan": 2,
+        "term_hits": 15
+      },
+      {
+        "work": "T1818",
+        "juan": 1,
+        "term_hits": 12
+      },
+      {
+        "work": "T0359",
+        "juan": 1,
+        "term_hits": 10
+      },
+      {
+        "work": "X0625",
+        "juan": 1,
+        "term_hits": 10
+      }
+    ]
+  },
+  "basic_ahan": {
+    "num_found": 3098,
+    "total_term_hits": 15838,
+    "results": [
+      {
+        "work": "A1267",
+        "juan": 18,
+        "term_hits": 567
+      },
+      {
+        "work": "Y0030",
+        "juan": 1,
+        "term_hits": 311
+      },
+      {
+        "work": "Y0033",
+        "juan": 10,
+        "term_hits": 305
+      },
+      {
+        "work": "Y0011",
+        "juan": 2,
+        "term_hits": 161
+      },
+      {
+        "work": "Y0033",
+        "juan": 7,
+        "term_hits": 161
+      }
+    ]
+  },
+  "ext_and": {
+    "num_found": 109,
+    "total_term_hits": 373,
+    "results": [
+      {
+        "work": "T0193",
+        "juan": 4,
+        "term_hits": 2
+      },
+      {
+        "work": "T0202",
+        "juan": 7,
+        "term_hits": 3
+      },
+      {
+        "work": "T0202",
+        "juan": 10,
+        "term_hits": 4
+      },
+      {
+        "work": "T0211",
+        "juan": 1,
+        "term_hits": 2
+      },
+      {
+        "work": "T0211",
+        "juan": 2,
+        "term_hits": 2
+      }
+    ]
+  },
+  "ext_or": {
+    "num_found": 7379,
+    "total_term_hits": 117060,
+    "results": [
+      {
+        "work": "T0099",
+        "juan": 25,
+        "term_hits": 1
+      },
+      {
+        "work": "T0099",
+        "juan": 26,
+        "term_hits": 4
+      },
+      {
+        "work": "T0100",
+        "juan": 13,
+        "term_hits": 1
+      },
+      {
+        "work": "T0120",
+        "juan": 2,
+        "term_hits": 2
+      },
+      {
+        "work": "T0120",
+        "juan": 3,
+        "term_hits": 5
+      }
+    ]
+  },
+  "ext_not": {
+    "num_found": 5296,
+    "total_term_hits": 25594,
+    "results": [
+      {
+        "work": "T0001",
+        "juan": 4,
+        "term_hits": 15
+      },
+      {
+        "work": "T0001",
+        "juan": 7,
+        "term_hits": 64
+      },
+      {
+        "work": "T0001",
+        "juan": 13,
+        "term_hits": 1
+      },
+      {
+        "work": "T0001",
+        "juan": 16,
+        "term_hits": 61
+      },
+      {
+        "work": "T0001",
+        "juan": 17,
+        "term_hits": 3
+      }
+    ]
+  },
+  "aio_near2": {
+    "num_found": 15,
+    "total_term_hits": 29,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 1,
+        "term_hits": 13
+      },
+      {
+        "work": "T0270",
+        "juan": 2,
+        "term_hits": 1
+      },
+      {
+        "work": "T1723",
+        "juan": 9,
+        "term_hits": 1
+      },
+      {
+        "work": "T1744",
+        "juan": 1,
+        "term_hits": 1
+      },
+      {
+        "work": "T1863",
+        "juan": 1,
+        "term_hits": 1
+      }
+    ]
+  },
+  "aio_near3": {
+    "num_found": 96,
+    "total_term_hits": 145,
+    "results": [
+      {
+        "work": "T1736",
+        "juan": 1,
+        "term_hits": 3
+      },
+      {
+        "work": "T1736",
+        "juan": 14,
+        "term_hits": 1
+      },
+      {
+        "work": "T1736",
+        "juan": 16,
+        "term_hits": 2
+      },
+      {
+        "work": "T1736",
+        "juan": 41,
+        "term_hits": 1
+      },
+      {
+        "work": "T1736",
+        "juan": 49,
+        "term_hits": 1
+      }
+    ]
+  },
+  "aio_exclude_suffix": {
+    "num_found": 5199,
+    "total_term_hits": 33095,
+    "results": [
+      {
+        "work": "T0001",
+        "juan": 3,
+        "term_hits": 3
+      },
+      {
+        "work": "T0001",
+        "juan": 4,
+        "term_hits": 40
+      },
+      {
+        "work": "T0001",
+        "juan": 17,
+        "term_hits": 1
+      },
+      {
+        "work": "T0005",
+        "juan": 2,
+        "term_hits": 18
+      },
+      {
+        "work": "T0006",
+        "juan": 2,
+        "term_hits": 12
+      }
+    ]
+  },
+  "aio_exclude_prefix": {
+    "num_found": 1244,
+    "total_term_hits": 2868,
+    "results": [
+      {
+        "work": "T0099",
+        "juan": 19,
+        "term_hits": 1
+      },
+      {
+        "work": "T0099",
+        "juan": 26,
+        "term_hits": 1
+      },
+      {
+        "work": "T0099",
+        "juan": 33,
+        "term_hits": 1
+      },
+      {
+        "work": "T0099",
+        "juan": 41,
+        "term_hits": 1
+      },
+      {
+        "work": "T0099",
+        "juan": 46,
+        "term_hits": 1
+      }
+    ]
+  },
+  "latin_pali": {
+    "num_found": 2,
+    "total_term_hits": 2,
+    "results": [
+      {
+        "work": "B0003",
+        "juan": 1,
+        "term_hits": 1
+      },
+      {
+        "work": "B0007",
+        "juan": 1,
+        "term_hits": 1
+      }
+    ]
+  },
+  "latin_ananda": {
+    "num_found": 52,
+    "total_term_hits": 94,
+    "results": [
+      {
+        "work": "B0198",
+        "juan": 1,
+        "term_hits": 4
+      },
+      {
+        "work": "Y0033",
+        "juan": 1,
+        "term_hits": 4
+      },
+      {
+        "work": "Y0035",
+        "juan": 11,
+        "term_hits": 4
+      },
+      {
+        "work": "B0026",
+        "juan": 1,
+        "term_hits": 3
+      },
+      {
+        "work": "B0198",
+        "juan": 9,
+        "term_hits": 3
+      }
+    ]
+  },
+  "latin_ananda_plain": {
+    "num_found": 52,
+    "total_term_hits": 94,
+    "results": [
+      {
+        "work": "B0198",
+        "juan": 1,
+        "term_hits": 4
+      },
+      {
+        "work": "Y0033",
+        "juan": 1,
+        "term_hits": 4
+      },
+      {
+        "work": "Y0035",
+        "juan": 11,
+        "term_hits": 4
+      },
+      {
+        "work": "B0026",
+        "juan": 1,
+        "term_hits": 3
+      },
+      {
+        "work": "B0198",
+        "juan": 9,
+        "term_hits": 3
+      }
+    ]
+  },
+  "latin_apostrophe": {
+    "num_found": 1,
+    "total_term_hits": 1,
+    "results": [
+      {
+        "work": "T1645",
+        "juan": 2,
+        "term_hits": 1
+      }
+    ]
+  },
+  "gaiji_zzs": {
+    "num_found": 1,
+    "total_term_hits": 1,
+    "results": [
+      {
+        "work": "K1257",
+        "juan": 17,
+        "term_hits": 1
+      }
+    ]
+  },
+  "cjk_compat": {
+    "num_found": 170,
+    "total_term_hits": 3231,
+    "results": [
+      {
+        "work": "D8888",
+        "juan": 5,
+        "term_hits": 364
+      },
+      {
+        "work": "D8891",
+        "juan": 3,
+        "term_hits": 266
+      },
+      {
+        "work": "D8879",
+        "juan": 3,
+        "term_hits": 124
+      },
+      {
+        "work": "D8774",
+        "juan": 1,
+        "term_hits": 82
+      },
+      {
+        "work": "D8888",
+        "juan": 6,
+        "term_hits": 80
+      }
+    ]
+  },
+  "kangxi_radical": {
+    "num_found": 0,
+    "total_term_hits": 0,
+    "results": []
+  },
+  "filter_canon": {
+    "num_found": 382,
+    "total_term_hits": 569,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 1,
+        "term_hits": 31
+      },
+      {
+        "work": "T0270",
+        "juan": 2,
+        "term_hits": 15
+      },
+      {
+        "work": "T1818",
+        "juan": 1,
+        "term_hits": 12
+      },
+      {
+        "work": "T0359",
+        "juan": 1,
+        "term_hits": 10
+      },
+      {
+        "work": "T0357",
+        "juan": 1,
+        "term_hits": 9
+      }
+    ]
+  },
+  "filter_canon_multi": {
+    "num_found": 654,
+    "total_term_hits": 953,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 1,
+        "term_hits": 31
+      },
+      {
+        "work": "T0270",
+        "juan": 2,
+        "term_hits": 15
+      },
+      {
+        "work": "T1818",
+        "juan": 1,
+        "term_hits": 12
+      },
+      {
+        "work": "T0359",
+        "juan": 1,
+        "term_hits": 10
+      },
+      {
+        "work": "X0625",
+        "juan": 1,
+        "term_hits": 10
+      }
+    ]
+  },
+  "filter_category": {
+    "num_found": 2,
+    "total_term_hits": 2,
+    "results": [
+      {
+        "work": "T0026",
+        "juan": 47,
+        "term_hits": 1
+      },
+      {
+        "work": "T0099",
+        "juan": 25,
+        "term_hits": 1
+      }
+    ]
+  },
+  "filter_creator": {
+    "num_found": 14,
+    "total_term_hits": 17,
+    "results": [
+      {
+        "work": "T0262",
+        "juan": 3,
+        "term_hits": 2
+      },
+      {
+        "work": "T0262",
+        "juan": 1,
+        "term_hits": 2
+      },
+      {
+        "work": "T1521",
+        "juan": 5,
+        "term_hits": 2
+      },
+      {
+        "work": "B0024",
+        "juan": 1,
+        "term_hits": 1
+      },
+      {
+        "work": "T0262",
+        "juan": 6,
+        "term_hits": 1
+      }
+    ]
+  },
+  "filter_dynasty": {
+    "num_found": 163,
+    "total_term_hits": 214,
+    "results": [
+      {
+        "work": "T1723",
+        "juan": 2,
+        "term_hits": 8
+      },
+      {
+        "work": "T1719",
+        "juan": 3,
+        "term_hits": 5
+      },
+      {
+        "work": "T1724",
+        "juan": 1,
+        "term_hits": 5
+      },
+      {
+        "work": "T1788",
+        "juan": 3,
+        "term_hits": 5
+      },
+      {
+        "work": "A1267",
+        "juan": 13,
+        "term_hits": 4
+      }
+    ]
+  },
+  "filter_time_range": {
+    "num_found": 119,
+    "total_term_hits": 171,
+    "results": [
+      {
+        "work": "T1818",
+        "juan": 1,
+        "term_hits": 12
+      },
+      {
+        "work": "T1723",
+        "juan": 2,
+        "term_hits": 8
+      },
+      {
+        "work": "T1744",
+        "juan": 1,
+        "term_hits": 7
+      },
+      {
+        "work": "A1267",
+        "juan": 13,
+        "term_hits": 4
+      },
+      {
+        "work": "T1696",
+        "juan": 1,
+        "term_hits": 4
+      }
+    ]
+  },
+  "filter_work_type": {
+    "num_found": 1103,
+    "total_term_hits": 1579,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 1,
+        "term_hits": 31
+      },
+      {
+        "work": "T0270",
+        "juan": 2,
+        "term_hits": 15
+      },
+      {
+        "work": "T1818",
+        "juan": 1,
+        "term_hits": 12
+      },
+      {
+        "work": "T0359",
+        "juan": 1,
+        "term_hits": 10
+      },
+      {
+        "work": "X0625",
+        "juan": 1,
+        "term_hits": 10
+      }
+    ]
+  },
+  "filter_note0": {
+    "num_found": 1093,
+    "total_term_hits": 1557,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 1,
+        "term_hits": 31
+      },
+      {
+        "work": "T0270",
+        "juan": 2,
+        "term_hits": 15
+      },
+      {
+        "work": "T1818",
+        "juan": 1,
+        "term_hits": 12
+      },
+      {
+        "work": "T0359",
+        "juan": 1,
+        "term_hits": 10
+      },
+      {
+        "work": "X0625",
+        "juan": 1,
+        "term_hits": 10
+      }
+    ]
+  },
+  "order_term_hits": {
+    "num_found": 1106,
+    "total_term_hits": 1582,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 1,
+        "term_hits": 31
+      },
+      {
+        "work": "T0270",
+        "juan": 2,
+        "term_hits": 15
+      },
+      {
+        "work": "T1818",
+        "juan": 1,
+        "term_hits": 12
+      },
+      {
+        "work": "T0359",
+        "juan": 1,
+        "term_hits": 10
+      },
+      {
+        "work": "X0625",
+        "juan": 1,
+        "term_hits": 10
+      }
+    ]
+  },
+  "order_time_from": {
+    "num_found": 1106,
+    "total_term_hits": 1582,
+    "results": [
+      {
+        "work": "T0492b",
+        "juan": 1,
+        "term_hits": 1
+      },
+      {
+        "work": "T0492a",
+        "juan": 1,
+        "term_hits": 1
+      },
+      {
+        "work": "T0418",
+        "juan": 3,
+        "term_hits": 1
+      },
+      {
+        "work": "T0196",
+        "juan": 1,
+        "term_hits": 2
+      },
+      {
+        "work": "T0474",
+        "juan": 1,
+        "term_hits": 1
+      }
+    ]
+  },
+  "paginate": {
+    "num_found": 1106,
+    "total_term_hits": 1582,
+    "results": [
+      {
+        "work": "GA0032",
+        "juan": 3,
+        "term_hits": 2
+      },
+      {
+        "work": "GA0042",
+        "juan": 8,
+        "term_hits": 2
+      },
+      {
+        "work": "JA042",
+        "juan": 1,
+        "term_hits": 2
+      },
+      {
+        "work": "I0072",
+        "juan": 1,
+        "term_hits": 2
+      },
+      {
+        "work": "JB178",
+        "juan": 4,
+        "term_hits": 2
+      }
+    ]
+  },
+  "facet_canon": {
+    "facet_size": 24,
+    "facet": [
+      {
+        "canon": "T",
+        "docs": 382,
+        "hits": 569,
+        "canon_name": "大正藏"
+      },
+      {
+        "canon": "X",
+        "docs": 272,
+        "hits": 384,
+        "canon_name": "新纂卍續藏"
+      },
+      {
+        "canon": "J",
+        "docs": 181,
+        "hits": 216,
+        "canon_name": "嘉興藏"
+      },
+      {
+        "canon": "B",
+        "docs": 101,
+        "hits": 137,
+        "canon_name": "大藏經補編"
+      },
+      {
+        "canon": "Y",
+        "docs": 19,
+        "hits": 54,
+        "canon_name": "印順法師集"
+      },
+      {
+        "canon": "GA",
+        "docs": 34,
+        "hits": 38,
+        "canon_name": "佛寺志彙刊"
+      },
+      {
+        "canon": "TX",
+        "docs": 12,
+        "hits": 32,
+        "canon_name": "太虛大師集"
+      },
+      {
+        "canon": "YP",
+        "docs": 16,
+        "hits": 32,
+        "canon_name": "演培法師全集"
+      }
+    ]
+  },
+  "facet_dynasty": {
+    "facet_size": 27,
+    "facet": [
+      {
+        "dynasty": "東漢",
+        "docs": 4,
+        "hits": 5
+      },
+      {
+        "dynasty": "曹魏",
+        "docs": 2,
+        "hits": 2
+      },
+      {
+        "dynasty": "吳",
+        "docs": 1,
+        "hits": 1
+      },
+      {
+        "dynasty": "西晉",
+        "docs": 20,
+        "hits": 24
+      },
+      {
+        "dynasty": "東晉",
+        "docs": 9,
+        "hits": 9
+      },
+      {
+        "dynasty": "前秦/符秦",
+        "docs": 4,
+        "hits": 5
+      },
+      {
+        "dynasty": "後秦/姚秦",
+        "docs": 17,
+        "hits": 22
+      },
+      {
+        "dynasty": "西秦/乞伏秦",
+        "docs": 1,
+        "hits": 1
+      }
+    ]
+  },
+  "facet_category": {
+    "facet_size": 22,
+    "facet": [
+      {
+        "category_id": 17,
+        "docs": 283,
+        "hits": 352,
+        "category_name": "禪宗部類"
+      },
+      {
+        "category_id": 23,
+        "docs": 201,
+        "hits": 321,
+        "category_name": "新編部類"
+      },
+      {
+        "category_id": 4,
+        "docs": 88,
+        "hits": 236,
+        "category_name": "法華部類"
+      },
+      {
+        "category_id": 18,
+        "docs": 136,
+        "hits": 156,
+        "category_name": "史傳部類"
+      },
+      {
+        "category_id": 19,
+        "docs": 68,
+        "hits": 85,
+        "category_name": "事彙部類"
+      },
+      {
+        "category_id": 9,
+        "docs": 68,
+        "hits": 83,
+        "category_name": "經集部類"
+      },
+      {
+        "category_id": 5,
+        "docs": 61,
+        "hits": 67,
+        "category_name": "華嚴部類"
+      },
+      {
+        "category_id": 6,
+        "docs": 23,
+        "hits": 56,
+        "category_name": "寶積部類"
+      }
+    ]
+  },
+  "sc": {
+    "hits": 9949
+  }
+}

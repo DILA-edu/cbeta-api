@@ -68,11 +68,37 @@ module CbData
     config.x.kwic.html = File.join(config.x.kwic.base, 'html')
     config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
 
-    # Search engine 相關
+    # Search engine 相關 (Manticore)
+    # 2026 年起 text index 改由 Elasticsearch 提供，但 notes / titles / chunks
+    # 仍走 Manticore，因此這裡的設定過渡期內必須保留。
+    # 見 doc/elasticsearch-migration.md
     config.x.se.indexes = %w[text notes titles chunks]
     config.x.se.index_text   = "text#{config.cb.v}"
     config.x.se.index_notes  = "notes#{config.cb.v}"
     config.x.se.index_titles = "titles#{config.cb.v}"
     config.x.se.index_chunks = "chunks#{config.cb.v}"
+
+    # Elasticsearch (取代 Manticore 的 text index)
+    #
+    # 連線設定優先讀 config/cb.yml (該檔 gitignored、每台機器一份)，
+    # 其次讀環境變數，最後才用本機開發預設值。
+    es = config.cb.elasticsearch || {}
+    config.x.elasticsearch.url = es[:url] ||
+      ENV.fetch('ELASTICSEARCH_URL', 'http://localhost:9200')
+    config.x.elasticsearch.request_timeout = (
+      es[:request_timeout] || ENV.fetch('ELASTICSEARCH_REQUEST_TIMEOUT', 120)
+    ).to_i
+
+    # 查詢一律走 alias，實際 index 為版本化名稱 (例 cbeta_text_2026r1_001)，
+    # 重建完成後以 rake elastic:promote 原子切換 alias。
+    config.x.elasticsearch.index_alias = es[:index_alias] ||
+      ENV.fetch('CBETA_ES_INDEX_ALIAS', 'cbeta_text_current')
+
+    # 建立/匯入 index 時必須指定版本化 index 名稱; 對 alias 名稱建 index 會被 ES 拒絕。
+    config.x.elasticsearch.index_name = es[:index_name] ||
+      ENV.fetch('CBETA_ES_INDEX_NAME', config.x.elasticsearch.index_alias)
+
+    # ES 匯入來源: 既有 Manticore 轉檔流程 (rake manticore:x2t) 產出的 text.xml
+    config.x.elasticsearch.text_xml = Rails.root.join('data', 'manticore-xml', 'text.xml')
   end
 end

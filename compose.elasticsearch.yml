@@ -1,0 +1,28 @@
+# 本機開發用的單節點 Elasticsearch。
+#
+# 注意：
+#   * xpack.security.enabled=false 只供本機開發，不可公開到外網。
+#   * port 只綁 127.0.0.1。
+#   * JVM heap 2g 足以匯入完整 text.xml；小量資料可調低。
+#
+# 用法：
+#   bin/rails elastic:start
+#   bin/rails elastic:status
+#   bin/rails elastic:stop
+name: cbeta-api-local
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.2
+    container_name: cbeta-api-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms2g -Xmx2g"
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+volumes:
+  elasticsearch-data:

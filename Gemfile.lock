@@ -147,6 +147,15 @@ GEM
     date (3.5.1)
     diff-lcs (2.0.0)
     drb (2.2.3)
+    elastic-transport (8.5.3)
+      faraday (< 3)
+      multi_json
+    elasticsearch (9.5.0)
+      elastic-transport (~> 8.3)
+      elasticsearch-api (= 9.5.0)
+    elasticsearch-api (9.5.0)
+      base64
+      multi_json
     erb (6.0.7)
     erubi (1.13.1)
     execjs (2.10.2)
@@ -229,6 +238,7 @@ GEM
       minitest (>= 5.0, < 7)
       ruby-progressbar
     msgpack (1.8.4)
+    multi_json (1.21.2)
     multi_xml (0.9.1)
       bigdecimal (>= 3.1, < 5)
     mysql2 (0.5.7)
@@ -478,6 +488,7 @@ DEPENDENCIES
   dalli
   dartsass-sprockets
   diff-lcs
+  elasticsearch (~> 9.4)
   faraday
   git (~> 3.0)
   haml-rails
@@ -558,6 +569,9 @@ CHECKSUMS
   date (3.5.1) sha256=750d06384d7b9c15d562c76291407d89e368dda4d4fff957eb94962d325a0dc0
   diff-lcs (2.0.0) sha256=708a5d52ec2945b50f8f53a181174aa1ef2c496edf81c05957fe956dabb363d5
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
+  elastic-transport (8.5.3) sha256=3bf036afb10728a58591593bc48fd736ea9fe2bf7b1252810e774340dcfe58c4
+  elasticsearch (9.5.0) sha256=46b7e4a56e93128c1f55ea579f97f377b6dc78b8bcc61cd3a52c6c7a36a1b0c2
+  elasticsearch-api (9.5.0) sha256=b98679e3f9635f5d3b578fa7600128ec595ae25af3c71d30394e1f1526b6c4d7
   erb (6.0.7) sha256=c5ca6dc25b0ef974a44dc8f59fe847577122483b1968a38dec305c60bf91ee92
   erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9
   execjs (2.10.2) sha256=466cf2b49e50c0cfdff8fdb88a7a983dfab7ac0f6185c317ccb434a75c224c88
@@ -591,6 +605,7 @@ CHECKSUMS
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   minitest-reporters (1.8.0) sha256=8ce5280fb73ad3178ae525454df169b6f28c1b38b1d088ea91815d3a370ba384
   msgpack (1.8.4) sha256=4411c22d350dd1c20250f7eada3cca2695438c2f769cf0782f0cd065d90a3e7b
+  multi_json (1.21.2) sha256=245531eaf54bdba57aba515ff08b4503505c5e09911daa89c5a561e2f85bea8e
   multi_xml (0.9.1) sha256=7ce766b59c17241ed62976caeae1fae9b2431b263398c35396239a68c4a64e57
   mysql2 (0.5.7) sha256=ba09ede515a0ae8a7192040a1b778c0fb0f025fa5877e9be895cd325fa5e9d7b
   net-http (0.9.1) sha256=25ba0b67c63e89df626ed8fac771d0ad24ad151a858af2cc8e6a716ca4336996
