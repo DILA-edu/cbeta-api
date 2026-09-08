@@ -256,13 +256,13 @@ key 名為 `api_origin_allowlist`，值是 Origin 字串的 array。
 語意比 denylist 安全。
 
 **納管**（API）：
-`api/*`（collections / resources / sections）、`v1/tools/*`、`search*`、`juans*`、
+`api/*`（collections / resources / sections）、`search*`、`juans*`、
 `lines`、`works*`、`toc`、`toc_node`、`catalog_entry`、`changes`、
 `chinese_tools/sc2tc`、`export/*`、`word_seg*`、`textref/*`、`category/:category`、
 `kwic3`
 
 **不納管**：
-- `/health`、`/openapi.json`
+- `/health`
 - `static_pages/*`（HTML 說明文件）
 - `/download`（靜態檔）
 - 登入與帳號管理頁（`/auth/*`、`/account/*`）

@@ -20,7 +20,7 @@ class CorsPreflightTest < ActionDispatch::IntegrationTest
     process :options, '/api/collections'
     assert_response :no_content
 
-    process :options, '/v1/tools/search'
+    process :options, '/search/all_in_one'
     assert_response :no_content
   end
 

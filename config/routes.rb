@@ -48,20 +48,6 @@ Rails.application.routes.draw do
   match 'report/url',     to: 'report#url',     as: :report_url,     via: [:get, :post]
   match 'report/referer', to: 'report#referer', as: :report_referer, via: [:get, :post]
 
-  # v1 tool surface (see public/openapi.json)
-  namespace :v1 do
-    post 'tools/find_passages',       to: 'tools#find_passages'
-    post 'tools/search_notes',        to: 'tools#search_notes'
-    post 'tools/expand_variants',     to: 'tools#expand_variants'
-    post 'tools/expand_synonyms',     to: 'tools#expand_synonyms'
-    post 'tools/convert_simplified',  to: 'tools#convert_simplified'
-    post 'tools/search_similar',      to: 'tools#search_similar'
-    post 'tools/search',               to: 'tools#search'
-    post 'tools/fetch',                to: 'fetch#fetch'
-    post 'tools/resolve_citation',    to: 'citations#resolve_citation'
-    post 'tools/get_context',         to: 'contexts#get_context'
-  end
-
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
   match 'search/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
