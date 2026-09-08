@@ -74,10 +74,16 @@ services:
 
 Elasticsearch 容器內以 uid 1000 執行，host 目錄要先給對權限。
 
+只有頭兩行需要 `sudo`（`/var/lib` 與 `/var/log` 屬於 root），而且 sakya 的 `sudo` 會要密碼。
+**docker 指令不需要 sudo** —— `ray` 已在 `docker` group（現有的 Manticore 流程也是這樣，
+見 `lib/tasks/quarterly/section-manticore.rb` 的 `docker compose ... restart`）。
+
 ```sh
+# 需要 sudo（會要密碼）
 sudo mkdir -p /var/lib/cbeta-es/data /var/log/cbeta-es
 sudo chown -R 1000:0 /var/lib/cbeta-es /var/log/cbeta-es
 
+# 以下都不需要 sudo
 mkdir -p /home/ray/cbeta-es
 # 把上面的 compose.yaml 存成 /home/ray/cbeta-es/compose.yaml
 
@@ -232,6 +238,7 @@ curl -s 'http://localhost:9200/_cat/indices?v'
 | 症狀 | 檢查 |
 |---|---|
 | 容器起不來 | `docker logs cbeta-es`；多半是 `/var/lib/cbeta-es` 權限不是 `1000:0` |
+| docker 指令回 permission denied | 該帳號不在 `docker` group（`ray` 已在其中，不必用 sudo） |
 | 啟動時 memory lock 警告 | compose 的 `ulimits.memlock` 要是 `-1`；host 的 `vm.max_map_count` 需 ≥ 262144 |
 | 匯入中途 timeout | 調高 `cb.yml` 的 `request_timeout` |
 | 搜尋回 502 | Rails 連不到 ES。確認容器在跑、`cb.yml` 的 `url` 正確 |
