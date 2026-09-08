@@ -197,7 +197,30 @@ Manticore 的 `charset_table = non_cjk` + `ngram_len = 1` 是「CJK 逐字切、
 
 ## 部署待辦
 
-- [ ] production / staging 安裝 Elasticsearch 9.4.2，並在 `config/cb.yml` 加 `elasticsearch:` 區塊（`url`、選用的 `index_name`／`index_alias`／`request_timeout`）
+操作步驟（compose.yaml、cb.yml 片段、每季流程、疑難排解）見
+[elasticsearch-deploy.md](elasticsearch-deploy.md)。
+
+- [ ] 在 `sakya.dila.edu.tw` 安裝 Elasticsearch 9.4.2（docker，照 Manticore 的慣例放 `/home/ray/cbeta-es/compose.yaml`）
+
+  伺服器現況（2026-09-08 實測）：10 核、94GB 記憶體（實際使用 5.7GB）、磁碟 1TB 用 44%、
+  port 9200 未被佔用（Manticore 用 9307）、已有 docker（`manticore3` 容器用 7.45GB）。
+  ES index 實測 1.4GB / 22,037 卷，heap 4GB 即足夠 —— 對現有服務的影響可忽略。
+
+  **與 Manticore 的兩個差異**：
+  * port 建議綁 `127.0.0.1:9200`。Manticore 目前綁 `0.0.0.0:9307`（compose 註解寫明「允許
+    server 外連線」），但 ES 的 PoC 設定關掉了 `xpack.security`，不可對外曝露。
+  * **不需要 slot 輪替目錄**。Manticore 每季要新建 `/var/lib/manticoreN`、改 conf、restart
+    容器；ES 只要 `elastic:rebuild` 建新的版本化 index、再 `elastic:promote` 切 alias，
+    容器完全不用動。
+
+- [ ] **staging 與 production 的 index 必須隔離**：兩者是同一台機器（`sakya.dila.edu.tw`，
+  只有 `deploy_to` 不同），共用同一個 ES 服務。若兩邊都用預設 alias `cbeta_text_current`，
+  staging 重建 index 就會影響 production。作法：各自的
+  `shared/config/cb.yml`（每個 deploy 一份、gitignored）設不同的 `elasticsearch.index_alias`，
+  例如 production 用 `cbeta_text_current`、staging 用 `cbeta_text_staging`。
+
+- [ ] 在各環境的 `config/cb.yml` 加 `elasticsearch:` 區塊（`url`、`index_alias`，
+  選用 `index_name`／`request_timeout`）
 - [ ] 每季流程加入 `rake elastic:rebuild[cbeta_text_<季號>_NNN]`（吃 `manticore:x2t` 產出的 `text.xml`，22,037 卷約 2.5 分鐘）
 - [ ] 切換後 flush Rails cache（cache key 沒變，但內容來自不同後端）
 - [x] 更新對外更新紀錄 `static_pages/log.haml`（2026-09 Version 5.0.0）
