@@ -2,7 +2,12 @@
 %p
   例：#{link_to_url '/search/extended?q="法鼓"'}
 
-%p 請注意上面的雙引號不可省略。
+%p
+  單一個詞可以不加雙引號，
+  #{link_to_url '/search/extended?q=法鼓'}
+  的結果相同。
+  但是以下的 AND、OR、NOT、Exclude 語法，每個詞都必須用雙引號括起來，
+  否則整個查詢字串會被當成一個詞。
 
 =render partial: 'q-length-limit'
 
@@ -30,6 +35,34 @@
   例：
   =link_to_url '/search/all_in_one?q="法鼓" NEAR/7 "迦葉"'
 %p NEAR/ 後面的數字 表示兩個關鍵詞中間的距離
+
+%h3 多個詞的 NEAR
+%p=link_to_url '/search/extended?q="老子" NEAR/7 "道" NEAR/3 "經"'
+
+%p
+  NEAR 查詢只回傳 num_found (符合的卷數)，不含 total_term_hits。
+  需要出現次數請改用
+  =link_to 'all_in_one', controller: 'static_pages', action: 'search_all_in_one'
+  ，該 endpoint 會逐卷計算。
+
+%h2 Exclude
+%h3 排除前搭配
+%p
+  搜尋「直心」，排除「正直心」：
+  =link_to_url '/search/extended?q="直心" -"正直心"'
+%h3 排除後搭配
+%p
+  搜尋「舍利」，排除「舍利弗」：
+  =link_to_url '/search/extended?q="舍利" -"舍利弗"'
+%p 被排除的字串必須包含原本要搜尋的詞，否則回傳錯誤。
+
+%h2 不支援的語法
+%p
+  括號分組、
+  %code ~n
+  (proximity)、
+  %code &
+  不在支援範圍，會回傳 400 錯誤。
 
 %h2 參數
 %table.table

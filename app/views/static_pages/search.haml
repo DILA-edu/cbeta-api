@@ -1,6 +1,11 @@
 %h1 一般全文檢索
 %p
   例：#{link_to_url '/search?q=法鼓'}
+%p
+  也可使用
+  =link_to 'Extended 語法', controller: 'static_pages', action: 'search_extended'
+  (AND、OR、NOT、NEAR、Exclude)，例：
+  =link_to_url '/search?q="波羅蜜" | "波羅密"'
 %h2 參數
 %table.table
   %tr
@@ -33,7 +38,8 @@
       %p 排序，例如按照文獻成立的年代排序：#{link_to_url '/search?q=法鼓&order=year'}
       %p 也可以指定多個排序欄位，例如先以年代排序、再以經號排序：
       %p=link_to_url '/search?q=法鼓&order=time_from,time_to,work'
-      %p 但是排序欄位最多五個，而且如果指定了 time_from 或 time_to 會各佔兩個欄位，因為必須以 has_time_from 或 has_time_to 先排序。
+      %p 指定 time_from 或 time_to 時，年代未知 (0) 的會排在有年代的後面。
+      %p 排序值相同時，一律再以 藏經、佛典編號、卷號 決定先後，因此分頁結果是穩定的。
       %p 每一個排序欄位都可以指定使用升冪排序或降冪排序：
       %ul
         %li 指定升冪排序：order=time_from+

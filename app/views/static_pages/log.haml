@@ -1,5 +1,21 @@
 %h1 更新紀錄
 
+%h2 2026-09 Version 5.0.0
+%ul
+  %li Search engine 由 Manticore 改用 Elasticsearch 9.4。
+  %li
+    修正 /search 與 /search/extended 的 Extended 語法：
+    原本查詢字串已含雙引號時語法會失效（例如 q="法鼓" 會被當成「法」AND「鼓」），
+    現在正確視為一個詞。/search/all_in_one 不受影響。
+  %li
+    /search 與 /search/extended 新增支援 NEAR 與 Exclude 語法，詳見：
+    =link_to_url '/static_pages/search_extended'
+  %li 排序值相同時，一律再以 藏經、佛典編號、卷號 決定先後，分頁結果因此是穩定的。
+  %li 不支援的查詢語法（括號分組、~n、&）改為回傳 400 錯誤，不再由搜尋引擎自行解讀。
+  %li /search/facet 不支援 NEAR 與 Exclude 語法，會回傳 400 錯誤。
+  %li 搜尋結果不再回傳僅供除錯用的 SQL 欄位。
+  %li start 參數的上限改為 start + rows 不得超過 100,000。
+
 %h2 2026-07
 %ul
   %li 內容更新至 CBETA 2026.R2。
