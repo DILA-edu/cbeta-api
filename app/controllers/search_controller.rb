@@ -22,6 +22,14 @@ class SearchController < ApplicationController
   after_action  :action_ending
   rescue_from Exception, with: :error_handler
 
+  # Elasticsearch 相關錯誤回 502，且不回傳 backtrace（那會洩漏伺服器路徑），
+  # 完整錯誤只寫進 log。
+  # 必須註冊在 rescue_from Exception 之後: Rails 是由後往前找第一個相符的 handler。
+  rescue_from Elastic::Transport::Transport::Error,
+              Elasticsearch::UnsupportedProductError,
+              Faraday::Error,
+              with: :elasticsearch_error_handler
+
   def initialize
     log_debug "SearchController initialize"
   end
@@ -51,6 +59,10 @@ class SearchController < ApplicationController
     r[:time] = Time.now - t1
     
     my_render r
+  rescue Elastic::Transport::Transport::Error, Elasticsearch::UnsupportedProductError, Faraday::Error
+    # 交給 elasticsearch_error_handler 統一處理（回 502、不回 backtrace）。
+    # 必須放在下面兩個 rescue 之前，否則會被它們攔下來變成 500 加 backtrace。
+    raise
   rescue CbetaError => e
     r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
     my_render(r)
@@ -1561,6 +1573,29 @@ class SearchController < ApplicationController
 
     log_debug "#{__LINE__} expand_vars_array result: %s" % r.inspect
     r
+  end
+
+  def elasticsearch_error_handler(e)
+    logger.fatal "Elasticsearch 錯誤 (#{e.class}): #{e.message}"
+    logger.fatal "environment: #{Rails.env}, url: #{Rails.configuration.x.elasticsearch.url}"
+    logger.fatal e.backtrace.first(5).join("\n") unless e.backtrace.nil?
+
+    r = { error: { code: 502, message: elasticsearch_error_message(e) } }
+    if params.key?('callback')
+      render json: r, callback: params['callback'], content_type: 'application/javascript', status: 502
+    else
+      render json: r, status: 502
+    end
+  end
+
+  # index 或 alias 不存在是最常見的部署疏漏（忘了 elastic:rebuild 或 elastic:promote），
+  # 給一個可以照著處理的訊息；其餘狀況只說服務不可用，細節留在 log。
+  def elasticsearch_error_message(e)
+    if e.is_a?(Elastic::Transport::Transport::Errors::NotFound)
+      "全文檢索索引尚未建立：#{Rails.configuration.x.elasticsearch.index_alias}"
+    else
+      '全文檢索服務暫時無法使用'
+    end
   end
 
   def error_handler(e)
