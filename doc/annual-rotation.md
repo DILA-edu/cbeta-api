@@ -57,6 +57,10 @@ Define dev_path    /var/www/cbeta-api-staging
      漏了在過渡期內不會有症狀，但過渡期一結束前端就全站 401。
      部署後跑 `cap staging rake api_key:config`（或在機器上
      `RAILS_ENV=staging bundle exec rake api_key:config`）確認。
+   - ⚠️ `cb.yml` 必須含 `elasticsearch:` 區塊，且 `index_alias` 要與另一個角色不同
+     （production 用 `cbeta_text_current`、staging 用 `cbeta_text_staging`）。
+     兩個角色共用同一個 Elasticsearch 服務，alias 相同會讓 staging 重建 index
+     直接影響 production。見 doc/elasticsearch-deploy.md。
    - `database.yml` 的 `staging:` 區塊：內容 DB 指新的（如 `cbdata3`）、
      analytics 指 `analytics_dev`、**accounts 指 `accounts_dev`**
    - `database.yml` 的 `production:` 區塊：analytics 指 `cb_analytics`、
@@ -85,7 +89,20 @@ Define dev_path    /var/www/cbeta-api-staging
    cap staging deploy:restart
    ```
 
-7. 用 `cap production slot:which` / `cap staging slot:which` 驗證。
+7. 把新 production 的 Elasticsearch alias 切到該季的 index：
+
+   ```bash
+   cd /var/www/cbeta-api-production/current
+   RAILS_ENV=production bundle exec rake elastic:info    # 先看 alias 現在指向哪個
+   RAILS_ENV=production bundle exec rake 'elastic:promote[cbeta_text_2026r3_001]'
+   ```
+
+   為什麼需要這一步：ES 的 index 名帶**季號**、alias 帶**角色**。季度流程是在
+   staging 跑的，新 index 當時被 promote 到 `cbeta_text_staging`；slot 升為
+   production 後讀的是 `cbeta_text_current`，那個 alias 還指著上一季的 index。
+   （這是原子操作，隨時可以 promote 回舊 index 退版。）
+
+8. 用 `cap production slot:which` / `cap staging slot:which` 驗證。
 
 ## accounts DB 不隨輪替搬移
 

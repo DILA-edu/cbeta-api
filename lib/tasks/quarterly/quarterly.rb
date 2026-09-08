@@ -7,6 +7,7 @@ class Quarterly
   require_relative 'section-rdb'
   require_relative 'section-convert'
   require_relative 'section-manticore'
+  require_relative 'section-elastic'
   require_relative 'section-kwic'
   require_relative 'section-download-ebooks'
 
@@ -34,6 +35,7 @@ class Quarterly
       run_section_convert
       #run_section_sphinx
       run_section_manticore
+      run_section_elastic
       run_section_kwic
       run_section_download_ebooks
     end
@@ -82,6 +84,7 @@ class Quarterly
   include SectionConvert
   #include SectionSphinx
   include SectionManticore
+  include SectionElastic
   include SectionKwic
   include SectionDownloadEbooks
 
