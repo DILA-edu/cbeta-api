@@ -181,9 +181,31 @@ RAILS_ENV=production be rake 'elastic:rebuild[cbeta_text_2026r1_001]'
 ## 5. 驗證
 
 ```sh
-# 與線上 API 的結果對照（golden values 在 test/fixtures/files/search_golden_<季號>.json）
+# 與線上 API 的結果對照（golden values 在 test/fixtures/files/search_golden.json，
+# 該檔的 _meta 記著是從哪個來源、什麼時候抓的）
 RAILS_ENV=staging be rake 'elastic:verify_golden[https://cbdata.dila.edu.tw/dev]'
 ```
+
+### 環境對照（2026-09-08 實測）
+
+| 對外路徑 | deploy 目錄 | slot | 季號 | 資料日期 |
+|---|---|---|---|---|
+| `/stable` | `cbeta-api-production` | cbapi2 | 2026R2（`v=2`） | 2026-08 |
+| `/dev` | `cbeta-api-staging` | cbapi3 | 2026R3（`v=3`） | 2025-11（上一輪殘留） |
+
+**staging 是下一季的準備環境，不是 production 的複本。** Manticore 目前只有 `r1` 與 `r2`
+的 index（`text1`/`text2`…），staging 要的 `text3`／`notes3`／`titles3` 都還沒建，所以
+`/dev` 的全文檢索目前一律回錯誤（`unknown local table(s) 'text3'`）。
+`/dev` 的 `search/kwic` 正常 —— 再次印證 KwicService 不依賴 Manticore。
+
+因此：
+
+* **golden 要從 `/stable` 抓**（那才有可用的 Manticore 結果）。
+* staging 上建 ES index 時，**用 staging 自己的 `text.xml`**，才會與 staging 的
+  `data/kwic`（同為 2025-11）同季；若改用 production 的 text.xml，多出來的約 195 卷
+  在 staging 的 KWIC 資料裡不存在，`all_in_one` 會回 500。
+* `notes`／`title`／`similar`／`variants` 在 staging 驗不了（Manticore `r3` index 不存在），
+  要等 2026R3 的季度流程跑完，或在 production 驗。
 
 差異若都是同方向的小幅偏差，通常是資料版本不同；判讀方式見
 [elasticsearch-migration.md](elasticsearch-migration.md) 的「驗證結果」。

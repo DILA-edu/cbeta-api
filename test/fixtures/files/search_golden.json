@@ -893,5 +893,10 @@
   },
   "sc": {
     "hits": 9949
+  },
+  "_meta": {
+    "source": "https://cbdata.dila.edu.tw/stable",
+    "fetched_at": "2026-09-08T09:40:00+08:00",
+    "note": "stable 對應 production（cbapi2, CBETA 2026R2）"
   }
 }

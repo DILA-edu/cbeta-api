@@ -95,6 +95,7 @@ namespace :elastic do
       puts format('  %-22s %s', name, result[name][:num_found] || result[name][:hits] ||
                                       result[name][:facet_size] || result[name][:error])
     end
+    result[:_meta] = { source: base, fetched_at: Time.current.iso8601 }
 
     File.write(path, JSON.pretty_generate(result))
     puts "已寫入 #{path} (來源: #{base})"
@@ -107,6 +108,10 @@ namespace :elastic do
     abort "找不到 golden values：#{path}，請先執行 rake elastic:fetch_golden" unless File.exist?(path)
 
     golden = JSON.parse(File.read(path), symbolize_names: true)
+    if (meta = golden[:_meta])
+      puts "golden 來源: #{meta[:source]}（抓取於 #{meta[:fetched_at]}）"
+      puts
+    end
     same = 0
     diff = []
 
@@ -171,8 +176,11 @@ namespace :elastic do
   # 只保留穩定、可比對的欄位，避免 fixture 太大或被無關變動影響。
   GOLDEN_RESULT_FIELDS = %w[work juan term_hits].freeze
 
+  # 固定檔名。季號不放進檔名: 各環境的 cb.yml 季號不同
+  # （production 2026R2、staging 2026R3），用 cb.r 命名會與資料來源不符。
+  # 來源與抓取時間記在 JSON 的 _meta 裡。
   def golden_path
-    Rails.root.join('test', 'fixtures', 'files', "search_golden_#{Rails.configuration.cb.r}.json")
+    Rails.root.join('test', 'fixtures', 'files', 'search_golden.json')
   end
 
   # API 有每分鐘的呼叫上限 (見 ApiKeyAuthentication)，連續打會拿到 429，
