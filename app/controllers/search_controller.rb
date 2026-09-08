@@ -63,16 +63,14 @@ class SearchController < ApplicationController
 
   def index
     remove_puncs_from_query
-    
+
     if @q.empty?
       my_render(empty_result)
       return
     end
-    
-    where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
-    @max_matches = MAX_MATCHES
-    r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    my_render r
+
+    # 無 order 參數時沿用舊行為: 按關鍵詞出現次數遞減
+    my_render es_search(default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT)
   end
 
   def similar
@@ -93,31 +91,30 @@ class SearchController < ApplicationController
     my_render r
   end
 
+  # 目前 config/routes.rb 沒有對應的 route
   def test
     remove_puncs_from_query
-    
+
     if @q.empty?
       my_render(empty_result)
       return
     end
-    
-    where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
-    r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    my_render r
-  end  
 
+    my_render es_search(default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT)
+  end
+
+  # 與 index 的差別只在說明文件: 查詢語法由 CbetaSearch::QueryParser 統一解析，
+  # 因此兩個 endpoint 的行為相同。
   def extended
     @mode = 'extend'
     remove_puncs_from_query
-    
+
     if @q.empty?
       my_render(empty_result)
       return
     end
-    
-    where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
-    r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    my_render r
+
+    my_render es_search(default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT)
   end
 
   def notes
@@ -156,37 +153,26 @@ class SearchController < ApplicationController
 
     raise CbetaError.new(400), "缺少 q 參數" if @q.empty?
 
-    @where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
-    
-    if params.key? :facet_by
-      r = facet_by_sphinx(params[:facet_by])
-    else
-      r = {}
-      r['canon']    = facet_by_sphinx('canon')
-      r['category'] = facet_by_sphinx('category')
-      r['creator']  = facet_by_sphinx('creator')
-      r['dynasty']  = facet_by_sphinx('dynasty')
-      r['work']     = facet_by_sphinx('work')
-    end
-            
+    r =
+      if params.key? :facet_by
+        es_facet(params[:facet_by])
+      else
+        %w[canon category creator dynasty work].to_h { |f| [f, es_facet(f)] }
+      end
+
     my_render r
-  ensure
-    @mysql_client.close unless @mysql_client.nil?
   end
   
+  # 目前 config/routes.rb 沒有對應的 route
   def fuzzy
     remove_puncs_from_query
-    
+
     if @q.empty?
       my_render(empty_result)
       return
     end
-    
-    where = "MATCH('@#{@text_field} #{@q}')" + @filter
-    r = sphinx_search(@fields, where, @start, @rows, order: @order)
-    my_render r
-  ensure
-    @mysql_client.close
+
+    my_render es_search(default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT)
   end
 
   # 根據異體字表，回傳各種可能異體字串及搜尋結果筆數
@@ -225,18 +211,13 @@ class SearchController < ApplicationController
     r = if @q == params[:q]
         { q: @q, hits: 0}
       else
-        where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
-        i = get_hit_count(where)
-        
-        r = {
+        {
           time: Time.now - t1,
           q: @q,
-          hits: i
+          hits: es_service.hit_count(es_query, params: es_params, field: @text_field)
         }
       end
     my_render r
-  ensure
-    @mysql_client.close unless @mysql_client.nil?
   end
 
   # 根據同義詞表，回傳各種可能字串及搜尋結果筆數
@@ -315,6 +296,101 @@ class SearchController < ApplicationController
 
   private
 
+  # ===== Elasticsearch (text index) =====
+  #
+  # text index 已改用 Elasticsearch; notes / titles / chunks 仍走 Manticore。
+  # 見 doc/elasticsearch-migration.md
+
+  # 需要 Manticore 連線的 action。
+  # variants 也需要: exist_in_cbeta 會查 notes / titles 兩個 Manticore index。
+  def manticore_needed?
+    %w[notes similar title variants].include?(action_name)
+  end
+
+  def es_service
+    @es_service ||= CbetaSearch::SearchService.new(referer_cn: @referer_cn)
+  end
+
+  def es_query
+    @es_query ||= CbetaSearch::QueryParser.new.parse(@q)
+  end
+
+  # 傳給 CbetaSearch::ElasticQueryBuilder 的參數 (filter 與排序)。
+  # 直接取值而不用 params.permit: 其餘參數 (q / start / rows / fields …) 由
+  # controller 自己處理，若走 permit 會被當成 unpermitted parameters。
+  ES_PARAM_KEYS = %i[canon work works category creator dynasty time work_type order].freeze
+
+  def es_params
+    @es_params ||= ES_PARAM_KEYS.to_h { |key| [key, params[key]] }.compact
+  end
+
+  # 對應舊的 sphinx_search
+  def es_search(default_sort: nil, count_hits: true)
+    r = es_service.search(
+      es_query,
+      params: es_params, start: @start, rows: @rows,
+      field: @text_field, default_sort:, count_hits:
+    )
+    r.delete(:total_term_hits) if r.key?(:total_term_hits) && r[:total_term_hits].nil?
+    filter_es_fields!(r[:results])
+    r
+  end
+
+  # 依 fields 參數過濾回傳欄位 (舊版是在 SQL 的 select list 做這件事)。
+  # kwics 由 all_in_one 另外加上，其保留與否見 kwic_by_juan。
+  def filter_es_fields!(rows)
+    return rows if rows.blank? || @field_keys.blank?
+
+    keys = @field_keys.map(&:to_sym)
+    rows.each { |row| row.select! { |k, _| keys.include?(k) || k == :kwics } }
+    rows
+  end
+
+  # 對應舊的 facet_by_sphinx: Elasticsearch 算出 docs / hits，這裡補上名稱與排序。
+  def es_facet(facet_by)
+    # NEAR / Exclude 走 intervals，_score 不是出現次數，加總得到的 hits 沒有意義。
+    # 舊版是把整串當詞組 (搜不到、回空陣列)，這裡改成明確報錯。
+    unless es_query.es_countable?
+      raise CbetaError.new(400), 'facet 不支援 NEAR 與 Exclude 語法'
+    end
+
+    read_dynasty_order if facet_by == 'dynasty'
+    rows = es_service.facet(es_query, params: es_params, facet_by:, field: @text_field)
+    decorate_facet!(facet_by, rows)
+  end
+
+  def decorate_facet!(facet_by, rows)
+    case facet_by
+    when 'canon'
+      rows.each do |row|
+        c = Canon.find_by id2: row[:canon]
+        row[:canon_name] = c.name unless c.nil?
+      end
+    when 'category'
+      fn = Rails.root.join('data-static', 'categories.json')
+      categories = JSON.parse(File.read(fn))
+      rows.each { |row| row['category_name'] = categories[row[:category_id].to_s] }
+    when 'creator'
+      rows.each do |row|
+        row[:creator_id] = "A%06d" % row[:creator_id]
+        person = Person.find_by(id2: row[:creator_id])
+        if person.nil?
+          Rails.logger.debug "Person model 無此 ID: #{row[:creator_id]}"
+        else
+          row[:creator_name] = person.name
+        end
+      end
+    when 'dynasty'
+      rows.sort_by! { |x| @dynasty_order.fetch(x[:dynasty], 999) }
+    when 'work'
+      rows.each do |row|
+        w = Work.find_by n: row[:work]
+        row['title'] = w.title unless w.nil?
+      end
+    end
+    rows
+  end
+
   def action_ending
     return if @manticore.nil?
     @manticore.close
@@ -364,8 +440,9 @@ class SearchController < ApplicationController
   end
 
   # function calls:
-  #   sphinx_search
-  #   facet_by_sphinx_all
+  #   all_in_one_fetch
+  #     CbetaSearch::SearchService#search / #all_candidates / #exclude_candidates
+  #   es_facet_all
   #   kwic_by_juan
   #     kwic_boolean
   #       KwicService::search_near
@@ -374,78 +451,51 @@ class SearchController < ApplicationController
   def all_in_one_sub
     @canon_name = {}
     @exclude = nil
+    query = es_query
 
-    # 1. Sphinx 的 NEAR，如果詞與詞有重疊，也會算找到,
-    #    例如: 意樂 NEAR/7 增上意樂
-    #    但這不是我們要的結果, 所以 sphinx 先傳回全部，再由 KWIC 過濾
-    if @q.include?('NEAR')
+    # NEAR 與 Exclude 的 term_hits、KWIC 都要由 KwicService 逐卷計算
+    # (Elasticsearch 的 intervals 允許兩詞區間重疊，KWIC 不允許)，
+    # 因此這兩種查詢先取回全部符合的卷，過濾完才分頁。
+    two_phase = %i[near exclude].include?(query.type)
+
+    case query.type
+    when :near
       @mode = 'near'
-      @start = 0
-      @rows = 99_999
-    elsif @q.match(/^"(.*?)" \-"(.*)"$/) # Sphinx 沒有 Exclude 功能，所以同 NEAR.
+    when :exclude
       @mode = 'exclude'
-      @q = $1
-      @exclude = $2
-      @start = 0
-      @rows = 99_999
-      unless @exclude.include?(@q)
-        raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{@q}，原查詢字串：#{params[:q]}"
-      end
+      @exclude = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
+      @q = query.phrase # kwic_boolean_exclude 需要「不含排除條件」的查詢詞
     end
-
     @q_orig = @q
-    unless @q.gsub(/\\"/, '').include? '"'
-      @q = %("#{@q}")
-    end
 
-    @where = %{MATCH('@#{@text_field} #{@q}')} + @filter
+    r = all_in_one_fetch(query)
 
-    # 因為 max_matches 參數如果太大，會影響效率
-    # 所以先計算最多會有多少 documents 符合條件
-    estimate_max_matches
-
-    if @order.empty?
-      @order = 'ORDER BY canon_order ASC, work ASC, juan ASC'
-    end
-
-    r = sphinx_search(@fields, @where, @start, @rows, order: @order)
-
-    # NEAR 跟 Exclude 的 Facet 不用 Sphinx 的
-    if params[:facet] == '1' and not @q.include?('NEAR') and @exclude.nil?
+    # NEAR 跟 Exclude 的 facet 要等 KWIC 過濾完，改由 my_facet 依結果計算
+    if params[:facet] == '1' && !two_phase
       r['facet'] = {}
-      facet_by_sphinx_all(r['facet'])
+      es_facet_all(r['facet'])
     end
 
-    log_debug "@exclude: #{@exclude.inspect}"
-    if @exclude
-      exclude_by_sphinx(r)
-    end
-
-    logger.debug "#{Time.now} sphinx search 完成"
-
-    if @q.include?('NEAR')
+    if query.type == :near
       # 呼叫 KWIC 過濾 NEAR, 並取得所有出處、行號
       kwic_by_juan(r)
       r[:num_found] = r[:results].size
-      r[:total_term_hits] = r[:results].inject(0) { |i, x| i + x[:term_hits] }
+      r[:total_term_hits] = r[:results].sum { it[:term_hits] }
     end
 
-    if @q.include?('NEAR') or not @exclude.nil?
-      r[:facet] = my_facet(r[:results]) if @facet==1
+    if two_phase
+      r[:facet] = my_facet(r[:results]) if @facet == 1
 
-      @start  = params.key?(:start)  ? params[:start].to_i  : 0
-      @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
-      r[:results] = r[:results][@start, @rows]
+      @start = params.key?(:start) ? params[:start].to_i : 0
+      @rows  = params.key?(:rows)  ? params[:rows].to_i  : 20
+      r[:results] = r[:results][@start, @rows] || []
     end
 
     if params[:fields].nil? or params[:fields].include?('kwic')
-      unless @q.include?('NEAR')
-        kwic_by_juan(r)
-        # r[:num_found] = r[:results].size
-        # r[:total_term_hits] = r[:results].sum { it[:term_hits] }
-        # log_info "kwic_by_juan 完成, num_found: #{r[:num_found]}, total_term_hits: #{r[:total_term_hits]}"
-      end
+      kwic_by_juan(r) unless query.type == :near
     end
+
+    filter_es_fields!(r[:results]) if two_phase
 
     if r.key?(:results)
       log_debug "results size: #{r[:results].size}"
@@ -463,8 +513,37 @@ class SearchController < ApplicationController
     end
 
     r
-  ensure
-    @mysql_client.close
+  end
+
+  # all_in_one 的第一階段: 取回符合的卷。
+  # NEAR / Exclude 不分頁 (要先過濾), 其餘直接取當頁。
+  def all_in_one_fetch(query)
+    case query.type
+    when :exclude
+      rows = es_service.exclude_candidates(query, params: es_params, field: @text_field)
+      {
+        query_string: query.raw,
+        num_found: rows.size,
+        total_term_hits: rows.sum { it[:term_hits] },
+        cache_key: nil,
+        results: rows
+      }
+    when :near
+      rows = es_service.all_candidates(query, params: es_params, field: @text_field)
+      {
+        query_string: query.raw,
+        num_found: rows.size,
+        total_term_hits: nil, # KWIC 過濾後才算得出來，這裡先佔位以維持欄位順序
+        cache_key: nil,
+        results: rows
+      }
+    else
+      es_search
+    end
+  end
+
+  def es_facet_all(dest)
+    %w[category creator dynasty work canon].each { |f| dest[f] = es_facet(f) }
   end
   
   def empty_result
@@ -491,53 +570,32 @@ class SearchController < ApplicationController
     raise CbetaError.new(500), "estimate_max_matches 發生錯誤, cmd: #{cmd}"
   end
 
-  def exclude_by_sphinx(r1)
-    r2 = sphinx_search_simple(@exclude) # 要被排除的
-    log_debug "exclude_by_sphinx, r2: #{r2.inspect}"
-
-    h = {}
-    r2.each do |juan|
-      k = "#{juan[:work]}_#{juan[:juan]}"
-      h[k] = juan[:term_hits]
-    end
-    log_debug "exclude_by_sphinx, h: #{h.inspect}"
-
-    r1[:total_term_hits] = 0
-    i = 0
-    while i < r1[:results].size
-      juan = r1[:results][i]
-      k = "#{juan[:work]}_#{juan[:juan]}"
-      log_debug "i: #{i}, k: #{k}"
-      log_debug "exclude 前 term_hits: #{juan[:term_hits]}"
-      if h.key?(k)
-        juan[:term_hits] -= h[k]
-      end
-      log_debug "exclude 後 term_hits: #{juan[:term_hits]}"
-      
-      if juan[:term_hits] <= 0
-        r1[:num_found] -= 1
-        r1[:results].delete_at(i)
-        next
-      end
-
-      r1[:total_term_hits] += juan[:term_hits]
-      i += 1
-    end
-  end
-  
   def exist_in_cbeta(q)
     log_debug "exist_in_cbeta, q: #{q}"
 
-    r = exist_in_index(q, Rails.configuration.x.se.index_text)
-      || exist_in_index(q, Rails.configuration.x.se.index_notes)
-    return r if r
-    
-    # title 最長 57, query 太長就不必搜了
-    if q.size < 58
-      r = exist_in_index(q, Rails.configuration.x.se.index_titles)
-    end
+    # text index 走 Elasticsearch, notes / titles 仍走 Manticore
+    return true if es_service.exist?(es_phrase_query(q), params: {})
+    return true if exist_in_index(q, Rails.configuration.x.se.index_notes)
 
-    r
+    # title 最長 57, query 太長就不必搜了
+    return false if q.size >= 58
+
+    exist_in_index(q, Rails.configuration.x.se.index_titles)
+  end
+
+  # 單純詞組查詢 (variants / exist_in_cbeta 用): 不經 QueryParser，
+  # 因為異體字展開後的字串可能含雙引號等字元，不該被當成查詢語法。
+  def es_phrase_query(phrase)
+    CbetaSearch::Query.new(type: :phrase, raw: phrase, phrase: phrase.downcase)
+  end
+
+  # variants 的計數。scope=title 查 Manticore 的 titles index，其餘查 Elasticsearch。
+  def variants_hit_count(phrase)
+    if params[:scope] == 'title'
+      get_hit_count(%{MATCH('@content "#{phrase}"')} + @filter)
+    else
+      es_service.hit_count(es_phrase_query(phrase), params: es_params)
+    end
   end
   
   def exist_in_index(q, index)
@@ -620,13 +678,6 @@ class SearchController < ApplicationController
     r
   end
 
-  def facet_by_sphinx_all(dest)
-    %w[category creator dynasty work canon].each do |f|
-      dest[f] = facet_by_sphinx(f)
-    end
-  end
-  
-  
   def get_hit_count(where)
     select = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
     r = manticore_query(select)
@@ -696,11 +747,28 @@ class SearchController < ApplicationController
     init_order unless action_name == 'similar'
     set_filter
 
-    @manticore = ManticoreService.new
-    @mysql_client = @manticore.open
+    # text index 已改用 Elasticsearch，notes / titles / chunks 仍走 Manticore。
+    # 見 doc/elasticsearch-migration.md
+    if manticore_needed?
+      @manticore = ManticoreService.new
+      @mysql_client = @manticore.open
+    end
   end
 
+  # 回傳欄位的預設清單與順序 (Elasticsearch 用; Manticore 用的 SQL 由 init_fields 產生)
+  FIELD_KEYS = %w[
+    id term_hits canon category file work juan title byline creators
+    creators_with_id time_dynasty time_from time_to juan_list
+  ].freeze
+
   def init_fields
+    @field_keys =
+      if params.key?(:fields)
+        FIELD_KEYS & params[:fields].split(',')
+      else
+        FIELD_KEYS
+      end
+
     all = {
       'id' => 'id',
       'term_hits' => 'weight()',
@@ -1388,25 +1456,6 @@ class SearchController < ApplicationController
     r
   end
 
-  def sphinx_search_simple(q)
-    logger.debug "begin sphinx_search_simple, q: #{q}"
-
-    where = %{MATCH('@#{@text_field} "#{q}"')} + @filter
-    fields = 'weight() as term_hits, work, juan'
-
-    select = %(
-      SELECT #{fields}
-      FROM #{@index}
-      WHERE #{where}
-      LIMIT 0, #{@max_matches}
-      OPTION ranker=#{RANKER}, max_matches=#{@max_matches}
-    ).gsub(/\s+/, " ").strip
-    logger.debug select
-    
-    results = manticore_query(select)
-    results.to_a
-  end
-
   def sphinx_select(fields, opts={})
     @opts = {
       where: @where,
@@ -1458,11 +1507,8 @@ class SearchController < ApplicationController
     q_ary.each do |q|
       next if q == @q
 
-      where = %{MATCH('@content "#{q}"')}
-      where << @filter
-  
-      i = get_hit_count(where)
-      results << { q: q, hits: i } unless i==0
+      i = variants_hit_count(q)
+      results << { q: q, hits: i } unless i.zero?
     end
     
     {
