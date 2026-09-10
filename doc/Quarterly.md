@@ -137,22 +137,12 @@ grep -E "^\s+v:" /var/www/cbapi?/shared/config/cb.yml   # 各 slot 的季號
 
 ### Manticore 殘留（一次性清理）
 
-5.2.0 起 Rails 完全不連 Manticore（見
-[elasticsearch-migration.md](elasticsearch-migration.md)）。確認四個 ES index
-都正常之後，這些東西可以一次清掉，之後每季就不必再做：
+5.2.0 起 Rails 完全不連 Manticore。但 **staging 與 production 共用同一個
+Manticore 服務**，要等**兩邊都升上 5.2.0** 才能停 —— 2026-09-10 時
+staging 已在 5.2.0、production 還在 4.6.1，停掉會讓 production 全站搜尋掛掉。
 
-```sh
-# 1. 停容器
-docker compose -f /home/ray/manticore3/compose.yaml down
-
-# 2. 確認 /search、/search/notes、/search/title、/search/similar 都正常
-
-# 3. 刪資料檔（每季一份，各約 7.4GB）與設定
-sudo rm -rf /var/lib/manticore3
-sudo rm -rf /etc/manticore3
-```
-
-`shared/config/cb.yml` 的 `manticore:` 區塊也可以刪掉，已經沒有程式在讀。
+步驟與確認方式見 [elasticsearch-deploy.md](elasticsearch-deploy.md) 的 §4-5。
+清掉之後每季就不必再做這件事（`/var/lib/manticore*` 每季一份，各約 7.4GB）。
 
 ### Elasticsearch 舊季 index
 

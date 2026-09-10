@@ -277,7 +277,11 @@ curl -X DELETE 'http://localhost:9200/cbeta_text_2026r3_001'
 ## 4-2. 從 5.1.0 升級到 5.2.0（chunks index）
 
 5.2.0 只多一個 chunks index（`search/similar`），其餘三個不必動。
-升級後 Rails 不再連 Manticore，**Manticore 容器可以在確認無誤之後停掉**。
+
+🚨 **staging 升級完不能停 Manticore。** staging 與 production 是同一台機器、
+共用同一個 Manticore 服務，而 production（`/stable`）目前還在 **4.6.1** ——
+連 `/search` 都還走 Manticore。停掉容器等於讓 production 全站搜尋掛掉。
+Manticore 要等 **production 也升上 5.2.0** 之後才能停，見 §4-5。
 
 ⚠️ **先做 §4-3 的目錄搬遷**。5.2.0 起 XML 目錄由 `shared/data/manticore-xml/`
 改名為 `shared/data/search-xml/`；沒搬之前 `elastic:rebuild` 會停在
@@ -302,15 +306,9 @@ RAILS_ENV=staging be rake elastic:info
 
 `/search/similar` 在 chunks index 建好、alias 切過去之前會回 502。
 
-確認 `/search/similar` 正常之後，Manticore 就可以停用：
-
-```sh
-docker compose -f /home/ray/manticore2/compose.yaml down   # 容器名見舊的 cb.yml
-```
-
 `shared/config/cb.yml` 的 `manticore:` 區塊（`container`／`conf`／`data`／`port`）
-已經沒有程式在讀，可以一併刪掉。舊的 index 目錄 `/var/lib/manticore*`
-確認不需要回滾之後才刪 —— 那是幾十 GB，是這次改動最大的一筆磁碟回收。
+5.2.0 起已經沒有程式在讀，**staging 那一份**可以刪掉；production 的那一份
+要等它也升上 5.2.0。
 
 ## 4-3. 5.2.0 的目錄與 rake task 更名
 
@@ -380,6 +378,30 @@ production 目前完全沒有 ES index，所以是**先部署程式、再建 ind
 把 index 建好（rake 只讀 `shared/data/search-xml/*.xml`，不影響仍在服務的舊版），
 切換 release 之後只剩 `import:vars` 與清 cache。
 
+## 4-5. Manticore 停用（production 也升上 5.2.0 之後才能做）
+
+**前提**：`/stable` 與 `/dev` 都回報 5.2.0，且四個 ES index 都正常。
+staging 與 production 共用同一個 Manticore 服務，只要還有一邊沒升級就不能停。
+
+（2026-09-10 現況：staging 已在 5.2.0，production 還在 4.6.1，**還不能停**。）
+
+```sh
+# 1. 先確認兩邊都不再需要 Manticore：回傳都不該有 SQL 欄位
+curl -s 'https://cbdata.dila.edu.tw/stable/search?q=法鼓&cache=0&rows=1' | grep -c '"SQL"'
+curl -s 'https://cbdata.dila.edu.tw/dev/search/similar?q=諸惡莫作&cache=0' | grep -c '"SQL"'
+
+# 2. 停容器（容器名見舊的 cb.yml，例如 manticore3）
+docker compose -f /home/ray/manticore3/compose.yaml down
+
+# 3. 觀察幾天，確認 /stable 與 /dev 的搜尋都正常
+
+# 4. 才刪資料與設定（每季一份，各約 7.4GB）
+sudo rm -rf /var/lib/manticore3
+sudo rm -rf /etc/manticore3
+```
+
+各環境 `shared/config/cb.yml` 的 `manticore:` 區塊也可以一併刪掉。
+
 ## 5. 驗證
 
 ```sh
@@ -390,10 +412,12 @@ RAILS_ENV=staging be rake 'elastic:verify_golden[https://cbdata.dila.edu.tw/dev]
 
 ### 環境對照（2026-09-10 更新）
 
-| 對外路徑 | deploy 目錄 | slot | 季號 | 資料日期 |
-|---|---|---|---|---|
-| `/stable` | `cbeta-api-production` | cbapi2 | 2026R2（`v=2`） | 2026-08 |
-| `/dev` | `cbeta-api-staging` | cbapi3 | 2026R3（`v=3`） | 2026-09-09 |
+| 對外路徑 | deploy 目錄 | slot | 季號 | 資料日期 | 版本（2026-09-10） | 搜尋後端 |
+|---|---|---|---|---|---|---|
+| `/stable` | `cbeta-api-production` | cbapi2 | 2026R2（`v=2`） | 2026-08 | 4.6.1 | 全部 Manticore |
+| `/dev` | `cbeta-api-staging` | cbapi3 | 2026R3（`v=3`） | 2026-09-09 | 5.2.0 | 全部 Elasticsearch |
+
+**production 還沒升級過**，所以 Manticore 服務還不能停（見 §4-5）。
 
 **staging 是下一季的準備環境，不是 production 的複本。**
 2026R3 的 `rake quarterly` 已於 2026-09-09 在 server 上跑完，`/dev` 的 Manticore
