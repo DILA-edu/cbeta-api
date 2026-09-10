@@ -489,6 +489,13 @@ CBETA 正文裡（`exist?` 查的就是同一份 text.xml），因此**新的結
 | text index 匯入 | 22,150 卷 / 169 秒 / 1.5GB |
 | `rake import:vars` | 56,165 個候選字 / 4.4 秒（改用 `_msearch` 批次前會把 ephemeral port 用光而失敗） |
 
+## 部署注意事項
+
+升級到 5.1.0 時 **`titles.xml` 一定要用新版的 `rake manticore:titles` 重新產生**，
+否則 `/search/title` 的限制搜尋範圍參數會安靜地回 0 筆（欄位不存在，ES 不報錯）。
+staging 部署時就踩到這一點，補在
+[elasticsearch-deploy.md](elasticsearch-deploy.md) 的 §4-1。
+
 ## 第三期待辦
 
 - [ ] `search/similar`（chunks index）搬到 Elasticsearch。已定案接受 Lucene BM25 與

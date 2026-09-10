@@ -237,23 +237,40 @@ production 將來輪到 2026R3 時要用的名字，所以這次升級順便換�
 
 ### staging（5.0.x → 5.1.0）
 
+⚠️ **`titles.xml` 一定要用新版重新產生**。5.1.0 起 titles.xml 多了朝代／部類／
+作譯者／年代，`/search/title` 的限制搜尋範圍參數才有作用。用舊檔建的 index
+不會報錯，只會讓那些 filter 安靜地回 0 筆。
+
 ```sh
 cd /var/www/cbeta-api-staging/current
 
-# 三個 index 一起重建成新命名（text 約 3 分、notes 約 6 分、titles 數秒）
+# 1. 重新產生 titles.xml（讀 Work model，約數秒）
+RAILS_ENV=staging be rake manticore:titles
+
+# 2. 三個 index 一起重建成新命名
 RAILS_ENV=staging be rake 'elastic:rebuild_all[2026r3]'
 
-# 異體字表要在 text index 建好之後才能匯入
+# 3. 異體字表要在 text index 建好之後才能匯入
 RAILS_ENV=staging be rake import:vars
+
+# 4. 清 Rails cache（cache key 沒變，但內容來自不同後端）
+RAILS_ENV=staging be rails runner 'Rails.cache.clear'
 
 RAILS_ENV=staging be rake elastic:info      # 確認三個 alias 都指到新 index
 ```
 
-確認無誤後刪掉舊命名的 index：
+實測耗時（sakya，2026-09-10）：text 255 秒、notes 804 秒、titles 1.2 秒、
+`import:vars` 18 秒 —— **合計約 18 分鐘**。過程中 `/search` 一直可用
+（alias 是最後才切的），`/search/notes`、`/search/title` 到各自的 index 建好為止會回 502。
+
+確認無誤後刪掉舊命名、已無 alias 指向的 index：
 
 ```sh
+RAILS_ENV=staging be rake elastic:info      # 先確認 alias 指向哪些
 curl -X DELETE 'http://localhost:9200/cbeta_text_2026r3_001'
 ```
+
+保留一個週期當退版備援也可以，`cbeta_text_2026r3_001` 約 1.5GB。
 
 ### production（Manticore → Elasticsearch，首次）
 
@@ -261,7 +278,7 @@ production 目前完全沒有 ES index，所以是**先部署程式、再建 ind
 中間 `/search`、`/search/notes`、`/search/title`、`/search/variants`
 會回 502「全文檢索索引尚未建立」。
 
-**請先與主管確認這個停機視窗。** 依本機實測，三個 index 合計約 10~15 分鐘。
+**請先與主管確認這個停機視窗。** staging 實測三個 index 合計約 18 分鐘。
 
 1. 在 `shared/config/cb.yml` 的 `production:` 區塊加上 `elasticsearch:`（見 §3）。
 2. `cap production deploy`
@@ -269,10 +286,15 @@ production 目前完全沒有 ES index，所以是**先部署程式、再建 ind
 
    ```sh
    cd /var/www/cbeta-api-production/current
+   RAILS_ENV=production be rake manticore:titles          # titles.xml 要新版的
    RAILS_ENV=production be rake 'elastic:rebuild_all[2026r2]'
    RAILS_ENV=production be rake import:vars
    ```
 4. 清 Rails cache：cache key 沒變，但內容來自不同後端。
+
+   ```sh
+   RAILS_ENV=production be rails runner 'Rails.cache.clear'
+   ```
 5. `RAILS_ENV=production be rake elastic:info` 確認三個 alias 都有指向。
 
 要縮短停機視窗的話，可以在 `cap production deploy` 之前先進到新的 release 目錄
@@ -316,7 +338,7 @@ be rake 'elastic:fetch_golden[https://cbdata.dila.edu.tw/stable]'
 
 ## 6. 每季流程
 
-`text.xml` 產出後（既有的 `manticore:x2t`）：
+三份 XML 產出後（既有的 `manticore:x2t` / `t2x` / `notes` / `titles`）：
 
 ```sh
 # 一次做完三個 index：建 index → 匯入 → 切 alias
