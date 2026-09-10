@@ -13,7 +13,7 @@ class KwicHtml2Text
   end
 
   def convert(canon, vol, inline_note)
-    puts "#{File.basename(__FILE__)}, line: #{__LINE__}, inline_note: #{inline_note}"
+    puts "\nhtml => text, #{inline_note ? '含夾注' : '不含夾注'}"
     # main
     t1 = Time.now
 
@@ -43,7 +43,6 @@ class KwicHtml2Text
 
   def read_file(base, rel_path)
     s1 = @builder.read_html_file(rel_path)
-    puts "read_file, size: #{s1.size}"
     @size += s1.size
     
     s1.downcase!
@@ -56,7 +55,6 @@ class KwicHtml2Text
     FileUtils.mkdir_p folder
 
     fn = File.join(folder, "#{@builder.juan}.txt")
-    puts "read_file, write #{fn}"
     # 有「卷跨冊」的例外情況，所以要用 append mode
     File.open(fn, 'a:UTF-32LE') { |f| f.write(@builder.text_with_punc) }
   end
@@ -73,10 +71,9 @@ class KwicHtml2Text
         relative = File.join(folder,f)
       end
       if Dir.exist? p
-        print "\n#{f} "
+        puts relative if relative.count('/') == 1 # 每冊印一行進度
         read_text_from_folder(base, relative)
       else
-        print f + ' '
         read_file(base, relative)
       end
     end

@@ -14,29 +14,31 @@ class KwicSuffixArray
   end
 
   def build(rel_path)
+    t1 = Time.now
+    puts "\n建立 suffix array: #{rel_path}"
+    @juan_count = 0
     source = File.join(Rails.configuration.x.kwic.temp, rel_path)
     handle_folder(source)
+    puts # 結束進度行
+    puts "#{rel_path}: #{@juan_count} 卷, #{ElapsedTime.label(t1)}"
   end
 
   def call_cpp(path)
-    t1 = Time.now
-    puts "#{File.basename(__FILE__)}, line: #{__LINE__}, call_cpp, path: #{path}"
     system "#{@task_base}/sa.out #{path}" # 呼叫 c++ 程式
-  
+
     fn = File.join(path, 'sa.dat')
     unless File.exist?(fn)
-      abort "呼叫 sa cpp 失敗，#{fn} 不存在"
+      abort "\n呼叫 sa cpp 失敗，#{fn} 不存在"
     end
-  
+
     fn = File.join(path, 'sa-b.dat')
     unless File.exist?(fn)
-      abort "呼叫 sa cpp 失敗，#{fn} 不存在"
+      abort "\n呼叫 sa cpp 失敗，#{fn} 不存在"
     end
-  
-    spend_time = Time.now - t1
-    if spend_time > 1
-      puts ElapsedTime.label(spend_time)
-    end
+
+    # 卷數很多，每 100 卷更新同一行進度即可
+    @juan_count += 1
+    print "\r  已完成 #{@juan_count} 卷" if (@juan_count % 100).zero?
   end
   
   def compile_cpp

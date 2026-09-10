@@ -222,7 +222,6 @@ class P5aToSimpleHTML
 
   def handle_sutra(xml_fn)
     @sutra_no = File.basename(xml_fn, ".xml")
-    print @sutra_no + ' '
     
     @dila_note = 0
     @div_count = 0
@@ -385,8 +384,7 @@ class P5aToSimpleHTML
   end  
 
   def handle_vol(vol)
-    puts "\nconvert volumn: #{vol}"
-
+    puts "convert volumn: #{vol}"
 
     @vol = vol
     @series = CBETA.get_canon_from_vol(vol)
