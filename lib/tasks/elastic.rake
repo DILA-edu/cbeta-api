@@ -47,7 +47,13 @@ namespace :elastic do
     puts "\nalias 指向:"
     INDEX_CLASSES.each_key do |type|
       alias_name = index_class(type).index_alias
-      targets = client.indices.get_alias(name: alias_name, ignore_unavailable: true)
+      # alias 還沒建立時 ES 回 404 (ignore_unavailable 只對 index 有效)。
+      # 這正是遷移途中的正常狀態，診斷指令不該因此中斷。
+      targets = begin
+        client.indices.get_alias(name: alias_name)
+      rescue Elastic::Transport::Transport::Errors::NotFound
+        {}
+      end
       if targets.empty?
         puts "  #{alias_name} 尚未指向任何 index"
       else
