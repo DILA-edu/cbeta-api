@@ -164,7 +164,7 @@ Manticore 的 `charset_table = non_cjk` + `ngram_len = 1` 是「CJK 逐字切、
 
 驗收工具：`rake elastic:fetch_golden[<url>]` 抓基準、`rake elastic:verify_golden[<url>]` 比對。
 
-**本機 `data/manticore-xml/text.xml` 比 production 舊**（只到 YP0021，production 有 YP0023 以後），因此有一批系統性的小差異。已用 canon facet 做決定性驗證：
+**本機 `data/search-xml/text.xml` 比 production 舊**（只到 YP0021，production 有 YP0023 以後），因此有一批系統性的小差異。已用 canon facet 做決定性驗證：
 
 > 「法鼓」的 24 個藏經 facet 中 **21 個 docs/hits 完全一致**，只有 B、G、YP 三藏有差，合計差 7 卷 7 hits —— **恰好等於該查詢的總差異**（1106→1099、1582→1575）。
 
@@ -221,7 +221,7 @@ Manticore 的 `charset_table = non_cjk` + `ngram_len = 1` 是「CJK 逐字切、
 
 - [ ] 在各環境的 `config/cb.yml` 加 `elasticsearch:` 區塊（`url`、`index_alias`，
   選用 `index_name`／`request_timeout`）
-- [ ] 每季流程加入 `rake elastic:rebuild[cbeta_text_<季號>_NNN]`（吃 `manticore:x2t` 產出的 `text.xml`，22,037 卷約 2.5 分鐘）
+- [ ] 每季流程加入 `rake elastic:rebuild[cbeta_text_<季號>_NNN]`（吃 `search_xml:x2t` 產出的 `text.xml`，22,037 卷約 2.5 分鐘）
 - [ ] 切換後 flush Rails cache（cache key 沒變，但內容來自不同後端）
 - [x] 更新對外更新紀錄 `static_pages/log.haml`（2026-09 Version 5.0.0）
 - [x] 更新 API 說明頁（2026-09-08）：`search_extended.haml` 改寫雙引號說明、補上多詞 NEAR／Exclude／不支援語法；`search.haml` 補上可用 Extended 語法、改掉 Manticore 特有的「排序欄位最多五個」限制
@@ -384,7 +384,7 @@ Manticore 結果。因此：
 | `config/application.rb` | 新增 `CbetaEsAlias`（由 text alias 推導其他 alias）、`config.x.elasticsearch.aliases`／`.xml` |
 | `lib/tasks/elastic.rake` | 所有 task 加 index 種類引數；新增 `elastic:rebuild_all[<季號>]`；golden 案例由 31 增為 45 |
 | `lib/tasks/import/vars.rake` | 改用 `SearchService#exist_all?`（只查 text index，與 controller 的三 index 版刻意不同） |
-| `lib/tasks/manticore/titles.rake` | titles.xml 補上朝代／部類／作譯者／年代 |
+| `lib/tasks/manticore/titles.rake` | titles.xml 補上朝代／部類／作譯者／年代（檔案在第三期更名為 `lib/tasks/search_xml/titles.rake`） |
 | `lib/tasks/quarterly/section-elastic.rb` | 一次建三個 index；接手原本在 manticore section 的 `import:vars` |
 | `lib/tasks/quarterly/section-manticore.rb` | 移除 `step_manticore_vars` |
 | `test/services/cbeta_search/index_definitions_test.rb` | 新增。三個 index 的 mapping、alias 推導、index 命名 |
@@ -491,18 +491,176 @@ CBETA 正文裡（`exist?` 查的就是同一份 text.xml），因此**新的結
 
 ## 部署注意事項
 
-升級到 5.1.0 時 **`titles.xml` 一定要用新版的 `rake manticore:titles` 重新產生**，
+升級到 5.1.0 時 **`titles.xml` 一定要用新版的 `rake search_xml:titles` 重新產生**，
 否則 `/search/title` 的限制搜尋範圍參數會安靜地回 0 筆（欄位不存在，ES 不報錯）。
 staging 部署時就踩到這一點，補在
 [elasticsearch-deploy.md](elasticsearch-deploy.md) 的 §4-1。
 
 ## 第三期待辦
 
-- [ ] `search/similar`（chunks index）搬到 Elasticsearch。已定案接受 Lucene BM25 與
-      Manticore `proximity_bm25` 的排序差異；`search_similar.haml` 的
-      「第一階段使用 Manticore 模糊搜尋」屆時要改寫。
-- [ ] chunks 搬完後移除：`ManticoreService`、`lib/tasks/manticore/` 的 `conf`／`build`、
-      四個 `manticore-template-*.conf`、`section-manticore.rb` 的建資料夾／設定／建 index／
-      重啟容器步驟。**`x2t`／`t2x`／`notes`／`titles`／`chunks` 的轉檔部分要留**，
-      Elasticsearch 就是吃這些 XML。
-- [ ] 屆時 `config.x.se.indexes` 只剩轉檔用途，可一併精簡。
+- [x] `search/similar`（chunks index）搬到 Elasticsearch。
+- [x] 移除 Manticore 的連線與建 index 流程。
+- [x] `config.x.se.*` 移除。
+
+（實作結果見下一節。）
+
+---
+
+# 第三期實作結果（2026-09-10）
+
+範圍：`search/similar`（chunks index）搬到 Elasticsearch，Manticore 完全退場。
+版號 5.2.0。
+
+## 新增與修改的檔案
+
+| 檔案 | 說明 |
+|---|---|
+| `app/services/cbeta_search/chunks_index.rb` | 新增。content 用預設 BM25（要的是相關度）、`_source` 存全文給 Smith-Waterman |
+| `app/services/cbeta_search/elastic_query_builder.rb` | `quorum` 門檻可以是百分比字串（`"50%"`），對應 Manticore 的 `/0.5` |
+| `app/services/cbeta_search/search_service.rb` | `search` 新增 `track_total_hits:`；缺少的 `_source` 欄位補預設值（見下） |
+| `app/services/cbeta_search/index_base.rb` | 新增 `row_default` |
+| `app/controllers/search_controller.rb` | `similar` 改走 ES；移除 `ManticoreService` 連線、`manticore_query`／`manticore_search`、`set_filter*`、`RANKER`、`@index`、`@max_matches`、`@select`、`action_ending`（**淨減 255 行**） |
+| `config/application.rb` | `CbetaEsAlias::TYPES` 與 `elasticsearch.xml` 加 chunks；**移除 `config.x.se.*`** |
+| `lib/tasks/elastic.rake` | 加 chunks；新增 `elastic:compare_similar`；golden 案例由 45 增為 50 |
+| `lib/tasks/quarterly/section-search-xml.rb` | 由 `section-manticore.rb` 更名，只留 `x2t`／`t2x` 兩個轉檔 step |
+| `lib/tasks/quarterly/section-elastic.rb` | 一次建四個 index |
+| **刪除** | `app/services/manticore_service.rb`、`lib/tasks/manticore/{conf,build}.rake`、四個 `manticore-template-*.conf`、`Gemfile` 的 `mysql2` |
+
+`x2t`／`t2x`／`notes`／`titles`／`chunks` 的轉檔流程完整保留 —— Elasticsearch 就是吃這些 XML。
+
+## 一併把 Manticore 的命名清乾淨
+
+轉檔流程留下來了，但名字全部改掉，免得日後看到 `manticore` 以為還有這個服務。
+檔案格式仍是 xmlpipe2（Sphinx／Manticore 的匯入格式），這一點寫在
+`CbetaSearch::XmlpipeReader` 的註解裡。
+
+| 舊 | 新 |
+|---|---|
+| rake namespace `manticore:` | `search_xml:`（`search_xml:x2t`／`t2x`／`notes`／`titles`／`chunks`） |
+| `data/manticore-xml/` | `data/search-xml/` |
+| `data/cbeta-txt-{with,without}-notes-for-manticore/` | `data/cbeta-txt-{with,without}-notes/` |
+| `log/manticore-{chunks,notes}.log` | `log/search-xml-{chunks,notes}.log` |
+| `lib/tasks/manticore/` | `lib/tasks/search_xml/` |
+| `lib/tasks/manticore/manticore-share.rb`（`ManticoreShare`） | `lib/tasks/search_xml/search-xml-share.rb`（`SearchXmlShare`） |
+| `ManticoreChunks`／`ManticoreNotes`／`ManticoreTitles`／`ManticoreT2X` | `SearchXmlChunks`／`SearchXmlNotes`／`SearchXmlTitles`／`SearchXmlT2X` |
+| `app/services/manticore/`（`module Manticore`） | `app/services/search_xml/`（`module SearchXml`） |
+| `CbetaSearch::ManticoreXmlReader` | `CbetaSearch::XmlpipeReader` |
+| `lib/tasks/quarterly/section-manticore.rb`（`SectionManticore`） | `section-search-xml.rb`（`SectionSearchXml`） |
+
+**部署時要注意**：`data` 是 capistrano 的 linked dir，server 上的
+`shared/data/manticore-xml/` 不會自己改名。每季流程會自己產生
+`shared/data/search-xml/`，所以**照常跑 `rake quarterly` 不會有問題**；
+只有「不重跑轉檔、直接重建某個 ES index」時才需要先搬過去，見
+[elasticsearch-deploy.md](elasticsearch-deploy.md) 的 §4-3。
+
+## 途中發現：`_source` 缺欄位時 ES 回 nil、Manticore 回空字串
+
+`chunks.xml` 的欄位是選填的：沒有作譯者的典籍就不會有 `<creators_with_id>`。
+Manticore 的 `xmlpipe_attr_string` 對缺少的欄位一律回**空字串**（實測 `/dev` 的
+`search/similar` 對 T1507 回 `creators_with_id: ""`），Elasticsearch 則是 `_source`
+裡根本沒有這個欄位，取出來是 `nil` —— `my_facet_creator` 的 `.split(';')` 直接炸掉。
+
+修正：`IndexBase.row_default` 依 `integer_fields` 決定補 `0` 或 `''`，
+`SearchService#row_from_hit` 用它填缺少的欄位。四個 index 一體適用，
+輸出型別因此與舊版一致。
+
+## 行為改變（版號 5.2.0）
+
+| # | 項目 | 舊版 | 新版 |
+|---|---|---|---|
+| 1 | `similar` 的結果組成與順序 | Manticore `quorum /0.5` + `proximity_bm25` 取 top 500 | ES `minimum_should_match: 50%` + Lucene BM25 取 top 500。**兩者的 top 500 差很多，見下方驗證結果** |
+| 2 | 回傳的 `SQL` 欄位 | 有 | 移除，同 text 第一期的第 2 項 |
+| 3 | 「卷首／卷尾除外」（程式原本設計的例外，說明頁未提及） | `position_in_juan` 沒有被 SELECT，永遠是 `nil`，例外從未生效 —— 只要比對區域從區塊第一字開始或延續到最後一字就一律砍掉 | 修正。實測 6 個範例查詢共 625 筆命中沒有一筆落在這個情況，實務影響很小 |
+| 4 | `k` 參數 | 預設 500，值不限 | **預設改為 2000**（理由見下方驗證結果）；必須 > 0，且受 `MAX_RESULT_WINDOW` 限制（不得超過 100,000），超過回 400 |
+| 5 | `work_type` filter | chunks index 沒有這個欄位，Manticore 回 500（`unknown column`） | ES 對不存在的欄位做 filter 會安靜地回 0 筆。同 notes 的 §F-1 第 6 項 |
+
+## 驗證結果
+
+`similar` 的最終順序由 Smith-Waterman 分數決定，Elasticsearch 只負責挑前 k 筆候選，
+因此逐筆比對 `num_found` 沒有意義。改用**結果集合的重疊率**衡量
+（`rake elastic:compare_similar`，識別 key 是 `work + juan + linehead`）。
+
+比較條件與第二期同樣嚴格：把 staging 的 `chunks.xml`（2026R3，2026-09-09 產出）抓到
+本機重建 index，基準取自 `/dev`（該處的 `similar` 仍是 Manticore `chunks3`，
+5.1.0 只搬到 titles）。**因此差異純粹來自演算法，不含資料版本。**
+
+說明頁的 6 個範例查詢：
+
+| | Manticore 合計 | ES 合計 | 交集 | 重疊率 | 涵蓋 Manticore |
+|---|---|---|---|---|---|
+| `k=500`（舊預設） | 438 | 354 | 229 | 57.8% | 52.3% |
+| `k=1000` | 438 | 449 | 299 | 67.4% | 68.3% |
+| **`k=2000`（新預設）** | 438 | **492** | 332 | **71.4%** | **75.8%** |
+
+**差異比預期大，原因已查明**：以「諸惡莫作，眾善奉行，自淨其意，是諸佛教」為例，
+符合 quorum 的區塊有 **115,853 筆**，進入 Smith-Waterman 的只有 top 500（0.4%）。
+決定結果的其實是「哪 500 筆」，而 Manticore 的 `proximity_bm25` **會把詞的相鄰程度
+算進分數**，Lucene 的 BM25 不會 —— 對「找相似句子」這件事，相鄰程度正好是最有用的訊號。
+
+逐 `k` 實測（同一個查詢）：
+
+| k | ES 找到 | 涵蓋 Manticore 的 210 筆 |
+|---|---|---|
+| 500 | 149 | 37.6% |
+| 2000 | 249 | 77.6% |
+| 5000 | 263 | 83.3% |
+| 20000 | 267 | 84.8% |
+
+也就是說**真正的相似句大多有被 ES 找到，只是排在 500 名之外**。
+加大 `k` 就能補回來，而且 `k ≥ 2000` 時 ES 找到的總數還比 Manticore 多。
+
+### 已測試但無效的做法
+
+試過在 quorum 之上加一層 `match_phrase` 的 `rescore`（`slop: 50`）補回相鄰訊號，
+top 500 完全沒變 —— 18 個字的查詢在重排過的經文裡，slop 50 根本比對不到。
+要真的補回 proximity 得另外設計（例如 `intervals` 或 shingle 欄位），
+不在本期範圍。
+
+### 因此 `k` 的預設值由 500 調高為 2000（2026-09-10 確認）
+
+§H 第 2 項定案「接受，照搬」時，預期的是「順序會不同」；
+實測顯示預設值下**會漏掉 Manticore 找到的近一半結果**，前提已經不同，
+因此把 `SearchController::SIMILAR_K` 由 500 改為 2000。
+
+本機實測延遲（macOS，含 Rails 端的 Smith-Waterman）：
+
+| k | 本機 ES | `/dev` Manticore（含網路往返） |
+|---|---|---|
+| 500 | 0.28 ~ 0.39 秒 | 0.65 ~ 0.93 秒 |
+| 2000 | 1.07 ~ 1.28 秒 | 同上 |
+
+也就是說 `k=2000` 的延遲與使用者目前實際感受到的差不多，
+但結果的涵蓋率由 52% 提高到 76%，總筆數（492）也比 Manticore（438）多。
+
+### 其他驗證
+
+* 回傳欄位與舊版完全相同：`id, canon, category, work, title, juan,
+  creators_with_id, dynasty, linehead, content, score, highlight`，只少了除錯用的 `SQL`。
+  `position_in_juan` 只在內部使用，輸出前刪除。
+* `facet=1` 的五種 facet 結構與 `/dev` 逐項相同（只有 `hits`、沒有 `docs`，
+  與舊版的 `unless action_name == 'similar'` 一致）。
+* filter 全部正常：`canon`、`dynasty`、`time`、`creator`、`category`、`work`、`works`。
+* 參數檢查：`k=0`／`k=abc` 回 400、`k=100001` 回 400、`gain=-1`／`penalty=1` 回 400。
+* `rake 'elastic:verify_golden[http://localhost:3000]'`：**50 項中 46 項一致**。
+  4 項差異全部有明確歸因：
+
+  | 案例 | 狀況 |
+  |---|---|
+  | `aio_near2`／`aio_near3` | 本機 `data/kwic/sa` 只有 135 卷，KWIC 讀檔失敗。既有的環境資料缺口，與這次改動無關（第二期也是這兩項） |
+  | `similar_gatha`（210 → 249，+18.6%）／`similar_mind`（130 → 145，+11.5%） | 上述的 top k 候選差異。`k` 改成 2000 後方向由「少」轉為「多」，也就是 ES 找到的相似句比 Manticore 多。另外三個 similar 案例（`moon`／`filter`／`facet`）數字完全相同 |
+
+  其餘 44 項（text／notes／titles／variants）與第二期相同，
+  確認 `row_default` 這個共用改動沒有影響其他 index。
+
+## 效能實測（本機 macOS）
+
+| 項目 | 數字 |
+|---|---|
+| chunks index 匯入 | 4,585,113 筆 / 386 秒 / 1.6GB |
+| 四個 index 合計 | 約 3.5GB |
+
+## 後續可考慮（不在本期範圍）
+
+- [ ] 若要真正補回 Manticore 的 proximity 訊號（讓 `k` 可以降回來、延遲更低），
+      需另外設計候選階段的查詢（例如 `intervals` 或 shingle 欄位）。
+（`manticore:` rake namespace 與 `data/manticore-xml/` 資料夾的更名已在本期一併完成，見上。）

@@ -1,5 +1,20 @@
 %h1 更新紀錄
 
+%h2 2026-09 Version 5.2.0
+%ul
+  %li /search/similar 也改用 Elasticsearch，全文檢索後端全面由 Manticore 改為 Elasticsearch。
+  %li
+    /search/similar 第一階段取候選的相關度演算法隨之改變，
+    進入 Smith-Waterman 比對的候選不完全相同，結果順序與筆數與先前略有出入。
+  %li
+    修正 /search/similar：比對區域從區塊開頭起算或延伸到區塊結尾時，
+    原本一律捨棄，程式裡「卷首、卷尾除外」的例外從未生效；現已修正。
+    （實測 6 個範例查詢共 625 筆命中都沒落在這個情況，實務影響很小。）
+  %li
+    /search/similar 的 k 參數（第一階段取回的候選筆數）預設由 500 改為 2000，
+    結果比先前完整；k 必須大於 0，否則回傳 400 錯誤。
+  %li /search/similar 的結果不再回傳僅供除錯用的 SQL 欄位。
+
 %h2 2026-09 Version 5.1.0
 %ul
   %li /search/notes 與 /search/title 也改用 Elasticsearch。

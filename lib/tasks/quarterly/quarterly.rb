@@ -6,7 +6,7 @@ class Quarterly
   require_relative 'section-change-log'
   require_relative 'section-rdb'
   require_relative 'section-convert'
-  require_relative 'section-manticore'
+  require_relative 'section-search-xml'
   require_relative 'section-elastic'
   require_relative 'section-kwic'
   require_relative 'section-download-ebooks'
@@ -16,12 +16,9 @@ class Quarterly
     puts "Environment: #{Rails.env}"
     confirm("請先確認 Rails 環境 是否正確")
 
-    @data_dir = Rails.configuration.cb.manticore[:data]
     @work_dir = Rails.root.join('lib', 'tasks', 'quarterly')
     @section_count = 0
     @step_count = 0
-
-    @indexes = Rails.configuration.x.se.indexes
   end
 
   def run
@@ -34,7 +31,7 @@ class Quarterly
       run_section_change_log
       run_section_convert
       #run_section_sphinx
-      run_section_manticore
+      run_section_search_xml
       run_section_elastic
       run_section_kwic
       run_section_download_ebooks
@@ -83,7 +80,7 @@ class Quarterly
   include SectionRDB
   include SectionConvert
   #include SectionSphinx
-  include SectionManticore
+  include SectionSearchXml
   include SectionElastic
   include SectionKwic
   include SectionDownloadEbooks

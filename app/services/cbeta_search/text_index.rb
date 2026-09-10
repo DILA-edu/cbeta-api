@@ -1,5 +1,5 @@
 module CbetaSearch
-  # CBETA 全文 (text) index。匯入來源是 rake manticore:x2t 產出的 text.xml。
+  # CBETA 全文 (text) index。匯入來源是 rake search_xml:x2t 產出的 text.xml。
   #
   # 共用的 analyzer、similarity、匯入與 alias 切換見 IndexBase。
   class TextIndex < IndexBase

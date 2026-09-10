@@ -1,9 +1,8 @@
 module SectionElastic
-  # text / notes / titles 三個 Elasticsearch index。
+  # text / notes / titles / chunks 四個 Elasticsearch index。
   #
-  # 來源是 section_manticore 產出的 text.xml / notes.xml / titles.xml，
-  # 因此必須排在 manticore section 之後。
-  # chunks (search/similar) 仍由 Manticore 提供，見 doc/elasticsearch-migration.md。
+  # 來源是 section_convert 產出的 data/search-xml/*.xml，
+  # 因此必須排在 convert section 之後。見 doc/elasticsearch-migration.md。
   def run_section_elastic
     run_section 'Elasticsearch' do
       step_elastic_rebuild
@@ -16,7 +15,7 @@ module SectionElastic
     conf = Rails.configuration.x.elasticsearch
     release = Rails.configuration.cb.r.downcase
 
-    run_step "建立三個 index (#{release}) 並切換 alias (約 15 分鐘)" do
+    run_step "建立四個 index (#{release}) 並切換 alias (約 30 分鐘)" do
       confirm <<~MSG
         位址: #{conf.url}
 
@@ -64,7 +63,7 @@ module SectionElastic
     conf = Rails.configuration.x.elasticsearch
     release = Rails.configuration.cb.r.downcase
 
-    %w[text notes titles].map do |type|
+    %w[text notes titles chunks].map do |type|
       klass = "CbetaSearch::#{type.camelize}Index".constantize
       format('  %-7s %-32s alias: %-24s 來源: %s',
              type, klass.versioned_index_name(release),

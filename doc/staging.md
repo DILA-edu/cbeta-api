@@ -54,9 +54,10 @@ tables 建好後，再把 analytics 加回 database.yml。
 
     export RAILS_ENV=staging
 
-## manticore
+## Elasticsearch
 
-/etc/manticore3/manticore.conf
+連線設定在 `shared/config/cb.yml` 的 `elasticsearch:` 區塊，
+見 [elasticsearch-deploy.md](elasticsearch-deploy.md)。
 
 ## Runbook
 

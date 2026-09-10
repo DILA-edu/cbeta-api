@@ -1,6 +1,6 @@
 module CbetaSearch
   # 校勘條目、註解、夾注 (notes) index。
-  # 匯入來源是 rake manticore:notes 產出的 notes.xml。
+  # 匯入來源是 rake search_xml:notes 產出的 notes.xml。
   class NotesIndex < IndexBase
     # notes 每筆平均約 600 bytes，2,000 筆一批約 1.2MB。
     DEFAULT_BATCH_SIZE = 2_000

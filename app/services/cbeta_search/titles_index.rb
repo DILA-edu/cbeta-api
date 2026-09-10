@@ -1,5 +1,5 @@
 module CbetaSearch
-  # 佛典題名 (titles) index。匯入來源是 rake manticore:titles 產出的 titles.xml。
+  # 佛典題名 (titles) index。匯入來源是 rake search_xml:titles 產出的 titles.xml。
   #
   # 與其他 index 不同，這裡要的是「相關度」而不是「出現次數」，
   # 因此 content 主欄位掛預設的 BM25。

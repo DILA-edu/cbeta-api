@@ -1,7 +1,7 @@
 module CbetaSearch
   # Elasticsearch 搜尋，取代舊 SearchController 的 sphinx_* 方法。
   #
-  # 預設操作 text index，傳 index: 可切到 notes / titles
+  # 預設操作 text index，傳 index: 可切到 notes / titles / chunks
   # (見 CbetaSearch::IndexBase 的子類別)。
   #
   # term_hits 的來源：
@@ -12,7 +12,7 @@ module CbetaSearch
   #     與 Manticore ranker=wordcount 的語意相同。
   #   * NEAR / Exclude 查詢：intervals 的 _score 不是出現次數，
   #     由呼叫端 (SearchController#kwic_by_juan) 用 KwicService 逐卷計算。
-  #   * quorum 查詢 (search#title)：走 BM25 相關度，不算 term_hits。
+  #   * quorum 查詢 (search#title、search#similar)：走 BM25 相關度，不算 term_hits。
   class SearchService
     # facet 筆數上限，對應舊 SearchController::FACET_MAX
     FACET_MAX = 10_000
@@ -54,7 +54,8 @@ module CbetaSearch
     # 對應舊的 sphinx_search。
     # 回傳 { query_string:, time:, num_found:, total_term_hits:, cache_key:, results: }
     # results 各筆為 symbol key 的 Hash，欄位與舊 Manticore 回傳一致。
-    def search(query, params:, start: 0, rows: 20, field: nil, default_sort: nil, count_hits: true)
+    def search(query, params:, start: 0, rows: 20, field: nil, default_sort: nil, count_hits: true,
+               track_total_hits: true)
       field ||= default_field
       t1 = Time.now
       validate_window!(start, rows)
@@ -67,6 +68,9 @@ module CbetaSearch
       body['size'] = rows
       body['sort'] = @builder.sort(params, default: default_sort)
       body['track_scores'] = true
+      # search#similar 用不到精確的 num_found (最後會被 Smith-Waterman 過濾後的
+      # 筆數蓋掉)，在 4 百多萬筆的 chunks index 上精算總數是白花時間。
+      body['track_total_hits'] = false unless track_total_hits
 
       response = client.search(index:, body:)
       rows = response.dig('hits', 'hits').map { |hit| row_from_hit(hit, query) }
@@ -309,7 +313,9 @@ module CbetaSearch
       if index_class.row_term_hits? && query.es_countable?
         row[:term_hits] = term_hits_from_score(hit['_score'])
       end
-      index_class.row_fields.each { |key, field| row[key] = source[field] }
+      index_class.row_fields.each do |key, field|
+        row[key] = source.fetch(field) { index_class.row_default(field) }
+      end
       row
     end
   end

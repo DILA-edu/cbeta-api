@@ -1,9 +1,9 @@
-module Manticore
+module SearchXml
   class ConvertXmlToText
     def self.call(inline_notes:, arg:)
       src = Rails.application.config.cbeta_xml
       dest = inline_notes ? 'with-notes' : 'without-notes'
-      dest = Rails.root.join('data', "cbeta-txt-#{dest}-for-manticore")
+      dest = Rails.root.join('data', "cbeta-txt-#{dest}")
       puts "dest: #{dest}"
 
       if arg.nil?
@@ -15,7 +15,7 @@ module Manticore
 
       # 為了要讓在 CBETA Online 看到什麼就可以搜得到
       # 所以缺字處理採用預設值，也就是優先使用通用字
-      x2t = Manticore::P5aToText.new(src, dest, inline_notes:)
+      x2t = SearchXml::P5aToText.new(src, dest, inline_notes:)
       x2t.convert(arg)
     end
   end

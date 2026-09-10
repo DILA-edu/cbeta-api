@@ -1,25 +1,25 @@
 require 'cbeta_p5a_share'
 
-namespace :manticore do  
-  desc "轉出 xml for manticore search chunks"
+namespace :search_xml do  
+  desc "轉出 chunks.xml（供 Elasticsearch 的 chunks index 使用）"
   task :chunks => :environment do
     t1 = Time.now
-    ManticoreChunks.new.convert
+    SearchXmlChunks.new.convert
     puts ElapsedTime.label(t1)
   end
 end
 
-# 讀 CBETA XML，切塊，產生 xml 給 manticore 做 index
+# 讀 CBETA XML，切塊，產生 chunks.xml（xmlpipe2 格式）給 Elasticsearch 建 index
 
-require_relative 'manticore-share'
+require_relative 'search-xml-share'
 
-class ManticoreChunks
+class SearchXmlChunks
   MAX = 100 # 區塊 最長 長度
   OVERLAP = 50 # 前後區塊 重疊 字數
   CB_PRIORITY = %w[uni_char norm_uni_char norm_big5_char PUA] # 缺字 呈現 優先序
 
   def initialize
-    f = Rails.root.join('log', 'manticore-chunks.log')
+    f = Rails.root.join('log', 'search-xml-chunks.log')
     @log = File.open(f, 'w')
 
     @xml_root = Rails.application.config.cbeta_xml
@@ -30,7 +30,7 @@ class ManticoreChunks
 
   def convert
     @count = 0
-    folder = Rails.root.join('data', 'manticore-xml')
+    folder = Rails.root.join('data', 'search-xml')
     FileUtils.mkpath(folder)
     
     fn = Rails.root.join(folder, 'chunks.xml')
@@ -89,7 +89,7 @@ class ManticoreChunks
   
   def convert_sutra(xml_fn)
     @basename = File.basename(xml_fn, '.*')
-    puts "manticore-chunks.rb #{@basename}"
+    puts "search-xml-chunks #{@basename}"
     @first_juan = true
     @blocks = []
     @buf = []
@@ -263,5 +263,5 @@ class ManticoreChunks
   end
   
   include CbetaP5aShare
-  include ManticoreShare
+  include SearchXmlShare
 end

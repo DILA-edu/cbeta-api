@@ -20,7 +20,9 @@
   %tr
     %td k
     %td 選項
-    %td 第一階段使用 Manticore 模糊搜尋，取 top k 筆數。預設為 500.
+    %td
+      第一階段使用 Elasticsearch 模糊搜尋（至少一半的字命中即為候選，
+      再依相關度排序），取 top k 筆數。預設為 2000，必須大於 0。
   %tr
     %td gain
     %td 選項

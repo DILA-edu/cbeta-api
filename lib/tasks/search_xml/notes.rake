@@ -1,20 +1,20 @@
 require 'cbeta_p5a_share'
 require 'my_cbeta_share'
 
-namespace :manticore do  
-  desc "將註解（校注、夾注）轉為 XML 供 Manticore 建 Index"
+namespace :search_xml do  
+  desc "將註解（校注、夾注）轉為 XML 供 Elasticsearch 建 Index"
   task :notes, [:canon] => :environment do |t, args|
     t1 = Time.now
-    ManticoreNotes.new.convert(args[:canon])
+    SearchXmlNotes.new.convert(args[:canon])
     puts ElapsedTime.label(t1)
   end
 end
 
 require_relative '../html-node'
-require_relative 'manticore-share'
+require_relative 'search-xml-share'
 
-# 產生 manticore 所需的 xml 檔案
-class ManticoreNotes
+# 產生 notes.xml（xmlpipe2 格式），供 Elasticsearch 的 notes index 匯入
+class SearchXmlNotes
   # 內容不輸出的元素
   PASS = %w[anchor back figDesc mulu pb rdg sic teiHeader]
   
@@ -24,7 +24,7 @@ class ManticoreNotes
   private_constant :PASS, :MISSING
 
   def initialize
-    fn = Rails.root.join('log', 'manticore-notes.log')
+    fn = Rails.root.join('log', 'search-xml-notes.log')
     @log = File.open(fn, 'w')
 
     @xml_root = Rails.application.config.cbeta_xml
@@ -40,7 +40,7 @@ class ManticoreNotes
     @stat = Hash.new(0)
     @sphinx_doc_id = 0
 
-    fn = Rails.root.join('data', 'manticore-xml')
+    fn = Rails.root.join('data', 'search-xml')
     FileUtils.makedirs(fn)
     fn = File.join(fn, 'notes.xml')
     @fo = File.open(fn, 'w')
@@ -136,7 +136,7 @@ class ManticoreNotes
   
   def convert_sutra(xml_fn)
     @sutra_no = File.basename(xml_fn, ".xml")
-    print "\nmanticore-notes.rb #{@sutra_no}"
+    print "\nsearch-xml-notes #{@sutra_no}"
 
     @work_id = CBETA.get_work_id_from_file_basename(@sutra_no)
     w = Work.find_by n: @work_id
@@ -146,7 +146,7 @@ class ManticoreNotes
     before_parse_xml(xml_fn)
     return if @work_info.nil?
     @text = parse_xml(xml_fn)
-    write_notes_for_manticore
+    write_notes_xml
   end
   
   def convert_vol(vol)
@@ -449,7 +449,7 @@ class ManticoreNotes
     r
   end
 
-  def write_notes_for_manticore
+  def write_notes_xml
     all_notes = {}
     write_notes_mod(all_notes)
     write_notes_add(all_notes)
@@ -555,7 +555,7 @@ class ManticoreNotes
     s = @text[i, length]
     if s.nil?
       abort <<~MSG
-        \nError manticore-notes.rb 行號: #{__LINE__}
+        \nError search-xml-notes 行號: #{__LINE__}
         text size: #{@text.size}
         offset: #{i}
         note: #{note.inspect}
@@ -595,5 +595,5 @@ class ManticoreNotes
   end
 
   include CbetaP5aShare
-  include ManticoreShare
+  include SearchXmlShare
 end

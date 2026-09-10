@@ -1,8 +1,8 @@
 module CbetaSearch
   # 把 Query 與 API 參數組成 Elasticsearch query body。
   #
-  # filter 的語意完全對應舊 SearchController#set_filter，
-  # 排序對應 SearchController#init_order。
+  # filter 與排序的語意都沿用舊 SearchController 的 Manticore 版
+  # (set_filter / init_order，兩者都已隨 Manticore 一起移除)。
   #
   # 各 index 的 _source 欄位、可排序欄位、預設排序與 tiebreaker 由 index class
   # 提供 (見 CbetaSearch::IndexBase 的子類別)。
@@ -182,23 +182,30 @@ module CbetaSearch
       }
     end
 
-    # 模糊比對 (search#title)。舊版是 Manticore 的 quorum: MATCH('"逐 字 空 格"/3')。
-    #
-    # 實測 /dev: q 只有 1~2 字時 quorum 退化成「全部都要命中」而不是回 0 筆，
-    # 所以門檻取 [threshold, token 數].min。
+    # 模糊比對。舊版是 Manticore 的 quorum:
+    #   search#title   MATCH('"逐 字 空 格"/3')   → 整數門檻，至少 3 個字命中
+    #   search#similar MATCH('"<q>"/0.5')         → 比例門檻，至少一半的字命中
     #
     # 用 match 而不是 match_phrase: quorum 比對的是「有幾個字命中」，不管順序與相鄰。
     def quorum_match(field, query)
-      tokens = TextIndex.token_count(query.phrase)
-      threshold = [query.quorum || TitlesIndex::QUORUM_THRESHOLD, tokens].min
       {
         'match' => {
           field => {
             'query' => query.phrase,
-            'minimum_should_match' => threshold
+            'minimum_should_match' => minimum_should_match(query)
           }
         }
       }
+    end
+
+    # quorum 是字串時當成百分比原樣送給 Elasticsearch (例 "50%")；
+    # 是整數時取 [門檻, token 數].min —— 實測 /dev: q 只有 1~2 字時 Manticore 的
+    # quorum 退化成「全部都要命中」而不是回 0 筆。
+    def minimum_should_match(query)
+      quorum = query.quorum || TitlesIndex::QUORUM_THRESHOLD
+      return quorum if quorum.is_a?(String)
+
+      [quorum, TextIndex.token_count(query.phrase)].min
     end
 
     def filters(params)

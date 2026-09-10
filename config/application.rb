@@ -14,7 +14,7 @@ Bundler.require(*Rails.groups)
 #
 # 定義在這裡而不是 app/services: config/application.rb 執行時 autoload 還沒啟動。
 module CbetaEsAlias
-  TYPES = %i[text notes titles].freeze
+  TYPES = %i[text notes titles chunks].freeze
 
   def self.build(text_alias, overrides = {})
     TYPES.index_with { |type| overrides[type].presence || derive(text_alias, type) }.freeze
@@ -92,18 +92,10 @@ module CbData
     config.x.kwic.html = File.join(config.x.kwic.base, 'html')
     config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
 
-    # Search engine 相關 (Manticore)
-    # 2026 年起 text / notes / titles 三個 index 改由 Elasticsearch 提供，
-    # 只剩 chunks (search/similar) 仍走 Manticore。
-    # notes / titles 的 Manticore 設定保留一季作為回滾備援，
-    # 見 doc/elasticsearch-migration.md
-    config.x.se.indexes = %w[text notes titles chunks]
-    config.x.se.index_text   = "text#{config.cb.v}"
-    config.x.se.index_notes  = "notes#{config.cb.v}"
-    config.x.se.index_titles = "titles#{config.cb.v}"
-    config.x.se.index_chunks = "chunks#{config.cb.v}"
-
     # Elasticsearch
+    #
+    # 四個 index (text / notes / titles / chunks) 全部由 Elasticsearch 提供，
+    # Manticore 已退場，見 doc/elasticsearch-migration.md
     #
     # 連線設定優先讀 config/cb.yml (該檔 gitignored、每台機器一份)，
     # 其次讀環境變數，最後才用本機開發預設值。
@@ -118,7 +110,7 @@ module CbData
     # 重建完成後以 rake elastic:promote 原子切換 alias。
     #
     # index_alias 是 text index 的 alias，同時也是其他 index alias 的推導依據:
-    # cbeta_text_current → cbeta_notes_current / cbeta_titles_current
+    # cbeta_text_current → cbeta_notes_current / cbeta_titles_current / cbeta_chunks_current
     # (staging 是 cbeta_text_staging → cbeta_notes_staging …)。
     # 這讓既有的 cb.yml 不必改就能沿用；要各自指定時在 cb.yml 寫
     #   elasticsearch:
@@ -138,11 +130,12 @@ module CbData
       ENV.fetch('CBETA_ES_INDEX_NAME', config.x.elasticsearch.index_alias)
 
     # ES 匯入來源: 既有 Manticore 轉檔流程產出的 xmlpipe2 檔案
-    xml_dir = Rails.root.join('data', 'manticore-xml')
+    xml_dir = Rails.root.join('data', 'search-xml')
     config.x.elasticsearch.xml = {
       text: xml_dir.join('text.xml'),
       notes: xml_dir.join('notes.xml'),
-      titles: xml_dir.join('titles.xml')
+      titles: xml_dir.join('titles.xml'),
+      chunks: xml_dir.join('chunks.xml')
     }
     # 舊名，仍有文件與 rake 引數在用
     config.x.elasticsearch.text_xml = config.x.elasticsearch.xml[:text]

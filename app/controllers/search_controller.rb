@@ -12,14 +12,19 @@ require 'open3'
 class SearchController < ApplicationController
   include ApiKeyAuthentication
 
-  # 以下兩個常數只剩 search/similar (Manticore chunks index) 在用。
-  # facet 上限與 max_matches 在 Elasticsearch 版由 CbetaSearch::SearchService 決定。
-  RANKER = 'wordcount' # ranking by the keyword occurrences count.
-  SIMILAR_K = 500
+  # search/similar 第一階段 (Elasticsearch) 取回的候選筆數上限，可用 k 參數覆寫。
+  #
+  # 5.2.0 由 500 調高為 2000: 符合 quorum 的區塊動輒十萬筆，只有 top k 會進
+  # Smith-Waterman，因此「取哪 k 筆」幾乎決定了最終結果。Manticore 的
+  # proximity_bm25 把詞的相鄰程度算進分數，Lucene 的 BM25 不會，真正的相似句
+  # 常掉到 500 名之外 —— 實測 6 個範例查詢，k=500 只涵蓋 Manticore 結果的 52%，
+  # k=2000 涵蓋 76% 且總筆數還多一些。延遲 0.3 秒 → 1.1 秒，與舊版 Manticore 相當。
+  # 詳見 doc/elasticsearch-migration.md 的第三期實作結果。
+  SIMILAR_K = 2000
+  # search/similar 第二階段 (Smith-Waterman) 的最低分數，可用 score_min 參數覆寫。
   SCORE_MIN = 16
 
   before_action :init
-  after_action  :action_ending
   rescue_from Exception, with: :error_handler
 
   # Elasticsearch 相關錯誤回 502，且不回傳 backtrace（那會洩漏伺服器路徑），
@@ -285,20 +290,15 @@ class SearchController < ApplicationController
 
   # ===== Elasticsearch =====
   #
-  # text / notes / titles 三個 index 都走 Elasticsearch;
-  # 只剩 chunks (search/similar) 仍走 Manticore。
+  # text / notes / titles / chunks 四個 index 全部走 Elasticsearch。
   # 見 doc/elasticsearch-migration.md
-
-  # 需要 Manticore 連線的 action。similar 查的是 chunks index。
-  def manticore_needed?
-    action_name == 'similar'
-  end
 
   # 這個 action 主要查哪一個 Elasticsearch index。
   def es_index
     case action_name
-    when 'notes' then CbetaSearch::NotesIndex
-    when 'title' then CbetaSearch::TitlesIndex
+    when 'notes'   then CbetaSearch::NotesIndex
+    when 'title'   then CbetaSearch::TitlesIndex
+    when 'similar' then CbetaSearch::ChunksIndex
     when 'variants'
       params[:scope] == 'title' ? CbetaSearch::TitlesIndex : CbetaSearch::TextIndex
     else CbetaSearch::TextIndex
@@ -392,11 +392,6 @@ class SearchController < ApplicationController
     rows
   end
 
-  def action_ending
-    return if @manticore.nil?
-    @manticore.close
-  end
-  
   def add_work_info(rows)
     rows.each do |row|
       w = Work.find_by n: row[:work]
@@ -592,7 +587,6 @@ class SearchController < ApplicationController
 
   def init
     @referer_cn = referer_cn?
-    @max_matches = 999_999
 
     unless params.key? :q
       render plain: '缺少必要參數：q'
@@ -627,23 +621,17 @@ class SearchController < ApplicationController
 
     case action_name
     when 'similar'
-      @index = Rails.configuration.x.se.index_chunks
+      @similar_k = params.key?(:k) ? params[:k].to_i : SIMILAR_K
       @gain  = params.key?(:gain)  ? params[:gain].to_i : 2
       @penalty  = params.key?(:penalty)  ? params[:penalty].to_i : -1
+      raise CbetaError.new(400), 'k 參數 必須 > 0' if @similar_k < 1
       raise CbetaError.new(400), 'gain 參數 必須 >= 0' if @gain < 0
       raise CbetaError.new(400), 'penalty 參數 必須 <= 0' if @penalty > 0
-      set_filter
     when 'notes', 'title'
       # 回傳欄位固定 (見各自的 index class ROW_FIELDS)，不吃 fields 參數
     else
       init_fields
     end
-
-    # 只剩 similar 走 Manticore (chunks index)，見 doc/elasticsearch-migration.md
-    return unless manticore_needed?
-
-    @manticore = ManticoreService.new
-    @mysql_client = @manticore.open
   end
 
   # 回傳欄位的預設清單與順序 (text index 用)
@@ -863,196 +851,6 @@ class SearchController < ApplicationController
     @q = CbetaString.new(allow_digit: true).remove_puncs(@q)
   end
 
-  def set_filter
-    @filter = ''
-    set_filter_category
-    set_filter_creator
-    set_filter_canon    
-    
-    if params.key? :dynasty
-      s = params[:dynasty]
-      if s.include? ','
-        a = s.split(',')
-        a.map! { |x| "'#{x}'"}
-        @filter << " AND dynasty IN (%s)" % a.join(',')
-      else
-        @filter << " AND dynasty='#{s}'"
-      end
-    end
-    
-    if params.key? :time
-      s = params[:time]
-      if s.include? '..'
-        t1, t2 = s.split('..')
-        @filter << " AND time_from<=#{t2} AND time_to>=#{t1}"
-      else
-        @filter << " AND time_from<=#{s} AND time_to>=#{s}"
-      end
-    end
-    
-    if params.key? :work
-      @filter << " AND work='%s'" % params[:work]
-    end
-    
-    if params.key? :works
-      works = Set.new
-      params[:works].split(',').each do |w|
-        works << w
-      end
-      works = works.to_a
-      works.map! { |x| %('#{x}')}
-      @filter << " AND work IN (%s)" % works.join(',')
-    end
-
-    if params.key? :work_type
-      t = params[:work_type]
-      @filter << " AND work_type='#{t}'"
-    end
-  end
-
-  def set_filter_canon
-    if @referer_cn
-      a = Rails.configuration.cn_filter.map { |x| "'#{x}'" }
-      r = a.join(',')
-      @filter << " AND canon NOT IN (#{r})"
-    end
-
-    return unless params.key?(:canon) 
-    
-    s = params[:canon]
-    if s.include?(',')
-      a = s.split(',').map { |x| "'#{x}'"}
-      @filter << " AND canon IN (%s)" % a.join(',')
-    else
-      @filter << " AND canon='#{s}'"
-    end
-  end
-
-  # a,b+c,d 表示 (a OR b) AND (c OR d)
-  def set_filter_category
-    return unless params.key? :category
-    and_conditions = []
-    params[:category].split('+').each do |exp|
-      names = exp.split(',')
-      if names.size == 1
-        n = Category.get_n_by_name(exp)
-        and_conditions << "category_ids = #{n}"
-      else # 多值
-        set = Set.new
-        names.each do |name|
-          set << Category.get_n_by_name(name).to_s
-        end
-        and_conditions << "(category_ids IN (%s))" % set.to_a.join(',')
-      end
-    end
-
-    @filter += ' AND ' + and_conditions.join(' AND ')
-  end
-  
-  # a,b+c,d 表示 (a OR b) AND (c OR d)
-  def set_filter_creator
-    return unless params.key? :creator
-    and_conditions = []
-    params[:creator].split('+').each do |exp|
-      set = Set.new
-      exp.split(',').each do |c|
-        set << c.sub(/^A0*(\d+)$/, '\1')
-      end
-      s = set.to_a.join(',')
-      and_conditions << "creator_id IN (#{s})"
-    end
-
-    @filter += ' AND ' + and_conditions.join(' AND ')
-  end
-
-  def manticore_query(select)
-    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    r = @mysql_client.query(select, symbolize_keys: true)
-    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
-    sql = select.tr("\n", " ")[0, 2000]
-    Rails.logger.info("[Manticore] elapsed=#{elapsed.round(3)}s sql=#{sql}")
-    r
-  rescue Mysql2::Error::TimeoutError, Timeout::Error, Errno::ETIMEDOUT => e
-    logger.warn e
-    raise CbetaError.new(504), "Manticore query timeout: #{e.message}"
-  rescue
-    logger.fatal $!
-    logger.fatal "environment: #{Rails.env}"
-    logger.fatal "select: #{@select}"
-    raise
-  end
-
-  def manticore_search(user_args={})
-    args = user_args.with_defaults(
-      rows: @rows, 
-      ranker: RANKER,
-      order: '',
-      count_hits: true
-    )
-    t1 = Time.now
-
-    @select = %(
-      SELECT #{args[:fields]}
-      FROM #{@index} 
-      WHERE #{args[:where]} #{args[:order]} 
-      LIMIT #{args[:rows]} 
-      OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
-    ).gsub(/\s+/, " ").strip
-    
-    @select += " FACET #{args[:facet]}" if args.key?(:facet)
-    results = manticore_query(@select)
-
-    hits = results.to_a
-    return hits if @mode == 'group'
-    log_debug "#{__LINE__} hits size: #{hits.size}"
-    
-    #add_work_info(hits)
-    
-    if args.key?(:facet)
-      if @mysql_client.next_result
-        rows = @mysql_client.store_result
-        facet_result = rows.to_a
-        pp facet_result
-      end
-    end    
-    
-    results = manticore_query("SHOW META LIKE 'total_found%';")
-    
-    a = results.to_a
-    total_found = a[0][:Value].to_i
-    log_debug "#{__LINE__} total_found: #{total_found}"
-    
-    total_term_hits = nil
-    if args[:count_hits]
-      if total_found == 0
-        total_term_hits = 0
-      else
-        # ranker 如果是 proximity_bm25, 執行以下動作會當機
-        select2 = <<~SQL
-          SELECT sum(weight()) as sum FROM #{@index} 
-          WHERE #{args[:where]} 
-          OPTION ranker=#{args[:ranker]}, max_matches=#{@max_matches}
-        SQL
-        log_debug "#{__LINE__} 計算 total_term_hits: #{select2}"
-        r = manticore_query(select2)
-        total_term_hits = r.to_a[0][:sum]
-        log_debug "#{__LINE__} total_term_hits: #{total_term_hits}"
-      end
-    end
-    
-    r = {
-      query_string: @q,
-      SQL: @select,
-      time: Time.now - t1,
-      num_found: total_found,
-      cache_key: nil
-    }
-    r[:total_term_hits] = total_term_hits unless total_term_hits.nil?
-    r[:facet] = facet_result if args.key?(:facet)
-    r[:results] = hits
-    r
-  end
-
   def notes_highlight(r)
     q1 = params[:q].sub(/\A"(.*)"\z/, '\1') # 未去標點的 Query String
 
@@ -1096,32 +894,36 @@ class SearchController < ApplicationController
     log_debug "similar_sub"
     remove_puncs_from_query
     @canon_name = {}
-    @max_matches = params[:k] || SIMILAR_K
-    data = {
-      fields: 'id, canon, category, work, title, juan, creators_with_id, dynasty, linehead, content',
-      where: %{MATCH('"#{@q}"/0.5')} + @filter,
-      rows: @max_matches,
-      ranker: 'proximity_bm25',
-      count_hits: false
-    }
-    where = %{MATCH('"#{@q}"')} + @filter
 
-    r = manticore_search(data)
+    # 第一階段: Elasticsearch 用 quorum (一半的字命中) + BM25 相關度取 top k 候選。
+    # 舊版是 Manticore 的 MATCH('"<q>"/0.5') + ranker=proximity_bm25。
+    query = CbetaSearch::Query.new(
+      type: :quorum, raw: @q, phrase: @q,
+      quorum: CbetaSearch::ChunksIndex::QUORUM_RATIO
+    )
+    r = es_service(CbetaSearch::ChunksIndex).search(
+      query, params: es_params, start: 0, rows: @similar_k,
+      default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT,
+      count_hits: false, track_total_hits: false
+    )
     hits = r[:results]
 
+    # 第二階段: Smith-Waterman 逐筆比對、去重，再依 score 排序。
     log_debug "begin similar_smith_waterman"
     similar_smith_waterman(hits)
     log_debug "begin similar_rm_duplicate"
     similar_rm_duplicate(hits)
     hits.sort_by! { |x| -x[:score] }
 
-    r.delete(:total_term_hits)
+    # position_in_juan 只是 similar_smith_waterman 的判斷依據，不對外回傳。
+    hits.each { it.delete(:position_in_juan) }
+
     r[:num_found] = hits.size
 
     if params[:facet] == '1'
       r[:facet] = my_facet(r[:results])
     end
-    
+
     r
   end
 
@@ -1299,7 +1101,6 @@ class SearchController < ApplicationController
   def error_handler(e)
     logger.fatal $!
     logger.fatal "environment: #{Rails.env}"
-    logger.fatal "select: #{@select}"
     logger.fatal e.backtrace.join("\n")
 
     if e.is_a?(CbetaError) && e.code == 504
@@ -1313,7 +1114,6 @@ class SearchController < ApplicationController
     end
 
     r = empty_result
-    r[:select] = @select unless @select.nil?
     r[:error] = e.message
     r[:backtrace] = e.backtrace
     my_render r

@@ -8,7 +8,7 @@ CBETA XML 新一季定案後執行。
 
 * config
   * cb.yml (server 端，每個 slot 的 shared/config 各一份)
-    * git, v, r, r_prev, pub, manticore
+    * git, v, r, r_prev, pub, elasticsearch
     * ⚠️ api_origin_allowlist 不進版控，新 slot 容易漏掉
     * ⚠️ elasticsearch 區塊也不進版控；`index_alias` 必須與另一個角色不同
       （production `cbeta_text_current`、staging `cbeta_text_staging`），
@@ -61,9 +61,9 @@ https://rubygems.org/gems/cbeta
 * 更新、取得 Github Repositories, 參考 update-github.md
 * Prepare Data Files, 參考 prepare-files.md
 * 資料初始化, 根據 doc/setup.md 做設定
-* Manticore index（只有 chunks 還在用，給 `search/similar`；
-  text / notes / titles 過渡期內也仍會建，作為回滾備援）
-* Elasticsearch 的 text / notes / titles 三個 index，
+* 全文檢索用的 XML（`search_xml:x2t` / `t2x` / `notes` / `titles` / `chunks`），
+  輸出到 `data/search-xml`。格式仍是 xmlpipe2，但 Manticore 本身已退場
+* Elasticsearch 的 text / notes / titles / chunks 四個 index，
   參考 [elasticsearch-deploy.md](elasticsearch-deploy.md)
 * 匯入異體字（`rake import:vars`）—— 排在 Elasticsearch 之後，
   因為過濾條件要查 ES 的 text index
@@ -135,32 +135,24 @@ grep -E "^\s+v:" /var/www/cbapi?/shared/config/cb.yml   # 各 slot 的季號
 也要確認 Apache 的 `cbdata-sub.conf` 只有 `stable_path` 與 `dev_path` 兩個掛載點，
 沒有其他路徑指向要清掉的 slot。
 
-### Manticore 舊季 index
+### Manticore 殘留（一次性清理）
 
-`manticore.conf` 是 `/etc/manticore3/base.conf` 加上所有 `[123]-*.conf` merge 而成
-（見 `lib/tasks/manticore/conf.rake`），所以移除舊季只要刪掉它的 conf 片段再重新 merge。
-
-**併進季度流程做最省事** —— 那時本來就要重新產生 conf 並 restart 容器，
-不必為了清理再中斷一次 production 的搜尋。以清掉 r1 為例：
+5.2.0 起 Rails 完全不連 Manticore（見
+[elasticsearch-migration.md](elasticsearch-migration.md)）。確認四個 ES index
+都正常之後，這些東西可以一次清掉，之後每季就不必再做：
 
 ```sh
-# 1. 刪掉舊季的 conf 片段
-rm /etc/manticore3/1-*.conf
+# 1. 停容器
+docker compose -f /home/ray/manticore3/compose.yaml down
 
-# 2. 重新 merge（rake quarterly 的「manticore configuration」那一步就會做）
-RAILS_ENV=staging bundle exec rake manticore:conf
-grep -c "text1" /etc/manticore3/manticore.conf     # 應為 0
+# 2. 確認 /search、/search/notes、/search/title、/search/similar 都正常
 
-# 3. restart 容器讓 conf 生效（搜尋會中斷數秒）
-docker compose -f /home/ray/manticore3/compose.yaml restart
-
-# 4. 確認還在服務的 index 正常，才刪資料檔（r1 約 7.4GB）
-docker exec manticore3 mysql -h0 -P9306 -e "SHOW TABLES;"
-sudo rm -rf /var/lib/manticore3/r1-*
+# 3. 刪資料檔（每季一份，各約 7.4GB）與設定
+sudo rm -rf /var/lib/manticore3
+sudo rm -rf /etc/manticore3
 ```
 
-⚠️ 順序不能顛倒：先刪資料檔，searchd 會對著已載入卻已消失的檔案運作。
-⚠️ `/var/lib/manticore3/data` 不能刪。
+`shared/config/cb.yml` 的 `manticore:` 區塊也可以刪掉，已經沒有程式在讀。
 
 ### Elasticsearch 舊季 index
 

@@ -64,11 +64,10 @@ gem "haml-rails"
 gem 'time_diff'
 #gem 'zhongwen_tools'
 gem 'chronic_duration'
-gem 'mysql2'
 
 # Elasticsearch: 2026 年起取代 Manticore 作為全文檢索後端。
-# 過渡期兩個後端並存（text index 走 ES，notes/titles/chunks 仍走 Manticore），
-# 見 doc/elasticsearch-migration.md。
+# text / notes / titles / chunks 四個 index 全部走 ES，Manticore 已退場
+# （mysql2 是 Manticore 的連線用的，一併移除），見 doc/elasticsearch-migration.md。
 gem 'elasticsearch', '~> 9.4'
 
 group :production do

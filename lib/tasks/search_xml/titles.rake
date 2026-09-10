@@ -1,17 +1,17 @@
-namespace :manticore do
-  desc "轉出 xml for manticore search title"
+namespace :search_xml do
+  desc "轉出 titles.xml（供 Elasticsearch 的 titles index 使用）"
   task :titles => :environment do
-    ManticoreTitles.new.run
+    SearchXmlTitles.new.run
   end
 end
 
-require_relative 'manticore-share'
+require_relative 'search-xml-share'
 
 # 讀 Work model，產生 xml 給搜尋引擎做 index。
 # 目前的消費者是 Elasticsearch 的 titles index（見 CbetaSearch::TitlesIndex），
-# Manticore 的 titles index 保留一季作為回滾備援。
-class ManticoreTitles
-  include ManticoreShare
+# 產生 titles.xml，供 Elasticsearch 的 titles index 匯入。
+class SearchXmlTitles
+  include SearchXmlShare
 
   # get_info_from_work 回傳的欄位裡，titles index 用不到的。
   # title 也排除: 經名在這裡是被搜尋的 content 欄位，不另存一份。
@@ -24,7 +24,7 @@ class ManticoreTitles
   def run
     @id = 0
     
-    folder = Rails.root.join('data', 'manticore-xml')
+    folder = Rails.root.join('data', 'search-xml')
     FileUtils.mkpath(folder)
     
     fn = Rails.root.join(folder, 'titles.xml')

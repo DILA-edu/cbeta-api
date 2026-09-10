@@ -199,6 +199,25 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
     end
   end
 
+  # search#similar 舊版是 Manticore 的 quorum: MATCH('"<q>"/0.5')
+  test 'quorum: 比例門檻原樣送給 Elasticsearch' do
+    builder = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::ChunksIndex)
+    q = '諸惡莫作眾善奉行'
+    query = CbetaSearch::Query.new(type: :quorum, raw: q, phrase: q,
+                                   quorum: CbetaSearch::ChunksIndex::QUORUM_RATIO)
+
+    assert_equal({ 'match' => { 'content' => { 'query' => q,
+                                               'minimum_should_match' => '50%' } } },
+                 builder.match_query(query, field: 'content'))
+  end
+
+  # chunks.xml 沒有 canon_order，tiebreaker 用 ES 內建的 _doc
+  test 'chunks: 預設排序是相關度，tiebreaker 是 _doc' do
+    builder = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::ChunksIndex)
+
+    assert_equal %w[_score _doc], builder.sort({}).flat_map(&:keys)
+  end
+
   # 少了外層的 script_score，Elasticsearch 在大 index 上會少算 total_term_hits
   # （bool 有多個計分子句時走 block-max WAND，部分文件只算到一個子句）。
   test 'bool 查詢外面一定要包一層 identity script_score' do

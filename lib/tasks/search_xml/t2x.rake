@@ -1,15 +1,15 @@
-namespace :manticore do  
+namespace :search_xml do  
   desc "txt 轉 xml"
   task :t2x => :environment do
-    ManticoreT2X.new.convert
+    SearchXmlT2X.new.convert
   end
 end
 
-# 讀純文字檔，產生 xml 給 manticore 做 index
+# 讀純文字檔，產生 text.xml（xmlpipe2 格式）給 Elasticsearch 建 index
 
-require_relative 'manticore-share'
+require_relative 'search-xml-share'
 
-class ManticoreT2X
+class SearchXmlT2X
   def initialize
     @cbeta = CBETA.new
     @dynasty_labels = read_dynasty_labels
@@ -19,14 +19,14 @@ class ManticoreT2X
   def convert
     @id = 0
     
-    folder = Rails.root.join('data', 'manticore-xml')
+    folder = Rails.root.join('data', 'search-xml')
     FileUtils.mkpath(folder)
     
     fn = Rails.root.join(folder, 'text.xml')
     @f_wo = open_xml(fn)
     
-    @src  = Rails.root.join('data', "cbeta-txt-with-notes-for-manticore")
-    @src2 = Rails.root.join('data', "cbeta-txt-without-notes-for-manticore")
+    @src  = Rails.root.join('data', "cbeta-txt-with-notes")
+    @src2 = Rails.root.join('data', "cbeta-txt-without-notes")
     Dir.entries(@src).sort.each do |f|
       next if f.start_with? '.'
       convert_canon(f)
@@ -44,7 +44,7 @@ class ManticoreT2X
   end
 
   def convert_canon(canon)
-    puts "manticore t2x: #{canon}"
+    puts "search_xml t2x: #{canon}"
     @canon = canon
     @canon_order = CBETA.get_sort_order_from_canon_id(canon)
     folder = File.join(@src, canon)
@@ -77,7 +77,7 @@ class ManticoreT2X
   end
   
   def convert_vol(vol)
-    puts "manticore t2x #{vol}"
+    puts "search_xml t2x #{vol}"
     @vol = vol
     folder = File.join(@src, @canon, vol)
     Dir.entries(folder).sort.each do |f|
@@ -139,5 +139,5 @@ class ManticoreT2X
     f.puts s
   end
 
-  include ManticoreShare
+  include SearchXmlShare
 end

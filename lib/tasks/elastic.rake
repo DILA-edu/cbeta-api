@@ -1,12 +1,13 @@
 # Elasticsearch index 的建立、匯入與 alias 切換。
 #
-# <type> 是 text / notes / titles 其中之一 (省略時為 text)。
+# <type> 是 text / notes / titles / chunks 其中之一 (省略時為 text)。
 # 見 doc/elasticsearch-migration.md
 namespace :elastic do
   INDEX_CLASSES = {
     'text' => 'CbetaSearch::TextIndex',
     'notes' => 'CbetaSearch::NotesIndex',
-    'titles' => 'CbetaSearch::TitlesIndex'
+    'titles' => 'CbetaSearch::TitlesIndex',
+    'chunks' => 'CbetaSearch::ChunksIndex'
   }.freeze
   desc '啟動本機 Elasticsearch (Docker Compose)'
   task :start do
@@ -91,7 +92,7 @@ namespace :elastic do
     rebuild_one(type, index_name, args[:xml_path].presence)
   end
 
-  desc '一次重建三個 index，例：rake elastic:rebuild_all[2026r3]'
+  desc '一次重建四個 index，例：rake elastic:rebuild_all[2026r3]'
   task :rebuild_all, [:release, :serial] => :environment do |_task, args|
     release = args[:release].presence or abort "請指定季號，例：rake 'elastic:rebuild_all[2026r3]'"
     serial = args[:serial].presence || '001'
@@ -105,7 +106,7 @@ namespace :elastic do
   desc '檢查 analyzer 輸出，例：rake elastic:analyze[阿含]'
   task :analyze, [:text] => :environment do |_task, args|
     text = args[:text].presence || '阿含'
-    # 三個 index 的 analyzer 定義相同，用哪一個問都一樣
+    # 四個 index 的 analyzer 定義相同，用哪一個問都一樣
     tokens = CbetaSearch::TextIndex.new.analyze(text).fetch('tokens').map { it.fetch('token') }
     puts "#{tokens.size} tokens: #{tokens.join('|')}"
   end
@@ -158,7 +159,7 @@ namespace :elastic do
     puts
     puts "一致 #{same} / #{GOLDEN_CASES.size}"
     puts "不一致: #{diff.join(', ')}" if diff.any?
-    puts '註: 若本機 data/manticore-xml/*.xml 與 golden 來源不同季，差異會落在資料版本上。'
+    puts '註: 若本機 data/search-xml/*.xml 與 golden 來源不同季，差異會落在資料版本上。'
   end
 
   # 驗收用的查詢清單。涵蓋對外承諾的 7 種查詢語法、各個 filter、排序與 facet。
@@ -203,10 +204,10 @@ namespace :elastic do
     ['notes_and',          'search/notes',        { q: '"法鼓" "印順"' }],
     ['notes_or',           'search/notes',        { q: '"波羅蜜" | "波羅密"' }],
     ['notes_not',          'search/notes',        { q: '"迦葉" !"迦葉佛"' }],
-    # 這一項預期會 DIFF: ES 的 NEAR 是「相隔 <= n 字」(與說明頁及 KwicService 一致)，
-    # Manticore 是「相隔 < n 字」，實測 ES(n) 恆等於 Manticore(n+1)。
-    # 另外 intervals 的 _score 不是出現次數，所以也沒有 total_term_hits。
-    # 見 doc/elasticsearch-migration.md 的 F-1 第 3b 項。
+    # NEAR 的距離邊界在 5.1.0 改成「相隔 <= n 字」(與說明頁及 KwicService 一致)，
+    # 比 Manticore 的「相隔 < n 字」多一個字；intervals 的 _score 不是出現次數，
+    # 所以也沒有 total_term_hits。見 doc/elasticsearch-migration.md 的 F-1 第 3b 項。
+    # /dev 已在 5.1.0，這一項的 golden 因此是新行為，不再預期 DIFF。
     ['notes_near',         'search/notes',        { q: '"阿含" NEAR/5 "迦葉"' }],
     ['notes_filter_canon', 'search/notes',        { q: '"法鼓"', canon: 'T' }],
     ['notes_facet',        'search/notes',        { q: '"法鼓"', facet: '1' }],
@@ -220,11 +221,94 @@ namespace :elastic do
     ['title_5char',        'search/title',        { q: '觀無量壽經' }],
     ['title_long',         'search/title',        { q: '大般若波羅蜜多經' }],
     ['variants_text',      'search/variants',     { q: '著衣持鉢' }],
-    ['variants_title',     'search/variants',     { q: '神咒', scope: 'title' }]
+    ['variants_title',     'search/variants',     { q: '神咒', scope: 'title' }],
+
+    # --- 第三期: chunks index (search/similar) ---
+    # 這幾項預期會 DIFF。/dev 的 similar 還是 Manticore (5.1.0 只搬到 titles)，
+    # 因此 golden 是貨真價實的 Manticore 基準。第一階段的 top k 候選由
+    # 「Manticore quorum + proximity_bm25」換成「Elasticsearch quorum + Lucene BM25」，
+    # 兩種相關度演算法本來就不同，進入 Smith-Waterman 的 500 筆候選不會完全一樣
+    # (已定案接受，見 §H 第 2 項)。另外「卷首／卷尾除外」的判斷在舊版是失效的
+    # (position_in_juan 沒被 SELECT)，這次一併修正，結果會比舊版多幾筆。
+    # 逐筆比對沒有意義，量化差異請用 rake elastic:compare_similar。
+    ['similar_gatha',      'search/similar',      { q: '諸惡莫作，眾善奉行，自淨其意，是諸佛教' }],
+    ['similar_mind',       'search/similar',      { q: '若人欲了知，三世一切佛，應觀法界性，一切唯心造' }],
+    ['similar_moon',       'search/similar',      { q: '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。' }],
+    ['similar_filter',     'search/similar',      { q: '是日已過，命亦隨減，如少水魚，斯有何樂', canon: 'T' }],
+    ['similar_facet',      'search/similar',      { q: '斷愛欲，轉諸結，慢無間等，究竟苦邊', facet: '1' }]
   ].freeze
 
   # 只保留穩定、可比對的欄位，避免 fixture 太大或被無關變動影響。
-  GOLDEN_RESULT_FIELDS = %w[work juan term_hits q hits].freeze
+  GOLDEN_RESULT_FIELDS = %w[work juan term_hits q hits linehead].freeze
+
+  desc '比較兩個環境的 search/similar 結果重疊率，' \
+       '例：rake \'elastic:compare_similar[https://cbdata.dila.edu.tw/dev,http://localhost:3000]\''
+  task :compare_similar, %i[base_a base_b] => :environment do |_task, args|
+    require 'faraday'
+    base_a = args[:base_a].presence || 'https://cbdata.dila.edu.tw/dev'
+    base_b = args[:base_b].presence || 'http://localhost:3000'
+    puts "A (基準): #{base_a}"
+    puts "B (本機): #{base_b}"
+    puts
+
+    totals = { a: 0, b: 0, both: 0 }
+    SIMILAR_QUERIES.each do |q|
+      a = fetch_similar_keys(base_a, q)
+      b = fetch_similar_keys(base_b, q)
+      next puts format('  %-24s 取得失敗', q.first(12)) if a.nil? || b.nil?
+
+      both = (a & b).size
+      totals[:a] += a.size
+      totals[:b] += b.size
+      totals[:both] += both
+      puts format('  %-14s A=%-4d B=%-4d 交集=%-4d 重疊率=%s',
+                  "#{q.first(12)}…", a.size, b.size, both,
+                  overlap_ratio(both, a.size, b.size))
+    end
+
+    puts
+    puts format('  合計          A=%-4d B=%-4d 交集=%-4d 重疊率=%s',
+                totals[:a], totals[:b], totals[:both],
+                overlap_ratio(totals[:both], totals[:a], totals[:b]))
+    puts
+    puts <<~MSG
+      重疊率 = 2 × 交集 / (A + B)。
+      第一階段的候選由 Manticore proximity_bm25 換成 Lucene BM25，
+      進入 Smith-Waterman 的 top k 不會完全相同，差異無法消除，
+      見 doc/elasticsearch-migration.md 的 §F-3 與第三期實作結果。
+    MSG
+  end
+
+  # compare_similar 用的查詢，取自說明頁 search_similar 的範例。
+  SIMILAR_QUERIES = [
+    '已得善提捨不證',
+    '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。',
+    '諸惡莫作，眾善奉行，自淨其意，是諸佛教',
+    '斷愛欲，轉諸結，慢無間等，究竟苦邊',
+    '若人欲了知，三世一切佛，應觀法界性，一切唯心造',
+    '是日已過，命亦隨減，如少水魚，斯有何樂'
+  ].freeze
+
+  # 一筆結果的識別: 同一個區塊在兩邊的 id 不同 (index 重建過)，
+  # 但 work + juan + linehead 唯一決定它在藏經裡的位置。
+  def fetch_similar_keys(base, q)
+    sleep GOLDEN_REQUEST_INTERVAL
+    response = Faraday.get("#{base}/search/similar", q:, cache: '0')
+    return nil unless response.success?
+
+    data = JSON.parse(response.body)
+    Array(data['results']).map { |row| [row['work'], row['juan'], row['linehead']] }.to_set
+  rescue StandardError => e
+    puts "    #{e.class}: #{e.message}"
+    nil
+  end
+
+  def overlap_ratio(both, size_a, size_b)
+    total = size_a + size_b
+    return 'n/a' if total.zero?
+
+    format('%.1f%%', 200.0 * both / total)
+  end
 
   # 固定檔名。季號不放進檔名: 各環境的 cb.yml 季號不同
   # （production 2026R2、staging 2026R3），用 cb.r 命名會與資料來源不符。

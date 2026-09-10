@@ -1,7 +1,7 @@
 require 'cbeta_p5a_share'
 require 'my_cbeta_share'
 
-module Manticore
+module SearchXml
   # Convert CBETA XML P5a to Text
   #
   # CBETA XML P5a 可由此取得: https://github.com/cbeta-git/xml-p5a
@@ -332,7 +332,7 @@ module Manticore
     end
 
     def handle_vol(vol)
-      $stderr.puts "manticore x2t #{vol}"
+      $stderr.puts "search_xml x2t #{vol}"
 
       @canon = CBETA.get_canon_from_vol(vol)
       @orig = @cbeta.get_canon_symbol(@canon)

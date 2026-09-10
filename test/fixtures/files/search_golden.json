@@ -978,8 +978,7 @@
     ]
   },
   "notes_near": {
-    "num_found": 3,
-    "total_term_hits": 3,
+    "num_found": 4,
     "results": [
       {
         "work": "T2145",
@@ -988,6 +987,10 @@
       {
         "work": "T2145",
         "juan": 4
+      },
+      {
+        "work": "T2154",
+        "juan": 15
       },
       {
         "work": "N0006",
@@ -1077,23 +1080,23 @@
     "num_found": 2272,
     "results": [
       {
-        "work": "ZW0095",
+        "work": "T0070",
         "juan": 1
       },
       {
-        "work": "ZW0092",
+        "work": "T0082",
         "juan": 1
       },
       {
-        "work": "ZW0091",
-        "juan": 4
-      },
-      {
-        "work": "ZW0039",
+        "work": "T0087",
         "juan": 1
       },
       {
-        "work": "ZW0037",
+        "work": "T0154",
+        "juan": 5
+      },
+      {
+        "work": "T2914",
         "juan": 1
       }
     ]
@@ -1115,23 +1118,23 @@
     "num_found": 51,
     "results": [
       {
-        "work": "X0411",
-        "juan": 3
-      },
-      {
-        "work": "X0413",
-        "juan": 2
-      },
-      {
-        "work": "X0410",
+        "work": "T1749",
         "juan": 1
       },
       {
-        "work": "X0406",
+        "work": "T1750",
         "juan": 1
       },
       {
         "work": "T1752",
+        "juan": 1
+      },
+      {
+        "work": "T1753",
+        "juan": 4
+      },
+      {
+        "work": "T2760",
         "juan": 1
       }
     ]
@@ -1140,23 +1143,23 @@
     "num_found": 248,
     "results": [
       {
-        "work": "T1695",
-        "juan": 3
-      },
-      {
         "work": "T0220",
         "juan": 600
       },
       {
-        "work": "T0994",
+        "work": "T0251",
         "juan": 1
       },
       {
-        "work": "T1709",
-        "juan": 3
+        "work": "T0253",
+        "juan": 1
       },
       {
-        "work": "T1514",
+        "work": "T0254",
+        "juan": 1
+      },
+      {
+        "work": "T0255",
         "juan": 1
       }
     ]
@@ -1189,8 +1192,158 @@
       }
     ]
   },
+  "similar_gatha": {
+    "num_found": 210,
+    "results": [
+      {
+        "work": "B0006",
+        "juan": 1,
+        "linehead": "B06n0006_p0290b14"
+      },
+      {
+        "work": "X0743",
+        "juan": 1,
+        "linehead": "X44n0743_p0337b17"
+      },
+      {
+        "work": "G2590",
+        "juan": 9,
+        "linehead": "G155n2590_p0489a12"
+      },
+      {
+        "work": "T0125",
+        "juan": 1,
+        "linehead": "T02n0125_p0551a10"
+      },
+      {
+        "work": "T0210",
+        "juan": 2,
+        "linehead": "T04n0210_p0567a28"
+      }
+    ]
+  },
+  "similar_mind": {
+    "num_found": 130,
+    "results": [
+      {
+        "work": "JB241",
+        "juan": 5,
+        "linehead": "J29nB241_p0591a01"
+      },
+      {
+        "work": "JB044",
+        "juan": 3,
+        "linehead": "J19nB044_p0182b15"
+      },
+      {
+        "work": "JB277",
+        "juan": 1,
+        "linehead": "J32nB277_p0573a16"
+      },
+      {
+        "work": "ZW0068",
+        "juan": 1,
+        "linehead": "ZW08n0068_p0087a19"
+      },
+      {
+        "work": "X1474",
+        "juan": 1,
+        "linehead": "X74n1474_p0374b14"
+      }
+    ]
+  },
+  "similar_moon": {
+    "num_found": 28,
+    "results": [
+      {
+        "work": "T1736",
+        "juan": 83,
+        "linehead": "T36n1736_p0653c11"
+      },
+      {
+        "work": "Y0012",
+        "juan": 1,
+        "linehead": "Y12n0012_p0032a10"
+      },
+      {
+        "work": "Y0040",
+        "juan": 1,
+        "linehead": "Y42n0040_p0032a10"
+      },
+      {
+        "work": "T1733",
+        "juan": 7,
+        "linehead": "T35n1733_p0237c05"
+      },
+      {
+        "work": "X0638",
+        "juan": 33,
+        "linehead": "X34n0638_p0874a04"
+      }
+    ]
+  },
+  "similar_filter": {
+    "num_found": 13,
+    "results": [
+      {
+        "work": "T0212",
+        "juan": 3,
+        "linehead": "T04n0212_p0621c11"
+      },
+      {
+        "work": "T0212",
+        "juan": 2,
+        "linehead": "T04n0212_p0616b09"
+      },
+      {
+        "work": "T2121",
+        "juan": 48,
+        "linehead": "T53n2121_p0257c08"
+      },
+      {
+        "work": "T0212",
+        "juan": 3,
+        "linehead": "T04n0212_p0621b22"
+      },
+      {
+        "work": "T2122",
+        "juan": 48,
+        "linehead": "T53n2122_p0651b01"
+      }
+    ]
+  },
+  "similar_facet": {
+    "num_found": 30,
+    "results": [
+      {
+        "work": "Y0030",
+        "juan": 7,
+        "linehead": "Y32n0030_p0735a15"
+      },
+      {
+        "work": "T0099",
+        "juan": 37,
+        "linehead": "T02n0099_p0268b05"
+      },
+      {
+        "work": "Y0030",
+        "juan": 3,
+        "linehead": "Y31n0030_p0111a10"
+      },
+      {
+        "work": "T0099",
+        "juan": 15,
+        "linehead": "T02n0099_p0104b21"
+      },
+      {
+        "work": "T0099",
+        "juan": 17,
+        "linehead": "T02n0099_p0119b18"
+      }
+    ]
+  },
   "_meta": {
     "source": "https://cbdata.dila.edu.tw/dev",
-    "fetched_at": "2026-09-10T13:59:55+08:00"
+    "fetched_at": "2026-09-10T15:58:13+08:00"
   }
 }

@@ -1,11 +1,11 @@
 module CbetaSearch
   # 各個 Elasticsearch index 的共同基底：analyzer、similarity、建立、匯入、alias 切換。
   #
-  # 子類別（TextIndex / NotesIndex / TitlesIndex）只需宣告
+  # 子類別（TextIndex / NotesIndex / TitlesIndex / ChunksIndex）只需宣告
   # key、mapping 與各自的欄位／排序設定，見 doc/elasticsearch-migration.md。
   #
-  # 匯入來源一律是既有 Manticore 轉檔流程產出的 data/manticore-xml/*.xml，
-  # 與 Manticore 完全同源，因此搜尋結果的一致性最高。
+  # 匯入來源一律是 rake search_xml:* 產出的 data/search-xml/*.xml —— 與舊 Manticore
+  # 流程完全同一份轉檔輸出，因此搜尋結果的一致性最高。
   class IndexBase
     # 「score = 詞頻」的 scripted similarity。
     # 這是取代 Manticore ranker=wordcount 的關鍵: phrase 查詢每份文件的
@@ -25,7 +25,7 @@ module CbetaSearch
     # 也不能用純 ngram(1,1): 那會讓拉丁文逐字元切開，搜「Ananda」會誤中
     # 「Pannananda」「Śikṣānanda」等較長字的子字串 (實測比 Manticore 多出 14 卷)。
     #
-    # 四個 manticore-template-*.conf 的 charset_table / ngram 設定逐字相同，
+    # 舊 Manticore 四個 index 的 charset_table / ngram 設定逐字相同，
     # 因此這一套 analyzer 四個 index 共用。
     #
     # 拉丁字母範圍: ASCII、Latin-1 Supplement (排除 × ÷ 兩個符號)、
@@ -78,7 +78,7 @@ module CbetaSearch
         self::DEFAULT_BATCH_SIZE
       end
 
-      # ManticoreXmlReader 的欄位型別轉換設定
+      # XmlpipeReader 的欄位型別轉換設定
       def integer_fields = [].freeze
       def array_integer_fields = [].freeze
 
@@ -110,6 +110,14 @@ module CbetaSearch
 
       # 是否在單筆結果附上 term_hits (舊版的 weight())
       def row_term_hits? = false
+
+      # xmlpipe2 的欄位是選填的: 例如沒有作譯者的典籍，chunks.xml 裡就不會有
+      # <creators_with_id>。Manticore 對缺少的 attribute 會回空字串 (uint 回 0)，
+      # Elasticsearch 則是 _source 裡根本沒有這個欄位。
+      # 為了讓 JSON 輸出與舊版一致 (實測 /dev 的 search/similar 回 "")，補回預設值。
+      def row_default(field)
+        integer_fields.include?(field) ? 0 : ''
+      end
     end
 
     attr_reader :client
@@ -128,7 +136,7 @@ module CbetaSearch
 
     # 匯入 Manticore xmlpipe2 XML。回傳匯入筆數。
     def import!(xml_path: self.class.xml_path, index_name: index_alias, batch_size: self.class.batch_size)
-      reader = ManticoreXmlReader.new(
+      reader = XmlpipeReader.new(
         xml_path,
         integer_fields: self.class.integer_fields,
         array_integer_fields: self.class.array_integer_fields
