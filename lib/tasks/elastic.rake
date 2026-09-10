@@ -27,9 +27,7 @@ namespace :elastic do
 
     client = CbetaSearch::ElasticClient.build
     puts "\nindices:"
-    client.cat.indices(index: 'cbeta_*', v: true, h: 'index,docs.count,store.size,health').each_line do |line|
-      puts "  #{line}"
-    end
+    print_indices(client)
     puts "\naliases:"
     aliases = client.indices.get_alias(name: conf.index_alias, ignore_unavailable: true)
     if aliases.empty?
@@ -38,7 +36,7 @@ namespace :elastic do
       aliases.each_key { |index| puts "  #{conf.index_alias} -> #{index}" }
     end
   rescue StandardError => e
-    abort "無法連線 Elasticsearch (#{conf.url})：#{e.message}"
+    abort "讀取 Elasticsearch 資訊失敗 (#{conf.url})：#{e.class}: #{e.message}"
   end
 
   desc '建立 text index，例：rake elastic:create_index[cbeta_text_2026r1_001]'
@@ -251,6 +249,30 @@ namespace :elastic do
     end
 
     { same:, message: same ? '一致' : messages.join('; ') }
+  end
+
+  # cat API 的回傳格式依 server 而異 (text 或 JSON)，所以固定要 JSON 自己排版，
+  # 不要直接把回傳值當字串處理。
+  INDEX_COLUMNS = %w[index docs.count store.size health].freeze
+
+  def print_indices(client)
+    # 回傳值是 Elasticsearch::API::Response，取 body 才拿得到真正的 Array。
+    rows = client.cat.indices(index: 'cbeta_*', format: 'json', h: INDEX_COLUMNS.join(',')).body
+    # 萬一某個 server 仍回傳純文字，就原樣印出，不要讓診斷指令自己爆掉。
+    return rows.to_s.each_line { |line| puts "  #{line.chomp}" } unless rows.is_a?(Array)
+
+    rows = rows.sort_by { |row| row['index'].to_s }
+    return puts '  (沒有 cbeta_* 開頭的 index)' if rows.empty?
+
+    widths = INDEX_COLUMNS.map do |col|
+      [col.size, *rows.map { |row| row[col].to_s.size }].max
+    end
+    puts "  #{format_index_row(INDEX_COLUMNS, widths)}"
+    rows.each { |row| puts "  #{format_index_row(INDEX_COLUMNS.map { row[it].to_s }, widths)}" }
+  end
+
+  def format_index_row(values, widths)
+    values.each_with_index.map { |value, i| value.ljust(widths[i]) }.join('  ').rstrip
   end
 
   def resolve_index_name(value)
