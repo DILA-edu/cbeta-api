@@ -18,7 +18,8 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
   test 'index 不存在時回 502 並指出是哪個 alias' do
     skip 'Elasticsearch 未啟動' unless elasticsearch_available?
 
-    with_elasticsearch_config(index_alias: 'no_such_index_for_test') do
+    aliases = Rails.configuration.x.elasticsearch.aliases.merge(text: 'no_such_index_for_test')
+    with_elasticsearch_config(aliases:) do
       get '/search', params: { q: '法鼓' }
 
       assert_response :bad_gateway
@@ -64,6 +65,8 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
 
   # 暫時改寫 Elasticsearch 設定；SearchService 每個 request 都會重新讀，
   # 因此不必重啟 app。
+  # 查詢走的是 config.x.elasticsearch.aliases（每個 index 一組），
+  # 不是單一的 index_alias，見 CbetaSearch::IndexBase.index_alias。
   def with_elasticsearch_config(**overrides)
     conf = Rails.configuration.x.elasticsearch
     original = overrides.keys.to_h { |key| [key, conf.send(key)] }

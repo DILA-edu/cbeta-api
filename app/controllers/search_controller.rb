@@ -1,6 +1,6 @@
 # all_in_one
 #   Exclude X -Y
-#     1. 先呼叫 Sphinx 取得全部符合 X 的卷數
+#     1. 先呼叫 Elasticsearch 取得全部符合 X 的卷數
 #     2. 每一卷呼叫 KWIC 過濾 -Y
 #        2.1 取得本卷符合 X 的位置
 #        2.2 讀取前後文，過濾 -Y
@@ -12,9 +12,9 @@ require 'open3'
 class SearchController < ApplicationController
   include ApiKeyAuthentication
 
+  # 以下兩個常數只剩 search/similar (Manticore chunks index) 在用。
+  # facet 上限與 max_matches 在 Elasticsearch 版由 CbetaSearch::SearchService 決定。
   RANKER = 'wordcount' # ranking by the keyword occurrences count.
-  FACET_MAX = 10_000 # facet 筆數上限, 影響記憶體用量、效率, 參考 2021 佛典數量 5,617
-  MAX_MATCHES = 99_999
   SIMILAR_K = 500
   SCORE_MIN = 16
 
@@ -138,25 +138,17 @@ class SearchController < ApplicationController
       my_render(empty_result)
       return
     end
-    
-    @where = "MATCH('#{@q}')" + @filter
-    estimate_max_matches
-    r = sphinx_search(@fields, @where, @start, @rows, order: @order)
+
+    r = es_search(index: CbetaSearch::NotesIndex)
 
     if params[:facet] == '1'
-      r['facet'] = {}
-      h = r['facet']
-      h['category'] = facet_by_sphinx('category')
-      h['creator']  = facet_by_sphinx('creator')
-      h['dynasty']  = facet_by_sphinx('dynasty')
-      h['work']     = facet_by_sphinx('work')
-      h['canon']    = facet_by_sphinx('canon')
+      # key 的順序與舊版一致
+      r['facet'] = %w[category creator dynasty work canon]
+                   .to_h { |f| [f, es_facet(f, index: CbetaSearch::NotesIndex)] }
     end
 
     notes_highlight(r)
     my_render r
-  ensure
-    @mysql_client.close unless @mysql_client.nil?
   end
 
   def facet
@@ -262,25 +254,20 @@ class SearchController < ApplicationController
     end
 
     t1 = Time.now
-    @index = Rails.configuration.x.se.index_titles
-    s = @q.chars.join(' ')
-    @where = %{MATCH('"#{s}"/3')} + @filter # /3 表示 至少要有2個字符合
-    @max_matches = MAX_MATCHES
+    # 舊版是 Manticore 的 quorum: MATCH('"觀 無 量 壽 經"/3')，至少 3 個字符合。
+    query = CbetaSearch::Query.new(
+      type: :quorum, raw: @q, phrase: @q,
+      quorum: CbetaSearch::TitlesIndex::QUORUM_THRESHOLD
+    )
+    r = es_service(CbetaSearch::TitlesIndex).search(
+      query, params: es_params, start: @start, rows: @rows, count_hits: false
+    )
 
-    select = <<~SQL
-      SELECT work, content
-       FROM #{@index}
-       WHERE #{@where} 
-       LIMIT #{@start}, #{@rows} 
-       OPTION max_matches=#{@max_matches}
-    SQL
-
-    results = manticore_query(select)
-
-    hits = results.to_a
-    hits.each do |h|
+    r[:results].each do |h|
       h[:highlight] = mark_title(h[:content], @q)
       w = Work.find_by(n: h[:work])
+      next if w.nil?
+
       h[:byline] = w.byline
       h[:juan] = w.juan
       h[:creators_with_id] = w.creators_with_id
@@ -289,38 +276,39 @@ class SearchController < ApplicationController
       h[:time_to] = w.time_to
     end
 
-    results = manticore_query("SHOW META LIKE 'total_found%';")
-    a = results.to_a
-    total_found = a[0][:Value].to_i
-    log_debug "total_found: #{total_found}"
-
-    r = {
-      query_string: @q,
-      time: 0,
-      num_found: total_found
-    }
-    r[:results] = hits
+    r.delete(:cache_key)
     r[:time] = Time.now - t1
     my_render r
-  ensure
-    @mysql_client.close unless @mysql_client.nil?
   end
 
   private
 
-  # ===== Elasticsearch (text index) =====
+  # ===== Elasticsearch =====
   #
-  # text index 已改用 Elasticsearch; notes / titles / chunks 仍走 Manticore。
+  # text / notes / titles 三個 index 都走 Elasticsearch;
+  # 只剩 chunks (search/similar) 仍走 Manticore。
   # 見 doc/elasticsearch-migration.md
 
-  # 需要 Manticore 連線的 action。
-  # variants 也需要: exist_in_cbeta 會查 notes / titles 兩個 Manticore index。
+  # 需要 Manticore 連線的 action。similar 查的是 chunks index。
   def manticore_needed?
-    %w[notes similar title variants].include?(action_name)
+    action_name == 'similar'
   end
 
-  def es_service
-    @es_service ||= CbetaSearch::SearchService.new(referer_cn: @referer_cn)
+  # 這個 action 主要查哪一個 Elasticsearch index。
+  def es_index
+    case action_name
+    when 'notes' then CbetaSearch::NotesIndex
+    when 'title' then CbetaSearch::TitlesIndex
+    when 'variants'
+      params[:scope] == 'title' ? CbetaSearch::TitlesIndex : CbetaSearch::TextIndex
+    else CbetaSearch::TextIndex
+    end
+  end
+
+  # 依 index 各自快取一個 SearchService: exist_in_cbeta 一次要查三個 index。
+  def es_service(index = es_index)
+    @es_services ||= {}
+    @es_services[index] ||= CbetaSearch::SearchService.new(referer_cn: @referer_cn, index:)
   end
 
   def es_query
@@ -336,9 +324,9 @@ class SearchController < ApplicationController
     @es_params ||= ES_PARAM_KEYS.to_h { |key| [key, params[key]] }.compact
   end
 
-  # 對應舊的 sphinx_search
-  def es_search(default_sort: nil, count_hits: true)
-    r = es_service.search(
+  # 對應舊的 sphinx_search（已移除）
+  def es_search(index: es_index, default_sort: nil, count_hits: true)
+    r = es_service(index).search(
       es_query,
       params: es_params, start: @start, rows: @rows,
       field: @text_field, default_sort:, count_hits:
@@ -358,8 +346,9 @@ class SearchController < ApplicationController
     rows
   end
 
-  # 對應舊的 facet_by_sphinx: Elasticsearch 算出 docs / hits，這裡補上名稱與排序。
-  def es_facet(facet_by)
+  # 對應舊的 facet_by_sphinx（已移除）: Elasticsearch 算出 docs / hits，
+  # 這裡補上名稱與排序。
+  def es_facet(facet_by, index: es_index)
     # NEAR / Exclude 走 intervals，_score 不是出現次數，加總得到的 hits 沒有意義。
     # 舊版是把整串當詞組 (搜不到、回空陣列)，這裡改成明確報錯。
     unless es_query.es_countable?
@@ -367,7 +356,7 @@ class SearchController < ApplicationController
     end
 
     read_dynasty_order if facet_by == 'dynasty'
-    rows = es_service.facet(es_query, params: es_params, facet_by:, field: @text_field)
+    rows = es_service(index).facet(es_query, params: es_params, facet_by:, field: @text_field)
     decorate_facet!(facet_by, rows)
   end
 
@@ -414,7 +403,7 @@ class SearchController < ApplicationController
       next if w.nil?
       
       info = w.to_hash
-      info.delete :juan # 要保留 sphinx 回傳的卷數
+      info.delete :juan # 要保留搜尋結果回傳的卷數
       row.merge! info
 
       #xf = XmlFile.find_by work: row[:work], vol: row[:vol]
@@ -567,32 +556,19 @@ class SearchController < ApplicationController
     }
   end
 
-  # 因為 max_matches 參數如果太大，會影響效率
-  # 所以先計算最多會有多少 documents 符合條件
-  def estimate_max_matches
-    cmd = "SELECT COUNT(*) as docs FROM #{@index} WHERE #{@where};"
-    log_debug "estimate_max_matches, cmd: #{cmd}"
-    r = manticore_query(cmd)
-    @max_matches = r.first[:docs]
-    log_debug "max_matches: #{@max_matches}"
-
-    # max_matches must be from 1 to 100M
-    @max_matches = 1 if @max_matches == 0
-  rescue => e
-    raise CbetaError.new(500), "estimate_max_matches 發生錯誤, cmd: #{cmd}"
-  end
-
+  # 這個字串在 CBETA 全文、註解或經名裡出現過嗎? (variants 用)
+  # 三個 index 都走 Elasticsearch，任一個命中就算存在。
   def exist_in_cbeta(q)
     log_debug "exist_in_cbeta, q: #{q}"
+    query = es_phrase_query(q)
 
-    # text index 走 Elasticsearch, notes / titles 仍走 Manticore
-    return true if es_service.exist?(es_phrase_query(q), params: {})
-    return true if exist_in_index(q, Rails.configuration.x.se.index_notes)
+    return true if es_service(CbetaSearch::TextIndex).exist?(query, params: {})
+    return true if es_service(CbetaSearch::NotesIndex).exist?(query, params: {})
 
     # title 最長 57, query 太長就不必搜了
     return false if q.size >= 58
 
-    exist_in_index(q, Rails.configuration.x.se.index_titles)
+    es_service(CbetaSearch::TitlesIndex).exist?(query, params: {})
   end
 
   # 單純詞組查詢 (variants / exist_in_cbeta 用): 不經 QueryParser，
@@ -601,108 +577,19 @@ class SearchController < ApplicationController
     CbetaSearch::Query.new(type: :phrase, raw: phrase, phrase: phrase.downcase)
   end
 
-  # variants 的計數。scope=title 查 Manticore 的 titles index，其餘查 Elasticsearch。
+  # variants 的計數。scope=title 查 titles index 的 freq sub-field
+  # (主欄位掛的是 BM25，算不出出現次數)，其餘查 text index。
   def variants_hit_count(phrase)
     if params[:scope] == 'title'
-      get_hit_count(%{MATCH('@content "#{phrase}"')} + @filter)
+      es_service(CbetaSearch::TitlesIndex).hit_count(
+        es_phrase_query(phrase), params: es_params,
+        field: CbetaSearch::TitlesIndex::FREQ_SUBFIELD
+      )
     else
-      es_service.hit_count(es_phrase_query(phrase), params: es_params)
+      es_service(CbetaSearch::TextIndex).hit_count(es_phrase_query(phrase), params: es_params)
     end
   end
-  
-  def exist_in_index(q, index)
-    log_debug "exist_in_index, index: #{index}, q: #{q}"
-    select = %(SELECT id FROM #{index} WHERE MATCH('"#{q}"') LIMIT 0, 1)
-    result = manticore_query(select)
-    result.size > 0
-  end
-  
-  # 參考 http://sphinxsearch.com/blog/2013/06/21/faceted-search-with-sphinx/
-  def facet_by_sphinx(facet)
-    read_dynasty_order if facet == 'dynasty'
 
-    case facet
-    when 'category'
-      f1 = 'category_id'
-      f2 = 'category_ids'
-    when 'creator'
-      f1 = f2 = 'creator_id'
-    else
-      f1 = f2 = facet
-    end
-
-    # ranker 會影響 weight 的計算方式
-    # max_matches: 回傳筆數上限，影響記憶體用量、效率
-    cmd = "SELECT GROUPBY() as #{f1}, "\
-      "COUNT(*) as docs, "\
-      "SUM(weight()) as hits "\
-      "FROM #{@index} "\
-      "WHERE #{@where} "\
-      "GROUP BY #{f2} "\
-      "ORDER BY hits DESC "\
-      "LIMIT #{FACET_MAX} "\
-      "OPTION ranker=#{RANKER}, max_matches=#{FACET_MAX};"
-
-    result = manticore_query(cmd)
-    r = result.to_a
-    
-    case facet
-    when 'canon'
-      # 取得藏經名稱
-      r.each do |row|
-        c = Canon.find_by id2: row[:canon]
-        row[:canon_name] = c.name unless c.nil?
-      end
-    when 'category'
-      # 取得部類名稱
-      fn = Rails.root.join('data-static', 'categories.json')
-      categories = JSON.parse(File.read(fn))
-      r.each do |row|
-        id = row[:category_id].to_s
-        row['category_name'] = categories[id]
-      end
-    when 'creator'
-      r.each do |row|
-        row[:creator_id] = "A%06d" % row[:creator_id]
-        person = Person.find_by(id2: row[:creator_id])
-        if person.nil?
-          Rails.logger.debug "Person model 無此 ID: #{row[:creator_id]}"
-        else
-          row[:creator_name] = person.name
-        end
-      end
-    when 'dynasty'
-      r.sort_by! do |x|
-        if @dynasty_order.key?(x[:dynasty])
-          @dynasty_order[x[:dynasty]]
-        else
-          999
-        end
-      end
-    when 'work'
-      # 取得 佛典 title
-      r.each do |row|
-        id = row[:category_id].to_s
-        w = Work.find_by n: row[:work]
-        row['title'] = w.title unless w.nil?
-      end
-    end
-    r
-  end
-
-  def get_hit_count(where)
-    select = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
-    r = manticore_query(select)
-    return 0 if r.count==0
-    r.each do |row|
-      return row[:sum]
-    end
-  rescue Mysql2::Error
-    logger.fatal "SQL command: #{select}"
-    logger.fatal $!
-    raise CbetaError.new(500), "Mysql2::Error, SQL command: #{select}\n#{$!}"
-  end
-  
   def init
     @referer_cn = referer_cn?
     @max_matches = 999_999
@@ -730,44 +617,36 @@ class SearchController < ApplicationController
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
     @inline_note = params.key?(:note) ? params[:note]=='1' : true
     @score_min = params.key?(:score_min) ? params[:score_min].to_i : SCORE_MIN
-    @text_field = @inline_note ? 'content' : 'content_without_notes'
+    # note=0 (不含夾注) 只有 text index 有對應欄位; notes / titles index 沒有。
+    @text_field =
+      if es_index == CbetaSearch::TextIndex && !@inline_note
+        'content_without_notes'
+      else
+        es_index.default_field
+      end
 
     case action_name
-    when 'notes' then init_notes
     when 'similar'
       @index = Rails.configuration.x.se.index_chunks
       @gain  = params.key?(:gain)  ? params[:gain].to_i : 2
       @penalty  = params.key?(:penalty)  ? params[:penalty].to_i : -1
       raise CbetaError.new(400), 'gain 參數 必須 >= 0' if @gain < 0
       raise CbetaError.new(400), 'penalty 參數 必須 <= 0' if @penalty > 0
-    when 'title'
-    when 'variants'
-      init_fields
-      @index = 
-        if params[:scope] == 'title'
-          Rails.configuration.x.se.index_titles
-        else
-          Rails.configuration.x.se.index_text
-        end
+      set_filter
+    when 'notes', 'title'
+      # 回傳欄位固定 (見各自的 index class ROW_FIELDS)，不吃 fields 參數
     else
       init_fields
-      @index = Rails.configuration.x.se.index_text
     end
 
-    log_debug "index: #{@index}"
-    
-    init_order unless action_name == 'similar'
-    set_filter
+    # 只剩 similar 走 Manticore (chunks index)，見 doc/elasticsearch-migration.md
+    return unless manticore_needed?
 
-    # text index 已改用 Elasticsearch，notes / titles / chunks 仍走 Manticore。
-    # 見 doc/elasticsearch-migration.md
-    if manticore_needed?
-      @manticore = ManticoreService.new
-      @mysql_client = @manticore.open
-    end
+    @manticore = ManticoreService.new
+    @mysql_client = @manticore.open
   end
 
-  # 回傳欄位的預設清單與順序 (Elasticsearch 用; Manticore 用的 SQL 由 init_fields 產生)
+  # 回傳欄位的預設清單與順序 (text index 用)
   FIELD_KEYS = %w[
     id term_hits canon category file work juan title byline creators
     creators_with_id time_dynasty time_from time_to juan_list
@@ -780,92 +659,6 @@ class SearchController < ApplicationController
       else
         FIELD_KEYS
       end
-
-    all = {
-      'id' => 'id',
-      'term_hits' => 'weight()',
-      'canon' => 'canon',
-      'category' => 'category', 
-      'file' => 'file',
-      'work' => 'work',
-      'juan' => 'juan',
-      'title' => 'title',
-      'byline' => 'byline',
-      'creators' => 'creators',
-      'creators_with_id' => 'creators_with_id',
-      'time_dynasty' => 'dynasty',
-      'time_from' => 'time_from',
-      'time_to' => 'time_to',
-      'juan_list' => 'juan_list'
-    }
-
-    if params.key? :fields
-      a = params[:fields].split(',')
-      all.delete_if { |k, v| !a.include?(k) }
-    end
-
-    a = []
-    all.each do |k, v|
-      if k == v
-        a << k
-      else
-        a << "#{v} as #{k}"
-      end
-    end
-
-    @fields = a.join(', ')
-  end
-
-  def init_notes
-    @index = Rails.configuration.x.se.index_notes
-    q = @q.sub(/~\d+$/, '') # 拿掉 near ~ 後面的數字
-    q.gsub!(/[\-!]".*?"/, '')
-    keys = q.split(/["\-\| ]/)
-    keys.delete('')
-    s = keys.join(' ')
-
-    @fields = "id, note_place, canon, category, vol, file, "\
-      "work, title, juan, lb, n, content, content_w_puncs, prefix, suffix"
-  end
-  
-  # 排序欄位最多只能有五個，否則會出現如下錯誤：
-  # Mysql2::Error (index cbeta122: too many sort-by attributes; maximum count is 5)
-  def init_order
-    @order = ''
-    count = 0
-
-    unless params.key? :order
-      if action_name == 'notes'
-        @order = "ORDER BY canon_order ASC, vol ASC, lb ASC"
-      end
-      return
-    end
-
-    tokens = params[:order].split(',')
-    orders = []
-    tokens.each do |t|
-      if t.end_with? '+'
-        field = t[0..-2]
-        dir = 'ASC'
-      elsif t.end_with? '-'
-        field = t[0..-2]
-        dir = 'DESC'
-      else
-        field = t
-        dir = field=='term_hits' ? "DESC" : "ASC"
-      end
-      order = case field
-      when 'canon'
-        "canon_order #{dir}"
-      when 'time_from', 'time_to'
-        @fields += ",(#{field} <> 0) AS has_#{field}"
-        "has_#{field} DESC, #{field} #{dir}"
-      else
-        "#{field} #{dir}"
-      end
-      orders << order
-    end
-    @order = "ORDER BY " + orders.join(',')
   end
 
   def mark_title(title, query)
@@ -1407,102 +1200,6 @@ class SearchController < ApplicationController
     end
   end
 
-  def sphinx_search(fields, where, start, rows, order: nil, facet: nil)
-    log_debug "sphinx_search 開始, where: #{where}, max_matches: #{@max_matches}"
-    t1 = Time.now
-
-    if start >= @max_matches
-      raise CbetaError.new(400), "start 參數超出範圍: #{start}, max_matches: #{@max_matches}, where: #{where}"
-    end
-    
-    @select = %(
-      SELECT #{fields}
-      FROM #{@index} 
-      WHERE #{where} #{order} 
-      LIMIT #{start}, #{rows} 
-      OPTION ranker=#{RANKER}, max_matches=#{@max_matches}
-    ).gsub(/\s+/, " ").strip
-    
-    @select += " FACET #{facet}" unless facet.nil?
-    log_debug "select: #{@select}"
-    results = manticore_query(@select)
-
-    hits = results.to_a
-    return hits if @mode == 'group'
-    log_debug "#{__LINE__} hits size: #{hits.size}"
-    
-    #add_work_info(hits)
-    
-    unless facet.nil?
-      if @mysql_client.next_result
-        rows = @mysql_client.store_result
-        facet_result = rows.to_a
-        pp facet_result
-      end
-    end    
-    
-    results = manticore_query("SHOW META LIKE 'total_found%';")
-    
-    a = results.to_a
-    total_found = a[0][:Value].to_i
-    log_debug "total_found: #{total_found}"
-    
-    if total_found == 0
-      total_term_hits = 0
-    else
-      select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{where} OPTION ranker=#{RANKER};)
-      r = manticore_query(select2)
-      total_term_hits = r.to_a[0][:sum]
-    end
-    
-    r = {
-      query_string: @q,
-      SQL: @select,
-      time: Time.now - t1,
-      num_found: total_found,
-      total_term_hits: total_term_hits,
-      cache_key: nil
-    }
-    r[:facet] = facet_result unless facet.nil?
-    r[:results] = hits
-    r
-  end
-
-  def sphinx_select(fields, opts={})
-    @opts = {
-      where: @where,
-      start: @start,
-      rows: @rows
-    }
-    @opts.merge!(opts)
-    select = "SELECT #{fields} FROM #{@index} WHERE #{@opts[:where]}"
-    select += " GROUP BY " + @opts[:group] if @opts.key?(:group)
-    select += " ORDER BY " + @opts[:order] if @opts.key?(:order)
-    select += " LIMIT #{@opts[:start]}, #{@opts[:rows]} OPTION ranker=#{RANKER}"
-    unless @max_matches.nil?
-      select += ", max_matches=#{@max_matches}"
-    end
-    results = manticore_query(select)
-    results.to_a
-  end
-
-  def sphinx_total_found
-    # total_found: 上次搜尋符合的 documents 數量
-    r = manticore_query("SHOW META LIKE 'total_found%';")
-    a = r.to_a
-    found = a[0][:Value].to_i
-
-    if found == 0
-      term_hits = 0
-    else
-      select2 = %(SELECT sum(weight()) as sum FROM #{@index} WHERE #{@where} OPTION ranker=#{RANKER};)
-      r = manticore_query(select2)
-      term_hits = r.to_a[0][:sum]
-    end
-
-    return found, term_hits
-  end
-
   # 根據異體字表，回傳各種可能異體字串及搜尋結果筆數
   # 效率測試：
   #   * 無上正等正覺
@@ -1590,9 +1287,10 @@ class SearchController < ApplicationController
 
   # index 或 alias 不存在是最常見的部署疏漏（忘了 elastic:rebuild 或 elastic:promote），
   # 給一個可以照著處理的訊息；其餘狀況只說服務不可用，細節留在 log。
+  # alias 取這個 action 主要查的 index（見 es_index），才不會三個 index 都報同一個名字。
   def elasticsearch_error_message(e)
     if e.is_a?(Elastic::Transport::Transport::Errors::NotFound)
-      "全文檢索索引尚未建立：#{Rails.configuration.x.elasticsearch.index_alias}"
+      "全文檢索索引尚未建立：#{es_index.index_alias}"
     else
       '全文檢索服務暫時無法使用'
     end

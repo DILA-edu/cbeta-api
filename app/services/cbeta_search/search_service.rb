@@ -1,13 +1,18 @@
 module CbetaSearch
-  # Elasticsearch 版的 text index 搜尋，取代舊 SearchController 的 sphinx_* 方法。
+  # Elasticsearch 搜尋，取代舊 SearchController 的 sphinx_* 方法。
+  #
+  # 預設操作 text index，傳 index: 可切到 notes / titles
+  # (見 CbetaSearch::IndexBase 的子類別)。
   #
   # term_hits 的來源：
   #   * phrase / bool 查詢：由 Elasticsearch 的 _score 直接還原。
-  #     每個 match_phrase 都設 boost = 1 / 詞長，配合 term_freq scripted similarity
-  #     (_score = 出現次數 × 詞長) 之後，_score 恰好等於出現次數，
+  #     content 掛 term_freq scripted similarity (_score = 出現次數 × 詞長)，
+  #     每個 match_phrase 再用 script_score 除以詞長 (見 ElasticQueryBuilder
+  #     #scored_phrase)，_score 因此恰好等於出現次數，
   #     與 Manticore ranker=wordcount 的語意相同。
   #   * NEAR / Exclude 查詢：intervals 的 _score 不是出現次數，
   #     由呼叫端 (SearchController#kwic_by_juan) 用 KwicService 逐卷計算。
+  #   * quorum 查詢 (search#title)：走 BM25 相關度，不算 term_hits。
   class SearchService
     # facet 筆數上限，對應舊 SearchController::FACET_MAX
     FACET_MAX = 10_000
@@ -15,9 +20,15 @@ module CbetaSearch
     # 取全部候選卷時的單頁筆數 (all_in_one 的 NEAR / Exclude 用)
     SCROLL_BATCH_SIZE = 5_000
 
-    # scripted_metric: 加總命中文件的 _score。boost 已把 _score 正規化成出現次數，
-    # 因此總和即 total_term_hits。ES 的 aggregation 無法直接 sum(_score)，
+    # exist_all? 每個 _msearch request 問幾個詞組
+    MSEARCH_BATCH_SIZE = 500
+
+    # scripted_metric: 加總命中文件的 _score。script_score 已把 _score 正規化成
+    # 出現次數，因此總和即 total_term_hits。ES 的 aggregation 無法直接 sum(_score)，
     # 只有 scripted_metric 的 map_script 拿得到 _score。
+    #
+    # 注意: bool 查詢一定要外包一層 script_score，否則這裡會少算，
+    # 見 ElasticQueryBuilder#bool_query。
     SUM_SCORE_AGG = {
       'scripted_metric' => {
         'init_script' => 'state.sum = 0.0',
@@ -27,18 +38,24 @@ module CbetaSearch
       }
     }.freeze
 
-    attr_reader :client, :index
+    attr_reader :client, :index_class, :builder
 
-    def initialize(referer_cn: false, client: ElasticClient.build)
+    def initialize(referer_cn: false, index: TextIndex, client: ElasticClient.build)
       @client = client
-      @builder = ElasticQueryBuilder.new(referer_cn:)
-      @index = Rails.configuration.x.elasticsearch.index_alias
+      @index_class = index
+      @builder = ElasticQueryBuilder.new(referer_cn:, index:)
     end
+
+    # ES 的 search API 一律走 alias，實際 index 由 rake elastic:promote 切換。
+    def index = index_class.index_alias
+
+    def default_field = index_class.default_field
 
     # 對應舊的 sphinx_search。
     # 回傳 { query_string:, time:, num_found:, total_term_hits:, cache_key:, results: }
     # results 各筆為 symbol key 的 Hash，欄位與舊 Manticore 回傳一致。
-    def search(query, params:, start: 0, rows: 20, field: 'content', default_sort: nil, count_hits: true)
+    def search(query, params:, start: 0, rows: 20, field: nil, default_sort: nil, count_hits: true)
+      field ||= default_field
       t1 = Time.now
       validate_window!(start, rows)
 
@@ -48,7 +65,7 @@ module CbetaSearch
       body = @builder.search_body(query, params:, field:)
       body['from'] = start
       body['size'] = rows
-      body['sort'] = @builder.sort(params, default: default_sort || ElasticQueryBuilder::DEFAULT_SORT)
+      body['sort'] = @builder.sort(params, default: default_sort)
       body['track_scores'] = true
 
       response = client.search(index:, body:)
@@ -76,11 +93,12 @@ module CbetaSearch
 
     # 取出所有符合的卷 (不分頁)，供 all_in_one 的 NEAR / Exclude 後處理使用。
     # 舊版是 LIMIT 0, 99999; ES 改用 search_after 逐批取回，沒有筆數上限。
-    def all_candidates(query, params:, field: 'content', default_sort: nil)
+    def all_candidates(query, params:, field: nil, default_sort: nil)
+      field ||= default_field
       body = @builder.search_body(query, params:, field:)
       body['size'] = SCROLL_BATCH_SIZE
       body['track_scores'] = true
-      sort = @builder.sort(params, default: default_sort || ElasticQueryBuilder::DEFAULT_SORT)
+      sort = @builder.sort(params, default: default_sort)
       # search_after 需要能唯一決定順序的 tiebreaker
       body['sort'] = sort + [{ '_doc' => { 'order' => 'asc' } }]
 
@@ -105,7 +123,8 @@ module CbetaSearch
     # 「完整排除字串」的出現次數，term_hits <= 0 的卷不算符合 ——
     # 與舊 SearchController#exclude_by_sphinx 完全相同的算法，
     # 因此 num_found 與 total_term_hits 都與 Manticore 版一致。
-    def exclude_candidates(query, params:, field: 'content', default_sort: nil)
+    def exclude_candidates(query, params:, field: nil, default_sort: nil)
+      field ||= default_field
       excluded = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
       base = Query.new(type: :phrase, raw: query.raw, phrase: query.phrase)
       minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
@@ -120,7 +139,8 @@ module CbetaSearch
     end
 
     # 對應舊的 sphinx_search_simple: 只取 work / juan / term_hits
-    def simple_search(query, params:, field: 'content')
+    def simple_search(query, params:, field: nil)
+      field ||= default_field
       body = @builder.search_body(query, params:, field:)
       body['_source'] = %w[work juan]
       body['size'] = SCROLL_BATCH_SIZE
@@ -151,8 +171,10 @@ module CbetaSearch
     end
 
     # 對應舊的 get_hit_count: 只回傳關鍵詞出現總次數
-    def hit_count(query, params:, field: 'content')
+    def hit_count(query, params:, field: nil)
       return 0 unless query.es_countable?
+
+      field ||= default_field
 
       body = @builder.search_body(query, params:, field:)
       body['size'] = 0
@@ -162,7 +184,8 @@ module CbetaSearch
     end
 
     # 對應舊的 exist_in_index: 只問「有沒有」，不算次數
-    def exist?(query, params: {}, field: 'content')
+    def exist?(query, params: {}, field: nil)
+      field ||= default_field
       body = @builder.search_body(query, params:, field:)
       body['size'] = 0
       body['terminate_after'] = 1
@@ -171,11 +194,40 @@ module CbetaSearch
       response.dig('hits', 'total', 'value').to_i.positive?
     end
 
+    # 批次版的 exist?: 一次問一整批詞組，回傳 { 詞組 => true/false }。
+    #
+    # rake import:vars 要對幾萬個異體字逐一問「CBETA 有沒有用到」。逐一發 HTTP
+    # 請求會把作業系統的 ephemeral port 用光 (Can't assign requested address)，
+    # 舊版走單一 MySQL 連線所以沒這個問題。改用 Elasticsearch 的 _msearch 批次查詢。
+    def exist_all?(phrases, params: {}, field: nil, batch_size: MSEARCH_BATCH_SIZE)
+      field ||= default_field
+      result = {}
+
+      phrases.uniq.each_slice(batch_size) do |batch|
+        body = batch.flat_map do |phrase|
+          query = Query.new(type: :phrase, raw: phrase, phrase: phrase.downcase)
+          search_body = @builder.search_body(query, params:, field:)
+          search_body['size'] = 0
+          search_body['terminate_after'] = 1
+          search_body['track_total_hits'] = 1
+          [{}, search_body]
+        end
+
+        responses = client.msearch(index:, body:).dig('responses') || []
+        batch.each_with_index do |phrase, i|
+          result[phrase] = responses.dig(i, 'hits', 'total', 'value').to_i.positive?
+        end
+      end
+
+      result
+    end
+
     # 對應舊的 facet_by_sphinx。
     # 回傳 [{ <field> => 值, docs: 文件數, hits: 出現次數 }, ...]，依 hits 遞減。
     # 舊版用 Manticore 的 GROUPBY() + SUM(weight())，ES 改用 terms aggregation
     # 搭配 scripted_metric 子 aggregation。
-    def facet(query, params:, facet_by:, field: 'content')
+    def facet(query, params:, facet_by:, field: nil)
+      field ||= default_field
       es_field, key = facet_field_and_key(facet_by)
 
       body = @builder.search_body(query, params:, field:)
@@ -219,14 +271,14 @@ module CbetaSearch
     end
 
     # Elasticsearch 的 from + size 有 index.max_result_window 上限
-    # (見 TextIndex::MAX_RESULT_WINDOW)，超過會被 ES 拒絕。
+    # (見 IndexBase::MAX_RESULT_WINDOW)，超過會被 ES 拒絕。
     # 舊版是由 estimate_max_matches 算出 max_matches 再擋，這裡直接擋在上限。
     def validate_window!(start, rows)
       window = start.to_i + rows.to_i
-      return if window <= TextIndex::MAX_RESULT_WINDOW
+      return if window <= IndexBase::MAX_RESULT_WINDOW
 
       raise CbetaError.new(400),
-            "start 參數超出範圍: #{start}, start + rows 不得超過 #{TextIndex::MAX_RESULT_WINDOW}"
+            "start 參數超出範圍: #{start}, start + rows 不得超過 #{IndexBase::MAX_RESULT_WINDOW}"
     end
 
     # facet 名稱 → [ES 欄位, 回傳的 key]。與舊 facet_by_sphinx 的欄位對應一致。
@@ -248,30 +300,16 @@ module CbetaSearch
     end
 
     # 組成與舊 Manticore 回傳一致的單筆結果 (symbol key)。
-    # key 的順序刻意與舊 SearchController#init_fields 相同，讓 JSON 輸出一致。
+    # 欄位與順序由 index class 的 row_fields 決定，讓 JSON 輸出與舊版一致。
     def row_from_hit(hit, query)
       source = hit['_source'] || {}
-      row = { id: hit['_id'].to_i }
+      row = {}
+      row[:id] = hit['_id'].to_i if index_class.row_id?
       # NEAR / Exclude 的 _score 不是出現次數，term_hits 由呼叫端另外計算
-      row[:term_hits] = term_hits_from_score(hit['_score']) if query.es_countable?
-      row.merge!(
-        canon: source['canon'],
-        category: source['category'],
-        file: source['file'],
-        work: source['work'],
-        juan: source['juan'],
-        title: source['title'],
-        byline: source['byline'],
-        creators: source['creators'],
-        creators_with_id: source['creators_with_id'],
-        time_dynasty: source['dynasty'],
-        time_from: source['time_from'],
-        time_to: source['time_to'],
-        juan_list: source['juan_list']
-      )
-      # 以下欄位舊版不回傳，供呼叫端內部使用 (輸出前會被 fields 過濾掉)
-      row[:vol] = source['vol']
-      row[:work_type] = source['work_type']
+      if index_class.row_term_hits? && query.es_countable?
+        row[:term_hits] = term_hits_from_score(hit['_score'])
+      end
+      index_class.row_fields.each { |key, field| row[key] = source[field] }
       row
     end
   end

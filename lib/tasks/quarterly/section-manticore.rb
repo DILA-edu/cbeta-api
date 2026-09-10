@@ -6,7 +6,6 @@ module SectionManticore
       step_manticore_x2t
       step_manticore_t2x
       step_manticore_index
-      step_manticore_vars
     end
   end
 
@@ -83,14 +82,6 @@ module SectionManticore
 
       print "step_manticore_t2x "
       puts ElapsedTime.label(t1)
-    end
-  end
-
-  def step_manticore_vars
-    run_step '匯入 異體字 (rake import:vars)' do
-      puts '資料來源是 https://github.com/DILA-edu/cbeta-metadata/blob/master/variants/variants.json'
-      confirm '這要在 Manticore Index 建好之後才能執行'
-      command 'rake import:vars'
     end
   end
 

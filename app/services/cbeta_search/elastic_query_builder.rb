@@ -3,66 +3,33 @@ module CbetaSearch
   #
   # filter 的語意完全對應舊 SearchController#set_filter，
   # 排序對應 SearchController#init_order。
+  #
+  # 各 index 的 _source 欄位、可排序欄位、預設排序與 tiebreaker 由 index class
+  # 提供 (見 CbetaSearch::IndexBase 的子類別)。
   class ElasticQueryBuilder
-    # _source 要回傳的欄位。content 全文已在 mapping 的 _source.excludes 排除。
-    SOURCE_FIELDS = %w[
-      canon canon_order category category_ids creator_id file vol work
-      title byline creators creators_with_id dynasty
-      time_from time_to juan juan_start juan_list work_type alt
-    ].freeze
-
-    # API 的 order 欄位 → ES 欄位。舊 API 可用的排序欄位見 static_pages/search.haml。
-    SORT_FIELDS = {
-      'canon' => 'canon_order',
-      'canon_order' => 'canon_order',
-      'category' => 'category',
-      'file' => 'file',
-      'vol' => 'vol',
-      'work' => 'work',
-      'juan' => 'juan',
-      'work_type' => 'work_type',
-      'dynasty' => 'dynasty',
-      'time_dynasty' => 'dynasty',
-      'time_from' => 'time_from',
-      'time_to' => 'time_to',
-      'title' => 'title.keyword',
-      'byline' => 'byline.keyword',
-      'creators' => 'creators.keyword',
-      'creators_with_id' => 'creators_with_id.keyword'
-    }.freeze
-
     # Manticore 對 time_from / time_to 會先以 has_time_from DESC 排序，
     # 讓「有年代」的排在「年代未知 (0)」之前。ES 用 script sort 表達同一件事。
     HAS_VALUE_SCRIPT = "doc['%s'].size() == 0 || doc['%s'].value == 0 ? 1 : 0".freeze
 
-    # all_in_one 的預設排序
-    DEFAULT_SORT = [
-      { 'canon_order' => { 'order' => 'asc' } },
-      { 'work' => { 'order' => 'asc' } },
-      { 'juan' => { 'order' => 'asc' } }
-    ].freeze
-
     # search / extended 無 order 參數時，Manticore 預設按 weight() 遞減
     SCORE_SORT = [{ '_score' => { 'order' => 'desc' } }].freeze
 
-    # 排序值相同時的最後比較依據。
-    # 舊版 Manticore 在平手時是回傳內部 doc id 的順序 (不可預期，例如同一部典籍的
-    # 卷 3 會排在卷 1 前面)，這裡改成穩定且語意合理的順序，讓分頁結果可預期。
-    TIEBREAKER = %w[canon_order work juan].freeze
+    attr_reader :index
 
-    def initialize(referer_cn: false)
+    def initialize(referer_cn: false, index: TextIndex)
       @referer_cn = referer_cn
+      @index = index
     end
 
-    def search_body(query, params:, field:)
+    def search_body(query, params:, field: index.default_field)
       {
         'query' => filtered_query(query, params:, field:),
-        '_source' => SOURCE_FIELDS,
+        '_source' => index.source_fields,
         'track_total_hits' => true
       }
     end
 
-    def filtered_query(query, params:, field:)
+    def filtered_query(query, params:, field: index.default_field)
       bool = { 'must' => [match_query(query, field:)] }
       filters = filters(params)
       bool['filter'] = filters if filters.any?
@@ -79,12 +46,14 @@ module CbetaSearch
       when :bool    then bool_query(query, field)
       when :near    then near_intervals(field, query)
       when :exclude then exclude_intervals(field, query)
+      when :quorum  then quorum_match(field, query)
       else
         raise CbetaError.new(500), "未知的查詢類型：#{query.type}"
       end
     end
 
-    def sort(params, default: DEFAULT_SORT)
+    def sort(params, default: nil)
+      default ||= index.default_sort
       order = params[:order].to_s
       clauses =
         if order.blank?
@@ -100,7 +69,7 @@ module CbetaSearch
 
     def append_tiebreaker(clauses)
       used = clauses.flat_map(&:keys)
-      missing = TIEBREAKER.reject { |field| used.include?(field) }
+      missing = index.tiebreaker.reject { |field| used.include?(field) }
       return clauses if missing.empty?
 
       clauses + missing.map { |field| { field => { 'order' => 'asc' } } }
@@ -134,6 +103,15 @@ module CbetaSearch
     end
 
     # AND / OR / NOT。must_not 不計分，與 Manticore ranker=wordcount 一致。
+    #
+    # 整個 bool 外面一定要再包一層 identity 的 script_score。
+    # 少了它，Elasticsearch 在資料量大時會少算 total_term_hits: bool 有多個計分
+    # 子句時 Lucene 走 block-max WAND，某些文件只算到其中一個子句的分數。
+    # 實測 2,182,414 筆的 notes index，"波羅蜜" | "波羅密" 得 3090，
+    # 正確值是 3204 (= 3084 + 120，與 Manticore 的 SUM(weight()) 相同)；
+    # 長度不同的 "波羅蜜" | "般若" 差更多 (7334 vs 正確的 9513)。
+    # 外包一層 script_score 會強迫內層以 COMPLETE 模式計分，數字就對了。
+    # 22,037 卷的 text index 兩種寫法同值 —— 這是規模相依的，所以一律外包。
     def bool_query(query, field)
       bool = {}
       must = query.must.map { |term| scored_phrase(field, term) }
@@ -150,7 +128,12 @@ module CbetaSearch
         bool['must_not'] = query.must_not.map { |term| match_phrase(field, term) }
       end
 
-      { 'bool' => bool }
+      complete_scoring({ 'bool' => bool })
+    end
+
+    # 見 bool_query 的說明。source 是 "_score"，分數本身不變。
+    def complete_scoring(query)
+      { 'script_score' => { 'query' => query, 'script' => { 'source' => '_score' } } }
     end
 
     # intervals 的 match 預設 ordered: false、max_gaps: -1，
@@ -194,6 +177,25 @@ module CbetaSearch
             'match' => phrase_interval(query.phrase)['match'].merge(
               'filter' => { 'not_contained_by' => phrase_interval(excluded) }
             )
+          }
+        }
+      }
+    end
+
+    # 模糊比對 (search#title)。舊版是 Manticore 的 quorum: MATCH('"逐 字 空 格"/3')。
+    #
+    # 實測 /dev: q 只有 1~2 字時 quorum 退化成「全部都要命中」而不是回 0 筆，
+    # 所以門檻取 [threshold, token 數].min。
+    #
+    # 用 match 而不是 match_phrase: quorum 比對的是「有幾個字命中」，不管順序與相鄰。
+    def quorum_match(field, query)
+      tokens = TextIndex.token_count(query.phrase)
+      threshold = [query.quorum || TitlesIndex::QUORUM_THRESHOLD, tokens].min
+      {
+        'match' => {
+          field => {
+            'query' => query.phrase,
+            'minimum_should_match' => threshold
           }
         }
       }
@@ -281,7 +283,7 @@ module CbetaSearch
       # 同一查詢的詞長固定，因此以 _score 排序等價於以 term_hits 排序。
       return [{ '_score' => { 'order' => direction == 'asc' ? 'asc' : 'desc' } }] if field == 'term_hits'
 
-      es_field = SORT_FIELDS[field]
+      es_field = index.sort_fields[field]
       return [] if es_field.blank?
 
       clauses = []

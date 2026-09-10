@@ -6,6 +6,7 @@ module CbetaSearch
   #   :near    "A" NEAR/n "B" [NEAR/m "C" ...]
   #   :exclude "A" -"XA" / "A" -"AX"
   #   :bool    AND / OR / NOT 組合
+  #   :quorum  模糊比對: 逐字切開，至少 n 個字命中 (search#title 用)
   Query = Struct.new(
     :type,
     :raw,             # 原始查詢字串 (回傳 query_string 用)
@@ -17,10 +18,12 @@ module CbetaSearch
     :must,            # :bool 必須出現的詞組
     :should_groups,   # :bool 的 OR 群組; 群組間為 AND、群組內為 OR
     :must_not,        # :bool 不可出現的詞組
+    :quorum,          # :quorum 的門檻 (整數，實際會取 [quorum, token 數].min)
     keyword_init: true
   ) do
     # 此查詢的 term_hits 能否直接由 Elasticsearch 的 _score 還原。
-    # NEAR 與 Exclude 走 intervals，_score 不是出現次數，必須由 KwicService 逐卷計數。
+    # NEAR 與 Exclude 走 intervals、:quorum 走 BM25，_score 都不是出現次數。
+    # NEAR / Exclude 必須由 KwicService 逐卷計數。
     def es_countable?
       type == :phrase || type == :bool
     end
@@ -32,6 +35,7 @@ module CbetaSearch
       when :bool    then must + should_groups.flatten
       when :exclude then [phrase]
       when :near    then near_terms
+      when :quorum  then [phrase]
       else []
       end
     end

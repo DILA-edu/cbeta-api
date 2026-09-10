@@ -1,5 +1,27 @@
 %h1 更新紀錄
 
+%h2 2026-09 Version 5.1.0
+%ul
+  %li /search/notes 與 /search/title 也改用 Elasticsearch。
+  %li
+    /search/notes 的 NEAR 語法可以串接多個詞，例如
+    %code "老子" NEAR/7 "道" NEAR/3 "經"
+  %li /search/notes 不支援的查詢語法（括號分組、~n、&）改為回傳 400 錯誤。
+  %li /search/notes 的 NEAR 查詢不再回傳 total_term_hits，只回傳 num_found。
+  %li
+    /search/notes 的 NEAR 距離判定改為「兩詞相隔不超過 n 個字」，與說明文件
+    及 /search/all_in_one、/search/kwic 一致。舊版少算一個字，
+    因此結果會比舊版略多。
+  %li /search/notes 的結果不再回傳僅供除錯用的 SQL 欄位。
+  %li
+    /search/title 新增支援「限制搜尋範圍」的參數（藏經、部類、作譯者、朝代、年代），
+    原本傳這些參數會發生錯誤：
+    =link_to_url '/static_pages/search_filter'
+  %li /search/title 的相關度排序演算法改變，結果順序與先前不同。
+  %li
+    /search/variants 多支援 102 個異體字（CJK 擴充 G/H、部首補充、圈號符號等），
+    這些字舊版搜尋引擎無法索引，因此以往不會出現在建議清單裡。
+
 %h2 2026-09 Version 5.0.0
 %ul
   %li Search engine 由 Manticore 改用 Elasticsearch 9.4。

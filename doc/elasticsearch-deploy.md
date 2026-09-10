@@ -1,7 +1,8 @@
 # Elasticsearch 部署（sakya）
 
-搜尋後端的 text index 由 Manticore 改為 Elasticsearch，背景與決策見
-[elasticsearch-migration.md](elasticsearch-migration.md)。
+搜尋後端的 text / notes / titles 三個 index 由 Manticore 改為 Elasticsearch，
+背景與決策見 [elasticsearch-migration.md](elasticsearch-migration.md)。
+只剩 chunks（`search/similar`）仍走 Manticore。
 
 **staging 與 production 是同一台機器**（`sakya.dila.edu.tw`，只有 `deploy_to` 目錄不同），
 因此共用同一個 Elasticsearch 服務，靠不同的 **index alias** 隔離。
@@ -10,9 +11,10 @@
 
 | 項目 | 現況 | Elasticsearch 需要 |
 |---|---|---|
-| CPU | 10 核 | 匯入時約 2.5 分鐘（排在季度批次流程） |
+| CPU | 10 核 | 匯入時約 15 分鐘（排在季度批次流程） |
 | 記憶體 | 94GB，實際使用 5.7GB（Manticore 佔 7.45GB） | heap 4GB |
-| 磁碟 | 1TB，使用 44%（剩 544GB） | index 約 1.4GB / 22,037 卷 |
+| 匯入 | — | 三個 index 合計約 15 分鐘 |
+| 磁碟 | 1TB，使用 44%（剩 544GB） | 三個 index 合計約 1.8GB |
 | port | Manticore 用 9307 | 9200（未被佔用） |
 | `vm.max_map_count` | 1048576 | ≥ 262144（已滿足，見 `/etc/sysctl.d/10-map-count.conf`） |
 | docker | 28.1.1 / compose v2.35.1 | — |
@@ -46,7 +48,7 @@ services:
       - xpack.security.enabled=false
       # 避免 heap 被 swap 出去（server 有 4GB swap）
       - bootstrap.memory_lock=true
-      # 22,037 卷的 index 約 1.4GB，4g heap 相當充裕
+      # 三個 index 合計約 1.8GB，4g heap 相當充裕
       - ES_JAVA_OPTS=-Xms4g -Xmx4g
       - TZ=Asia/Taipei
     # 換 index 是靠 alias、不必重啟容器，所以可以放心自動重啟
@@ -145,9 +147,31 @@ production:
 | key | 預設 | 說明 |
 |---|---|---|
 | `url` | `http://localhost:9200` | Elasticsearch 位址 |
-| `index_alias` | `cbeta_text_current` | 查詢一律走這個 alias |
-| `index_name` | 同 `index_alias` | 只在建立／匯入 index 時當預設值；平常不必設，由 rake 引數指定 |
+| `index_alias` | `cbeta_text_current` | **text** index 的 alias，同時也是其他 alias 的推導依據 |
+| `aliases` | 由 `index_alias` 推導 | 各 index 的 alias，見下方 |
+| `index_name` | 同 `index_alias` | 只在建立／匯入 text index 時當預設值；平常不必設，由 rake 引數指定 |
 | `request_timeout` | 120 | 秒 |
+
+### alias 的推導
+
+`index_alias` 裡的 `text` 會被換成其他 index 種類：
+
+| `index_alias` | text | notes | titles |
+|---|---|---|---|
+| `cbeta_text_current`（production） | `cbeta_text_current` | `cbeta_notes_current` | `cbeta_titles_current` |
+| `cbeta_text_staging`（staging） | `cbeta_text_staging` | `cbeta_notes_staging` | `cbeta_titles_staging` |
+
+因此**既有的 cb.yml 不必修改**就能涵蓋三個 index。要各自指定時再寫：
+
+```yaml
+production:
+  elasticsearch:
+    url: 'http://localhost:9200'
+    index_alias: 'cbeta_text_current'
+    aliases:
+      notes: 'cbeta_notes_current'
+      titles: 'cbeta_titles_current'
+```
 
 沒有設 `elasticsearch:` 區塊時會退回環境變數
 （`ELASTICSEARCH_URL`／`CBETA_ES_INDEX_ALIAS`／`CBETA_ES_INDEX_NAME`），再退回上表的預設值。
@@ -160,23 +184,100 @@ index 名稱要帶季號與序號，**不可以用 alias 名稱**（會被拒絕
 ```sh
 cd /var/www/cbeta-api-staging/current
 
-# text.xml 由既有的 manticore:x2t 產生，位置在 shared/data/manticore-xml/text.xml
-ls -lh data/manticore-xml/text.xml
+# 三份 XML 由既有的 manticore:x2t / t2x / notes / titles 產生
+ls -lh data/manticore-xml/{text,notes,titles}.xml
 
-# 建 index、匯入、切 alias（22,037 卷約 2.5 分鐘）
-RAILS_ENV=staging be rake 'elastic:rebuild[cbeta_text_2026r1_stg_001]'
+# 一次建好三個 index、匯入、切 alias
+RAILS_ENV=staging be rake 'elastic:rebuild_all[2026r3]'
 
 # 確認
 RAILS_ENV=staging be rake elastic:info
 RAILS_ENV=staging be rake 'elastic:analyze[阿含]'
 ```
 
-production 同樣做法，index 名稱不帶 `stg`：
+單獨處理某一個 index 時第一個引數是種類（`text` / `notes` / `titles`）：
 
 ```sh
-cd /var/www/cbeta-api-production/current
-RAILS_ENV=production be rake 'elastic:rebuild[cbeta_text_2026r1_001]'
+RAILS_ENV=staging be rake 'elastic:rebuild[notes,cbeta_notes_2026r3_001]'
 ```
+
+各 index 的規模（2026R3 實測）：
+
+| index | 筆數 | ES index 大小 | 匯入耗時 |
+|---|---|---|---|
+| text | 22,037 卷 | 1.4 GB | 約 2.5 分鐘 |
+| notes | 2,182,414 條 | 約 0.4 GB | 約 12 分鐘 |
+| titles | 4,904 部 | 0.6 MB | 約 1 秒 |
+
+## 4-1. 從既有環境升級到 5.1.0
+
+伺服器實況（2026-09-10 實測）：
+
+```
+$ curl -s 'http://localhost:9200/_cat/aliases?h=alias,index'
+cbeta_text_staging  cbeta_text_2026r3_001
+```
+
+也就是：**staging 已在 5.0.x（text 走 ES），production 還是 Manticore 舊版**
+（`/stable` 的搜尋結果仍帶 `SQL` 欄位，且沒有 `cbeta_text_current` alias）。
+兩邊的升級步驟因此不同。
+
+### index 命名的改變
+
+5.1.0 起 index 名稱由 alias 推導（見 `IndexBase.versioned_index_name`），
+避免 staging 與 production 在同一個 Elasticsearch 上撞名：
+
+| 角色 | alias | index 名稱 |
+|---|---|---|
+| production | `cbeta_text_current` | `cbeta_text_2026r3_001` |
+| staging | `cbeta_text_staging` | `cbeta_text_staging_2026r3_001` |
+
+舊的 `cbeta_text_2026r3_001` 是 staging 用**舊命名**建的。它佔用的正是
+production 將來輪到 2026R3 時要用的名字，所以這次升級順便換掉。
+
+### staging（5.0.x → 5.1.0）
+
+```sh
+cd /var/www/cbeta-api-staging/current
+
+# 三個 index 一起重建成新命名（text 約 3 分、notes 約 6 分、titles 數秒）
+RAILS_ENV=staging be rake 'elastic:rebuild_all[2026r3]'
+
+# 異體字表要在 text index 建好之後才能匯入
+RAILS_ENV=staging be rake import:vars
+
+RAILS_ENV=staging be rake elastic:info      # 確認三個 alias 都指到新 index
+```
+
+確認無誤後刪掉舊命名的 index：
+
+```sh
+curl -X DELETE 'http://localhost:9200/cbeta_text_2026r3_001'
+```
+
+### production（Manticore → Elasticsearch，首次）
+
+production 目前完全沒有 ES index，所以是**先部署程式、再建 index**，
+中間 `/search`、`/search/notes`、`/search/title`、`/search/variants`
+會回 502「全文檢索索引尚未建立」。
+
+**請先與主管確認這個停機視窗。** 依本機實測，三個 index 合計約 10~15 分鐘。
+
+1. 在 `shared/config/cb.yml` 的 `production:` 區塊加上 `elasticsearch:`（見 §3）。
+2. `cap production deploy`
+3. 立刻建 index（季號用 production 當時的資料季別，例如 2026R2）：
+
+   ```sh
+   cd /var/www/cbeta-api-production/current
+   RAILS_ENV=production be rake 'elastic:rebuild_all[2026r2]'
+   RAILS_ENV=production be rake import:vars
+   ```
+4. 清 Rails cache：cache key 沒變，但內容來自不同後端。
+5. `RAILS_ENV=production be rake elastic:info` 確認三個 alias 都有指向。
+
+要縮短停機視窗的話，可以在 `cap production deploy` 之前先進到新的 release 目錄
+把 index 建好（rake 只讀 `shared/data/manticore-xml/*.xml`，不影響仍在服務的舊版），
+切換 release 之後只剩 `import:vars` 與清 cache。
 
 ## 5. 驗證
 
@@ -186,26 +287,23 @@ RAILS_ENV=production be rake 'elastic:rebuild[cbeta_text_2026r1_001]'
 RAILS_ENV=staging be rake 'elastic:verify_golden[https://cbdata.dila.edu.tw/dev]'
 ```
 
-### 環境對照（2026-09-08 實測）
+### 環境對照（2026-09-10 更新）
 
 | 對外路徑 | deploy 目錄 | slot | 季號 | 資料日期 |
 |---|---|---|---|---|
 | `/stable` | `cbeta-api-production` | cbapi2 | 2026R2（`v=2`） | 2026-08 |
-| `/dev` | `cbeta-api-staging` | cbapi3 | 2026R3（`v=3`） | 2025-11（上一輪殘留） |
+| `/dev` | `cbeta-api-staging` | cbapi3 | 2026R3（`v=3`） | 2026-09-09 |
 
-**staging 是下一季的準備環境，不是 production 的複本。** Manticore 目前只有 `r1` 與 `r2`
-的 index（`text1`/`text2`…），staging 要的 `text3`／`notes3`／`titles3` 都還沒建，所以
-`/dev` 的全文檢索目前一律回錯誤（`unknown local table(s) 'text3'`）。
-`/dev` 的 `search/kwic` 正常 —— 再次印證 KwicService 不依賴 Manticore。
+**staging 是下一季的準備環境，不是 production 的複本。**
+2026R3 的 `rake quarterly` 已於 2026-09-09 在 server 上跑完，`/dev` 的 Manticore
+`text3`／`notes3`／`titles3`／`chunks3` 都已建好，因此：
 
-因此：
-
-* **golden 要從 `/stable` 抓**（那才有可用的 Manticore 結果）。
-* staging 上建 ES index 時，**用 staging 自己的 `text.xml`**，才會與 staging 的
-  `data/kwic`（同為 2025-11）同季；若改用 production 的 text.xml，多出來的約 195 卷
-  在 staging 的 KWIC 資料裡不存在，`all_in_one` 會回 500。
-* `notes`／`title`／`similar`／`variants` 在 staging 驗不了（Manticore `r3` index 不存在），
-  要等 2026R3 的季度流程跑完，或在 production 驗。
+* **第二期的 golden 從 `/dev` 抓**（那裡的 Manticore 結果與 staging 的 XML 同季，
+  可以做逐筆精確比對，不必再用「差異落在資料版本」來解讀）。
+* staging 上建 ES index 時，**用 staging 自己的 XML**，才會與 staging 的
+  `data/kwic`（同季）一致；若改用 production 的 text.xml，多出來的卷在 staging 的
+  KWIC 資料裡不存在，`all_in_one` 會回 500。
+* `similar` 仍走 Manticore chunks index，不在 ES 的驗證範圍。
 
 差異若都是同方向的小幅偏差，通常是資料版本不同；判讀方式見
 [elasticsearch-migration.md](elasticsearch-migration.md) 的「驗證結果」。
@@ -221,26 +319,32 @@ be rake 'elastic:fetch_golden[https://cbdata.dila.edu.tw/stable]'
 `text.xml` 產出後（既有的 `manticore:x2t`）：
 
 ```sh
-# 一次做完：建 index → 匯入 → 切 alias
-RAILS_ENV=production be rake 'elastic:rebuild[cbeta_text_2026r2_001]'
+# 一次做完三個 index：建 index → 匯入 → 切 alias
+RAILS_ENV=production be rake 'elastic:rebuild_all[2026r2]'
 ```
 
-想先驗證再切換的話分兩步：
+想先驗證再切換的話分兩步（以 notes 為例）：
 
 ```sh
-RAILS_ENV=production be rake 'elastic:create_index[cbeta_text_2026r2_001]'
-RAILS_ENV=production be rake 'elastic:import_text[cbeta_text_2026r2_001]'
+RAILS_ENV=production be rake 'elastic:create_index[notes,cbeta_notes_2026r2_001]'
+RAILS_ENV=production be rake 'elastic:import[notes,cbeta_notes_2026r2_001]'
 # 驗證後才切 alias（原子操作，隨時可切回舊 index）
-RAILS_ENV=production be rake 'elastic:promote[cbeta_text_2026r2_001]'
+RAILS_ENV=production be rake 'elastic:promote[notes,cbeta_notes_2026r2_001]'
 ```
+
+異體字表（`rake import:vars`）要過濾「CBETA 沒用到的字」，靠 Elasticsearch 的
+text index 判斷，因此**必須排在 `elastic:rebuild_all` 之後**。季度流程已經照這個
+順序排（見 `lib/tasks/quarterly/section-elastic.rb`）。
 
 `create_index` 與 `rebuild` 會**擋下**「重建 alias 目前指向的 index」，避免線上搜尋中斷。
 
 確認沒問題、也不需要回滾之後，再刪掉舊 index：
 
 ```sh
-RAILS_ENV=production be rake elastic:info      # 先確認 alias 指向哪一個
+RAILS_ENV=production be rake elastic:info      # 先確認各 alias 指向哪一個
 curl -X DELETE 'http://localhost:9200/cbeta_text_2026r1_001'
+curl -X DELETE 'http://localhost:9200/cbeta_notes_2026r1_001'
+curl -X DELETE 'http://localhost:9200/cbeta_titles_2026r1_001'
 ```
 
 ## 常用指令
@@ -265,4 +369,5 @@ curl -s 'http://localhost:9200/_cat/indices?v'
 | 匯入中途 timeout | 調高 `cb.yml` 的 `request_timeout` |
 | 搜尋回 502 | Rails 連不到 ES。確認容器在跑、`cb.yml` 的 `url` 正確 |
 | `elastic:rebuild` 被 abort | 該 index 正是 alias 指向的；改用新的序號，完成後再 `promote` |
+| `rake import:vars` 匯入 0 筆 | text index 還沒建好或 alias 沒切；先跑 `elastic:rebuild_all` |
 | staging 動作影響到 production | 兩邊的 `cb.yml` 用了同一個 `index_alias`，必須分開 |

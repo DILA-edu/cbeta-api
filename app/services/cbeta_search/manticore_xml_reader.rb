@@ -1,17 +1,17 @@
 require 'nokogiri'
 
 module CbetaSearch
-  # 讀取 Manticore 轉檔流程產出的 data/manticore-xml/text.xml (xmlpipe2 格式)，
+  # 讀取 Manticore 轉檔流程產出的 data/manticore-xml/*.xml (xmlpipe2 格式)，
   # 逐份 document yield 成 Hash，供 Elasticsearch 匯入。
   #
-  # 檔案約 1.3GB，因此不整份載入 DOM，改為逐行累積單一 <sphinx:document> 再解析。
-  class ManticoreTextXmlReader
-    INTEGER_FIELDS = %w[juan juan_start time_from time_to].freeze
-    ARRAY_INTEGER_FIELDS = %w[category_ids creator_id].freeze
-
-    def initialize(path)
+  # text.xml 約 1.3GB、notes.xml 約 2GB，因此不整份載入 DOM，
+  # 改為逐行累積單一 <sphinx:document> 再解析。
+  class ManticoreXmlReader
+    def initialize(path, integer_fields: [], array_integer_fields: [])
       @path = path
-      raise CbetaError.new(500), "找不到 text.xml：#{path}" unless File.exist?(path)
+      @integer_fields = integer_fields.to_a
+      @array_integer_fields = array_integer_fields.to_a
+      raise CbetaError.new(500), "找不到匯入來源：#{path}" unless File.exist?(path)
     end
 
     def each
@@ -36,7 +36,7 @@ module CbetaSearch
       # Nokogiri 不接受未宣告的 sphinx namespace，去掉前綴後當一般 fragment 解析。
       fragment = Nokogiri::XML.fragment(xml.gsub('sphinx:', ''))
       node = fragment.at_css('document')
-      raise CbetaError.new(500), '無法解析 text.xml document' if node.nil?
+      raise CbetaError.new(500), '無法解析 xmlpipe2 document' if node.nil?
 
       doc = { '_id' => node['id'] }
       node.element_children.each do |child|
@@ -46,8 +46,8 @@ module CbetaSearch
     end
 
     def normalize_value(name, value)
-      return value.to_i if INTEGER_FIELDS.include?(name)
-      return split_integers(value) if ARRAY_INTEGER_FIELDS.include?(name)
+      return value.to_i if @integer_fields.include?(name)
+      return split_integers(value) if @array_integer_fields.include?(name)
 
       value
     end

@@ -1,6 +1,13 @@
-# Elasticsearch text index 的建立、匯入與 alias 切換。
+# Elasticsearch index 的建立、匯入與 alias 切換。
+#
+# <type> 是 text / notes / titles 其中之一 (省略時為 text)。
 # 見 doc/elasticsearch-migration.md
 namespace :elastic do
+  INDEX_CLASSES = {
+    'text' => 'CbetaSearch::TextIndex',
+    'notes' => 'CbetaSearch::NotesIndex',
+    'titles' => 'CbetaSearch::TitlesIndex'
+  }.freeze
   desc '啟動本機 Elasticsearch (Docker Compose)'
   task :start do
     ensure_docker_daemon!
@@ -21,63 +28,84 @@ namespace :elastic do
   task info: :environment do
     conf = Rails.configuration.x.elasticsearch
     puts "url:         #{conf.url}"
-    puts "index_name:  #{conf.index_name}"
-    puts "index_alias: #{conf.index_alias}"
-    puts "text_xml:    #{conf.text_xml}"
+    puts "index_name:  #{conf.index_name}  (只是 text 的預設值)"
+    puts "\naliases / 匯入來源:"
+    INDEX_CLASSES.each_key do |type|
+      klass = index_class(type)
+      xml = begin
+        klass.xml_path
+      rescue KeyError
+        '(config.x.elasticsearch.xml 沒有這一項)'
+      end
+      puts format('  %-7s %-26s %s', type, klass.index_alias, xml)
+    end
 
     client = CbetaSearch::ElasticClient.build
     puts "\nindices:"
     print_indices(client)
-    puts "\naliases:"
-    aliases = client.indices.get_alias(name: conf.index_alias, ignore_unavailable: true)
-    if aliases.empty?
-      puts "  #{conf.index_alias} 尚未指向任何 index"
-    else
-      aliases.each_key { |index| puts "  #{conf.index_alias} -> #{index}" }
+    puts "\nalias 指向:"
+    INDEX_CLASSES.each_key do |type|
+      alias_name = index_class(type).index_alias
+      targets = client.indices.get_alias(name: alias_name, ignore_unavailable: true)
+      if targets.empty?
+        puts "  #{alias_name} 尚未指向任何 index"
+      else
+        targets.each_key { |index| puts "  #{alias_name} -> #{index}" }
+      end
     end
   rescue StandardError => e
     abort "讀取 Elasticsearch 資訊失敗 (#{conf.url})：#{e.class}: #{e.message}"
   end
 
-  desc '建立 text index，例：rake elastic:create_index[cbeta_text_2026r1_001]'
-  task :create_index, [:index_name] => :environment do |_task, args|
-    index_name = resolve_index_name(args[:index_name])
-    refuse_if_live!(index_name)
-    CbetaSearch::TextIndex.new.create!(index_name)
+  desc '建立 index，例：rake elastic:create_index[text,cbeta_text_2026r3_001]'
+  task :create_index, [:type, :index_name] => :environment do |_task, args|
+    type, index_name = resolve_target(args)
+    refuse_if_live!(type, index_name)
+    index_class(type).new.create!(index_name)
     puts "已建立 index：#{index_name}"
   end
 
-  desc '匯入 text.xml，例：rake elastic:import_text[cbeta_text_2026r1_001]'
+  desc '匯入 xmlpipe2 XML，例：rake elastic:import[notes,cbeta_notes_2026r3_001]'
+  task :import, [:type, :index_name, :xml_path] => :environment do |_task, args|
+    type, index_name = resolve_target(args)
+    import_xml(type, index_name, args[:xml_path].presence)
+  end
+
+  desc '（相容舊名）等同 elastic:import[text,...]'
   task :import_text, [:index_name, :xml_path] => :environment do |_task, args|
-    index_name = resolve_index_name(args[:index_name])
-    xml_path = args[:xml_path].presence || Rails.configuration.x.elasticsearch.text_xml
-    import_text_xml(index_name, xml_path)
+    index_name = resolve_index_name('text', args[:index_name])
+    import_xml('text', index_name, args[:xml_path].presence)
   end
 
-  desc '把 alias 切到指定 index，例：rake elastic:promote[cbeta_text_2026r1_001]'
-  task :promote, [:index_name] => :environment do |_task, args|
-    index_name = resolve_index_name(args[:index_name])
-    alias_name = Rails.configuration.x.elasticsearch.index_alias
-    CbetaSearch::TextIndex.new.promote!(index_name, alias_name:)
-    puts "已將 alias #{alias_name} 切到 #{index_name}"
+  desc '把 alias 切到指定 index，例：rake elastic:promote[text,cbeta_text_2026r3_001]'
+  task :promote, [:type, :index_name] => :environment do |_task, args|
+    type, index_name = resolve_target(args)
+    klass = index_class(type)
+    klass.new.promote!(index_name)
+    puts "已將 alias #{klass.index_alias} 切到 #{index_name}"
   end
 
-  desc '建立 index、匯入 text.xml、切換 alias'
-  task :rebuild, [:index_name, :xml_path] => :environment do |_task, args|
-    index_name = resolve_index_name(args[:index_name])
-    refuse_if_live!(index_name)
-    xml_path = args[:xml_path].presence || Rails.configuration.x.elasticsearch.text_xml
+  desc '建立 index、匯入、切換 alias，例：rake elastic:rebuild[notes,cbeta_notes_2026r3_001]'
+  task :rebuild, [:type, :index_name, :xml_path] => :environment do |_task, args|
+    type, index_name = resolve_target(args)
+    rebuild_one(type, index_name, args[:xml_path].presence)
+  end
 
-    CbetaSearch::TextIndex.new.create!(index_name)
-    puts "已建立 index：#{index_name}"
-    import_text_xml(index_name, xml_path)
-    CbetaSearch::TextIndex.new.promote!(index_name)
-    puts "已將 alias #{Rails.configuration.x.elasticsearch.index_alias} 切到 #{index_name}"
+  desc '一次重建三個 index，例：rake elastic:rebuild_all[2026r3]'
+  task :rebuild_all, [:release, :serial] => :environment do |_task, args|
+    release = args[:release].presence or abort "請指定季號，例：rake 'elastic:rebuild_all[2026r3]'"
+    serial = args[:serial].presence || '001'
+
+    INDEX_CLASSES.each_key do |type|
+      rebuild_one(type, index_class(type).versioned_index_name(release, serial), nil)
+      puts
+    end
   end
 
   desc '檢查 analyzer 輸出，例：rake elastic:analyze[阿含]'
   task :analyze, [:text] => :environment do |_task, args|
     text = args[:text].presence || '阿含'
+    # 三個 index 的 analyzer 定義相同，用哪一個問都一樣
     tokens = CbetaSearch::TextIndex.new.analyze(text).fetch('tokens').map { it.fetch('token') }
     puts "#{tokens.size} tokens: #{tokens.join('|')}"
   end
@@ -130,7 +158,7 @@ namespace :elastic do
     puts
     puts "一致 #{same} / #{GOLDEN_CASES.size}"
     puts "不一致: #{diff.join(', ')}" if diff.any?
-    puts '註: 若本機 data/manticore-xml/text.xml 與 golden 來源不同季，差異會落在資料版本上。'
+    puts '註: 若本機 data/manticore-xml/*.xml 與 golden 來源不同季，差異會落在資料版本上。'
   end
 
   # 驗收用的查詢清單。涵蓋對外承諾的 7 種查詢語法、各個 filter、排序與 facet。
@@ -168,11 +196,35 @@ namespace :elastic do
     ['facet_canon',        'search/facet/canon',   { q: '法鼓' }],
     ['facet_dynasty',      'search/facet/dynasty', { q: '法鼓' }],
     ['facet_category',     'search/facet/category', { q: '法鼓' }],
-    ['sc',                 'search/sc',           { q: '观世音' }]
+    ['sc',                 'search/sc',           { q: '观世音' }],
+
+    # --- 第二期: notes index ---
+    ['notes_phrase',       'search/notes',        { q: '"法鼓"' }],
+    ['notes_and',          'search/notes',        { q: '"法鼓" "印順"' }],
+    ['notes_or',           'search/notes',        { q: '"波羅蜜" | "波羅密"' }],
+    ['notes_not',          'search/notes',        { q: '"迦葉" !"迦葉佛"' }],
+    # 這一項預期會 DIFF: ES 的 NEAR 是「相隔 <= n 字」(與說明頁及 KwicService 一致)，
+    # Manticore 是「相隔 < n 字」，實測 ES(n) 恆等於 Manticore(n+1)。
+    # 另外 intervals 的 _score 不是出現次數，所以也沒有 total_term_hits。
+    # 見 doc/elasticsearch-migration.md 的 F-1 第 3b 項。
+    ['notes_near',         'search/notes',        { q: '"阿含" NEAR/5 "迦葉"' }],
+    ['notes_filter_canon', 'search/notes',        { q: '"法鼓"', canon: 'T' }],
+    ['notes_facet',        'search/notes',        { q: '"法鼓"', facet: '1' }],
+    ['notes_paginate',     'search/notes',        { q: '"法鼓"', start: '20', rows: '5' }],
+
+    # --- 第二期: titles index ---
+    # 只比對 num_found: 相關度排序由 Manticore proximity_bm25 換成 Lucene BM25，
+    # 順序本來就會不同 (見 doc/elasticsearch-migration.md 的 F-2)。
+    ['title_1char',        'search/title',        { q: '經' }],
+    ['title_2char',        'search/title',        { q: '法鼓' }],
+    ['title_5char',        'search/title',        { q: '觀無量壽經' }],
+    ['title_long',         'search/title',        { q: '大般若波羅蜜多經' }],
+    ['variants_text',      'search/variants',     { q: '著衣持鉢' }],
+    ['variants_title',     'search/variants',     { q: '神咒', scope: 'title' }]
   ].freeze
 
   # 只保留穩定、可比對的欄位，避免 fixture 太大或被無關變動影響。
-  GOLDEN_RESULT_FIELDS = %w[work juan term_hits].freeze
+  GOLDEN_RESULT_FIELDS = %w[work juan term_hits q hits].freeze
 
   # 固定檔名。季號不放進檔名: 各環境的 cb.yml 季號不同
   # （production 2026R2、staging 2026R3），用 cb.r 命名會與資料來源不符。
@@ -275,20 +327,41 @@ namespace :elastic do
     values.each_with_index.map { |value, i| value.ljust(widths[i]) }.join('  ').rstrip
   end
 
-  def resolve_index_name(value)
-    name = value.presence || Rails.configuration.x.elasticsearch.index_name
-    alias_name = Rails.configuration.x.elasticsearch.index_alias
-    if name == alias_name
-      abort "index 名稱不可等於 alias (#{name})。請指定版本化名稱，例如 cbeta_text_2026r1_001，" \
-            '或設定環境變數 CBETA_ES_INDEX_NAME。'
+  def index_class(type)
+    name = INDEX_CLASSES[type.to_s] or
+      abort "未知的 index 種類：#{type}。可用：#{INDEX_CLASSES.keys.join(', ')}"
+    name.constantize
+  end
+
+  # rake 'elastic:rebuild[notes,cbeta_notes_2026r3_001]' 的引數解析。
+  # 為了相容第一期的 rake 'elastic:rebuild[cbeta_text_2026r1_001]'，
+  # 第一個引數若不是 index 種類就當成 text 的 index 名稱。
+  def resolve_target(args)
+    first = args[:type].presence
+    if first.nil? || INDEX_CLASSES.key?(first)
+      type = first || 'text'
+      [type, resolve_index_name(type, args[:index_name])]
+    else
+      ['text', resolve_index_name('text', first)]
+    end
+  end
+
+  def resolve_index_name(type, value)
+    klass = index_class(type)
+    name = value.presence
+    name ||= Rails.configuration.x.elasticsearch.index_name if type == 'text'
+    abort "請指定 #{type} 的 index 名稱，例如 cbeta_#{type}_2026r3_001。" if name.blank?
+
+    if name == klass.index_alias
+      abort "index 名稱不可等於 alias (#{name})。請指定版本化名稱，例如 cbeta_#{type}_2026r3_001。"
     end
     name
   end
 
   # create_index / rebuild 會先刪掉同名 index。如果那個 index 正是 alias
   # 指向的 (也就是線上查詢正在用的)，重建期間全站搜尋會壞掉，所以先擋下來。
-  def refuse_if_live!(index_name)
-    alias_name = Rails.configuration.x.elasticsearch.index_alias
+  def refuse_if_live!(type, index_name)
+    alias_name = index_class(type).index_alias
     live = begin
       CbetaSearch::ElasticClient.build.indices.get_alias(name: alias_name, ignore_unavailable: true).keys
     rescue StandardError
@@ -300,14 +373,27 @@ namespace :elastic do
           '請改用新的版本編號建立，完成後再用 rake elastic:promote 切換 alias。'
   end
 
-  def import_text_xml(index_name, xml_path)
+  def import_xml(type, index_name, xml_path = nil)
+    klass = index_class(type)
+    xml_path ||= klass.xml_path
     puts "匯入 #{xml_path} 到 #{index_name}"
     started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    imported = CbetaSearch::TextIndex.new.import!(xml_path:, index_name:) do |count|
-      print "\r  已匯入 #{count} 卷…" if (count % 2000).zero?
+    imported = klass.new.import!(xml_path:, index_name:) do |count|
+      print "\r  已匯入 #{count} 筆…" if (count % 20_000).zero?
     end
     elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
-    puts "\r已匯入 #{imported} 卷到 #{index_name}，耗時 #{format('%.1f', elapsed)} 秒"
+    puts "\r已匯入 #{imported} 筆到 #{index_name}，耗時 #{format('%.1f', elapsed)} 秒"
+  end
+
+  def rebuild_one(type, index_name, xml_path = nil)
+    klass = index_class(type)
+    refuse_if_live!(type, index_name)
+
+    klass.new.create!(index_name)
+    puts "已建立 index：#{index_name}"
+    import_xml(type, index_name, xml_path)
+    klass.new.promote!(index_name)
+    puts "已將 alias #{klass.index_alias} 切到 #{index_name}"
   end
 
   def elastic_compose_file

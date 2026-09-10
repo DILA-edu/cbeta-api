@@ -61,9 +61,9 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
   end
 
   test '無 order 參數時用指定的預設排序' do
-    assert_equal CbetaSearch::ElasticQueryBuilder::DEFAULT_SORT, @builder.sort({})
+    assert_equal CbetaSearch::TextIndex::DEFAULT_SORT, @builder.sort({})
     assert_equal [{ '_score' => { 'order' => 'desc' } }] +
-                 CbetaSearch::ElasticQueryBuilder::DEFAULT_SORT,
+                 CbetaSearch::TextIndex::DEFAULT_SORT,
                  @builder.sort({}, default: CbetaSearch::ElasticQueryBuilder::SCORE_SORT)
   end
 
@@ -89,7 +89,7 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
 
   test '未知的排序欄位被忽略, 全部無效時退回預設' do
     assert_equal({ 'work' => { 'order' => 'asc' } }, @builder.sort({ order: 'nonexistent,work' }).first)
-    assert_equal CbetaSearch::ElasticQueryBuilder::DEFAULT_SORT, @builder.sort({ order: 'nonexistent' })
+    assert_equal CbetaSearch::TextIndex::DEFAULT_SORT, @builder.sort({ order: 'nonexistent' })
   end
 
   # 舊版 Manticore 平手時是不可預期的內部順序，這裡改成穩定的排序。
@@ -149,5 +149,68 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
     body = @builder.match_query(@parser.parse('法鼓'), field: 'content_without_notes')
 
     assert body['script_score']['query']['match_phrase'].key?('content_without_notes')
+  end
+
+  # ===== 第二期: notes / titles index =====
+
+  test 'notes index 的 _source 與預設排序自成一套' do
+    builder = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::NotesIndex)
+    body = builder.search_body(@parser.parse('"法鼓"'), params: {})
+
+    assert_includes body['_source'], 'content_w_puncs'
+    assert_equal CbetaSearch::NotesIndex::DEFAULT_SORT.first.keys,
+                 builder.sort({}).first.keys
+  end
+
+  test 'notes 可以用 lb 排序, text 不行' do
+    notes = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::NotesIndex)
+
+    assert_equal({ 'lb' => { 'order' => 'asc' } }, notes.sort({ order: 'lb' }).first)
+    # text index 沒有 lb 欄位, 無效的排序欄位被忽略後退回預設
+    assert_equal CbetaSearch::TextIndex::DEFAULT_SORT, @builder.sort({ order: 'lb' })
+  end
+
+  test 'titles index 沒有 juan, tiebreaker 只到 work' do
+    builder = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::TitlesIndex)
+
+    assert_equal %w[_score canon_order work], builder.sort({}).flat_map(&:keys)
+  end
+
+  # 舊版是 Manticore 的 quorum: MATCH('"觀 無 量 壽 經"/3')
+  test 'quorum: 3 字以上的查詢門檻是 3' do
+    builder = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::TitlesIndex)
+    query = CbetaSearch::Query.new(type: :quorum, raw: '觀無量壽經', phrase: '觀無量壽經', quorum: 3)
+
+    assert_equal({ 'match' => { 'content' => { 'query' => '觀無量壽經',
+                                               'minimum_should_match' => 3 } } },
+                 builder.match_query(query, field: 'content'))
+  end
+
+  # 實測 /dev: q 只有 1~2 字時 Manticore 的 quorum 退化成「全部都要命中」
+  test 'quorum: 查詢字數少於門檻時取字數' do
+    builder = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::TitlesIndex)
+
+    %w[經 法鼓].each do |q|
+      query = CbetaSearch::Query.new(type: :quorum, raw: q, phrase: q, quorum: 3)
+      body = builder.match_query(query, field: 'content')
+
+      assert_equal CbetaSearch::TextIndex.token_count(q),
+                   body['match']['content']['minimum_should_match']
+    end
+  end
+
+  # 少了外層的 script_score，Elasticsearch 在大 index 上會少算 total_term_hits
+  # （bool 有多個計分子句時走 block-max WAND，部分文件只算到一個子句）。
+  test 'bool 查詢外面一定要包一層 identity script_score' do
+    body = @builder.match_query(@parser.parse('"法鼓" | "聖嚴"'), field: 'content')
+
+    assert_equal '_score', body.dig('script_score', 'script', 'source')
+    assert body.dig('script_score', 'query').key?('bool')
+  end
+
+  test '單一詞組不必外包（只有一個計分子句）' do
+    body = @builder.match_query(@parser.parse('法鼓'), field: 'content')
+
+    assert_equal '_score / 2', body.dig('script_score', 'script', 'source')
   end
 end

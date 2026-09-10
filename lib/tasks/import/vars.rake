@@ -8,7 +8,9 @@ end
 class ImportVars  
   def initialize
     @folder = Rails.application.config.cbeta_data
-    @index = Rails.configuration.x.se.index_text
+    # 只查 text index: 與 SearchController#exist_in_cbeta 不同，
+    # 這裡刻意不查 notes / titles，否則會改變 Variant 表要保留哪些異體字。
+    @search = CbetaSearch::SearchService.new(index: CbetaSearch::TextIndex)
   end
   
   def import
@@ -36,38 +38,26 @@ class ImportVars
   end
   
   def exist_in_cbeta(q)
-    select = %(SELECT id FROM #{@index} WHERE MATCH('"#{q}"') LIMIT 0, 1)
-    result = @mysql_client.query(select)
-    
-    if result.size == 0
-      return false
-    else
-      return true
-    end    
-  end
-  
-  def filter(terms)
-    r = []
-    terms.each do |t|
-      r << t if exist_in_cbeta(t)
-    end
-    r
+    query = CbetaSearch::Query.new(type: :phrase, raw: q, phrase: q.downcase)
+    @search.exist?(query, params: {})
   end
 
   def read_variants
-    @manticore = ManticoreService.new
-    @mysql_client = @manticore.open
-
     fn = File.join(@folder, 'variants', 'vars-for-cbdata.json')
     puts "read #{fn}"
     variants = JSON.parse(File.read(fn))
 
+    # 先把所有候選字收齊，一次批次問 Elasticsearch。
+    # 逐字問要發幾萬次 HTTP 請求，會把 ephemeral port 用光。
+    candidates = variants.each_value.flat_map { |v| v.split(',') }.uniq
+    puts "查詢 #{number_with_delimiter(candidates.size)} 個候選字是否出現在 CBETA"
+    exists = @search.exist_all?(candidates)
+
     variants.each_pair do |k, v|
       k1 = cbeta_pua(k)
-      vars = v.split(',')
 
       # 去掉 CBETA 沒用到的字
-      vars.delete_if { |c| not exist_in_cbeta(c) }
+      vars = v.split(',').select { |c| exists[c] }
       next if vars.empty?
 
       vars.map! { |c| cbeta_pua(c) }
@@ -76,7 +66,5 @@ class ImportVars
       s = vars.join(',')
       @inserts << { k: k1, vars: s }
     end
-
-    @manticore.close
   end  
 end

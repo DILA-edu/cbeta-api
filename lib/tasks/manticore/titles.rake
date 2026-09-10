@@ -5,8 +5,22 @@ namespace :manticore do
   end
 end
 
-# 讀純文字檔，產生 xml 給 manticore 做 index
+require_relative 'manticore-share'
+
+# 讀 Work model，產生 xml 給搜尋引擎做 index。
+# 目前的消費者是 Elasticsearch 的 titles index（見 CbetaSearch::TitlesIndex），
+# Manticore 的 titles index 保留一季作為回滾備援。
 class ManticoreTitles
+  include ManticoreShare
+
+  # get_info_from_work 回傳的欄位裡，titles index 用不到的。
+  # title 也排除: 經名在這裡是被搜尋的 content 欄位，不另存一份。
+  EXCLUDE = %i[title byline work_type alt juan_list juan_start].freeze
+
+  def initialize
+    @dynasty_labels = read_dynasty_labels
+  end
+
   def run
     @id = 0
     
@@ -34,6 +48,9 @@ class ManticoreTitles
         canon: w.canon,
         canon_order: CBETA.get_sort_order_from_canon_id(w.canon)
       }
+      # 補上朝代、部類、作譯者、年代，讓 /search/title 也能用限制搜尋範圍的參數。
+      info = get_info_from_work(w.n, exclude: EXCLUDE)
+      data.merge!(info.except(*EXCLUDE)) unless info.nil?
       write_xml(@fo, data)
     end
     puts "title 最長: #{max}"
@@ -60,7 +77,9 @@ class ManticoreTitles
     s = "<sphinx:document id='#{@id}'>\n"
     
     data.each_pair do |k,v|
-      s << "<#{k}>#{v}</#{k}>\n"
+      next if v.nil?
+
+      s << "<#{k}>#{v.to_s.encode(xml: :text)}</#{k}>\n"
     end
     
     s << "</sphinx:document>\n"

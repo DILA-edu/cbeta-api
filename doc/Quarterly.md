@@ -61,8 +61,12 @@ https://rubygems.org/gems/cbeta
 * 更新、取得 Github Repositories, 參考 update-github.md
 * Prepare Data Files, 參考 prepare-files.md
 * 資料初始化, 根據 doc/setup.md 做設定
-* Manticore index (notes / titles / chunks; text 過渡期內也仍會建)
-* Elasticsearch text index, 參考 [elasticsearch-deploy.md](elasticsearch-deploy.md)
+* Manticore index（只有 chunks 還在用，給 `search/similar`；
+  text / notes / titles 過渡期內也仍會建，作為回滾備援）
+* Elasticsearch 的 text / notes / titles 三個 index，
+  參考 [elasticsearch-deploy.md](elasticsearch-deploy.md)
+* 匯入異體字（`rake import:vars`）—— 排在 Elasticsearch 之後，
+  因為過濾條件要查 ES 的 text index
 * kwic
 
 ## heaven 比對 HTML
@@ -163,11 +167,13 @@ sudo rm -rf /var/lib/manticore3/r1-*
 不必改設定、也不必重啟容器，確認 alias 沒指向它就能刪：
 
 ```sh
-RAILS_ENV=production bundle exec rake elastic:info    # 看 alias 指向哪一個
+RAILS_ENV=production bundle exec rake elastic:info    # 看各 alias 指向哪一個
 curl -X DELETE 'http://localhost:9200/cbeta_text_2026r1_001'
+curl -X DELETE 'http://localhost:9200/cbeta_notes_2026r1_001'
+curl -X DELETE 'http://localhost:9200/cbeta_titles_2026r1_001'
 ```
 
-保留前一季的 index 就能隨時 `rake 'elastic:promote[<舊 index>]'` 退版，
+保留前一季的 index 就能隨時 `rake 'elastic:promote[<種類>,<舊 index>]'` 退版，
 確認新版穩定後再刪。
 
 ## 建立下一季開發環境

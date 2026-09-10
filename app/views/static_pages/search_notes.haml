@@ -55,6 +55,11 @@
   %h4 1.1.4 NEAR
   %p 例：#{link_to_url '/search/notes?q="阿含" NEAR/5 "迦葉"'}
   %p 上例表示「阿含」跟「迦葉」之間距離不超過5個字。
+  %p 也可以串接多個 NEAR，例：#{link_to_url '/search/notes?q="老子" NEAR/7 "道" NEAR/3 "經"'}
+  %p.text-muted NEAR 查詢不回傳 total_term_hits，只回傳 num_found。
+
+  %h4 1.1.5 不支援的語法
+  %p 括號分組 (…)、鄰近運算子 ~n、以及 & 運算子都不支援，會回傳 400 並說明原因。
 
 %h3 1.2 限制搜尋範圍
 %p 參考 #{link_to_url '/static_pages/search_filter'}
@@ -68,3 +73,5 @@
     %li note_place: 註解出現的位置，可能是 "foot" 或 "inline" 兩種類型。
     %li content: note 的內容
     %li highlight: 關鍵字詞出現於 note 週圍的文字
+    %li num_found: 符合的註解筆數
+    %li total_term_hits: 關鍵字詞出現的總次數（NEAR 查詢不回傳此欄位）

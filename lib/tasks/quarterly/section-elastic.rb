@@ -1,32 +1,42 @@
 module SectionElastic
-  # text index 的 Elasticsearch。
+  # text / notes / titles 三個 Elasticsearch index。
   #
-  # 來源是 section_manticore 的 t2x 產出的 text.xml，因此必須排在 manticore section
-  # 之後。過渡期內 notes / titles / chunks 仍由 Manticore 提供，見
-  # doc/elasticsearch-migration.md。
+  # 來源是 section_manticore 產出的 text.xml / notes.xml / titles.xml，
+  # 因此必須排在 manticore section 之後。
+  # chunks (search/similar) 仍由 Manticore 提供，見 doc/elasticsearch-migration.md。
   def run_section_elastic
     run_section 'Elasticsearch' do
       step_elastic_rebuild
+      step_elastic_vars
       step_elastic_verify
     end
   end
 
   def step_elastic_rebuild
     conf = Rails.configuration.x.elasticsearch
-    index_name = elastic_index_name
+    release = Rails.configuration.cb.r.downcase
 
-    run_step "建立 index #{index_name} 並切換 alias (約 3 分鐘)" do
+    run_step "建立三個 index (#{release}) 並切換 alias (約 15 分鐘)" do
       confirm <<~MSG
-        index: #{index_name}
-        來源:  #{conf.text_xml}
-        alias: #{conf.index_alias} (完成後切到新 index)
-        位址:  #{conf.url}
+        位址: #{conf.url}
+
+        #{elastic_index_table}
 
         換 index 只靠 alias，不必重啟容器；要退回舊版隨時可以執行
-        rake 'elastic:promote[<舊 index 名稱>]'。
+        rake 'elastic:promote[<種類>,<舊 index 名稱>]'。
       MSG
-      command "bundle exec rake 'elastic:rebuild[#{index_name}]'"
+      command "bundle exec rake 'elastic:rebuild_all[#{release}]'"
       command 'bundle exec rake elastic:info'
+    end
+  end
+
+  # 異體字表要過濾「CBETA 沒用到的字」，靠 Elasticsearch 的 text index 判斷，
+  # 因此必須排在 elastic:rebuild_all 之後 (舊版是查 Manticore，排在 manticore section)。
+  def step_elastic_vars
+    run_step '匯入 異體字 (rake import:vars)' do
+      puts '資料來源是 https://github.com/DILA-edu/cbeta-metadata/blob/master/variants/variants.json'
+      puts '過濾條件會查 Elasticsearch 的 text index，所以要排在 index 建好之後。'
+      command 'rake import:vars'
     end
   end
 
@@ -46,10 +56,19 @@ module SectionElastic
     end
   end
 
-  # 例: cbeta_text_2026r3_001。
-  # index 名用季號、alias 用角色（cbeta_text_current / cbeta_text_staging），
+  private
+
+  # index 名用季號、alias 用角色（cbeta_*_current / cbeta_*_staging），
   # 因此年度輪替時只要重新 promote 一次，見 doc/annual-rotation.md。
-  def elastic_index_name
-    "cbeta_text_#{Rails.configuration.cb.r.downcase}_001"
+  def elastic_index_table
+    conf = Rails.configuration.x.elasticsearch
+    release = Rails.configuration.cb.r.downcase
+
+    %w[text notes titles].map do |type|
+      klass = "CbetaSearch::#{type.camelize}Index".constantize
+      format('  %-7s %-32s alias: %-24s 來源: %s',
+             type, klass.versioned_index_name(release),
+             conf.aliases[type.to_sym], conf.xml[type.to_sym])
+    end.join("\n")
   end
 end

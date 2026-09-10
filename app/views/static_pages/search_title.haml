@@ -2,7 +2,9 @@
 
 %p 例：#{link_to_url '/search/title?q=觀無量壽經'}
 
-%p 模糊搜尋，至少符合3個字。
+%p 模糊搜尋，至少符合3個字（查詢字串不足3個字時，則須全部符合）。
+
+%p 結果依相關度排序。
 
 =render partial: 'q-length-limit'
 
@@ -13,3 +15,9 @@
     %td
     %td 說明
   =render partial: 'search-arg-paginate'
+  %tr
+    %td 限制搜尋範圍
+    %td 選項
+    %td
+      請參考：
+      =link_to nil, controller: 'static_pages', action: 'search_filter' 

@@ -226,3 +226,276 @@ Manticore 的 `charset_table = non_cjk` + `ngram_len = 1` 是「CJK 逐字切、
 - [x] 更新對外更新紀錄 `static_pages/log.haml`（2026-09 Version 5.0.0）
 - [x] 更新 API 說明頁（2026-09-08）：`search_extended.haml` 改寫雙引號說明、補上多詞 NEAR／Exclude／不支援語法；`search.haml` 補上可用 Extended 語法、改掉 Manticore 特有的「排序欄位最多五個」限制
 - [ ] 過渡期結束後移除 Manticore 的 rake tasks、`quarterly/section-manticore.rb`、四個 `manticore-template-*.conf`（`x2t` → `text.xml` 這段要留）
+
+---
+
+# 第二期盤點：notes / titles / chunks（2026-09-10）
+
+第一期已把 text index 搬到 Elasticsearch 並隨 2026R3 的 `rake quarterly` 在 server 上跑完。
+第二期的目標是把剩下三個 Manticore index 也搬過去，讓 Manticore 完全退場。
+
+## D. 現況：還在用 Manticore 的地方
+
+| 進入點 | index | 查詢方式 | 後處理 |
+|---|---|---|---|
+| `search#notes` | `notes<v>` | `MATCH('<q 原樣>')` + filter，`ranker=wordcount`，`ORDER BY canon_order, vol, lb` | `notes_highlight`（Ruby 端加 `<mark>`） |
+| `search#title` | `titles<v>` | `MATCH('"逐字空格"/3')` quorum，**無 ORDER BY**（依 Manticore 預設 `proximity_bm25` 相關度） | `mark_title`、補 `Work` 欄位 |
+| `search#similar` | `chunks<v>` | `MATCH('"<q>"/0.5')` quorum，`ranker=proximity_bm25`，取 top k（預設 500） | Smith-Waterman 比對、去重、依 score 排序 |
+| `search#variants`（`scope=title`） | `titles<v>` | `MATCH('@content "<phrase>"')`，`SUM(weight())` | — |
+| `exist_in_cbeta`（`variants` 用） | `notes<v>`、`titles<v>` | `MATCH('"<q>"') LIMIT 1` | text 部分已走 ES |
+| `rake import:vars` | **`text<v>`** | 自己有一份 `exist_in_cbeta`，查的是 **Manticore 的 text index**（`config.x.se.index_text`），不是 controller 那一份 | — |
+
+其餘 Manticore 相關檔案：`ManticoreService`、`lib/tasks/manticore/*`、
+`lib/tasks/quarterly/section-manticore.rb`、四個 `manticore-template-*.conf`、
+`config.x.se.index_*`。
+
+## E. 好消息：analyzer 完全共用
+
+四個 `manticore-template-*.conf` 的切詞設定**逐字相同**：
+
+```
+charset_table = non_cjk
+ngram_len = 1
+ngram_chars = cjk, U+2580..U+25FF, U+2F00..U+A4CF, U+F900..U+FAFF, U+FE30..U+FE4F, U+20000..U+2FA1F
+```
+
+因此第一期實測定案的 `cbeta_text` analyzer（`pattern` tokenizer + `lowercase` +
+`asciifolding`，見 `TextIndex::TOKEN_PATTERN`）可原封不動套用到三個新 index，
+不需要重新實測切詞規則。
+
+## F. 三個 index 的差異與難點
+
+### F-1. notes（難度：低）
+
+* **語法**：說明頁只承諾 AND／OR／NOT／NEAR 四項，全部落在現有 `QueryParser` 的能力內。
+* **`_source` 要存 content**：與 text 相反。notes 回傳 `content`，`notes_highlight`
+  還要用 `content_w_puncs`／`prefix`／`suffix`，都必須存進 `_source`。
+  只有 `content`（去標點版）需要索引；`content_w_puncs` 在 Manticore 是 string
+  attribute，本來就不進 index。
+* **`term_hits` 與 `total_term_hits`**：逐筆結果沒有 `term_hits`（`init_notes` 的欄位
+  清單沒有 `weight()`），但**回傳的最外層有 `total_term_hits`**（實測 `/dev`：
+  `q="法鼓"` → `num_found=60`、`total_term_hits=67`）。因此 `content` 仍要掛
+  `term_freq` similarity，`facet=1` 的 `hits` 也照 text 的 `scripted_metric` 做法。
+* **排序**：預設 `canon_order, vol, lb` 三個都是 keyword，ES 直接排即可。
+  但 `ElasticQueryBuilder::SORT_FIELDS` 與 `TIEBREAKER` 是 text 專用的
+  （沒有 `lb`／`n`／`note_place`），要改成每個 index 一組排序設定，不能共用常數。
+
+行為改變（與 text 第一期同型）：
+
+| # | 項目 | 舊 | 新 |
+|---|---|---|---|
+| 1 | 回傳的 `SQL` 欄位 | 有（實測 `/dev` 仍回傳） | 移除，同 text 的第 2 項 |
+| 2 | NEAR 的 `total_term_hits` | Manticore `ranker=wordcount` 算得出（實測 `"阿含" NEAR/5 "迦葉"` → 3） | intervals 的 `_score` 不是出現次數，且 notes **沒有** KWIC suffix array 可退回逐筆計數，只能回 `num_found` |
+| 3 | NEAR + `facet=1` | 有數字（意義存疑） | 回 400，同 text 的第 7 項 |
+| 3b | NEAR 的距離邊界 | Manticore 是「相隔 < n 字」（實測 `ES(n) ≡ Manticore(n+1)`） | 「相隔 ≤ n 字」—— 與說明頁寫的「距離不超過 n 個字」及 `KwicService#check_near`（`pos2 - pos1 - q1.size <= near`）一致。Manticore 才是例外，`search/all_in_one` 本來就是新的這個語意 |
+| 4 | `~n` | 原樣送進 Manticore（`init_notes` 裡剝除 `~\d+$` 的那段是 dead code，算出來的 `s` 沒被用到） | 回 400，同 text 的第 5 項 |
+| 5 | `start` 超出範圍 | `estimate_max_matches` 算出的 `max_matches` | `MAX_RESULT_WINDOW` 上限，同 text 的第 6 項 |
+| 6 | `work_type` filter | notes index 沒有這個欄位，Manticore 回 500（`unknown column`） | ES 對不存在的欄位做 filter 會安靜地回 0 筆。說明頁的「限制搜尋範圍」本來就沒承諾 notes 支援 `work_type`，但行為從報錯變成空結果 |
+
+### F-2. titles（難度：低，但排序一定會變）
+
+* **quorum `/3` 實測結果**：`/dev` 的 `q=法鼓`（2 字）回 2 筆、`q=經`（1 字）回 2272 筆。
+  也就是 **keyword 數少於 3 時，quorum 退化成「全部都要命中」，不是回 0 筆**。
+  ES 對應為 `match` + `minimum_should_match: [3, token 數].min`（**不是** `match_phrase`）。
+* **similarity 用預設 BM25，不掛 `term_freq`**：這裡要的是相關度，不是出現次數。
+* **排序一定會變**：現行 SQL 沒有 `ORDER BY`，靠 Manticore 預設的 `proximity_bm25`；
+  ES 用 Lucene BM25。兩者演算法不同，**同分與相近分數的順序必然不同**。
+  這是無法做到 100% 一致的一項，需要接受。
+* **latin 切詞的邊界差異**：Manticore 收到的是 `@q.chars.join(' ')`（逐字空格分開），
+  拉丁字母因此一字一 keyword；ES 若直接 `match` 原始 `@q`，analyzer 會把連續拉丁字母
+  併成一個 token。經名裡的拉丁字很少，但行為不同，要在實作時決定沿用哪一種。
+* **`variants` 的 `scope=title` 計數**：`SUM(weight())` 是 phrase 出現次數
+  （實測 `q=神咒&scope=title` → `神呪` 31）。titles.xml 只有 742KB，
+  **建議 `content` 多開一個掛 `term_freq` 的 sub-field**（一個給 BM25 排序、
+  一個給計數），成本可忽略，且回傳數字完全不變。
+* **filter 支援範圍**：titles index 只有 `work`／`canon`／`canon_order` 三個屬性。
+  實測 `/dev` 的 `/search/title?q=觀無量壽經&dynasty=唐` 回
+  `table titles3: unknown column: dynasty`，**而且把 backtrace（含伺服器路徑）一起回傳**。
+  搬到 ES 時至少要讓它變成乾淨的錯誤；titles.xml 由 `Work` model 產生，
+  要補齊 dynasty／category／creator／time 也很容易。
+
+### F-3. chunks / similar（難度：高，一致性最差）
+
+* **index 體積**：`chunks.xml` 本機 3.7GB（text.xml 的 3 倍；每 100 字一塊、
+  前後重疊 50 字）。ES index 估計 4~5GB，是三者中最大的。
+* **`_source` 必須存 content**：Smith-Waterman 要拿全文比對。
+* **top-k 的組成會變**：第一階段是 `quorum /0.5` + `proximity_bm25` 取前 500。
+  Lucene BM25 與 Manticore proximity_bm25 的排序不同 → **進入 Smith-Waterman 的
+  500 筆候選不會完全一樣 → 最終結果必然有出入**。這一項無法用「資料版本差異」解釋掉，
+  是演算法差異。
+* 因此建議把 `similar` 排在最後，且先確認它的實際使用量（同 §A-3 一直沒做的 production
+  log 統計）。
+
+## G. 第一期遺留：`rake import:vars` 還在用 Manticore 的 text index
+
+`lib/tasks/import/vars.rake` 有自己的 `exist_in_cbeta`，`@index` 直接取
+`Rails.configuration.x.se.index_text`，第一期沒有一起改。也就是說：
+
+* **Manticore 的 text index 目前還不能停**，否則 `rake import:vars` 會壞。
+* `section_manticore` 裡的 `step_manticore_vars` 排在 `section_elastic` **之前**。
+  改用 ES 之後，`import:vars` 必須移到 `elastic:rebuild` 之後 —— 這不是選項，是必要的重排。
+
+修法：把 `ImportVars#exist_in_cbeta` 換成
+`CbetaSearch::SearchService#exist?`（controller 已經是這樣做了）。
+
+## H. 決策（2026-09-10 已確認）
+
+| # | 項目 | 內容 | 決定 |
+|---|---|---|---|
+| 1 | 本期範圍 | notes + titles + `import:vars` | **已定案**。做完後 Manticore 只剩 `chunks` 一個 index（`search/similar` 用） |
+| 2 | `similar` 的排序差異 | 接受 Lucene BM25 的結果差異 | **已定案：接受，照搬**。排在第三期，屆時 `search_similar.haml` 的「第一階段使用 Manticore 模糊搜尋」也要改寫 |
+| 3 | `variants` 的 `scope=title` 計數 | 保留「出現次數」，或改回「文件數」 | **保留出現次數**。titles.xml 只有 742KB，多一個 `term_freq` sub-field 成本可忽略，回傳數字完全不變 |
+| 4 | `/search/title` 的 filter | 維持現狀（只支援 canon），或補齊 dynasty／category／creator／time | **補齊**。現況是回 500 並洩漏 backtrace，本來就該修 |
+| 5 | rake 介面 | `elastic:rebuild[<type>,<index_name>]` 加型別參數，或各自 `elastic:rebuild_notes[...]` | 加型別參數，另提供 `elastic:rebuild_all[<季號>]` 一次做完 |
+| 6 | alias 命名 | `cbeta_notes_current`／`cbeta_titles_current`（staging 各自 `_staging`）；cb.yml 從單一 `index_alias` 改成每個 index 一組 | 照此辦理，cb.yml 改成 `elasticsearch.aliases.{text,notes,titles}` |
+| 7 | Manticore 退場時機 | 本期一併移除，或再保留一季 | 保留到 chunks 也搬完為止（本期結束後 Manticore 只剩 `chunks` 一個 index，conf 與 quarterly 步驟可先精簡） |
+
+## I. 驗證計畫
+
+第一期文件記的「`notes`／`title`／`similar`／`variants` 在 staging 驗不了（Manticore r3
+index 不存在）」已經解除 —— 2026R3 的 `rake quarterly` 跑完了，`/dev` 現在有可用的
+Manticore 結果。因此：
+
+* golden 從 `/dev` 抓（與 staging 的 XML 同季），擴充 `elastic:fetch_golden` 的案例清單，
+  加入 `search/notes`、`search/title`、`search/similar`、`search/variants`。
+* **本機資料版本比 text 更亂**：`notes.xml`／`chunks.xml` 是 2026-03、`text.xml` 是
+  2026-06、`titles.xml` 是 2026-05。本機只能驗語法與結構，數字一致性要在 server 上驗。
+
+---
+
+# 第二期實作結果（2026-09-10）
+
+範圍：`notes`、`titles` 兩個 index 與 `rake import:vars`。
+`search/similar`（chunks index）仍走 Manticore，排在第三期。
+
+## 新增與修改的檔案
+
+| 檔案 | 說明 |
+|---|---|
+| `app/services/cbeta_search/index_base.rb` | 新增。三個 index 共用的 analyzer、similarity、建立／匯入／alias 切換 |
+| `app/services/cbeta_search/text_index.rb` | 改為繼承 `IndexBase`，欄位／排序設定收斂成 class 方法 |
+| `app/services/cbeta_search/notes_index.rb` | 新增 |
+| `app/services/cbeta_search/titles_index.rb` | 新增 |
+| `app/services/cbeta_search/manticore_xml_reader.rb` | 由 `manticore_text_xml_reader.rb` 改名，欄位型別轉換改由呼叫端指定 |
+| `app/services/cbeta_search/elastic_query_builder.rb` | 依 index 參數化；新增 `:quorum` 查詢；bool 查詢外包 `script_score`（見下） |
+| `app/services/cbeta_search/search_service.rb` | 可指定 index；`row_from_hit` 依 index 的 `row_fields`；新增 `exist_all?`（`_msearch` 批次） |
+| `app/services/cbeta_search/query.rb` | 新增 `:quorum` 型別 |
+| `app/controllers/search_controller.rb` | `notes`／`title`／`variants` 改走 ES；移除 `sphinx_search`／`sphinx_select`／`sphinx_total_found`／`facet_by_sphinx`／`get_hit_count`／`exist_in_index`／`estimate_max_matches`／`init_order`（**淨減 375 行**） |
+| `config/application.rb` | 新增 `CbetaEsAlias`（由 text alias 推導其他 alias）、`config.x.elasticsearch.aliases`／`.xml` |
+| `lib/tasks/elastic.rake` | 所有 task 加 index 種類引數；新增 `elastic:rebuild_all[<季號>]`；golden 案例由 31 增為 45 |
+| `lib/tasks/import/vars.rake` | 改用 `SearchService#exist_all?`（只查 text index，與 controller 的三 index 版刻意不同） |
+| `lib/tasks/manticore/titles.rake` | titles.xml 補上朝代／部類／作譯者／年代 |
+| `lib/tasks/quarterly/section-elastic.rb` | 一次建三個 index；接手原本在 manticore section 的 `import:vars` |
+| `lib/tasks/quarterly/section-manticore.rb` | 移除 `step_manticore_vars` |
+| `test/services/cbeta_search/index_definitions_test.rb` | 新增。三個 index 的 mapping、alias 推導、index 命名 |
+
+## 途中發現的兩個 Elasticsearch 問題（都已修正）
+
+這兩個都是**規模相依**的：22,037 筆的 text index 不會出現，2,182,414 筆的 notes index 必現。
+
+### 1. `norms` 開著會讓大 index 的 OR 查詢回 500
+
+`term_freq` scripted similarity 只用 `doc.freq`，不用 `doc.length`，但 mapping 沒關掉 norms。
+「OR 查詢 + `scripted_metric` 讀 `_score`」時，`ScriptedSimilarity` 會對已走完的 scorer
+（docID = `Integer.MAX_VALUE`）去讀 norms：
+
+```
+java.io.EOFException: read past EOF (pos=2147483647) ... [slice=_10.nvd]
+```
+
+`_forcemerge` 成單一 segment 後依然重現，確定不是 segment 損壞。
+**修正**：全文欄位一律 `norms: false`。分數完全不變（實測單一詞組前後都是 3084），
+index 還小了約 2%。
+
+### 2. bool 查詢的 `total_term_hits` 會少算
+
+bool 有多個計分子句時 Lucene 走 block-max WAND，部分文件只算到其中一個子句的分數。
+實測 notes index：
+
+| 查詢 | 現行寫法 | 正確值 | Manticore |
+|---|---|---|---|
+| `"波羅蜜" \| "波羅密"` | 3090 | 3204（= 3084 + 120） | 3204 |
+| `"波羅蜜" \| "般若"` | 7334 | 9513（= 3084 + 6429） | — |
+
+**修正**：`bool_query` 外面再包一層 `script_score`，`source` 就是 `"_score"`
+（分數不變），強迫內層以 COMPLETE 模式計分。text index 兩種寫法同值，
+但因為是規模相依的，一律外包。
+
+## 驗證結果
+
+驗證條件比第一期嚴格得多：**把 staging 的 `text.xml`／`notes.xml`／`titles.xml`
+（2026R3，2026-09-09 產出）抓到本機重建三個 index**，golden 從 `/dev` 抓，
+因此可以逐筆精確比對，不必用「差異落在資料版本」來解讀。
+
+`rake 'elastic:verify_golden[http://localhost:3000]'`：**45 項中 42 項完全一致**。
+
+三項差異全部有明確歸因：
+
+| 案例 | 狀況 |
+|---|---|
+| `aio_near2`／`aio_near3` | 本機 `data/kwic/sa` 只有 135 卷（完整需 22,037 卷），KWIC 讀檔失敗。既有的環境資料缺口，與這次改動無關 |
+| `notes_near` | 刻意的行為改變，見 F-1 的第 3b 項（NEAR 距離邊界的 off-by-one） |
+
+另外逐項比對過、golden 沒涵蓋的部分：
+
+* `notes` 的 5 種 facet（canon／category／creator／dynasty／work）**所有項目逐筆相符**。
+* `notes` 的回傳欄位與舊版完全相同（`id, note_place, canon, category, vol, file,
+  work, title, juan, lb, n, content, highlight`），只少了除錯用的 `SQL`。
+* `title` 的 quorum：1 字（2272）、2 字（2）、5 字（51）、8 字（248）全部與 `/dev` 相同 ——
+  含 §F-2 實測到的「字數少於門檻時退化成全部都要命中」。
+* `title` 的回傳欄位與舊版相同。
+* `variants`：`神咒`（4963）、`神咒&scope=title`（神呪 31）、`著衣持鉢`（51/3/17）、
+  `無上正等正覺`（[]）四例的 `q` 與 `hits` 全部相符。
+  這同時驗證了 `import:vars` → `Variant` 表 → `exist_in_cbeta` → `hit_count` 整條鏈路。
+* `/search/title` 加 filter 不再回 500：`dynasty=唐`（8）、`category=淨土宗部類`（34）、
+  `canon=T`（35）、`time=600..700`（6）。
+
+### `import:vars` 的結果差異：ES 比 Manticore 多收 107 個異體字
+
+拿 staging（Manticore、同一份 text.xml）比對：
+
+| | 記錄數 | 異體字總數 |
+|---|---|---|
+| staging（Manticore） | 36,603 | 50,098 |
+| 本機（Elasticsearch） | 36,706 | 50,205 |
+
+差異是 **ES 多收 102 個字元、107 個 (key, 異體字) 配對；Manticore 沒有多收任何一個**
+（ES 的結果是嚴格超集）。原因是 Manticore 的 `ngram_chars` 範圍：
+
+```
+ngram_chars = cjk, U+2580..U+25FF, U+2F00..U+A4CF, U+F900..U+FAFF, U+FE30..U+FE4F, U+20000..U+2FA1F
+```
+
+多收的字全部落在這些範圍**之外**，Manticore 因此把它們當成分隔符、根本沒進 index，
+`exist_in_cbeta` 永遠回 false：
+
+| 類別 | 例子 |
+|---|---|
+| CJK 擴充 G／H（U+30000 以上） | 𱆮 U+311AE、𱀸 U+31038、𰚖 U+30696 |
+| CJK 部首補充（U+2E80..U+2EFF） | ⺩ U+2EA9、⺼ U+2EBC |
+| 圈號與符號（U+2460..U+24FF、U+2600..U+267F） | ⑫ U+246B、⒉ U+2489、☷ U+2637 |
+| 全形標點 | ： U+FF1A |
+
+ES 的 `pattern` tokenizer 保留所有非空白字元，所以查得到。這些字確實出現在
+CBETA 正文裡（`exist?` 查的就是同一份 text.xml），因此**新的結果比較正確** ——
+`/search/variants` 會多建議這些寫法，而且建議了就真的搜得到。
+
+## 效能實測（本機 macOS）
+
+| 項目 | 數字 |
+|---|---|
+| notes index 匯入 | 2,182,414 筆 / 358 秒 / 410MB |
+| titles index 匯入 | 4,900 筆 / 0.5 秒 / 0.6MB |
+| text index 匯入 | 22,150 卷 / 169 秒 / 1.5GB |
+| `rake import:vars` | 56,165 個候選字 / 4.4 秒（改用 `_msearch` 批次前會把 ephemeral port 用光而失敗） |
+
+## 第三期待辦
+
+- [ ] `search/similar`（chunks index）搬到 Elasticsearch。已定案接受 Lucene BM25 與
+      Manticore `proximity_bm25` 的排序差異；`search_similar.haml` 的
+      「第一階段使用 Manticore 模糊搜尋」屆時要改寫。
+- [ ] chunks 搬完後移除：`ManticoreService`、`lib/tasks/manticore/` 的 `conf`／`build`、
+      四個 `manticore-template-*.conf`、`section-manticore.rb` 的建資料夾／設定／建 index／
+      重啟容器步驟。**`x2t`／`t2x`／`notes`／`titles`／`chunks` 的轉檔部分要留**，
+      Elasticsearch 就是吃這些 XML。
+- [ ] 屆時 `config.x.se.indexes` 只剩轉檔用途，可一併精簡。

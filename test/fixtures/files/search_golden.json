@@ -94,7 +94,7 @@
   },
   "ext_or": {
     "num_found": 7379,
-    "total_term_hits": 117060,
+    "total_term_hits": 117059,
     "results": [
       {
         "work": "T0099",
@@ -186,8 +186,8 @@
     ]
   },
   "aio_near3": {
-    "num_found": 96,
-    "total_term_hits": 145,
+    "num_found": 102,
+    "total_term_hits": 155,
     "results": [
       {
         "work": "T1736",
@@ -320,7 +320,7 @@
       },
       {
         "work": "B0198",
-        "juan": 9,
+        "juan": 7,
         "term_hits": 3
       }
     ]
@@ -351,7 +351,7 @@
       },
       {
         "work": "B0198",
-        "juan": 9,
+        "juan": 7,
         "term_hits": 3
       }
     ]
@@ -498,12 +498,12 @@
     "results": [
       {
         "work": "T0262",
-        "juan": 3,
+        "juan": 1,
         "term_hits": 2
       },
       {
         "work": "T0262",
-        "juan": 1,
+        "juan": 3,
         "term_hits": 2
       },
       {
@@ -512,13 +512,13 @@
         "term_hits": 2
       },
       {
-        "work": "B0024",
-        "juan": 1,
+        "work": "T0262",
+        "juan": 6,
         "term_hits": 1
       },
       {
         "work": "T0262",
-        "juan": 6,
+        "juan": 7,
         "term_hits": 1
       }
     ]
@@ -548,8 +548,8 @@
         "term_hits": 5
       },
       {
-        "work": "A1267",
-        "juan": 13,
+        "work": "T2103",
+        "juan": 28,
         "term_hits": 4
       }
     ]
@@ -574,13 +574,13 @@
         "term_hits": 7
       },
       {
-        "work": "A1267",
-        "juan": 13,
+        "work": "T1696",
+        "juan": 1,
         "term_hits": 4
       },
       {
-        "work": "T1696",
-        "juan": 1,
+        "work": "T2103",
+        "juan": 28,
         "term_hits": 4
       }
     ]
@@ -683,12 +683,12 @@
     "total_term_hits": 1582,
     "results": [
       {
-        "work": "T0492b",
+        "work": "T0492a",
         "juan": 1,
         "term_hits": 1
       },
       {
-        "work": "T0492a",
+        "work": "T0492b",
         "juan": 1,
         "term_hits": 1
       },
@@ -714,28 +714,28 @@
     "total_term_hits": 1582,
     "results": [
       {
-        "work": "GA0032",
-        "juan": 3,
-        "term_hits": 2
-      },
-      {
-        "work": "GA0042",
-        "juan": 8,
-        "term_hits": 2
-      },
-      {
-        "work": "JA042",
+        "work": "T1189",
         "juan": 1,
         "term_hits": 2
       },
       {
-        "work": "I0072",
+        "work": "T1493",
         "juan": 1,
         "term_hits": 2
       },
       {
-        "work": "JB178",
-        "juan": 4,
+        "work": "T1521",
+        "juan": 5,
+        "term_hits": 2
+      },
+      {
+        "work": "T1531",
+        "juan": 1,
+        "term_hits": 2
+      },
+      {
+        "work": "T1715",
+        "juan": 2,
         "term_hits": 2
       }
     ]
@@ -780,16 +780,16 @@
         "canon_name": "佛寺志彙刊"
       },
       {
-        "canon": "TX",
-        "docs": 12,
-        "hits": 32,
-        "canon_name": "太虛大師集"
-      },
-      {
         "canon": "YP",
         "docs": 16,
         "hits": 32,
         "canon_name": "演培法師全集"
+      },
+      {
+        "canon": "TX",
+        "docs": 12,
+        "hits": 32,
+        "canon_name": "太虛大師集"
       }
     ]
   },
@@ -894,9 +894,303 @@
   "sc": {
     "hits": 9949
   },
+  "notes_phrase": {
+    "num_found": 60,
+    "total_term_hits": 67,
+    "results": [
+      {
+        "work": "T0894a",
+        "juan": 1
+      },
+      {
+        "work": "T1307",
+        "juan": 1
+      },
+      {
+        "work": "T1309",
+        "juan": 1
+      },
+      {
+        "work": "T1648",
+        "juan": 1
+      },
+      {
+        "work": "T1648",
+        "juan": 1
+      }
+    ]
+  },
+  "notes_and": {
+    "num_found": 0,
+    "total_term_hits": 0,
+    "results": []
+  },
+  "notes_or": {
+    "num_found": 2580,
+    "total_term_hits": 3204,
+    "results": [
+      {
+        "work": "T0220",
+        "juan": 1
+      },
+      {
+        "work": "T0220",
+        "juan": 9
+      },
+      {
+        "work": "T0220",
+        "juan": 9
+      },
+      {
+        "work": "T0220",
+        "juan": 158
+      },
+      {
+        "work": "T0220",
+        "juan": 158
+      }
+    ]
+  },
+  "notes_not": {
+    "num_found": 1090,
+    "total_term_hits": 1376,
+    "results": [
+      {
+        "work": "T0001",
+        "juan": 1
+      },
+      {
+        "work": "T0001",
+        "juan": 1
+      },
+      {
+        "work": "T0001",
+        "juan": 4
+      },
+      {
+        "work": "T0001",
+        "juan": 4
+      },
+      {
+        "work": "T0001",
+        "juan": 7
+      }
+    ]
+  },
+  "notes_near": {
+    "num_found": 3,
+    "total_term_hits": 3,
+    "results": [
+      {
+        "work": "T2145",
+        "juan": 4
+      },
+      {
+        "work": "T2145",
+        "juan": 4
+      },
+      {
+        "work": "N0006",
+        "juan": 42
+      }
+    ]
+  },
+  "notes_filter_canon": {
+    "num_found": 6,
+    "total_term_hits": 8,
+    "results": [
+      {
+        "work": "T0894a",
+        "juan": 1
+      },
+      {
+        "work": "T1307",
+        "juan": 1
+      },
+      {
+        "work": "T1309",
+        "juan": 1
+      },
+      {
+        "work": "T1648",
+        "juan": 1
+      },
+      {
+        "work": "T1648",
+        "juan": 1
+      }
+    ]
+  },
+  "notes_facet": {
+    "num_found": 60,
+    "total_term_hits": 67,
+    "results": [
+      {
+        "work": "T0894a",
+        "juan": 1
+      },
+      {
+        "work": "T1307",
+        "juan": 1
+      },
+      {
+        "work": "T1309",
+        "juan": 1
+      },
+      {
+        "work": "T1648",
+        "juan": 1
+      },
+      {
+        "work": "T1648",
+        "juan": 1
+      }
+    ]
+  },
+  "notes_paginate": {
+    "num_found": 60,
+    "total_term_hits": 67,
+    "results": [
+      {
+        "work": "ZW0068",
+        "juan": 5
+      },
+      {
+        "work": "ZW0083",
+        "juan": 1
+      },
+      {
+        "work": "ZW0083",
+        "juan": 1
+      },
+      {
+        "work": "B0009",
+        "juan": 28
+      },
+      {
+        "work": "B0009",
+        "juan": 28
+      }
+    ]
+  },
+  "title_1char": {
+    "num_found": 2272,
+    "results": [
+      {
+        "work": "ZW0095",
+        "juan": 1
+      },
+      {
+        "work": "ZW0092",
+        "juan": 1
+      },
+      {
+        "work": "ZW0091",
+        "juan": 4
+      },
+      {
+        "work": "ZW0039",
+        "juan": 1
+      },
+      {
+        "work": "ZW0037",
+        "juan": 1
+      }
+    ]
+  },
+  "title_2char": {
+    "num_found": 2,
+    "results": [
+      {
+        "work": "T0270",
+        "juan": 2
+      },
+      {
+        "work": "T0704",
+        "juan": 1
+      }
+    ]
+  },
+  "title_5char": {
+    "num_found": 51,
+    "results": [
+      {
+        "work": "X0411",
+        "juan": 3
+      },
+      {
+        "work": "X0413",
+        "juan": 2
+      },
+      {
+        "work": "X0410",
+        "juan": 1
+      },
+      {
+        "work": "X0406",
+        "juan": 1
+      },
+      {
+        "work": "T1752",
+        "juan": 1
+      }
+    ]
+  },
+  "title_long": {
+    "num_found": 248,
+    "results": [
+      {
+        "work": "T1695",
+        "juan": 3
+      },
+      {
+        "work": "T0220",
+        "juan": 600
+      },
+      {
+        "work": "T0994",
+        "juan": 1
+      },
+      {
+        "work": "T1709",
+        "juan": 3
+      },
+      {
+        "work": "T1514",
+        "juan": 1
+      }
+    ]
+  },
+  "variants_text": {
+    "num_found": 3,
+    "possibility": 4,
+    "results": [
+      {
+        "q": "著衣持缽",
+        "hits": 51
+      },
+      {
+        "q": "著衣持盋",
+        "hits": 3
+      },
+      {
+        "q": "着衣持鉢",
+        "hits": 17
+      }
+    ]
+  },
+  "variants_title": {
+    "num_found": 1,
+    "possibility": 2,
+    "results": [
+      {
+        "q": "神呪",
+        "hits": 31
+      }
+    ]
+  },
   "_meta": {
-    "source": "https://cbdata.dila.edu.tw/stable",
-    "fetched_at": "2026-09-08T09:40:00+08:00",
-    "note": "stable 對應 production（cbapi2, CBETA 2026R2）"
+    "source": "https://cbdata.dila.edu.tw/dev",
+    "fetched_at": "2026-09-10T13:59:55+08:00"
   }
 }

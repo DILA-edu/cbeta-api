@@ -89,18 +89,27 @@ Define dev_path    /var/www/cbeta-api-staging
    cap staging deploy:restart
    ```
 
-7. 把新 production 的 Elasticsearch alias 切到該季的 index：
+7. 把新 production 的 Elasticsearch alias 切到該季的 index（**三個 index 都要**）：
 
-   ```bash
+   ```sh
    cd /var/www/cbeta-api-production/current
-   RAILS_ENV=production bundle exec rake elastic:info    # 先看 alias 現在指向哪個
-   RAILS_ENV=production bundle exec rake 'elastic:promote[cbeta_text_2026r3_001]'
+   RAILS_ENV=production bundle exec rake elastic:info    # 先看各 alias 指向哪個 index
+
+   RAILS_ENV=production bundle exec rake 'elastic:promote[text,cbeta_text_staging_2026r3_001]'
+   RAILS_ENV=production bundle exec rake 'elastic:promote[notes,cbeta_notes_staging_2026r3_001]'
+   RAILS_ENV=production bundle exec rake 'elastic:promote[titles,cbeta_titles_staging_2026r3_001]'
    ```
 
    為什麼需要這一步：ES 的 index 名帶**季號**、alias 帶**角色**。季度流程是在
-   staging 跑的，新 index 當時被 promote 到 `cbeta_text_staging`；slot 升為
-   production 後讀的是 `cbeta_text_current`，那個 alias 還指著上一季的 index。
+   staging 跑的，新 index 當時被 promote 到 `cbeta_*_staging`；slot 升為
+   production 後讀的是 `cbeta_*_current`，那些 alias 還指著上一季的 index。
    （這是原子操作，隨時可以 promote 回舊 index 退版。）
+
+   index 名稱裡的 `staging` 只是「建立當時是哪個角色」的痕跡，不影響它為
+   production 服務；判斷依據一律是 alias。名稱由
+   `CbetaSearch::IndexBase.versioned_index_name` 從 alias 推導，
+   目的是讓兩個角色在同一個 Elasticsearch 上不會撞名。
+
 
 8. 用 `cap production slot:which` / `cap staging slot:which` 驗證。
 

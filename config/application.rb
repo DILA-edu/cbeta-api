@@ -6,6 +6,30 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# 由 text index 的 alias 推導其他 index 的 alias。
+#
+# 慣例是 <前綴>_<index 種類>_<角色>，例如 production 的 cbeta_text_current
+# 與 staging 的 cbeta_text_staging。這樣既有的 cb.yml 只設一個 index_alias
+# 就能涵蓋全部 index，需要各自指定時再用 elasticsearch.aliases 覆寫。
+#
+# 定義在這裡而不是 app/services: config/application.rb 執行時 autoload 還沒啟動。
+module CbetaEsAlias
+  TYPES = %i[text notes titles].freeze
+
+  def self.build(text_alias, overrides = {})
+    TYPES.index_with { |type| overrides[type].presence || derive(text_alias, type) }.freeze
+  end
+
+  def self.derive(text_alias, type)
+    return text_alias if type == :text
+
+    m = text_alias.to_s.match(/\A(.*)_text(_.*)?\z/)
+    return "#{text_alias}_#{type}" if m.nil?
+
+    "#{m[1]}_#{type}#{m[2]}"
+  end
+end
+
 module CbData
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
@@ -69,8 +93,9 @@ module CbData
     config.x.kwic.temp = File.join(config.x.kwic.base, 'temp')
 
     # Search engine 相關 (Manticore)
-    # 2026 年起 text index 改由 Elasticsearch 提供，但 notes / titles / chunks
-    # 仍走 Manticore，因此這裡的設定過渡期內必須保留。
+    # 2026 年起 text / notes / titles 三個 index 改由 Elasticsearch 提供，
+    # 只剩 chunks (search/similar) 仍走 Manticore。
+    # notes / titles 的 Manticore 設定保留一季作為回滾備援，
     # 見 doc/elasticsearch-migration.md
     config.x.se.indexes = %w[text notes titles chunks]
     config.x.se.index_text   = "text#{config.cb.v}"
@@ -78,7 +103,7 @@ module CbData
     config.x.se.index_titles = "titles#{config.cb.v}"
     config.x.se.index_chunks = "chunks#{config.cb.v}"
 
-    # Elasticsearch (取代 Manticore 的 text index)
+    # Elasticsearch
     #
     # 連線設定優先讀 config/cb.yml (該檔 gitignored、每台機器一份)，
     # 其次讀環境變數，最後才用本機開發預設值。
@@ -91,14 +116,35 @@ module CbData
 
     # 查詢一律走 alias，實際 index 為版本化名稱 (例 cbeta_text_2026r1_001)，
     # 重建完成後以 rake elastic:promote 原子切換 alias。
+    #
+    # index_alias 是 text index 的 alias，同時也是其他 index alias 的推導依據:
+    # cbeta_text_current → cbeta_notes_current / cbeta_titles_current
+    # (staging 是 cbeta_text_staging → cbeta_notes_staging …)。
+    # 這讓既有的 cb.yml 不必改就能沿用；要各自指定時在 cb.yml 寫
+    #   elasticsearch:
+    #     aliases:
+    #       notes: cbeta_notes_current
     config.x.elasticsearch.index_alias = es[:index_alias] ||
       ENV.fetch('CBETA_ES_INDEX_ALIAS', 'cbeta_text_current')
 
+    overrides = (es[:aliases] || {}).symbolize_keys
+    config.x.elasticsearch.aliases = CbetaEsAlias.build(
+      config.x.elasticsearch.index_alias, overrides
+    )
+
     # 建立/匯入 index 時必須指定版本化 index 名稱; 對 alias 名稱建 index 會被 ES 拒絕。
+    # 只有 text 有這個預設值，其餘 index 一律要在 rake 引數明確指定。
     config.x.elasticsearch.index_name = es[:index_name] ||
       ENV.fetch('CBETA_ES_INDEX_NAME', config.x.elasticsearch.index_alias)
 
-    # ES 匯入來源: 既有 Manticore 轉檔流程 (rake manticore:x2t) 產出的 text.xml
-    config.x.elasticsearch.text_xml = Rails.root.join('data', 'manticore-xml', 'text.xml')
+    # ES 匯入來源: 既有 Manticore 轉檔流程產出的 xmlpipe2 檔案
+    xml_dir = Rails.root.join('data', 'manticore-xml')
+    config.x.elasticsearch.xml = {
+      text: xml_dir.join('text.xml'),
+      notes: xml_dir.join('notes.xml'),
+      titles: xml_dir.join('titles.xml')
+    }
+    # 舊名，仍有文件與 rake 引數在用
+    config.x.elasticsearch.text_xml = config.x.elasticsearch.xml[:text]
   end
 end
