@@ -11,9 +11,9 @@
 
 | 項目 | 現況 | Elasticsearch 需要 |
 |---|---|---|
-| CPU | 10 核 | 匯入時約 30 分鐘（排在季度批次流程） |
+| CPU | 10 核 | 匯入時約 45 分鐘（排在季度批次流程；瓶頸是 Ruby 端的 XML 解析，約 2,700 筆/秒）|
 | 記憶體 | 94GB，實際使用 5.7GB | heap 4GB |
-| 匯入 | — | 四個 index 合計約 30 分鐘 |
+| 匯入 | — | 四個 index 合計約 45 分鐘（chunks 一個就佔 28 分鐘）|
 | 磁碟 | 1TB，使用 44%（剩 544GB） | 四個 index 合計約 3.5GB |
 | port | — | 9200（未被佔用） |
 | `vm.max_map_count` | 1048576 | ≥ 262144（已滿足，見 `/etc/sysctl.d/10-map-count.conf`） |
@@ -209,7 +209,7 @@ RAILS_ENV=staging be rake 'elastic:rebuild[notes,cbeta_notes_2026r3_001]'
 | text | 22,037 卷 | 1.4 GB | 約 2.5 分鐘 |
 | notes | 2,182,414 條 | 約 0.4 GB | 約 12 分鐘 |
 | titles | 4,904 部 | 0.6 MB | 約 1 秒 |
-| chunks | 4,585,113 塊 | 1.6 GB | 約 6.5 分鐘（本機實測） |
+| chunks | 4,585,113 塊 | 1.4 GB | 約 28 分鐘（staging 實測 1,688 秒；本機 macOS 只要 6.5 分鐘）|
 
 ## 4-1. 從既有環境升級到 5.1.0
 
@@ -355,7 +355,7 @@ production 目前完全沒有 ES index，所以是**先部署程式、再建 ind
 中間 `/search`、`/search/notes`、`/search/title`、`/search/variants`
 會回 502「全文檢索索引尚未建立」。
 
-**請先與主管確認這個停機視窗。** staging 實測前三個 index 約 18 分鐘，加上 chunks 約 30 分鐘。
+**請先與主管確認這個停機視窗。** staging 實測前三個 index 約 18 分鐘，加上 chunks 共約 45 分鐘。
 
 1. 在 `shared/config/cb.yml` 的 `production:` 區塊加上 `elasticsearch:`（見 §3）。
 2. `cap production deploy`

@@ -15,7 +15,7 @@ module SectionElastic
     conf = Rails.configuration.x.elasticsearch
     release = Rails.configuration.cb.r.downcase
 
-    run_step "建立四個 index (#{release}) 並切換 alias (約 30 分鐘)" do
+    run_step "建立四個 index (#{release}) 並切換 alias (約 45 分鐘)" do
       confirm <<~MSG
         位址: #{conf.url}
 

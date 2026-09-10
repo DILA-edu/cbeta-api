@@ -18,7 +18,12 @@ class SearchController < ApplicationController
   # Smith-Waterman，因此「取哪 k 筆」幾乎決定了最終結果。Manticore 的
   # proximity_bm25 把詞的相鄰程度算進分數，Lucene 的 BM25 不會，真正的相似句
   # 常掉到 500 名之外 —— 實測 6 個範例查詢，k=500 只涵蓋 Manticore 結果的 52%，
-  # k=2000 涵蓋 76% 且總筆數還多一些。延遲 0.3 秒 → 1.1 秒，與舊版 Manticore 相當。
+  # k=2000 涵蓋 76% 且總筆數還多一些。
+  #
+  # 代價是延遲: 第二階段的 Smith-Waterman 是 Ruby 單執行緒、成本與 k 成正比。
+  # staging 實測 k=500 是 0.70 秒、k=2000 是 2.24 秒 (舊版 Manticore 0.79 秒)，
+  # 2026-09-10 與主管確認取結果完整度、接受這個延遲。
+  # 本機 macOS 量出來只有 1.1 秒 —— 這個數字會低估，要以 server 為準。
   # 詳見 doc/elasticsearch-migration.md 的第三期實作結果。
   SIMILAR_K = 2000
   # search/similar 第二階段 (Smith-Waterman) 的最低分數，可用 score_min 參數覆寫。
