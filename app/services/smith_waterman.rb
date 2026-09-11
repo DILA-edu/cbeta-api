@@ -1,20 +1,41 @@
 # https://gist.github.com/vincentchu/1041980
-require_relative 'matrix'
-
 class SmithWaterman
-  attr_reader :str_a, :str_b, :str_a_arr, :str_b_arr, :m, :n, :mat, :config, :alignment, :score
+  attr_reader :str_a, :str_b, :str_a_arr, :str_b_arr, :m, :n, :config, :score
+
+  # 分數上界: gain × 兩字串共同字元數 (multiset 交集)。
+  #
+  # 最佳路徑的分數 = Σ(match gain) + Σ(mismatch／gap penalty)，而 penalty <= 0，
+  # 因此分數不可能超過「全部共同字元都對齊上」的情形。成本是 O(m+n)，
+  # 用來在建矩陣 (O(m×n)) 之前先剔除不可能達到門檻的候選。
+  #
+  # 字元單位與 assign_cell 的比較一致，都用 unpack('U*') 的 codepoint。
+  def self.max_score(str_a, str_b, gain: 2)
+    counts = str_a.unpack('U*').tally
+    common = 0
+    str_b.unpack('U*').each do |c|
+      n = counts[c]
+      next if n.nil? || n.zero?
+
+      counts[c] = n - 1
+      common += 1
+    end
+    gain * common
+  end
 
   def initialize(stra, strb, opts = {})
     @str_a  = stra
     @str_b  = strb
-    
+
     @str_a_arr = stra.unpack("U*")
     @str_b_arr = strb.unpack("U*")
-    
+
     @m      = str_a.length + 1
     @n      = str_b.length + 1
-    @mat    = Matrix.new(m, n)
-    
+    # m×n 的矩陣攤平成一維 Array，索引 i*n+j。
+    # 原本是 Matrix 類別，每個 cell 存取都要經過一次帶 bounds check 的 method call，
+    # 而 similar 一次查詢要算兩千筆候選 × 上千個 cell。
+    @mat    = Array.new(@m * @n, 0)
+
     @config = opts.with_defaults(gain: 2, penalty: -1)
     raise 'SmithWaterman penalty 必須 <= 0' if @config[:penalty] > 0
 
@@ -24,13 +45,27 @@ class SmithWaterman
     @score_match  = @config[:gain]
   end
 
-  def align!
-    iterate_over_cells!
-    find_optimal_path
-    
-    return alignment
+  # 只算分數，不做 traceback。
+  # 分數不到門檻的候選會被直接丟棄，traceback 對它們是白做的。
+  def score!
+    iterate_over_cells! if @score.nil?
+    @score
   end
-  
+
+  def align!
+    score!
+    alignment
+  end
+
+  # traceback 延後到真正要用 alignment 時才做 (alignment_inspect / _b)。
+  def alignment
+    return @alignment unless @alignment.nil?
+
+    score!
+    find_optimal_path
+    @alignment
+  end
+
   def alignment_inspect
     
     la = "... "
@@ -117,19 +152,22 @@ class SmithWaterman
   def recurse_optimal_path(i_curr, j_curr)    
     @alignment << [i_curr, j_curr]
     
+    row  = i_curr * @n
+    prev = row - @n
+
     values = [
-      mat[i_curr-1, j_curr-1],
-      mat[i_curr-1, j_curr],
-      mat[i_curr  , j_curr-1]
+      @mat[prev + j_curr - 1],
+      @mat[prev + j_curr],
+      @mat[row + j_curr - 1]
     ]
-    
+
     ii, jj = case values.index(values.max)
       when 0 then [i_curr-1, j_curr-1]
       when 1 then [i_curr-1, j_curr]
       when 2 then [i_curr  , j_curr-1]
-    end    
-    
-    if (mat[i_curr, j_curr] == 0)
+    end
+
+    if (@mat[row + j_curr] == 0)
       return
     else
       return recurse_optimal_path(ii, jj)
@@ -150,22 +188,25 @@ class SmithWaterman
   end
   
   def assign_cell(i, j)
-    score = (str_a_arr[i-1] == str_b_arr[j-1]) ? @score_match : @score_miss
+    score = (@str_a_arr[i-1] == @str_b_arr[j-1]) ? @score_match : @score_miss
 
-    value = [
-      0,
-      mat[i-1, j-1] + score,
-      mat[i-1, j] + @score_delete,
-      mat[i, j-1] + @score_insert
-    ].max
-    
+    row  = i * @n
+    prev = row - @n
+
+    value = @mat[prev + j - 1] + score
+    v = @mat[prev + j] + @score_delete
+    value = v if v > value
+    v = @mat[row + j - 1] + @score_insert
+    value = v if v > value
+    value = 0 if value < 0
+
     if (value >= @score)
       @score = value
       @i_max = i
       @j_max = j
     end
-    
-    mat[i,j] = value
+
+    @mat[row + j] = value
   end
 
   def paint_char_in_a(s)

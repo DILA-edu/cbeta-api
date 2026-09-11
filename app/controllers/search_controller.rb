@@ -937,6 +937,7 @@ class SearchController < ApplicationController
 
     cs = CbetaString.new(allow_digit: true, allow_space: false)
     i = 0
+    pruned = 0
     while i < hits.size
       node = hits[i]
       text = cs.remove_puncs(node[:content])
@@ -948,9 +949,18 @@ class SearchController < ApplicationController
         next
       end
 
+      # 分數上界不到門檻的，連矩陣都不必建。
+      # 候選是 quorum 50% 挑出來的 (一半的字命中即可)，但要通過 score_min
+      # 需要更多字對得上，因此候選池裡本來就有一批是「可證明拿不到分數」的。
+      # 剪掉的都是下面 sw.score < @score_min 本來就會淘汰的，結果不變。
+      if SmithWaterman.max_score(@q, text, gain: @gain) < @score_min
+        pruned += 1
+        hits.delete_at(i)
+        next
+      end
+
       sw = SmithWaterman.new(@q, text, gain: @gain, penalty: @penalty)
-      sw.align!
-      if sw.score < @score_min
+      if sw.score! < @score_min
         hits.delete_at(i)
         next
       end
@@ -968,7 +978,7 @@ class SearchController < ApplicationController
         i += 1
       end
     end
-    log_debug "end similar_smith_waterman"
+    log_debug "end similar_smith_waterman, 上界剪枝 #{pruned} 筆"
   end
 
   def similar_rm_duplicate(hits)
