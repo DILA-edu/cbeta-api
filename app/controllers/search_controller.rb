@@ -490,6 +490,10 @@ class SearchController < ApplicationController
       @start = params.key?(:start) ? params[:start].to_i : 0
       @rows  = params.key?(:rows)  ? params[:rows].to_i  : 20
       r[:results] = r[:results][@start, @rows] || []
+
+      # Exclude 的候選是 light 模式取回的 (見 SearchService::LIGHT_SOURCE_FIELDS)，
+      # 當頁這十幾筆才需要完整欄位。
+      r[:results] = es_service.rows_by_ids(r[:results], query) if query.type == :exclude
     end
 
     if params[:fields].nil? or params[:fields].include?('kwic')

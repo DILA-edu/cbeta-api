@@ -17,8 +17,15 @@ module CbetaSearch
     # facet 筆數上限，對應舊 SearchController::FACET_MAX
     FACET_MAX = 10_000
 
-    # 取全部候選卷時的單頁筆數 (all_in_one 的 NEAR / Exclude 用)
-    SCROLL_BATCH_SIZE = 5_000
+    # 取全部候選卷時的單頁筆數 (all_in_one 的 NEAR / Exclude 用)。
+    # 走的是 search_after，不受 index.max_result_window 限制。
+    SCROLL_BATCH_SIZE = 10_000
+
+    # Exclude 的候選階段只要這幾個欄位: work / juan / term_hits 用來相減，
+    # 其餘是 all_in_one 的 my_facet 要用的 (見 SearchController#my_facet)。
+    # 省下的是 juan_list 這類大欄位 —— 一個常見詞的候選動輒一萬多卷，
+    # 而其中只有當頁那十幾筆需要完整欄位，那些在分頁後由 rows_by_ids 補回。
+    LIGHT_SOURCE_FIELDS = %w[canon category work juan title creators_with_id dynasty].freeze
 
     # exist_all? 每個 _msearch request 問幾個詞組
     MSEARCH_BATCH_SIZE = 500
@@ -97,9 +104,12 @@ module CbetaSearch
 
     # 取出所有符合的卷 (不分頁)，供 all_in_one 的 NEAR / Exclude 後處理使用。
     # 舊版是 LIMIT 0, 99999; ES 改用 search_after 逐批取回，沒有筆數上限。
-    def all_candidates(query, params:, field: nil, default_sort: nil)
+    # light: true 只取 LIGHT_SOURCE_FIELDS，其餘欄位留空值 (row_default)，
+    # 等分頁後再用 rows_by_ids 補齊。
+    def all_candidates(query, params:, field: nil, default_sort: nil, light: false)
       field ||= default_field
       body = @builder.search_body(query, params:, field:)
+      body['_source'] = LIGHT_SOURCE_FIELDS if light
       body['size'] = SCROLL_BATCH_SIZE
       body['track_scores'] = true
       sort = @builder.sort(params, default: default_sort)
@@ -136,9 +146,31 @@ module CbetaSearch
       subtract = simple_search(minus, params:, field:)
                  .to_h { |row| [[row[:work], row[:juan]], row[:term_hits]] }
 
-      all_candidates(base, params:, field:, default_sort:).filter_map do |row|
+      all_candidates(base, params:, field:, default_sort:, light: true).filter_map do |row|
         hits = row[:term_hits] - subtract.fetch([row[:work], row[:juan]], 0)
         row.merge(term_hits: hits) if hits.positive?
+      end
+    end
+
+    # 把 light 模式取回的當頁結果補成完整欄位。
+    # term_hits 沿用候選階段算好的值 —— 這裡是 ids query，_score 沒有意義。
+    def rows_by_ids(rows, query)
+      return rows if rows.blank?
+
+      ids = rows.map { it[:id].to_s }
+      body = {
+        'query' => { 'ids' => { 'values' => ids } },
+        '_source' => index_class.source_fields,
+        'size' => ids.size
+      }
+      hits = client.search(index:, body:).dig('hits', 'hits') || []
+      by_id = hits.to_h { |hit| [hit['_id'].to_i, hit] }
+
+      rows.map do |row|
+        hit = by_id[row[:id]]
+        next row if hit.nil?
+
+        row_from_hit(hit, query, term_hits: row[:term_hits])
       end
     end
 
@@ -262,7 +294,7 @@ module CbetaSearch
     # 與 all_in_one 走同一個 exclude_candidates，所以兩個 endpoint 的數字一致。
     def search_exclude(query, params:, start:, rows:, field:, default_sort:, t1:)
       candidates = exclude_candidates(query, params:, field:, default_sort:)
-      page = candidates[start, rows] || []
+      page = rows_by_ids(candidates[start, rows] || [], query)
 
       {
         query_string: query.raw,
@@ -305,12 +337,14 @@ module CbetaSearch
 
     # 組成與舊 Manticore 回傳一致的單筆結果 (symbol key)。
     # 欄位與順序由 index class 的 row_fields 決定，讓 JSON 輸出與舊版一致。
-    def row_from_hit(hit, query)
+    def row_from_hit(hit, query, term_hits: nil)
       source = hit['_source'] || {}
       row = {}
       row[:id] = hit['_id'].to_i if index_class.row_id?
       # NEAR / Exclude 的 _score 不是出現次數，term_hits 由呼叫端另外計算
-      if index_class.row_term_hits? && query.es_countable?
+      if term_hits
+        row[:term_hits] = term_hits
+      elsif index_class.row_term_hits? && query.es_countable?
         row[:term_hits] = term_hits_from_score(hit['_score'])
       end
       index_class.row_fields.each do |key, field|
