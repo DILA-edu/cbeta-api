@@ -31,10 +31,7 @@
 
 %h3 1.1 q 參數
 .ml-4
-  %p
-    例：#{link_to_url '/search/notes?q="法鼓"'}
-
-  %p 請注意上面的雙引號不可省略。
+  =render partial: 'q-quotes', locals: { path: '/search/notes' }
 
   %p 以下範例均要做 URL encode, 例如：
   %pre "波羅蜜" | "波羅密"

@@ -1,6 +1,7 @@
 %p
   要搜尋的關鍵字。（標點符號會被去除，包括半形小括號）
-%p 
+=render partial: 'q-quotes', locals: { path: '/search/all_in_one' }
+%p
   也可使用
   =link_to 'Extended 語法', controller: 'static_pages', action: 'search_extended'
   。例如：

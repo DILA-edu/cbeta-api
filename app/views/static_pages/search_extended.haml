@@ -1,13 +1,6 @@
 %h1 擴充模式 全文檢索
-%p
-  例：#{link_to_url '/search/extended?q="法鼓"'}
 
-%p
-  單一個詞可以不加雙引號，
-  #{link_to_url '/search/extended?q=法鼓'}
-  的結果相同。
-  但是以下的 AND、OR、NOT、Exclude 語法，每個詞都必須用雙引號括起來，
-  否則整個查詢字串會被當成一個詞。
+=render partial: 'q-quotes', locals: { path: '/search/extended' }
 
 =render partial: 'q-length-limit'
 

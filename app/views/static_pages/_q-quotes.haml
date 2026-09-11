@@ -1,0 +1,16 @@
+-# q 參數的雙引號規則。search / search/extended / search/notes / search/all_in_one
+-# 四個 endpoint 的行為相同（都走 CbetaSearch::QueryParser），說明因此共用這個 partial。
+-#
+-# 規則出自 QueryParser#parse 的第一個判斷：整個 q 不含雙引號時，一律當成一個詞組，
+-# 連 NEAR 都不會被解析成運算子。
+-#
+-# path: 該頁對應的 endpoint 路徑，例如 '/search/notes'
+%p
+  單一個詞可以不加雙引號，
+  #{link_to_url "#{path}?q=法鼓"}
+  與
+  #{link_to_url %(#{path}?q="法鼓")}
+  的結果相同。
+%p
+  但 AND、OR、NOT、NEAR、Exclude 語法的每個詞都必須用雙引號括起來，
+  否則整個查詢字串會被當成一個詞。
