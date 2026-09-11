@@ -39,14 +39,9 @@ module Minitest
 end
 
 if ARGV.size < 2
-  Dir[File.join(__dir__, 'test_*.rb')].sort.each do |f|
-    puts "require: #{File.basename(f)}"
-    require f
-  end
+  Dir[File.join(__dir__, 'test_*.rb')].sort.each { |f| require f }
 else
-  s = File.join(__dir__, "test_#{ARGV[1]}.rb")
-  puts "require: #{File.basename(s)}"
-  require s
+  require File.join(__dir__, "test_#{ARGV[1]}.rb")
 end
 
 $referer = ENV.fetch('CBETA_REFERER', 'ray@dila.edu.tw')
