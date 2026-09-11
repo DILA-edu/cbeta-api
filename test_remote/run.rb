@@ -14,8 +14,9 @@ require 'nokogiri'
 require 'minitest/reporters'
 Minitest::Reporters.use!
 
-# CBETA XML (p5a) 目錄，少數 test 需要用它逐一檢查所有典籍。
+# CBETA XML (p5a) 目錄，test_goto_works 用它取得全藏的典籍清單。
 # 未設定時，相關 test 會 skip。
+# 該 test 預設每個藏經抽 20 部，可用 CBETA_GOTO_SAMPLE 調整（0 = 全掃）。
 XML = ENV['CBETA_XML']
 
 # 測試過程中產生的檔案放這裡 (Rails 專案的 tmp 已被 gitignore)

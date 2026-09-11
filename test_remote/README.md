@@ -32,7 +32,8 @@ ruby test_remote/run.rb dev search
 
 | 變數 | 用途 |
 | --- | --- |
-| `CBETA_XML` | cbeta-xml-p5a 目錄。`test_goto.rb` 的 `test_goto_works` 需要它逐一檢查所有典籍，未設定時該 test 會 skip。用 `rake remote:test` 會自動帶入 `config.cbeta_xml` |
+| `CBETA_XML` | cbeta-xml-p5a 目錄。`test_goto.rb` 的 `test_goto_works` 用它取得典籍清單，未設定時該 test 會 skip。用 `rake remote:test` 會自動帶入 `config.cbeta_xml` |
+| `CBETA_GOTO_SAMPLE` | `test_goto_works` 每個藏經抽幾部典籍，預設 `20`（26 個藏經共約 360 次 request）。設 `0` 表示不抽樣，全藏約 4900 部全掃 |
 | `CBETA_REFERER` | 送出 request 的 Referer，預設 `ray@dila.edu.tw` |
 | `CBETA_API_KEY` | API key。帶了額度由 60 提高到 300 req/min，整套跑完快很多 |
 | `CBETA_RATE_LIMIT` | 每分鐘的節流上限。**預設 0 = 不節流**（校內 IP 在 server 端已豁免）。從校外跑才需要設 |
@@ -58,9 +59,28 @@ CBETA_API_KEY=xxx CBETA_RATE_LIMIT=270 rake remote:test[dev] # 帶 key
 未達上限不等待，單跑一個檔案仍是全速。不論有沒有節流，撞到 429 都會依
 `Retry-After` 重試。
 
-校外跑整套會很慢：`test_goto_works` 會對全藏每部典籍各打一次 request
-（約 4000 次），匿名約 74 分鐘、帶 key 約 15 分鐘。只想跑其他 test 時，
-不要帶 `CBETA_XML`（直接用 `ruby test_remote/run.rb dev`），該 test 就會 skip。
+## test_goto_works 的抽樣
+
+整套測試的 request 有 99% 來自 `test_goto_works`：全藏約 4900 部典籍，每部各
+打一次 goto。校內全掃一次約 4 分 45 秒，校外更久（匿名約 74 分鐘、帶 key 約
+15 分鐘）。
+
+所以預設改為**分層抽樣**：每個藏經抽 `CBETA_GOTO_SAMPLE` 部（預設 20，該藏
+不足就全取），共約 360 次 request，整套約 30 秒跑完。分層而不是整體隨機，是
+因為 goto 的眉角多半跟藏經有關（ZW 頁碼開頭是英文字母、J 的經號有 A/B 開頭），
+整體隨機會讓小藏經幾乎抽不到。
+
+抽樣用 `Random.new(Minitest.seed)`，所以同一個 `--seed` 抽到的典籍一樣，失敗
+可以重現。
+
+release 前或改動 goto 相關 code 時，建議全掃一次：
+
+```sh
+CBETA_GOTO_SAMPLE=0 rake remote:test[dev]
+```
+
+只想跑其他 test 時，不要帶 `CBETA_XML`（直接用 `ruby test_remote/run.rb dev`），
+該 test 就會 skip。
 
 ## 新增 test
 
