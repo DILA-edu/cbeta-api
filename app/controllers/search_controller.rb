@@ -310,7 +310,7 @@ class SearchController < ApplicationController
     end
   end
 
-  # 依 index 各自快取一個 SearchService: exist_in_cbeta 一次要查三個 index。
+  # 依 index 各自快取一個 SearchService: filter_exist_in_cbeta 一次要查三個 index。
   def es_service(index = es_index)
     @es_services ||= {}
     @es_services[index] ||= CbetaSearch::SearchService.new(referer_cn: @referer_cn, index:)
@@ -556,22 +556,34 @@ class SearchController < ApplicationController
     }
   end
 
-  # 這個字串在 CBETA 全文、註解或經名裡出現過嗎? (variants 用)
-  # 三個 index 都走 Elasticsearch，任一個命中就算存在。
-  def exist_in_cbeta(q)
-    log_debug "exist_in_cbeta, q: #{q}"
-    query = es_phrase_query(q)
+  # 這一批字串，哪些在 CBETA 全文、註解或經名裡出現過? (variants 用)
+  # 三個 index 都走 Elasticsearch，任一個命中就算存在，回傳保持傳入順序。
+  #
+  # 一次問一整批，而不是一個字串問一次: 異體字展開每多一個字就多一層，
+  # 每層的候選組合都要問「CBETA 有沒有用到」。逐一發請求的話，
+  # 「無上正等正覺」這種六字查詢要送出上百個循序的 HTTP 請求 (實測 6.8 秒)，
+  # 而候選組合數其實只有數十個。改用 _msearch 之後，每層每個 index 各一次請求。
+  #
+  # 短路順序與逐一版相同: text 命中的就不再問 notes，兩者都沒有的才問 titles。
+  def filter_exist_in_cbeta(phrases)
+    return [] if phrases.empty?
 
-    return true if es_service(CbetaSearch::TextIndex).exist?(query, params: {})
-    return true if es_service(CbetaSearch::NotesIndex).exist?(query, params: {})
+    found = es_service(CbetaSearch::TextIndex).exist_all?(phrases)
+
+    rest = phrases.reject { found[it] }
+    unless rest.empty?
+      found.merge!(es_service(CbetaSearch::NotesIndex).exist_all?(rest))
+      rest = rest.reject { found[it] }
+    end
 
     # title 最長 57, query 太長就不必搜了
-    return false if q.size >= 58
+    rest.select! { it.size < 58 }
+    found.merge!(es_service(CbetaSearch::TitlesIndex).exist_all?(rest)) unless rest.empty?
 
-    es_service(CbetaSearch::TitlesIndex).exist?(query, params: {})
+    phrases.select { found[it] }
   end
 
-  # 單純詞組查詢 (variants / exist_in_cbeta 用): 不經 QueryParser，
+  # 單純詞組查詢 (variants 的計數用): 不經 QueryParser，
   # 因為異體字展開後的字串可能含雙引號等字元，不該被當成查詢語法。
   def es_phrase_query(phrase)
     CbetaSearch::Query.new(type: :phrase, raw: phrase, phrase: phrase.downcase)
@@ -1075,13 +1087,9 @@ class SearchController < ApplicationController
     until vars.empty?
       a1 = r
       a2 = vars.shift
-      r = []
-      a1.each do |s1|
-        a2.each do |s2|
-          s = s1 + s2
-          r << s if exist_in_cbeta(s)
-        end
-      end
+      # 整層的候選一次問完，不要逐一問 (見 filter_exist_in_cbeta)
+      candidates = a1.flat_map { |s1| a2.map { |s2| s1 + s2 } }
+      r = chk_exist ? filter_exist_in_cbeta(candidates) : candidates
       break if r.empty? # 已經搜不到了，就不必再往下找了
     end
 
