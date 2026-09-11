@@ -1,9 +1,9 @@
 class AsiaNetworkTest < Minitest::Test
   def test_asia_network
     url = "#{$api}/api/sections/7f5913a2-bc18-48cf-84e5-4797573795b6/content_units"
-    h = headers
-    h['Accept'] = 'application/vnd.rise_api.v2, application/json'
-    response = Faraday.get(url, nil, h)
+    # 走 api_get 才會套用節流，否則這個 test 很容易單獨吃到 429
+    accept = 'application/vnd.rise_api.v2, application/json'
+    response = api_get(url, nil, 'Accept' => accept)
     assert_equal(200, response.status)
     if response.status == 200
       r = JSON.parse(response.body)
