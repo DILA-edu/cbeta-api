@@ -291,7 +291,7 @@ ngram_chars = cjk, U+2580..U+25FF, U+2F00..U+A4CF, U+F900..U+FAFF, U+FE30..U+FE4
 | 4 | `~n` | 原樣送進 Manticore（`init_notes` 裡剝除 `~\d+$` 的那段是 dead code，算出來的 `s` 沒被用到） | 回 400，同 text 的第 5 項 |
 | 5 | `start` 超出範圍 | `estimate_max_matches` 算出的 `max_matches` | `MAX_RESULT_WINDOW` 上限，同 text 的第 6 項 |
 | 6 | `work_type` filter | notes index 沒有這個欄位，Manticore 回 500（`unknown column`） | ES 對不存在的欄位做 filter 會安靜地回 0 筆。說明頁的「限制搜尋範圍」本來就沒承諾 notes 支援 `work_type`，但行為從報錯變成空結果 |
-| 7 | **未加引號的多字查詢**（2026-09-11 補記） | `MATCH('#{@q}')` 少了一層引號，Manticore 逐字切 token 因此當成隱含 AND：`梵語` 與 `語梵` 同樣是 4,180 筆。同一支程式的 text index 有加引號，兩者行為不一致 | 一律視為詞組（`梵語` 3,852 筆、`語梵` 19 筆），與 text index 一致。使用者自己加引號時兩邊本來就相同，因此 `GOLDEN_CASES`（都帶引號）沒有暴露這個差異。詳見文末「`notes` 筆數差異的真因」 |
+| 7 | **省略雙引號時的多字查詢**（2026-09-11 補記） | `MATCH('#{@q}')` 沒有補詞組引號，Manticore 逐字切 token 因此當成隱含 AND：`梵語` 與 `語梵` 同樣是 4,180 筆。說明頁因此寫明「雙引號不可省略」—— 但 `/search`／`/search/all_in_one` 的範例都不加引號，三個 endpoint 的要求不一致 | 由 `QueryParser` 統一解析，一律視為詞組（`梵語` 3,852 筆、`語梵` 19 筆），不再需要那句但書。照說明頁加引號時兩邊本來就相同，因此 `GOLDEN_CASES`（都帶引號）沒有暴露這個差異。詳見文末「`notes` 筆數差異的真因」 |
 
 ### F-2. titles（難度：低，但排序一定會變）
 
@@ -841,26 +841,38 @@ KWIC 是分頁之後才跑、只處理當頁十幾筆 —— **成本幾乎全�
 這次的改動保留：結果正確、確實減少了傳輸量，而且分頁後才補欄位的架構
 正是 aggregation 作法會需要的。
 
-## `notes` 筆數差異的真因：舊版未加引號
+## `notes` 筆數差異的真因：舊版各 endpoint 的引號要求不一致
 
 量測時發現 `notes` 兩邊的筆數對不起來，一度懷疑是資料版本或 ES 的問題。
-**都不是 —— 是舊版 `MATCH('#{@q}')` 少了一層引號。**
+**都不是 —— 是舊版三個 endpoint 對雙引號的要求不一致。**
 
-`main` 的 `SearchController#notes`：
+`main` 的 `SearchController#notes` 沒有替 `@q` 加上詞組引號：
 
 ```ruby
 @where = "MATCH('#{@q}')" + @filter
 ```
 
-對照同一支程式的 `extended`，text index 那邊是有加引號的：
+而同一支程式的 `extended`（text index）有加：
 
 ```ruby
 where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
 ```
 
-Manticore 的 analyzer 是逐字切 token，因此 `MATCH('梵語')` 是
-「梵 AND 語」（不限順序、不限距離），不是詞組「梵語」。
-**同一個舊版程式，text index 做詞組查詢、notes 做隱含 AND，兩者行為不一致。**
+Manticore 的 analyzer 逐字切 token，因此 `MATCH('梵語')` 是「梵 AND 語」
+（不限順序、不限距離），不是詞組「梵語」。
+
+**這不是 bug —— 舊版的說明頁寫明了這個要求。** `search_notes.haml`：
+
+> 例：`/search/notes?q="法鼓"`
+> 請注意上面的雙引號不可省略。
+
+但 `/search` 與 `/search/all_in_one` 的說明頁範例都是不加引號的
+（`/search?q=法鼓`、`/search/all_in_one?q=法鼓`），因為那兩個 endpoint 的
+SQL 有補引號，不加也是詞組。**三個 endpoint 的語法要求因此不一致，
+只有 notes 需要那句但書。**
+
+新版由 `QueryParser` 統一解析，三個 endpoint 一律視為詞組，
+不再需要這個但書。
 
 ### 證據一：反序查詢
 
@@ -873,7 +885,7 @@ Manticore 的 analyzer 是逐字切 token，因此 `MATCH('梵語')` 是
 
 Manticore 對反序查詢回傳完全相同的筆數 —— AND 不看順序。
 
-### 證據二：使用者自己加引號時，兩邊完全一致
+### 證據二：照說明頁加引號時，兩邊完全一致
 
 | 查詢 | ES | Manticore |
 |---|---|---|
@@ -882,9 +894,10 @@ Manticore 對反序查詢回傳完全相同的筆數 —— AND 不看順序。
 | `"菩薩"` | 13,393 / tth 18,667 | 13,393 / tth 18,667 |
 
 引號會原樣送進 `MATCH`，Manticore 就做詞組查詢。
-**差異只發生在使用者不加引號時**，而 API 說明頁的範例都是帶引號的
-（`GOLDEN_CASES` 的 notes 項目也都帶引號，因此 `verify_golden` 一直是「一致」，
-沒有暴露這個差異）。
+**差異只發生在不照 notes 說明頁的要求、省略引號時**
+（`GOLDEN_CASES` 的 notes 項目都帶引號，因此 `verify_golden` 一直是「一致」，
+沒有暴露這個差異。本次量測為了與 text index 用同一組查詢字串而未加引號，
+才踩到）。
 
 ### `total_term_hits` 的差距同理
 
@@ -893,7 +906,12 @@ Manticore 對反序查詢回傳完全相同的筆數 —— AND 不看順序。
 出現次數，所以不會等於兩個單字查詢的 tth 相加（27,030 + 23,356），
 但必然遠大於詞組「菩薩」的實際出現次數。
 
-**ES 這邊的數字才是對的**，而且新版讓 text 與 notes 的語意一致了。
+### 待辦：`search_notes.haml` 的但書已經過時
+
+「請注意上面的雙引號不可省略。」這句話目前在 `main` 與 `dev` 都還在。
+新版不加引號也是詞組，這句但書已經不適用，留著反而會讓人以為省略引號有問題。
+建議連同 1.1.1 AND 那段「將每個詞用雙引號括起來」一併檢視，
+與 `search.haml`／`search_all_in_one.haml` 的寫法對齊。
 
 ### 順帶澄清：`notes` 一直都有 `total_term_hits`
 
@@ -904,6 +922,7 @@ Manticore 對反序查詢回傳完全相同的筆數 —— AND 不看順序。
 intervals 的 `_score` 不是出現次數，而 notes 沒有 KWIC suffix array 可以退回
 逐筆計數，所以 NEAR 只回 `num_found`（實測 `/dev` 的
 `"阿含" NEAR/5 "迦葉"` → `num_found` 4，沒有 `total_term_hits`）。
+說明頁 1.1.4 已註明這一點。
 
 ## 資料版本確認：production 與 staging 相同
 
@@ -927,7 +946,7 @@ staging 的季號目錄雖然叫 `2026R3`（為下一季預備的環境），
 
 | 項目 | ES | Manticore | 成因 |
 |---|---|---|---|
-| `notes` 夾注「菩薩」 | 13,393 | 13,511 | 舊版未加引號（見上節），ES 為正 |
+| `notes` 夾注「菩薩」 | 13,393 | 13,511 | 省略引號時舊版視為隱含 AND（見上節）；照說明頁加引號兩邊相同 |
 | `notes` 夾注「梵語」 | 3,852 | 4,180 | 同上 |
 | `similar` 一切有為法如夢幻泡影 | 16 | 17 | 候選階段評分機制不同，見第三期「延遲」一節 |
 | `all_in_one` `"阿含" NEAR/5 "迦葉"` | 58 | 43 | NEAR 距離邊界，見 F-1 第 3b 項 |
