@@ -7,4 +7,12 @@ namespace :remote do
     cmd << args[:part] if args[:part].present?
     exec(*cmd)
   end
+
+  desc '全文檢索效能量測, 例: rake remote:bench[dev,stable], ' \
+       'rake remote:bench[compare,tmp/bench/a.json,tmp/bench/b.json]'
+  task :bench, %i[a b c d] => :environment do |_t, args|
+    argv = args.to_a.compact_blank
+    argv = %w[dev stable] if argv.empty?
+    exec('ruby', Rails.root.join('test_remote/bench.rb').to_s, *argv)
+  end
 end

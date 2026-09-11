@@ -28,6 +28,40 @@ ruby test_remote/run.rb dev search
 | `test` | http://cbdata.dila.edu.tw/test |
 | `local` | http://localhost:3000 |
 
+## 效能量測
+
+`bench.rb` 量全文檢索各 endpoint 的回應時間，用來比較兩個 server（例如
+Elasticsearch 的 dev 與 Manticore 的 stable），或比較同一個 server 改版前後。
+
+```sh
+rake remote:bench[dev,stable]   # 兩邊交錯跑，控掉時段差異
+rake remote:bench[dev]          # 只跑一邊
+ruby test_remote/bench.rb dev stable
+```
+
+每組查詢跑 5 次（1 次 cold + 4 次 warm），取 warm 的中位數。
+量的是 API 自報的處理時間（回應的 `time` 欄位），不含網路往返；
+wall clock 也一併記下來，兩者的差距就是網路加 Rails 的額外成本。
+有 Rails cache 的 endpoint（`all_in_one` / `similar` / `variants`）一律帶
+`cache=0`，量的是引擎的真實運算成本。
+
+結果寫到 `tmp/bench/`（已 gitignore），之後可以拿兩份檔案對比：
+
+```sh
+rake remote:bench[compare,tmp/bench/舊.json,tmp/bench/新.json]
+ruby test_remote/bench.rb compare tmp/bench/*.json
+```
+
+compare 會印出三張表：同功能的延遲比較、語法語意在新舊版不同因此不比倍率的
+那幾項、以及各筆 `num_found` 是否一致。**改版前後的比較要看一致性那張表**——
+快但結果變了不算改善。
+
+從校外跑一定要設 `CBETA_RATE_LIMIT`，一輪是幾百個 request，否則必定撞 429：
+
+```sh
+CBETA_RATE_LIMIT=54 rake remote:bench[dev,stable]
+```
+
 ## 環境變數
 
 | 變數 | 用途 |
