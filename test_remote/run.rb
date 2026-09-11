@@ -57,20 +57,22 @@ API_KEY = ENV['CBETA_API_KEY']
 
 # --- rate limit 因應（見 app/controllers/concerns/api_key_authentication.rb）---
 #
-# server 對未帶 key 的 request 限 60/min/IP、帶有效 key 限 300/min/user。
-# 本套件的請求量遠超過這個上限（光 test_goto_works 就對全藏每部典籍各打一次，
-# 約 4000 次），不節流的話大多數 test 都會拿到 429。
+# server 對校內 IP 完全豁免 rate limit，所以在校內跑**預設不節流**。
 #
-# 節流採 sliding window：保證「任何 60 秒內」不超過額度，因此也涵蓋 server
-# 端的 fixed window。只有逼近上限時才等待，小範圍的測試
-# （例如 rake remote:test[dev,juan]）仍然全速跑完。
+# 從校外跑就會受限（未帶 key 60/min/IP、帶有效 key 300/min/user），而本套件
+# 的請求量遠超過（光 test_goto_works 就對全藏每部典籍各打一次，約 4000 次），
+# 這時要自己設 CBETA_RATE_LIMIT，例如:
+#
+#   CBETA_RATE_LIMIT=54 rake remote:test[dev]          # 未帶 key
+#   CBETA_API_KEY=xxx CBETA_RATE_LIMIT=270 rake ...    # 帶 key
+#
+# 設了之後採 sliding window：保證「任何 60 秒內」不超過該數字，因此也涵蓋
+# server 端的 fixed window；未達上限不等待，小範圍的測試仍然全速跑完。
+# 建議比 server 的上限少約 10% —— client 與 server 的 window 邊界不會對齊。
 RATE_WINDOW = 60
 
-# 留 10% 餘裕：client 與 server 的 window 邊界不會對齊，額度也可能與
-# 其他來源（瀏覽器、同事）共用同一個 IP。
-# 與別人共用對外 IP 時可用 CBETA_RATE_LIMIT 再調低；
-# 設 0 表示完全不節流（例如從已豁免的校內 IP 測試）。
-RATE_LIMIT = (ENV['CBETA_RATE_LIMIT'] || ((API_KEY ? 300 : 60) * 0.9).floor).to_i
+# 0（預設）= 不節流
+RATE_LIMIT = ENV.fetch('CBETA_RATE_LIMIT', 0).to_i
 
 # 真的撞到 429 時的重試次數（等待時間以 server 回的 Retry-After 為準）
 MAX_RETRY = 2
@@ -164,5 +166,5 @@ else
   'https://cbdata.dila.edu.tw/dev'
 end
 puts "Test API: #{$api}"
-puts "API key: #{API_KEY ? '有' : '無（設 CBETA_API_KEY 可提高額度）'}，" \
-     "節流上限 #{RATE_LIMIT} req/min"
+puts "API key: #{API_KEY ? '有' : '無'}，" \
+     "節流: #{RATE_LIMIT.positive? ? "#{RATE_LIMIT} req/min" : '關閉（校內 IP 已豁免）'}"
