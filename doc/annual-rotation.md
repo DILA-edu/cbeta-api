@@ -55,8 +55,11 @@ Define dev_path    /var/www/cbeta-api-staging
    - 放 `database.yml`、`cb.yml`、`master.key`（見 doc/staging.md）
    - ⚠️ `cb.yml` 必須含 `api_origin_allowlist`（Origin 白名單不進版控）。
      漏了在過渡期內不會有症狀，但過渡期一結束前端就全站 401。
-     部署後跑 `cap staging rake api_key:config`（或在機器上
-     `RAILS_ENV=staging bundle exec rake api_key:config`）確認。
+   - ⚠️ `cb.yml` 必須含 `api_internal_ip_ranges`（校內 IP 範圍不進版控）。
+     漏了不會有明顯症狀，只是校內退回 60/min 的匿名額度，
+     不容易聯想到是設定沒讀到。見 doc/api-key-design.md 3.4。
+   - 上面兩個 key 都要在部署後跑 `cap staging rake api_key:config`
+     （或在機器上 `RAILS_ENV=staging bundle exec rake api_key:config`）確認。
    - ⚠️ `cb.yml` 必須含 `elasticsearch:` 區塊，且 `index_alias` 要與另一個角色不同
      （production 用 `cbeta_text_current`、staging 用 `cbeta_text_staging`）。
      兩個角色共用同一個 Elasticsearch 服務，alias 相同會讓 staging 重建 index

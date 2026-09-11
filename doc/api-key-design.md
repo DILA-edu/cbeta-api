@@ -236,7 +236,55 @@ key 名為 `api_origin_allowlist`，值是 Origin 字串的 array。
    `true` 就會讓 cbetaonline 前端**全站 401**。輪替 checklist 見
    `doc/annual-rotation.md`。
 
-### 3.4 錯誤回應
+### 3.4 校內 IP 豁免（2026-09-11 決定）
+
+來自校內 IP 的 request **不需要 key，也完全不套 rate limit**。
+
+- 判斷位置在「有帶 Bearer」分支**之後**：帶了無效 key 一律 401，校內也一樣。
+  理由同 3.2 —— 那通常是 client 設定錯誤，靜默放行會讓人誤以為 key 有效。
+- 判斷位置在 `transition_period?` **之前**：過渡期結束後校內仍然免 key。
+- 命中時**不加** `X-CBETA-API-Key: recommended`。那個 header 的意思是
+  「過渡期結束後你會壞掉」，對校內並不成立。
+
+| 來源 | 帶 key | 過渡期 | 過渡期結束後 |
+|---|---|---|---|
+| 校內 IP | 無 | 放行 | 放行 |
+| 校內 IP | 有效 | 放行 | 放行 |
+| 校內 IP | 無效 | **401** | **401** |
+
+#### 放在哪裡
+
+同 3.3 的處置：`config/cb.yml`（gitignored、每台機器一份），key 名為
+`api_internal_ip_ranges`，值是 CIDR 字串的 array。
+`config/application.rb` 用 `IPAddr` 解析後放進 `config.api_internal_ip_ranges`。
+
+**而且刻意不寫進對外公開的說明頁**（`app/views/static_pages/api_key.haml`）——
+2026-09-11 決定。該頁仍然只說明 60/300 的一般額度。
+
+解析失敗只略過該筆並印警告，不讓 boot 失敗：這是「豁免」清單，解析失敗的後果是
+校內退回 60/min（還能用），boot 失敗則是整個 API 掛掉（不能用）。
+
+#### ⚠️ 為什麼用 `remote_addr` 而不是 `remote_ip`
+
+**`request.remote_ip` 會優先採信 client 送來的 `X-Forwarded-For`。**
+本站是 Apache + Passenger（`PassengerBaseURI`）直接對外，前面沒有反向 proxy，
+所以那個 header 必定是偽造的。
+
+2026-09-11 於 dev 實測確認：連送 60 次帶 `X-Forwarded-For: 203.0.113.99`
+會拿到 429，換成 `203.0.113.100` 立刻恢復 200，真實 IP 的額度桶完全沒被動到
+—— 也就是說**任何人輪替這個 header 就能無限繞過限流**。
+
+若校內判斷用 `remote_ip`，等於任何人送一個 header 就能同時繞過 key 與限流。
+因此改用 `request.remote_addr`（TCP 連線的對端，偽造不了），
+rate limit 的 `by:` 與 401 的 fail2ban log 也一併改用它（見 6.6）。
+
+這個前提是「Apache + Passenger 直接對外」。**哪天前面放了 CDN 或 load balancer，
+`remote_addr` 會變成那台機器的 IP，這裡必須改寫。**
+
+`test/integration/api_key_authentication_test.rb` 有一個測試專門鎖住這件事：
+偽造 `X-Forwarded-For` 不能冒充校內 IP。
+
+### 3.5 錯誤回應
 
 - key 無效 / 過渡期結束後未帶 key → HTTP **401**，並帶
   `WWW-Authenticate: Bearer realm="CBETA API"`（RFC 6750）。
@@ -249,7 +297,7 @@ key 名為 `api_origin_allowlist`，值是 Origin 字串的 array。
   `X-CBETA-API-Key: recommended`（過渡期結束後將強制要求）。
   這比只在網站公告有效。
 
-### 3.5 納管範圍（allowlist，非全站套用）
+### 3.6 納管範圍（allowlist，非全站套用）
 
 採 **allowlist**：新增 concern，由需要納管的 controller 明確 `include`。
 漏掉的後果是「該 endpoint 沒納管」，而不是「意外擋掉不該擋的東西」——
@@ -491,6 +539,37 @@ Rails 在 key 驗證失敗時寫一行固定格式的 warn log，新增一個 fi
 maxretry 設低（例如 10 次 / 10 分鐘）。這也能阻擋拿洩漏的舊 key 清單來掃的行為。
 
 列為建議事項，可在主體功能上線後再做。
+
+### 6.6 額度以 `remote_addr` 計算（2026-09-11 修正）
+
+原本 `by:` 用 `request.remote_ip`，而它會優先採信 client 送來的
+`X-Forwarded-For` —— 實測證實輪替該 header 即可無限繞過 60/min（見 3.4）。
+已改用 `request.remote_addr`。
+
+校內 IP（3.4）在兩條 `rate_limit` 都豁免：
+匿名那條 `unless: -> { api_key_used? || internal_ip? }`、
+帶 key 那條 `if: -> { api_key_used? && !internal_ip? }`。
+
+#### Apache 已在來源清掉 `X-Forwarded-For`（2026-09-11 完成）
+
+只改 Rails 這邊並不夠：Rails 內建的 `Started ... for <IP>` 用的也是
+`request.remote_ip`，而 `cbeta-api-r3` jail 就是抓這一行（見 6.4）。
+那一行改不到，代表 jail 的計數同樣吃得到偽造的 IP。
+
+根本解法是在 Apache vhost 把這個 header 清掉（本站前面沒有合法的 proxy）：
+
+    RequestHeader unset X-Forwarded-For
+
+**已於 2026-09-11 在 server 上套用並重啟。** 這樣 `remote_ip` 就等於
+`remote_addr`，一次修好 Rails 內建 log、`record_visit` 的統計，
+以及其他所有用到 `remote_ip` 的地方。
+
+驗證方式（在 dev 上實測過）：連送 60 次帶同一個 `X-Forwarded-For` 到 429 後，
+換一個 `X-Forwarded-For` 再送 —— 修好前會恢復 200（另開一個額度桶），
+修好後仍然是 429（與不帶 header 時同一個桶）。
+
+Rails 這邊仍然改用 `remote_addr`，不倚賴 Apache 設定正確：
+兩層都對，哪天有人動了 vhost 也不會靜默退回可偽造的狀態。
 
 ## 7. 一併移除的項目
 

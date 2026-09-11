@@ -28,4 +28,38 @@ class ApiOriginAllowlistConfigTest < ActiveSupport::TestCase
   test 'api_key_required 預設是 false（過渡期）' do
     assert_equal false, Rails.configuration.api_key_required
   end
+
+  # --- 校內 IP 範圍（設計文件 3.4）---
+  #
+  # 同樣不進版控,接錯只會靜默變成空陣列 —— 症狀是校內莫名其妙被 429,
+  # 不容易聯想到是設定沒讀到。
+
+  test '校內 IP 範圍一定是 Array' do
+    assert_kind_of Array, Rails.configuration.api_internal_ip_ranges
+  end
+
+  test '校內 IP 範圍的元素是 IPAddr,不是字串' do
+    # concern 用 range.include?(IPAddr) 比對,字串會比不出東西。
+    # 用 all? 而不是 each + assert_kind_of: 開發機的 cb.yml 通常沒設校內範圍,
+    # each 在空陣列上會一個 assertion 都沒跑。
+    ranges = Rails.configuration.api_internal_ip_ranges
+    assert ranges.all?(IPAddr), "應該全部都是 IPAddr: #{ranges.inspect}"
+  end
+
+  test 'cb.yml 沒有這個 key 時是空陣列,不是 nil' do
+    assert_not_nil Rails.configuration.api_internal_ip_ranges
+  end
+
+  test '格式錯誤的 CIDR 只略過該筆,不讓 boot 失敗' do
+    # application.rb 用 filter_map + rescue。這裡驗證同樣的語意:
+    # 壞掉的那筆被丟掉,好的那筆留下。
+    parsed = ['203.0.113.0/24', '不是 IP'].filter_map do |cidr|
+      IPAddr.new(cidr)
+    rescue IPAddr::Error
+      nil
+    end
+
+    assert_equal 1, parsed.size
+    assert parsed.first.include?(IPAddr.new('203.0.113.7'))
+  end
 end

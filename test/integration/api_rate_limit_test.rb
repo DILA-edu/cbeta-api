@@ -13,20 +13,37 @@ class ApiRateLimitTest < ActionDispatch::IntegrationTest
   # 直接決定測試時間。
   ENDPOINT = '/changes'
 
+  # 校內 IP 用假的 —— 真實範圍不進版控。203.0.113.0/24 是 RFC 5737 的 TEST-NET-3。
+  INTERNAL_RANGE = '203.0.113.0/24'
+  INTERNAL_IP = '203.0.113.7'
+
   setup do
     @original_cache = Rails.cache
     Rails.cache = ActiveSupport::Cache::MemoryStore.new
 
     @user = User.create!(provider: 'github', uid: '1')
     _api_key, @token = ApiKey.generate!(@user)
+
+    # 預設沒有校內 IP,既有的 test 才不受影響
+    @original_internal = Rails.configuration.api_internal_ip_ranges
+    Rails.configuration.api_internal_ip_ranges = []
   end
 
   teardown do
     Rails.cache = @original_cache
+    Rails.configuration.api_internal_ip_ranges = @original_internal
   end
 
   def call(headers: {})
     get ENDPOINT, headers:
+  end
+
+  def internal!
+    Rails.configuration.api_internal_ip_ranges = [IPAddr.new(INTERNAL_RANGE)]
+  end
+
+  def from_internal
+    { 'REMOTE_ADDR' => INTERNAL_IP }
   end
 
   def bearer
@@ -105,6 +122,43 @@ class ApiRateLimitTest < ActionDispatch::IntegrationTest
 
     get '/health'
     assert_response :success
+  end
+
+  # --- 校內 IP 豁免 ---
+
+  test '校內 IP 超過匿名額度也不會 429' do
+    internal!
+    (ApiKeyAuthentication::ANONYMOUS_LIMIT + 10).times { call(headers: from_internal) }
+    assert_response :success
+  end
+
+  test '校內 IP 帶 key 也不受 per-user 額度限制' do
+    internal!
+    (ApiKeyAuthentication::KEYED_LIMIT + 10).times do
+      call(headers: from_internal.merge(bearer))
+    end
+    assert_response :success
+  end
+
+  test '校內 IP 的流量不會用掉其他人的額度' do
+    internal!
+    (ApiKeyAuthentication::ANONYMOUS_LIMIT + 10).times { call(headers: from_internal) }
+
+    call(headers: { 'REMOTE_ADDR' => '198.51.100.7' })
+    assert_response :success
+  end
+
+  test '額度依 remote_addr 計算,偽造 X-Forwarded-For 繞不過去' do
+    # 之前 by: 用的是 remote_ip,它會優先採信 client 送來的 X-Forwarded-For,
+    # 於是輪替那個 header 就能無限繞過限流（2026-09-11 於 dev 實測確認）。
+    ApiKeyAuthentication::ANONYMOUS_LIMIT.times do
+      call(headers: { 'REMOTE_ADDR' => '198.51.100.7' })
+    end
+    assert_response :success
+
+    call(headers: { 'REMOTE_ADDR' => '198.51.100.7',
+                    'HTTP_X_FORWARDED_FOR' => '198.51.100.250' })
+    assert_response :too_many_requests
   end
 
   test 'rate limit 上限低於 fail2ban 的 cbeta-api-r3（約 540 req/min）' do

@@ -1,6 +1,7 @@
 require_relative "boot"
 
 require "rails/all"
+require 'ipaddr'
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -66,6 +67,28 @@ module CbData
     #    照樣放行），但過渡期結束後（api_key_required = true）會讓 cbetaonline
     #    前端全站拿到 401。上線前務必用 rake api_key:config 確認。
     config.api_origin_allowlist = Array(config.cb.api_origin_allowlist)
+
+    # 內網（校內）IP 範圍。命中的 request 不需要 key，也不套 rate limit。
+    #
+    # 與 Origin 白名單一樣放 config/cb.yml（gitignored、每台機器一份），
+    # 而且**不寫進對外公開的說明頁**（app/views/static_pages/api_key.haml）。
+    # 用 rake api_key:config 確認每台機器的實際設定。
+    #
+    # 寫法是 CIDR 字串陣列，例如:
+    #   api_internal_ip_ranges:
+    #     - '140.112.0.0/16'
+    #     - '2001:db8::/32'
+    #
+    # 格式錯誤只略過該筆並警告，不讓 boot 失敗 —— 這是「豁免」清單，
+    # 解析失敗的後果是校內退回 60/min 的匿名額度（還能用），
+    # 若改成 boot 就炸掉則是整個 API 掛掉（不能用）。
+    config.api_internal_ip_ranges =
+      Array(config.cb.api_internal_ip_ranges).filter_map do |cidr|
+        IPAddr.new(cidr.to_s)
+      rescue IPAddr::Error => e
+        warn "⚠️ cb.yml api_internal_ip_ranges 這筆無法解析，已略過: #{cidr.inspect} (#{e.class})"
+        nil
+      end
 
     # 過渡期: false = 未帶 key 也放行（但帶了無效 key 一律 401）。
     # 過渡期結束時改為 true，未帶 key 即回 401。

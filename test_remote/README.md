@@ -35,7 +35,7 @@ ruby test_remote/run.rb dev search
 | `CBETA_XML` | cbeta-xml-p5a 目錄。`test_goto.rb` 的 `test_goto_works` 需要它逐一檢查所有典籍，未設定時該 test 會 skip。用 `rake remote:test` 會自動帶入 `config.cbeta_xml` |
 | `CBETA_REFERER` | 送出 request 的 Referer，預設 `ray@dila.edu.tw` |
 | `CBETA_API_KEY` | API key。帶了額度由 60 提高到 300 req/min，整套跑完快很多 |
-| `CBETA_RATE_LIMIT` | 覆寫每分鐘的節流上限。與別人共用對外 IP 時可調低 |
+| `CBETA_RATE_LIMIT` | 覆寫每分鐘的節流上限。與別人共用對外 IP 時可調低；設 `0` 表示完全不節流（校內 IP 已在 server 端豁免時用） |
 
 ## Rate limit
 

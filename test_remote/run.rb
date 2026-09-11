@@ -68,7 +68,8 @@ RATE_WINDOW = 60
 
 # 留 10% 餘裕：client 與 server 的 window 邊界不會對齊，額度也可能與
 # 其他來源（瀏覽器、同事）共用同一個 IP。
-# 與別人共用對外 IP 時可用 CBETA_RATE_LIMIT 再調低。
+# 與別人共用對外 IP 時可用 CBETA_RATE_LIMIT 再調低；
+# 設 0 表示完全不節流（例如從已豁免的校內 IP 測試）。
 RATE_LIMIT = (ENV['CBETA_RATE_LIMIT'] || ((API_KEY ? 300 : 60) * 0.9).floor).to_i
 
 # 真的撞到 429 時的重試次數（等待時間以 server 回的 Retry-After 為準）
@@ -78,6 +79,8 @@ $request_times = []
 
 # 逼近每分鐘上限時才擋下來等待
 def throttle!
+  return if RATE_LIMIT <= 0 # 0 或負數 = 不節流（校內 IP 已豁免時用）
+
   now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   drop_expired(now)
 

@@ -25,6 +25,16 @@ namespace :api_key do
     end
     puts
 
+    internal = Rails.configuration.api_internal_ip_ranges
+    puts '校內 IP 範圍 (來源: config/cb.yml，不進版控，也不寫在對外說明頁):'
+    if internal.empty?
+      puts '  (空) → 校內與一般使用者一樣要受 60/min 限制'
+    else
+      internal.each { |range| puts "  #{range}/#{range.prefix}" }
+      puts '  → 命中的 IP 免 key、且完全不套 rate limit'
+    end
+    puts
+
     puts "rate limit: 未帶 key #{ApiKeyAuthentication::ANONYMOUS_LIMIT}/min/IP、" \
          "帶 key #{ApiKeyAuthentication::KEYED_LIMIT}/min/user"
     puts "accounts DB: #{AccountsRecord.connection_db_config.database}"

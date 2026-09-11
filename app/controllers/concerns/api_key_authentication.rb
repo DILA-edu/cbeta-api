@@ -12,18 +12,25 @@
 #      理由: 帶了無效 key 通常是 client 設定錯誤。靜默放行會讓開發者誤以為
 #      key 有效,等過渡期結束才一次爆掉。
 #   2. 未帶 key:
+#      - 校內 IP（config.api_internal_ip_ranges）→ 放行,且不套 rate limit。
 #      - Origin 命中白名單 → 放行。
 #      - Origin 為 nil 或不在白名單 → 過渡期放行,
 #        過渡期結束後（config.api_key_required = true）回 401。
 #
-# | Origin | 帶 key | 過渡期 | 過渡期結束後 |
+# | 來源 | 帶 key | 過渡期 | 過渡期結束後 |
 # |---|---|---|---|
+# | 校內 IP      | 無     | 放行 | 放行 |
+# | 校內 IP      | 有效   | 放行 | 放行 |
+# | 校內 IP      | 無效   | 401  | 401  |
 # | 命中白名單   | 無     | 放行 | 放行 |
 # | 命中白名單   | 有效   | 放行 | 放行 |
 # | 命中白名單   | 無效   | 401  | 401  |
 # | nil 或未命中 | 無     | 放行 | 401  |
 # | nil 或未命中 | 有效   | 放行 | 放行 |
 # | nil 或未命中 | 無效   | 401  | 401  |
+#
+# rate limit: 校內 IP 完全豁免; 其餘未帶 key 60/min/IP、帶 key 300/min/user。
+# 校內 IP 範圍放 config/cb.yml（不進版控）,且刻意不寫進對外公開的說明頁。
 #
 # 只接受 HTTP header,不接受 query param（如 ?api_key=）—— query string 會被
 # 寫入 Apache access log、Rails log 與 visits 統計,等於在多處留下明文 key。
@@ -74,19 +81,25 @@ module ApiKeyAuthentication
     # 額度設計與 fail2ban 的分工見設計文件 6.2: cbeta-api-r3 jail 的實際上限
     # 約 540 req/min 且懲罰是 ban 整個 IP 一小時,所以 Rails 的 per-user 上限
     # 訂在它之下 (300),429 會先發生,fail2ban 退居最後一道防線。
+    #
+    # by: 用 remote_addr 而不是 remote_ip —— remote_ip 會優先採信 client 送來的
+    # X-Forwarded-For。本站是 Apache + Passenger 直接對外,前面沒有反向 proxy,
+    # 所以那個 header 一定是偽造的; 用它當額度 key 等於讓人輪替 header 就能
+    # 無限繞過限流(2026-09-11 於 dev 實測確認可繞過)。
+    # remote_addr 是 TCP 連線的對端,偽造不了。
     rate_limit to: ANONYMOUS_LIMIT, within: RATE_LIMIT_WINDOW,
-               by: -> { request.remote_ip },
+               by: -> { request.remote_addr },
                with: -> { reject_rate_limited },
                store: RATE_LIMIT_STORE,
                scope: 'cbeta-api-anonymous',
-               unless: :api_key_used?
+               unless: -> { api_key_used? || internal_ip? }
 
     rate_limit to: KEYED_LIMIT, within: RATE_LIMIT_WINDOW,
                by: -> { "user-#{current_api_key.user_id}" },
                with: -> { reject_rate_limited },
                store: RATE_LIMIT_STORE,
                scope: 'cbeta-api-user',
-               if: :api_key_used?
+               if: -> { api_key_used? && !internal_ip? }
   end
 
   private
@@ -101,6 +114,13 @@ module ApiKeyAuthentication
       record_api_key_use
       return
     end
+
+    # 校內 IP 免 key(也不套 rate limit,見上面 rate_limit 的條件)。
+    # 放在 transition_period? 之前,過渡期結束後校內仍然免 key。
+    #
+    # 位置在 token 分支之後: 帶了無效 key 一律 401,校內也一樣 —— 那通常是
+    # client 設定錯誤,靜默放行會讓人誤以為 key 有效。
+    return if internal_ip?
 
     return if allowed_origin?
     return allow_without_key if transition_period?
@@ -131,6 +151,26 @@ module ApiKeyAuthentication
     origin_allowlist.include?(origin)
   end
 
+  # 校內 IP 判斷。用 remote_addr(TCP 對端)而非 remote_ip,理由同上面 rate_limit。
+  #
+  # ⚠️ 前提是「Apache + Passenger 直接對外」。哪天前面放了 CDN 或 load balancer,
+  # remote_addr 會變成那台機器的 IP,這裡必須改寫。
+  def internal_ip?
+    return @internal_ip if defined?(@internal_ip)
+
+    @internal_ip = internal_ip_ranges.any? { |range| range.include?(client_addr) }
+  end
+
+  def client_addr
+    IPAddr.new(request.remote_addr.to_s)
+  rescue IPAddr::Error
+    IPAddr.new('0.0.0.0') # 解析不出來就當成外部
+  end
+
+  def internal_ip_ranges
+    Rails.configuration.api_internal_ip_ranges
+  end
+
   # 比對只比 Origin 完整字串（scheme + host [+ port]）,不做 subdomain 模糊比對。
   def origin_allowlist
     Rails.configuration.api_origin_allowlist
@@ -154,7 +194,9 @@ module ApiKeyAuthentication
 
   def reject_invalid_key
     # 固定格式的 warn log,供日後新增 fail2ban filter 使用（設計文件 6.5）
-    logger.warn "CBETA API key auth failure from #{request.remote_ip} for #{request.fullpath}"
+    # 用 remote_addr: 這行是給 fail2ban 抓的,若寫入可被偽造的 remote_ip,
+    # 攻擊者就能讓 fail2ban 去 ban 無辜的第三方 IP。
+    logger.warn "CBETA API key auth failure from #{request.remote_addr} for #{request.fullpath}"
     render_api_key_error(:unauthorized, 'API key 無效或已撤銷')
   end
 
