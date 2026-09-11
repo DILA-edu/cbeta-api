@@ -291,6 +291,7 @@ ngram_chars = cjk, U+2580..U+25FF, U+2F00..U+A4CF, U+F900..U+FAFF, U+FE30..U+FE4
 | 4 | `~n` | 原樣送進 Manticore（`init_notes` 裡剝除 `~\d+$` 的那段是 dead code，算出來的 `s` 沒被用到） | 回 400，同 text 的第 5 項 |
 | 5 | `start` 超出範圍 | `estimate_max_matches` 算出的 `max_matches` | `MAX_RESULT_WINDOW` 上限，同 text 的第 6 項 |
 | 6 | `work_type` filter | notes index 沒有這個欄位，Manticore 回 500（`unknown column`） | ES 對不存在的欄位做 filter 會安靜地回 0 筆。說明頁的「限制搜尋範圍」本來就沒承諾 notes 支援 `work_type`，但行為從報錯變成空結果 |
+| 7 | **未加引號的多字查詢**（2026-09-11 補記） | `MATCH('#{@q}')` 少了一層引號，Manticore 逐字切 token 因此當成隱含 AND：`梵語` 與 `語梵` 同樣是 4,180 筆。同一支程式的 text index 有加引號，兩者行為不一致 | 一律視為詞組（`梵語` 3,852 筆、`語梵` 19 筆），與 text index 一致。使用者自己加引號時兩邊本來就相同，因此 `GOLDEN_CASES`（都帶引號）沒有暴露這個差異。詳見文末「`notes` 筆數差異的真因」 |
 
 ### F-2. titles（難度：低，但排序一定會變）
 
@@ -686,3 +687,247 @@ staging 實測（2026-09-10，6 個範例查詢，快取關閉、已暖機）：
 - [ ] 若要真正補回 Manticore 的 proximity 訊號（讓 `k` 可以降回來、延遲更低），
       需另外設計候選階段的查詢（例如 `intervals` 或 shingle 欄位）。
 （`manticore:` rake namespace 與 `data/manticore-xml/` 資料夾的更名已在本期一併完成，見上。）
+
+---
+
+# 效能優化與 staging／production 對照（2026-09-11）
+
+主管要一份「由 Manticore 遷移至 Elasticsearch」的效能對照，做為決策參考。
+量測過程中找出三處明顯較慢的 endpoint，當天完成其中兩處的優化並部署
+（staging 5.4.0，`6512d53..a83f069`）。本節記錄量測結果、三項優化的成敗，
+以及途中查出來的 `notes` 筆數差異真因。
+
+量測對象是同一台主機 `sakya.dila.edu.tw` 上的兩個 slot：
+production `/stable`（5.3.0，Manticore）與 staging `/dev`（Elasticsearch）。
+
+## 量測工具
+
+`test_remote/bench.rb`，用法見 `test_remote/README.md`：
+
+```sh
+CBETA_RATE_LIMIT=54 rake remote:bench[dev,stable]
+rake remote:bench[compare,tmp/bench/舊.json,tmp/bench/新.json]
+```
+
+兩邊交錯發送同一組查詢以控掉時段差異，每組 1 次 cold + 4 次 warm，取 warm 的
+中位數。量的是 API 自報的處理時間（回應的 `time` 欄位），不含網路往返。
+有 Rails cache 的 endpoint（`all_in_one`／`similar`／`variants`）一律帶 `cache=0`，
+量的是引擎的真實運算成本。結果寫到 `tmp/bench/`（已 gitignore）。
+
+**毫秒級項目的中位數會在 ±50% 間漂移**（同一查詢、相隔 13 分鐘的兩輪量測，
+「如是我聞」是 81 ms 與 174 ms）。秒級項目的差異遠大於這個漂移，才能做結論。
+
+## 對照結果：秒級的六組
+
+單位秒，warm 中位數。「優化前」是 5.3.0 的 staging，「優化後」是 5.4.0。
+
+| 查詢 | Manticore | ES 優化前 | ES 優化後 | 優化後／Manticore |
+|---|---|---|---|---|
+| `variants` 無上正等正覺 | 0.72 | 6.65 | **0.96** | 1.3× |
+| `variants` 大比丘三千威儀 | 0.36 | 2.80 | **0.86** | 2.4× |
+| `variants` 阿耨多羅三藐三菩提 | 0.41 | 5.34 | **1.18** | 2.9× |
+| `similar` 一切有為法如夢幻泡影 | 0.26 | 1.25 | **0.55** | 2.1× |
+| `similar` 諸行無常是生滅法 | 0.25 | 1.09 | **0.51** | 2.0× |
+| `all_in_one` `"菩薩" -"諸菩薩"` | 1.09 | 4.64 | 4.62 | 4.2× |
+
+其餘 14 組（基本檢索、facet、notes、title、sc、`all_in_one` 一般查詢、NEAR）
+兩邊都在 0.35 秒內，差距 6–120 毫秒，落在量測漂移的量級。
+
+全部 26 組查詢（含語法差異的 6 組）的 `num_found` 在優化前後**完全相同**，
+`rake elastic:verify_golden` 部署前後同為 48/50，不一致的是同樣兩項
+（`similar_gatha`、`similar_mind`，即 `GOLDEN_CASES` 註解載明預期會與
+Manticore 基準不同的那兩項）。
+
+## 三項優化
+
+### 1. `variants`：N+1 改成 `_msearch` 整層批次（成功，快 3.2–7.0 倍）
+
+`expand_vars_array` 每產生一個候選字串就呼叫一次 `exist_in_cbeta`，而後者最多要
+循序查三個 index（text → notes → titles，任一命中就算存在）。
+
+「無上正等正覺」各字的異體字分支數是 5/2/4/4/4/4，逐層推算：
+
+| 層 | 候選組合數（= `exist_in_cbeta` 呼叫） | 存活 |
+|---|---|---|
+| 無 | 5 | 5 |
+| 上 | 10 | 2 |
+| 正 | 8 | 3 |
+| 等 | 12 | 3 |
+| 正 | 12 | 1 |
+| 覺 | 4 | 1 |
+| 合計 | **51 次** | — |
+
+51 次裡只有 15 次命中（1 次查詢），其餘 36 次要連查三個 index，
+**約 123 次循序的 Elasticsearch 查詢**。而 `possibility` 只有 1 ——
+時間完全花在中間層的存在性檢查，不是花在產出結果。逐字加長也呈線性
+（「無上」1.62 秒 → 「無上正等正覺」6.81 秒，每多一字約 +1 秒）。
+
+改法：整層的候選一次問完，改用 `SearchService#exist_all?`（`_msearch`）。
+這個方法原本就存在，但只接在 `rake import:vars`，runtime 沒有用到。
+短路語意保留（text 命中的不再問 notes，兩者都沒有的才問 titles，
+titles 仍只問長度小於 58 的）。查詢次數從約 123 次降到**每層每個 index 各一次，
+最多 18 次**。
+
+`exist_in_cbeta` 改寫為 `filter_exist_in_cbeta` 後沒有其他呼叫端。
+
+### 2. `similar`：Smith-Waterman 上界剪枝 + 常數優化（成功，快 2.1–2.3 倍）
+
+用 `k` 參數掃出的曲線（同一句、`cache=0`、staging）：
+
+| k | 50 | 100 | 250 | 500 | 1000 | 2000 |
+|---|---|---|---|---|---|---|
+| 處理時間 | 0.154 s | 0.168 s | 0.223 s | 0.301 s | 0.579 s | 1.294 s |
+
+線性回歸：每筆候選 0.585 ms、固定成本 0.125 秒 ——
+**第二階段的 Smith-Waterman 佔 k=2000 時的約 90%**。
+
+三項改動：
+
+1. **候選先用分數上界剪枝**（關鍵）。`SmithWaterman.max_score` = `gain ×`
+   兩字串共同字元數（multiset 交集），O(m+n)。最佳路徑的分數
+   = Σ(match gain) + Σ(penalty)，而 `penalty <= 0`，因此分數不可能超過
+   「共同字元全部對齊」的情形，這是真正的上界。算不到 `score_min` 的候選
+   連矩陣都不必建。
+   候選是 `QUORUM_RATIO = '50%'` 挑出來的（一半的字命中即可），而通過
+   `SCORE_MIN = 16`（`gain = 2`）需要 8 個字對得上 —— 兩個門檻不一致，
+   候選池裡本來就有一批是可證明拿不到分數的。
+2. **矩陣攤平**。`Matrix` 類別每個 cell 存取都要經過一次帶 bounds check 的
+   method call，換成一維 `Array`（索引 `i*n+j`）。`Matrix` 只有 `SmithWaterman`
+   在用，一併移除（它還會遮蔽標準庫的同名類別）。
+3. **traceback 延後**。`align!` 拆成 `score!` 與延後執行的 traceback，
+   分數不到門檻的候選不再白做一次遞迴。
+
+剪掉的都是原本 `sw.score < score_min` 就會淘汰的，三個判斷的順序也維持原樣
+（完全符合排除 → 剪枝 → 計分 → `<mark>` 邊界規則），結果不變。
+`similar_smith_waterman` 的 log 會印出實際剪枝筆數。
+
+本機 macOS 以 2000 筆合成候選比對舊版與新版，score 與 highlight 逐筆相同；
+耗時 1.62 倍（攤平 + 延後 traceback）、2.27 倍（再加上剪枝）。
+`test/services/smith_waterman_test.rb` 把 6 組 pair 的輸出逐字鎖住。
+
+這項原本是 2026-09-10 拍板接受的代價（`k=2000` 取結果完整度，接受 2.2 秒）。
+現在絕對延遲在 0.6 秒以內，`k` 的結果完整度沒有改變。
+
+### 3. Exclude 的候選階段：假設被否證（未改善）
+
+先確認成本在哪：同一個查詢 `"菩薩" -"諸菩薩"` 在 `search/extended` 是 4.71 秒、
+在 `search/all_in_one` 是 4.69 秒。兩者共用 `exclude_candidates`，而 all_in_one 的
+KWIC 是分頁之後才跑、只處理當頁十幾筆 —— **成本幾乎全在候選階段**。
+
+當時的假設是 `_source` 太大：候選要取回「菩薩」的 15,789 卷，每筆都帶
+`TextIndex::SOURCE_FIELDS` 的 20 個欄位，其中 `juan_list` 動輒數百 bytes，
+而其中只有當頁十幾筆用得到。
+
+改法：`all_candidates` 加 `light` 參數只取 7 個欄位（`LIGHT_SOURCE_FIELDS`），
+分頁後用 `rows_by_ids`（一次 ids query）補回完整欄位；
+`SCROLL_BATCH_SIZE` 5000 → 10000。
+
+**結果 4.64 → 4.62 秒，沒有改善。假設被否證**：瓶頸不是 `_source` 的大小，
+也不是 round trip 次數（批次加倍同樣無效）。
+
+目前的研判：
+
+* 成本與命中卷數呈線性（3,166 卷 1.24 秒、15,690 卷 4.62 秒）。
+* 但 `search/facet/category?q=菩薩` 掃同一批 15,789 卷只要 0.19 秒 ——
+  aggregation 不逐筆回傳結果。
+* 因此瓶頸應該在**逐筆回傳一萬五千多個 hit 本身**（ES 端 materialize 每個 hit、
+  序列化，Rails 端反序列化、`row_from_hit` 每列配置一個 Hash），
+  而不在傳輸的位元組數。
+
+要確認需要 Elasticsearch 的 `_profile` API 或 server 端 profiling。
+真正的解法可能是把「逐卷相減」改成依 `work`／`juan` 分組的 aggregation，
+完全不回傳 hit —— 那是另一個設計，不在本次範圍。
+
+這次的改動保留：結果正確、確實減少了傳輸量，而且分頁後才補欄位的架構
+正是 aggregation 作法會需要的。
+
+## `notes` 筆數差異的真因：舊版未加引號
+
+量測時發現 `notes` 兩邊的筆數對不起來，一度懷疑是資料版本或 ES 的問題。
+**都不是 —— 是舊版 `MATCH('#{@q}')` 少了一層引號。**
+
+`main` 的 `SearchController#notes`：
+
+```ruby
+@where = "MATCH('#{@q}')" + @filter
+```
+
+對照同一支程式的 `extended`，text index 那邊是有加引號的：
+
+```ruby
+where = %{MATCH('@#{@text_field} "#{@q}"')} + @filter
+```
+
+Manticore 的 analyzer 是逐字切 token，因此 `MATCH('梵語')` 是
+「梵 AND 語」（不限順序、不限距離），不是詞組「梵語」。
+**同一個舊版程式，text index 做詞組查詢、notes 做隱含 AND，兩者行為不一致。**
+
+### 證據一：反序查詢
+
+| 查詢 | ES `num_found` | Manticore `num_found` |
+|---|---|---|
+| `梵語` | 3,852 | 4,180 |
+| `語梵` | 19 | **4,180** |
+| `菩薩` | 13,393 | 13,511 |
+| `薩菩` | 24 | **13,511** |
+
+Manticore 對反序查詢回傳完全相同的筆數 —— AND 不看順序。
+
+### 證據二：使用者自己加引號時，兩邊完全一致
+
+| 查詢 | ES | Manticore |
+|---|---|---|
+| `"梵語"` | 3,852 / tth 4,381 | 3,852 / tth 4,381 |
+| `"語梵"` | 19 / tth 20 | 19 / tth 20 |
+| `"菩薩"` | 13,393 / tth 18,667 | 13,393 / tth 18,667 |
+
+引號會原樣送進 `MATCH`，Manticore 就做詞組查詢。
+**差異只發生在使用者不加引號時**，而 API 說明頁的範例都是帶引號的
+（`GOLDEN_CASES` 的 notes 項目也都帶引號，因此 `verify_golden` 一直是「一致」，
+沒有暴露這個差異）。
+
+### `total_term_hits` 的差距同理
+
+`菩薩` 的 `total_term_hits` 是 18,667（ES）對 40,368（Manticore）。
+舊版的 `ranker=wordcount` 加總的是「菩」與「薩」兩個 term 在**符合的文件裡**的
+出現次數，所以不會等於兩個單字查詢的 tth 相加（27,030 + 23,356），
+但必然遠大於詞組「菩薩」的實際出現次數。
+
+**ES 這邊的數字才是對的**，而且新版讓 text 與 notes 的語意一致了。
+
+### 順帶澄清：`notes` 一直都有 `total_term_hits`
+
+單字 `梵` → `num_found` 11,284、`total_term_hits` 13,853；
+詞組 `"梵語"` → 3,852 / 4,381。與 index 的文件數多寡無關。
+
+`F-1` 行為改變表第 2 項講的限制只針對 **NEAR 查詢**：
+intervals 的 `_score` 不是出現次數，而 notes 沒有 KWIC suffix array 可以退回
+逐筆計數，所以 NEAR 只回 `num_found`（實測 `/dev` 的
+`"阿含" NEAR/5 "迦葉"` → `num_found` 4，沒有 `total_term_hits`）。
+
+## 資料版本確認：production 與 staging 相同
+
+單字查詢沒有 AND 與詞組之分，可以用來排除語法因素、直接比對兩邊的索引內容。
+五組 notes 與兩組 text 的 `num_found` 與 `total_term_hits` **一筆不差**：
+
+| index | 查詢 | ES | Manticore |
+|---|---|---|---|
+| notes | 梵 | 11,284 / 13,853 | 11,284 / 13,853 |
+| notes | 語 | 17,378 / 21,345 | 17,378 / 21,345 |
+| notes | 菩 | 18,608 / 27,030 | 18,608 / 27,030 |
+| notes | 薩 | 16,459 / 23,356 | 16,459 / 23,356 |
+| notes | 鉢 | 2,513 / 3,362 | 2,513 / 3,362 |
+| text | 梵 | 15,080 / 128,082 | 15,080 / 128,082 |
+| text | 薩 | 17,059 / 702,374 | 17,059 / 702,374 |
+
+staging 的季號目錄雖然叫 `2026R3`（為下一季預備的環境），
+但目前載入的資料與 production 同版。
+
+## 兩邊仍然不同的四項（與資料版本無關）
+
+| 項目 | ES | Manticore | 成因 |
+|---|---|---|---|
+| `notes` 夾注「菩薩」 | 13,393 | 13,511 | 舊版未加引號（見上節），ES 為正 |
+| `notes` 夾注「梵語」 | 3,852 | 4,180 | 同上 |
+| `similar` 一切有為法如夢幻泡影 | 16 | 17 | 候選階段評分機制不同，見第三期「延遲」一節 |
+| `all_in_one` `"阿含" NEAR/5 "迦葉"` | 58 | 43 | NEAR 距離邊界，見 F-1 第 3b 項 |
