@@ -276,6 +276,34 @@ class CbetaSearch::SearchServiceExcludeTest < ActiveSupport::TestCase
     assert_equal %i[query_string time num_found total_term_hits cache_key results], r.keys
   end
 
+  # notes 一卷有多條註解, work + juan 不唯一, 下推的 script 會把整卷的次數
+  # 併成一個 bucket 再從每條註解各扣一次 —— 必須走逐筆取回、以 _id 相減的原路徑。
+  test 'notes index 不下推, 走逐筆相減' do
+    responses = [
+      { 'hits' => { 'hits' => [bare_hit(11, 2.0)] } },          # simple_search
+      { 'hits' => { 'hits' => [bare_hit(11, 5.0), bare_hit(12, 3.0)] } }, # all_candidates
+      { 'hits' => { 'hits' => [] } }                            # rows_by_ids
+    ]
+    client = FakeClient.new(responses)
+    svc = CbetaSearch::SearchService.new(client:, index: CbetaSearch::NotesIndex)
+
+    r = svc.send(:search_exclude, exclude_query, params: {}, start: 0, rows: 20,
+                                                field: nil, default_sort: nil, t1: Time.now)
+
+    assert_equal 2, r[:num_found]
+    assert_equal 6, r[:total_term_hits], '(5-2) + 3'
+    assert_nil client.bodies.first['aggs'], '不發 composite aggregation'
+    assert(client.bodies.none? { it.dig('query', 'script_score', 'script', 'params') },
+           '不用相減的 script_score')
+  end
+
+  test '只有一卷一份 document 的 index 才下推' do
+    assert CbetaSearch::TextIndex.exclude_pushdown?
+    assert_not CbetaSearch::NotesIndex.exclude_pushdown?
+    assert_not CbetaSearch::TitlesIndex.exclude_pushdown?
+    assert_not CbetaSearch::ChunksIndex.exclude_pushdown?
+  end
+
   test 'search_exclude 超出 max_result_window 要報錯' do
     svc, = service([])
     window = CbetaSearch::IndexBase::MAX_RESULT_WINDOW

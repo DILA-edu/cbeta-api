@@ -74,6 +74,8 @@ module CbetaSearch
       def tiebreaker = TIEBREAKER
       def row_fields = ROW_FIELDS
       def row_term_hits? = true
+      # text 是一卷一份 document，work + juan 唯一
+      def exclude_pushdown? = true
     end
 
     def mappings

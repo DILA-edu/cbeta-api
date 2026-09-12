@@ -314,20 +314,7 @@ module CbetaSearch
       body['track_scores'] = true
       body['sort'] = [{ '_doc' => { 'order' => 'asc' } }]
 
-      rows = {}
-      search_after = nil
-      loop do
-        body['search_after'] = search_after if search_after
-        response = client.search(index:, body:)
-        hits = response.dig('hits', 'hits') || []
-        break if hits.empty?
-
-        hits.each { |hit| rows[hit['_id'].to_i] = term_hits_from_score(hit['_score']) }
-        break if hits.size < SCROLL_BATCH_SIZE
-
-        search_after = hits.last['sort']
-      end
-      rows
+      scroll_scores(body).to_h
     end
 
     # 對應舊的 get_hit_count: 只回傳關鍵詞出現總次數
@@ -414,6 +401,25 @@ module CbetaSearch
 
     private
 
+    # 以 search_after 逐批取回 [[_id, 出現次數], ...]，不讀 _source。
+    # 呼叫端負責在 body 裡設好 sort (要能唯一決定順序)。
+    def scroll_scores(body)
+      rows = []
+      search_after = nil
+      loop do
+        body['search_after'] = search_after if search_after
+        response = client.search(index:, body:)
+        hits = response.dig('hits', 'hits') || []
+        break if hits.empty?
+
+        hits.each { |hit| rows << [hit['_id'].to_i, term_hits_from_score(hit['_score'])] }
+        break if hits.size < SCROLL_BATCH_SIZE
+
+        search_after = hits.last['sort']
+      end
+      rows
+    end
+
     # EXCLUDE_SCRIPT 回傳的是相減前的 a，當頁這幾筆再於 Ruby 端減掉 b。
     def exclude_row(hit, query, subtract)
       source = hit['_source'] || {}
@@ -447,9 +453,47 @@ module CbetaSearch
     # Exclude 查詢: 取全部候選、逐卷相減，再取當頁。
     # 與 all_in_one 走同一個 exclude_candidates，所以兩個 endpoint 的數字一致。
     def search_exclude(query, params:, start:, rows:, field:, default_sort:, t1:)
-      r = exclude_search(query, params:, start:, rows:, field:, default_sort:)
+      r =
+        if index_class.exclude_pushdown?
+          exclude_search(query, params:, start:, rows:, field:, default_sort:)
+        else
+          exclude_by_candidates(query, params:, start:, rows:, field:, default_sort:)
+        end
       # key 的順序要與 #search 一致 (query_string, time, num_found, ...)
       { query_string: r[:query_string], time: Time.now - t1 }.merge(r)
+    end
+
+    # 相減不能下推時的原路徑 (見 IndexBase.exclude_pushdown?):
+    # 逐筆取回全部候選的 _id 與出現次數、以 _id 相減、分頁後才補欄位。
+    #
+    # 不走 #exclude_candidates —— 那個方法靠 row_from_hit 產生 term_hits，
+    # 而 row_term_hits? 只有 text index 是 true，notes 會拿到 nil。
+    def exclude_by_candidates(query, params:, start:, rows:, field:, default_sort:)
+      excluded = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
+      base = Query.new(type: :phrase, raw: query.raw, phrase: query.phrase)
+      minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
+      subtract = simple_search(minus, params:, field:)
+
+      body = @builder.search_body(base, params:, field:)
+      body['_source'] = false
+      body['size'] = SCROLL_BATCH_SIZE
+      body['track_scores'] = true
+      body['sort'] = @builder.sort(params, default: default_sort) +
+                     [{ '_doc' => { 'order' => 'asc' } }]
+
+      kept = scroll_scores(body).filter_map do |id, hits|
+        adjusted = hits - subtract.fetch(id, 0)
+        [id, adjusted] if adjusted.positive?
+      end
+      page = (kept[start, rows] || []).map { |id, hits| { id:, term_hits: hits } }
+
+      {
+        query_string: query.raw,
+        num_found: kept.size,
+        total_term_hits: kept.sum { it[1] },
+        cache_key: nil,
+        results: rows_by_ids(page, query)
+      }
     end
 
     # Elasticsearch 的 from + size 有 index.max_result_window 上限

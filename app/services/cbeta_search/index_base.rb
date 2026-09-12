@@ -111,6 +111,14 @@ module CbetaSearch
       # 是否在單筆結果附上 term_hits (舊版的 weight())
       def row_term_hits? = false
 
+      # Exclude 的相減能不能下推到 Elasticsearch (見 SearchService#exclude_search)。
+      # 下推的 script 以 work + juan 當 key，因此只有「一卷一份 document」的 index
+      # 適用。notes 一卷有多條註解，work + juan 會把整卷的次數併成一個 bucket，
+      # 再從每一條註解各扣一次整卷的量 —— 實測 /search/notes 的
+      # 「"菩薩" -"諸菩薩"」num_found 會從一萬二千多掉到 9,164。
+      # 不適用的 index 走逐筆取回、以 _id 相減的原路徑 (notes 的候選量不大，不慢)。
+      def exclude_pushdown? = false
+
       # xmlpipe2 的欄位是選填的: 例如沒有作譯者的典籍，chunks.xml 裡就不會有
       # <creators_with_id>。Manticore 對缺少的 attribute 會回空字串 (uint 回 0)，
       # Elasticsearch 則是 _source 裡根本沒有這個欄位。
