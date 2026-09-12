@@ -886,7 +886,7 @@ ES 的 `took` 合計 0.18 秒（原本 4.4 秒）。
 #### 驗證
 
 `rake elastic:verify_golden` 部署前後同為 48/50（不一致的是同樣兩項 similar）。
-另以 8 組 Exclude 查詢逐一比對 production 與 staging 的 `num_found`、
+另以 9 組 Exclude 查詢逐一比對 production 與 staging 的 `num_found`、
 `total_term_hits`、前 5 筆的 `work/juan=term_hits`：
 
 | 查詢 | Manticore | ES | 一致 |
@@ -904,6 +904,34 @@ ES 的 `took` 合計 0.18 秒（原本 4.4 秒）。
 最後兩項的 1 筆之差**不是這次改動造成的**：在 `sakya` 上用舊演算法（逐筆取回、
 逐卷相減）重算，得到的是與新演算法完全相同的數字（5,608 / 20,276 與
 3,166 / 14,881）。那是 Manticore 與 Elasticsearch 對自重疊詞處理方式的既有差異。
+
+#### 只有 text index 下推：`IndexBase.exclude_pushdown?`
+
+下推的 script 以 `work` + `juan` 當 key，因此只有「一卷一份 document」的 index
+適用。`notes` 一卷有多條註解，`work` + `juan` 會把整卷的次數併成一個 bucket，
+再從每一條註解各扣一次整卷的量 —— 實測 `/search/notes` 的 `"菩薩" -"諸菩薩"`
+`num_found` 會從一萬三千掉到 9,164。因此加了 `IndexBase.exclude_pushdown?`，
+只有 `TextIndex` 是 `true`，其餘走逐筆取回、以 `_id` 相減的原路徑。
+
+查這件事的時候順帶發現：**`notes` 的 Exclude 在遷移後一直是 500**。
+`#exclude_candidates` 靠 `row_from_hit` 產生 `term_hits`，而 `row_term_hits?`
+只有 text index 是 `true`，`notes` 拿到的是 `nil`（`GOLDEN_CASES` 沒有
+notes + Exclude 的案例，所以沒被擋下來）。新的 `#exclude_by_candidates`
+直接從 `_score` 取出現次數，不經過 `row_from_hit`，問題一併修掉。
+
+修好之後 `/search/notes` 的 `"菩薩" -"諸菩薩"`：
+
+| | Manticore | Elasticsearch |
+|---|---|---|
+| `num_found` | 12,691 | 13,002 |
+| `total_term_hits` | 17,028 | 17,851 |
+| 耗時（warm） | 0.13 s | 0.39 s |
+
+`num_found` 的差來自語意不同：Manticore 是「整條註解含排除字串就整條剔除」
+（12,691 = 13,393 − 702），Elasticsearch 是逐條相減 —— 一條註解出現「菩薩」
+3 次、「諸菩薩」1 次，仍算符合。這與 text index 的 Exclude 語意一致
+（見 F-1 第 6 項）。首次查詢會花十幾秒載入 `notes` 的 keyword 排序欄位
+global ordinals，warm 之後 0.39 秒。
 
 ## `notes` 筆數差異的真因：舊版各 endpoint 的引號要求不一致
 
