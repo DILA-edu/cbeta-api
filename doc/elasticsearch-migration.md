@@ -690,12 +690,13 @@ staging 實測（2026-09-10，6 個範例查詢，快取關閉、已暖機）：
 
 ---
 
-# 效能優化與 staging／production 對照（2026-09-11）
+# 效能優化與 staging／production 對照（2026-09-11 ～ 09-12）
 
 主管要一份「由 Manticore 遷移至 Elasticsearch」的效能對照，做為決策參考。
-量測過程中找出三處明顯較慢的 endpoint，當天完成其中兩處的優化並部署
-（staging 5.4.0，`6512d53..a83f069`）。本節記錄量測結果、三項優化的成敗，
-以及途中查出來的 `notes` 筆數差異真因。
+量測過程中找出三處明顯較慢的 endpoint。09-11 完成其中兩處（`variants`、
+`similar`，staging 5.4.0，`6512d53..a83f069`）；Exclude 當天的假設被否證，
+09-12 找出真因並解決（staging 5.5.0，`96a8a6a..6680d86`）。本節記錄量測結果、
+三項優化的過程，以及途中查出來的 `notes` 筆數差異真因。
 
 量測對象是同一台主機 `sakya.dila.edu.tw` 上的兩個 slot：
 production `/stable`（5.3.0，Manticore）與 staging `/dev`（Elasticsearch）。
@@ -719,16 +720,17 @@ rake remote:bench[compare,tmp/bench/舊.json,tmp/bench/新.json]
 
 ## 對照結果：秒級的六組
 
-單位秒，warm 中位數。「優化前」是 5.3.0 的 staging，「優化後」是 5.4.0。
+單位秒，warm 中位數。「優化前」是 5.3.0 的 staging，「優化後」是 5.5.0。
+最後一欄大於 1 表示 ES 比 Manticore 慢。
 
 | 查詢 | Manticore | ES 優化前 | ES 優化後 | 優化後／Manticore |
 |---|---|---|---|---|
-| `variants` 無上正等正覺 | 0.72 | 6.65 | **0.96** | 1.3× |
-| `variants` 大比丘三千威儀 | 0.36 | 2.80 | **0.86** | 2.4× |
-| `variants` 阿耨多羅三藐三菩提 | 0.41 | 5.34 | **1.18** | 2.9× |
-| `similar` 一切有為法如夢幻泡影 | 0.26 | 1.25 | **0.55** | 2.1× |
-| `similar` 諸行無常是生滅法 | 0.25 | 1.09 | **0.51** | 2.0× |
-| `all_in_one` `"菩薩" -"諸菩薩"` | 1.09 | 4.64 | 4.62 | 4.2× |
+| `variants` 無上正等正覺 | 0.73 | 6.65 | **0.97** | 1.3× |
+| `variants` 大比丘三千威儀 | 0.35 | 2.80 | **0.89** | 2.5× |
+| `variants` 阿耨多羅三藐三菩提 | 0.41 | 5.34 | **1.19** | 2.9× |
+| `similar` 一切有為法如夢幻泡影 | 0.27 | 1.25 | **0.57** | 2.1× |
+| `similar` 諸行無常是生滅法 | 0.26 | 1.09 | **0.54** | 2.1× |
+| `all_in_one` `"菩薩" -"諸菩薩"` | 1.08 | 4.64 | **0.20** | **0.19×（快 5.3 倍）** |
 
 其餘 14 組（基本檢索、facet、notes、title、sc、`all_in_one` 一般查詢、NEAR）
 兩邊都在 0.35 秒內，差距 6–120 毫秒，落在量測漂移的量級。
@@ -808,7 +810,12 @@ titles 仍只問長度小於 58 的）。查詢次數從約 123 次降到**每�
 這項原本是 2026-09-10 拍板接受的代價（`k=2000` 取結果完整度，接受 2.2 秒）。
 現在絕對延遲在 0.6 秒以內，`k` 的結果完整度沒有改變。
 
-### 3. Exclude 的候選階段：假設被否證（未改善）
+### 3. Exclude：相減下推到 Elasticsearch（成功，快 23 倍；對 Manticore 由慢 4.2 倍變快 5.3 倍）
+
+這一項花了兩輪。第一輪（09-11）的假設是錯的，記在這裡是因為「錯在哪」正是
+找到真因的線索。
+
+#### 第一輪：`_source` 太大（假設被否證）
 
 先確認成本在哪：同一個查詢 `"菩薩" -"諸菩薩"` 在 `search/extended` 是 4.71 秒、
 在 `search/all_in_one` 是 4.69 秒。兩者共用 `exclude_candidates`，而 all_in_one 的
@@ -816,30 +823,87 @@ KWIC 是分頁之後才跑、只處理當頁十幾筆 —— **成本幾乎全�
 
 當時的假設是 `_source` 太大：候選要取回「菩薩」的 15,789 卷，每筆都帶
 `TextIndex::SOURCE_FIELDS` 的 20 個欄位，其中 `juan_list` 動輒數百 bytes，
-而其中只有當頁十幾筆用得到。
+而其中只有當頁十幾筆用得到。改法是 `all_candidates` 只取 7 個欄位
+（`LIGHT_SOURCE_FIELDS`），分頁後用 `rows_by_ids` 補回完整欄位。
 
-改法：`all_candidates` 加 `light` 參數只取 7 個欄位（`LIGHT_SOURCE_FIELDS`），
-分頁後用 `rows_by_ids`（一次 ids query）補回完整欄位；
-`SCROLL_BATCH_SIZE` 5000 → 10000。
+**結果 4.64 → 4.62 秒，沒有改善。** 第二輪一開始又把候選階段改成
+完全不回傳 `_source`（`96a8a6a`），仍然是 4.6 秒。
 
-**結果 4.64 → 4.62 秒，沒有改善。假設被否證**：瓶頸不是 `_source` 的大小，
-也不是 round trip 次數（批次加倍同樣無效）。
+#### 第二輪：直接量 ES 的 `took`
 
-目前的研判：
+繞過 Rails，在 `sakya` 上直接對 Elasticsearch 發查詢（`q=菩薩`，15,789 卷）：
 
-* 成本與命中卷數呈線性（3,166 卷 1.24 秒、15,690 卷 4.62 秒）。
-* 但 `search/facet/category?q=菩薩` 掃同一批 15,789 卷只要 0.19 秒 ——
-  aggregation 不逐筆回傳結果。
-* 因此瓶頸應該在**逐筆回傳一萬五千多個 hit 本身**（ES 端 materialize 每個 hit、
-  序列化，Rails 端反序列化、`row_from_hit` 每列配置一個 Hash），
-  而不在傳輸的位元組數。
+| 查詢 | ES `took` | 回傳位元組 |
+|---|---|---|
+| `size=1` | 29 ms | 264 |
+| `size=15789`、`_source` 完整 | 2,466 ms | 10.4 MB |
+| `size=15789`、`_source: ["work","juan"]` | 2,645 ms | 2.1 MB |
+| `size=15789`、`_source: false` | 2,458 ms | 1.6 MB |
 
-要確認需要 Elasticsearch 的 `_profile` API 或 server 端 profiling。
-真正的解法可能是把「逐卷相減」改成依 `work`／`juan` 分組的 aggregation，
-完全不回傳 hit —— 那是另一個設計，不在本次範圍。
+三者**同時間、位元組差 6 倍**。而 `size=1` 只要 29 ms —— 比對、計分、排序
+（含 15,789 卷的 keyword 排序）全都做完了。結論明確：
 
-這次的改動保留：結果正確、確實減少了傳輸量，而且分頁後才補欄位的架構
-正是 aggregation 作法會需要的。
+* 成本是**每筆 hit 的固定開銷，約 0.16 ms**，與讀不讀 stored fields 無關。
+* 不是傳輸量、不是往返次數、不是排序、不是 Rails 端的反序列化
+  （`x-runtime` 與 API 自報的 `time` 只差 0.15 秒）。
+
+唯一的辦法是**不要回傳上萬筆**。
+
+#### 解法：三個都不逐筆回傳的請求
+
+`SearchService#exclude_search` 取代「逐筆取回全部候選、在 Ruby 端相減」：
+
+1. **composite aggregation** 取排除字串的逐卷出現次數。同樣是 6,803 卷，
+   aggregation 的 `took` 是 42 ms，逐筆取回是 1,574 ms，兩者數字完全相同。
+   用 composite 而不是 terms aggregation，是因為它以 `after_key` 翻頁，
+   不會被 `size` 悄悄截斷。
+2. **主要詞組包一層 `script_score`**，把「被排除光」的卷歸零，`min_score`
+   濾掉，只取當頁（`size` = `rows`）。`num_found` 由 `track_total_hits` 取得。
+3. **`hit_count`** 取主要詞組的總次數。
+
+ES 的 `took` 合計 0.18 秒（原本 4.4 秒）。
+
+刻意保持的兩件事：
+
+* **排序鍵是「相減前」的次數 a，不是 a − b。** script 回傳 a，只把 a ≤ b 的卷
+  歸零。這樣 `order=term_hits` 與舊版相同 —— production（Manticore）與遷移後的
+  逐卷相減版都是依 a 排序、之後才相減，實測兩邊前幾筆順序一致
+  （`X1499/1=881` 排在 `P1612/18=892` 之前）。改用相減後的值排序更合理，
+  但那是行為變更，不在效能修正的範圍。
+* **`total_term_hits` = sum_a − sum_b，是精確值而不是近似。** 排除字串必含
+  主要詞組（否則 `QueryParser` 回 400），排除字串的每一次出現都對應主要詞組的
+  一次出現且位置互異，因此逐卷 b ≤ a 恆成立，逐卷 `max(0, a − b)` 的總和就等於
+  sum_a − sum_b。在 `sakya` 上以舊演算法逐卷驗算，「b > a 的卷」為 0 卷。
+
+**不能改用 aggregation 算 `total_term_hits`。** `scripted_metric` 的 `map_script`
+讀 `script_score` 調整後的 `_score` 會偏高（實測 525,085，正確值 521,087），
+而同一組分數逐筆取回加總是對的 —— 與 `ElasticQueryBuilder#bool_query` 註解
+描述的是同一類「Lucene 剪枝下 `_score` 不完整」的現象。
+
+`all_in_one` 的 `facet=1` 仍走舊路徑：`my_facet` 在 Ruby 端逐卷累加，
+非得有全部候選不可。
+
+#### 驗證
+
+`rake elastic:verify_golden` 部署前後同為 48/50（不一致的是同樣兩項 similar）。
+另以 8 組 Exclude 查詢逐一比對 production 與 staging 的 `num_found`、
+`total_term_hits`、前 5 筆的 `work/juan=term_hits`：
+
+| 查詢 | Manticore | ES | 一致 |
+|---|---|---|---|
+| `"菩薩" -"諸菩薩"` | 0.90 s | **0.17 s** | ✓ |
+| `"菩薩" -"菩薩摩訶薩"` | 0.99 s | **0.15 s** | ✓ |
+| `"直心" -"正直心"` | 0.16 s | **0.06 s** | ✓ |
+| `"舍利" -"舍利弗"` | 0.55 s | **0.13 s** | ✓ |
+| `"菩薩" -"諸菩薩"`、`start=100` | 1.23 s | **0.18 s** | ✓ |
+| `"舍利" -"舍利弗"`、`order=term_hits`、`start=20` | 0.55 s | **0.14 s** | ✓ |
+| `"菩薩" -"諸菩薩"`、`canon=T` | 0.44 s | **0.18 s** | ✓ |
+| `"阿耨多羅三藐三菩提" -"得阿耨多羅三藐三菩提"` | 0.32 s | **0.10 s** | `total_term_hits` 差 1 |
+| `"心心" -"正心心"`（自重疊詞） | 0.46 s | **0.17 s** | `num_found` 差 1 |
+
+最後兩項的 1 筆之差**不是這次改動造成的**：在 `sakya` 上用舊演算法（逐筆取回、
+逐卷相減）重算，得到的是與新演算法完全相同的數字（5,608 / 20,276 與
+3,166 / 14,881）。那是 Manticore 與 Elasticsearch 對自重疊詞處理方式的既有差異。
 
 ## `notes` 筆數差異的真因：舊版各 endpoint 的引號要求不一致
 
