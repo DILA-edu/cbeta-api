@@ -454,10 +454,14 @@ class SearchController < ApplicationController
     @exclude = nil
     query = es_query
 
-    # NEAR 與 Exclude 的 term_hits、KWIC 都要由 KwicService 逐卷計算
-    # (Elasticsearch 的 intervals 允許兩詞區間重疊，KWIC 不允許)，
-    # 因此這兩種查詢先取回全部符合的卷，過濾完才分頁。
-    two_phase = %i[near exclude].include?(query.type)
+    # NEAR 的 term_hits、KWIC 要由 KwicService 逐卷計算 (Elasticsearch 的
+    # intervals 允許兩詞區間重疊，KWIC 不允許)，因此先取回全部符合的卷，
+    # 過濾完才分頁。
+    #
+    # Exclude 只有 facet=1 才需要這樣做 —— my_facet 在 Ruby 端逐卷累加，
+    # 非得有全部候選不可。其餘情況相減已經下推到 Elasticsearch，
+    # 直接取當頁就好 (見 SearchService#exclude_search)。
+    two_phase = query.type == :near || (query.type == :exclude && @facet == 1)
 
     case query.type
     when :near
@@ -500,7 +504,9 @@ class SearchController < ApplicationController
       kwic_by_juan(r) unless query.type == :near
     end
 
-    filter_es_fields!(r[:results]) if two_phase
+    # 平常這件事由 es_search 做掉，Exclude / NEAR 走的是別條路。
+    # 順序固定在 kwic_by_juan 之後 —— KWIC 要讀 work / juan，先過濾會拿不到。
+    filter_es_fields!(r[:results]) if two_phase || query.type == :exclude
 
     if r.key?(:results)
       log_debug "results size: #{r[:results].size}"
@@ -525,18 +531,25 @@ class SearchController < ApplicationController
   def all_in_one_fetch(query)
     case query.type
     when :exclude
-      # facet=1 要在 Ruby 端逐卷累加 (my_facet)，候選階段才需要帶欄位；
-      # 否則候選只要 _id 與出現次數，完整欄位等分頁後由 rows_by_ids 補。
-      rows = es_service.exclude_candidates(
-        query, params: es_params, field: @text_field, source: @facet == 1 ? :light : :none
-      )
-      {
-        query_string: query.raw,
-        num_found: rows.size,
-        total_term_hits: rows.sum { it[:term_hits] },
-        cache_key: nil,
-        results: rows
-      }
+      if @facet == 1
+        # my_facet 要在 Ruby 端逐卷累加，只好取回全部候選 (慢，但 facet=1 罕用)。
+        rows = es_service.exclude_candidates(
+          query, params: es_params, field: @text_field, source: :light
+        )
+        {
+          query_string: query.raw,
+          num_found: rows.size,
+          total_term_hits: rows.sum { it[:term_hits] },
+          cache_key: nil,
+          results: rows
+        }
+      else
+        r = es_service.exclude_search(
+          query, params: es_params, start: @start, rows: @rows,
+          field: @text_field, default_sort: nil
+        )
+        r
+      end
     when :near
       rows = es_service.all_candidates(query, params: es_params, field: @text_field)
       {

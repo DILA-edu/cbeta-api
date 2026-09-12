@@ -178,21 +178,111 @@ class CbetaSearch::SearchServiceExcludeTest < ActiveSupport::TestCase
     assert_equal page, rows
   end
 
-  test 'search_exclude 只對當頁補欄位' do
+  # ===== 相減下推到 Elasticsearch 的路徑 (#exclude_search) =====
+  #
+  # 三個請求，順序固定:
+  #   1. composite aggregation 取排除字串的逐卷次數
+  #   2. 主要詞組包 script_score，只取當頁
+  #   3. hit_count 取主要詞組的總次數
+  def composite_response(buckets, after_key: nil)
+    agg = { 'buckets' => buckets.map do |work, juan, hits|
+      { 'key' => { 'work' => work, 'juan' => juan }, 'hits' => { 'value' => hits.to_f } }
+    end }
+    agg['after_key'] = after_key if after_key
+    { 'hits' => { 'hits' => [] }, 'aggregations' => { 'juans' => agg } }
+  end
+
+  def hit_count_response(total)
+    { 'hits' => { 'hits' => [] },
+      'aggregations' => { 'total_term_hits' => { 'value' => total.to_f } } }
+  end
+
+  def page_response(hits, total)
+    { 'hits' => { 'total' => { 'value' => total }, 'hits' => hits } }
+  end
+
+  test 'exclude_search 三個請求: composite agg、當頁、hit_count' do
     responses = [
-      { 'hits' => { 'hits' => [] } }, # simple_search: 沒有要排除的
-      { 'hits' => { 'hits' => [bare_hit(1, 10.0), bare_hit(2, 5.0), bare_hit(3, 2.0)] } },
-      { 'hits' => { 'hits' => [hit(2, 1.0, source(work: 'T0002', juan: 1, juan_list: '1'))] } }
+      composite_response([['T0001', 1, 3]]),
+      page_response([hit(1, 10.0, source(work: 'T0001', juan: 1)),
+                     hit(2, 5.0, source(work: 'T0002', juan: 1))], 2),
+      hit_count_response(15)
     ]
     svc, client = service(responses)
 
-    r = svc.send(:search_exclude, exclude_query, params: {}, start: 1, rows: 1,
+    r = svc.exclude_search(exclude_query, params: {}, start: 0, rows: 20)
+
+    assert_equal 3, client.bodies.size, '只發三個請求, 不逐筆取回候選'
+    assert_equal 2, r[:num_found], 'num_found 取自當頁查詢的 hits.total'
+    assert_equal 12, r[:total_term_hits], 'sum_a(15) - sum_b(3)'
+    assert_equal [7, 5], r[:results].map { it[:term_hits] }, '當頁逐筆在 Ruby 端相減'
+    assert_equal %w[T0001 T0002], r[:results].map { it[:work] }
+  end
+
+  test 'exclude_search 的當頁查詢: script_score + min_score + 分頁' do
+    responses = [composite_response([['T0001', 1, 3]]), page_response([], 0),
+                 hit_count_response(15)]
+    svc, client = service(responses)
+    svc.exclude_search(exclude_query, params: {}, start: 40, rows: 20)
+
+    body = client.bodies[1]
+    script = body.dig('query', 'script_score', 'script')
+    assert_equal CbetaSearch::SearchService::EXCLUDE_SCRIPT, script['source']
+    assert_equal({ 'T0001/1' => 3 }, script.dig('params', 'sub'),
+                 'key 要與 script 裡的 work + "/" + juan 同格式')
+    assert_equal CbetaSearch::SearchService::MIN_ADJUSTED_SCORE, body['min_score']
+    assert_equal 40, body['from']
+    assert_equal 20, body['size']
+    assert_equal CbetaSearch::TextIndex.source_fields, body['_source'], '當頁要完整欄位'
+    assert body['track_scores'], 'term_hits 靠 _score, 不能關掉'
+  end
+
+  # script 回傳的是「相減前」的次數 a，只把 a <= b 的卷歸零。
+  # 這樣 order=term_hits 的排序鍵與舊版 (Manticore 以及遷移後的逐卷相減版)
+  # 相同 —— 兩者都是依 a 排序、之後才相減。
+  test 'EXCLUDE_SCRIPT 回傳相減前的分數, 只把被排除光的卷歸零' do
+    script = CbetaSearch::SearchService::EXCLUDE_SCRIPT
+    assert_includes script, 'Math.round(_score)'
+    assert_includes script, "doc['work'].value + '/' + doc['juan'].value"
+    assert_includes script, 'return a > b ? a : 0;'
+  end
+
+  test 'exclude_subtract_map 以 after_key 翻頁, 不會被 size 截斷' do
+    batch = CbetaSearch::SearchService::COMPOSITE_BATCH_SIZE
+    full = Array.new(batch) { |i| ["T#{format('%04d', i)}", 1, 1] }
+    responses = [
+      composite_response(full, after_key: { 'work' => 'T9998', 'juan' => 1 }),
+      composite_response([['T9999', 2, 4]])
+    ]
+    svc, client = service(responses)
+
+    subtract = svc.exclude_subtract_map(phrase('諸菩薩'), params: {})
+
+    assert_equal batch + 1, subtract.size, '兩頁都要收進來'
+    assert_equal 4, subtract['T9999/2']
+    assert_equal({ 'work' => 'T9998', 'juan' => 1 },
+                 client.bodies.last.dig('aggs', 'juans', 'composite', 'after'))
+    assert_equal false, client.bodies.first['_source'], 'aggregation 不必回傳 hit'
+    assert_equal 0, client.bodies.first['size']
+  end
+
+  test 'search_exclude 保持與 #search 相同的 key 順序' do
+    responses = [composite_response([]), page_response([], 0), hit_count_response(0)]
+    svc, = service(responses)
+
+    r = svc.send(:search_exclude, exclude_query, params: {}, start: 0, rows: 20,
                                                 field: nil, default_sort: nil, t1: Time.now)
 
-    assert_equal 3, r[:num_found], '總數是全部候選'
-    assert_equal 17, r[:total_term_hits]
-    assert_equal 1, r[:results].size
-    assert_equal 'T0002', r[:results].first[:work]
-    assert_equal %w[2], client.bodies.last.dig('query', 'ids', 'values'), '只補當頁那一筆'
+    assert_equal %i[query_string time num_found total_term_hits cache_key results], r.keys
+  end
+
+  test 'search_exclude 超出 max_result_window 要報錯' do
+    svc, = service([])
+    window = CbetaSearch::IndexBase::MAX_RESULT_WINDOW
+
+    assert_raises(CbetaError) do
+      svc.send(:search_exclude, exclude_query, params: {}, start: window, rows: 20,
+                                               field: nil, default_sort: nil, t1: Time.now)
+    end
   end
 end

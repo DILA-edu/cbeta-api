@@ -29,17 +29,43 @@ module CbetaSearch
     # 取候選卷時要不要回傳 _source:
     #   :full  完整欄位 (NEAR 用: 候選就是最終結果，要逐卷做 KWIC)
     #   :light 只取 my_facet 要用的欄位 (Exclude 且 facet=1)
-    #   :none  完全不取 (Exclude 的一般情況)
+    #   :none  完全不取 (只需要「哪一卷、幾次」時)
     #
-    # :none 是 Exclude 效能的關鍵。實測 /dev 的「菩薩」(15,789 卷):
-    # 比對加計分加排序只要 0.07 秒，逐筆取回 _source 卻要 3.16 秒 ——
-    # 成本幾乎全在 fetch 階段讀 stored fields。而候選階段真正需要的只有
-    # 「哪一卷」與「幾次」，前者用 _id (與 minus 查詢同一個 index，可直接對應)，
-    # 後者用 _score，兩者都不必讀 _source。
+    # 注意: 省 _source 省不到時間。直接對 ES 量「菩薩」(15,789 卷) 的 took:
     #
-    # 註: 只把 _source 縮成 LIGHT_SOURCE_FIELDS 是沒用的 —— ES 的 _source
-    # filtering 仍要先讀出並解析整份 _source 再挑欄位，實測 4.64 → 4.62 秒。
+    #   size=1                      29 ms  ← 比對、計分、排序全做完了
+    #   size=15789 _source 完整    2466 ms  回傳 10.4 MB
+    #   size=15789 _source 兩欄    2645 ms  回傳  2.1 MB
+    #   size=15789 _source false   2458 ms  回傳  1.6 MB
+    #
+    # 三者同時間、位元組差 6 倍，可見成本是「每筆 hit 的固定開銷」(約 0.16 ms)，
+    # 與讀不讀 stored fields 無關。要讓 Exclude 變快，唯一的辦法是不要回傳
+    # 上萬筆 —— 見 #exclude_search。這裡的模式只是「要什麼才拿什麼」。
     SOURCE_MODES = %i[full light none].freeze
+
+    # composite aggregation 每頁的 bucket 數
+    COMPOSITE_BATCH_SIZE = 10_000
+
+    # 相減後的分數門檻。分數是整數 (出現次數)，被排除光的卷由 script 歸零。
+    MIN_ADJUSTED_SCORE = 0.5
+
+    # Exclude 的相減下推到 Elasticsearch。
+    #
+    # 回傳的分數刻意是「相減前」的出現次數 a，只把「被排除光」(a <= b) 的卷歸零，
+    # 交給 min_score 濾掉。這樣 order=term_hits 的排序鍵與舊版 (Manticore 與
+    # 遷移後的逐卷相減版) 完全相同 —— 兩者都是依 a 排序、之後才相減，
+    # 實測 production 與 staging 的前幾筆順序一致 (例 X1499/1=881 排在
+    # P1612/18=892 之前)。改用相減後的值排序會更合理，但那是行為變更，
+    # 不在這次效能修正的範圍。
+    #
+    # 當頁各卷的 term_hits 由呼叫端在 Ruby 端減 (見 #exclude_search)。
+    EXCLUDE_SCRIPT = <<~PAINLESS.freeze
+      double a = Math.round(_score);
+      String k = doc['work'].value + '/' + doc['juan'].value;
+      double b = 0;
+      if (params.sub.containsKey(k)) { b = ((Number)params.sub.get(k)).doubleValue(); }
+      return a > b ? a : 0;
+    PAINLESS
 
     # exist_all? 每個 _msearch request 問幾個詞組
     MSEARCH_BATCH_SIZE = 500
@@ -144,6 +170,95 @@ module CbetaSearch
         search_after = hits.last['sort']
       end
       rows
+    end
+
+    # Exclude 查詢: 相減在 Elasticsearch 裡做，只回傳當頁。
+    #
+    # 舊路徑 (#exclude_candidates) 要把主要詞組的全部候選逐筆取回 Ruby 再相減，
+    # 「"菩薩" -"諸菩薩"」是 15,789 + 6,803 筆，光 ES 的 took 就 4.4 秒。
+    # 這條路徑三個請求都不逐筆回傳:
+    #
+    #   1. composite aggregation 取排除字串的逐卷出現次數 b (只有 bucket，沒有 hit)
+    #   2. 主要詞組包一層 script_score，把 a <= b 的卷歸零，min_score 濾掉，
+    #      只取當頁 (size = rows)
+    #   3. hit_count 取主要詞組的總次數 sum_a
+    #
+    # 實測同一題 ES 的 took 合計 0.18 秒。
+    #
+    # total_term_hits = sum_a - sum_b。這是精確值而不是近似:
+    # 排除字串必含主要詞組 (見 QueryParser，否則回 400)，排除字串每一次出現
+    # 都對應主要詞組的一次出現，且位置互異，因此逐卷 b <= a 恆成立，
+    # 逐卷 max(0, a - b) 的總和就等於 sum_a - sum_b。
+    #
+    # 註: 不能改用 aggregation 算 total_term_hits。scripted_metric 的 map_script
+    # 讀 script_score 調整後的 _score 會偏高 (實測 525,085，正確值 521,087，
+    # 而同一組分數逐筆取回加總是對的)，與 ElasticQueryBuilder#bool_query 註解
+    # 描述的是同一類「Lucene 剪枝下 _score 不完整」的現象。
+    def exclude_search(query, params:, start:, rows:, field: nil, default_sort: nil)
+      field ||= default_field
+      validate_window!(start, rows)
+      excluded = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
+      base = Query.new(type: :phrase, raw: query.raw, phrase: query.phrase)
+      minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
+
+      subtract = exclude_subtract_map(minus, params:, field:)
+
+      body = @builder.search_body(base, params:, field:)
+      body['query'] = exclude_adjusted_query(body['query'], subtract)
+      body['min_score'] = MIN_ADJUSTED_SCORE
+      body['from'] = start
+      body['size'] = rows
+      body['sort'] = @builder.sort(params, default: default_sort)
+      body['track_scores'] = true
+      response = client.search(index:, body:)
+
+      hits = response.dig('hits', 'hits') || []
+      {
+        query_string: query.raw,
+        num_found: response.dig('hits', 'total', 'value').to_i,
+        total_term_hits: hit_count(base, params:, field:) - subtract.values.sum,
+        cache_key: nil,
+        results: hits.map { |hit| exclude_row(hit, query, subtract) }
+      }
+    end
+
+    # 排除字串的逐卷出現次數: { "work/juan" => 次數 }。
+    # 用 composite aggregation 而不是逐筆取回 —— 同樣是 6,803 卷，
+    # aggregation 的 took 是 42 ms，逐筆取回是 1,574 ms (兩者數字相同)。
+    # composite 以 after_key 分頁，不像 terms aggregation 會被 size 悄悄截斷。
+    def exclude_subtract_map(minus, params:, field: nil)
+      field ||= default_field
+      body = @builder.search_body(minus, params:, field:)
+      body['_source'] = false
+      body['size'] = 0
+      body['track_total_hits'] = false
+
+      subtract = {}
+      after = nil
+      loop do
+        composite = {
+          'size' => COMPOSITE_BATCH_SIZE,
+          'sources' => [
+            { 'work' => { 'terms' => { 'field' => 'work' } } },
+            { 'juan' => { 'terms' => { 'field' => 'juan' } } }
+          ]
+        }
+        composite['after'] = after if after
+        body['aggs'] = {
+          'juans' => { 'composite' => composite, 'aggs' => { 'hits' => SUM_SCORE_AGG } }
+        }
+
+        agg = client.search(index:, body:).dig('aggregations', 'juans') || {}
+        buckets = agg['buckets'] || []
+        buckets.each do |bucket|
+          key = subtract_key(bucket.dig('key', 'work'), bucket.dig('key', 'juan'))
+          subtract[key] = bucket.dig('hits', 'value').to_f.round
+        end
+        break if buckets.size < COMPOSITE_BATCH_SIZE
+
+        after = agg['after_key']
+      end
+      subtract
     end
 
     # Exclude 查詢的候選卷。
@@ -299,6 +414,26 @@ module CbetaSearch
 
     private
 
+    # EXCLUDE_SCRIPT 回傳的是相減前的 a，當頁這幾筆再於 Ruby 端減掉 b。
+    def exclude_row(hit, query, subtract)
+      source = hit['_source'] || {}
+      key = subtract_key(source['work'], source['juan'])
+      term_hits = term_hits_from_score(hit['_score']) - subtract.fetch(key, 0)
+      row_from_hit(hit, query, term_hits:)
+    end
+
+    # 與 EXCLUDE_SCRIPT 裡的 doc['work'].value + '/' + doc['juan'].value 同格式。
+    def subtract_key(work, juan) = "#{work}/#{juan}"
+
+    def exclude_adjusted_query(query, subtract)
+      {
+        'script_score' => {
+          'query' => query,
+          'script' => { 'source' => EXCLUDE_SCRIPT, 'params' => { 'sub' => subtract } }
+        }
+      }
+    end
+
     # SOURCE_MODES → ES body 的 _source 值。
     def source_clause(mode)
       case mode
@@ -312,18 +447,9 @@ module CbetaSearch
     # Exclude 查詢: 取全部候選、逐卷相減，再取當頁。
     # 與 all_in_one 走同一個 exclude_candidates，所以兩個 endpoint 的數字一致。
     def search_exclude(query, params:, start:, rows:, field:, default_sort:, t1:)
-      # /search 與 /search/extended 沒有 facet 參數，候選階段不需要任何 _source。
-      candidates = exclude_candidates(query, params:, field:, default_sort:, source: :none)
-      page = rows_by_ids(candidates[start, rows] || [], query)
-
-      {
-        query_string: query.raw,
-        time: Time.now - t1,
-        num_found: candidates.size,
-        total_term_hits: candidates.sum { it[:term_hits] },
-        cache_key: nil,
-        results: page
-      }
+      r = exclude_search(query, params:, start:, rows:, field:, default_sort:)
+      # key 的順序要與 #search 一致 (query_string, time, num_found, ...)
+      { query_string: r[:query_string], time: Time.now - t1 }.merge(r)
     end
 
     # Elasticsearch 的 from + size 有 index.max_result_window 上限
