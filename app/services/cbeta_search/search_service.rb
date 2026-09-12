@@ -21,11 +21,25 @@ module CbetaSearch
     # 走的是 search_after，不受 index.max_result_window 限制。
     SCROLL_BATCH_SIZE = 10_000
 
-    # Exclude 的候選階段只要這幾個欄位: work / juan / term_hits 用來相減，
-    # 其餘是 all_in_one 的 my_facet 要用的 (見 SearchController#my_facet)。
-    # 省下的是 juan_list 這類大欄位 —— 一個常見詞的候選動輒一萬多卷，
-    # 而其中只有當頁那十幾筆需要完整欄位，那些在分頁後由 rows_by_ids 補回。
+    # all_in_one 的 facet=1 會在 Ruby 端逐卷累加 (見 SearchController#my_facet)，
+    # 候選階段因此要帶這幾個欄位。其餘欄位 (juan_list 這類) 只有當頁那十幾筆用得到，
+    # 分頁後由 rows_by_ids 補回。
     LIGHT_SOURCE_FIELDS = %w[canon category work juan title creators_with_id dynasty].freeze
+
+    # 取候選卷時要不要回傳 _source:
+    #   :full  完整欄位 (NEAR 用: 候選就是最終結果，要逐卷做 KWIC)
+    #   :light 只取 my_facet 要用的欄位 (Exclude 且 facet=1)
+    #   :none  完全不取 (Exclude 的一般情況)
+    #
+    # :none 是 Exclude 效能的關鍵。實測 /dev 的「菩薩」(15,789 卷):
+    # 比對加計分加排序只要 0.07 秒，逐筆取回 _source 卻要 3.16 秒 ——
+    # 成本幾乎全在 fetch 階段讀 stored fields。而候選階段真正需要的只有
+    # 「哪一卷」與「幾次」，前者用 _id (與 minus 查詢同一個 index，可直接對應)，
+    # 後者用 _score，兩者都不必讀 _source。
+    #
+    # 註: 只把 _source 縮成 LIGHT_SOURCE_FIELDS 是沒用的 —— ES 的 _source
+    # filtering 仍要先讀出並解析整份 _source 再挑欄位，實測 4.64 → 4.62 秒。
+    SOURCE_MODES = %i[full light none].freeze
 
     # exist_all? 每個 _msearch request 問幾個詞組
     MSEARCH_BATCH_SIZE = 500
@@ -104,12 +118,12 @@ module CbetaSearch
 
     # 取出所有符合的卷 (不分頁)，供 all_in_one 的 NEAR / Exclude 後處理使用。
     # 舊版是 LIMIT 0, 99999; ES 改用 search_after 逐批取回，沒有筆數上限。
-    # light: true 只取 LIGHT_SOURCE_FIELDS，其餘欄位留空值 (row_default)，
+    # source: 見 SOURCE_MODES。:light / :none 省下的欄位留空值 (row_default)，
     # 等分頁後再用 rows_by_ids 補齊。
-    def all_candidates(query, params:, field: nil, default_sort: nil, light: false)
+    def all_candidates(query, params:, field: nil, default_sort: nil, source: :full)
       field ||= default_field
       body = @builder.search_body(query, params:, field:)
-      body['_source'] = LIGHT_SOURCE_FIELDS if light
+      body['_source'] = source_clause(source)
       body['size'] = SCROLL_BATCH_SIZE
       body['track_scores'] = true
       sort = @builder.sort(params, default: default_sort)
@@ -137,17 +151,18 @@ module CbetaSearch
     # 「完整排除字串」的出現次數，term_hits <= 0 的卷不算符合 ——
     # 與舊 SearchController#exclude_by_sphinx 完全相同的算法，
     # 因此 num_found 與 total_term_hits 都與 Manticore 版一致。
-    def exclude_candidates(query, params:, field: nil, default_sort: nil)
+    def exclude_candidates(query, params:, field: nil, default_sort: nil, source: :none)
       field ||= default_field
       excluded = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
       base = Query.new(type: :phrase, raw: query.raw, phrase: query.phrase)
       minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
 
+      # 兩次查詢打的是同一個 index，同一卷就是同一份 document，
+      # 因此用 _id 對應即可，不必為了湊 key 去讀 work / juan。
       subtract = simple_search(minus, params:, field:)
-                 .to_h { |row| [[row[:work], row[:juan]], row[:term_hits]] }
 
-      all_candidates(base, params:, field:, default_sort:, light: true).filter_map do |row|
-        hits = row[:term_hits] - subtract.fetch([row[:work], row[:juan]], 0)
+      all_candidates(base, params:, field:, default_sort:, source:).filter_map do |row|
+        hits = row[:term_hits] - subtract.fetch(row[:id], 0)
         row.merge(term_hits: hits) if hits.positive?
       end
     end
@@ -174,16 +189,17 @@ module CbetaSearch
       end
     end
 
-    # 對應舊的 sphinx_search_simple: 只取 work / juan / term_hits
+    # 對應舊的 sphinx_search_simple: 只要「哪一卷出現幾次」。
+    # 回傳 { document _id => 出現次數 }，完全不讀 _source (見 SOURCE_MODES)。
     def simple_search(query, params:, field: nil)
       field ||= default_field
       body = @builder.search_body(query, params:, field:)
-      body['_source'] = %w[work juan]
+      body['_source'] = false
       body['size'] = SCROLL_BATCH_SIZE
       body['track_scores'] = true
       body['sort'] = [{ '_doc' => { 'order' => 'asc' } }]
 
-      rows = []
+      rows = {}
       search_after = nil
       loop do
         body['search_after'] = search_after if search_after
@@ -191,14 +207,7 @@ module CbetaSearch
         hits = response.dig('hits', 'hits') || []
         break if hits.empty?
 
-        hits.each do |hit|
-          source = hit['_source']
-          rows << {
-            term_hits: term_hits_from_score(hit['_score']),
-            work: source['work'],
-            juan: source['juan']
-          }
-        end
+        hits.each { |hit| rows[hit['_id'].to_i] = term_hits_from_score(hit['_score']) }
         break if hits.size < SCROLL_BATCH_SIZE
 
         search_after = hits.last['sort']
@@ -290,10 +299,21 @@ module CbetaSearch
 
     private
 
+    # SOURCE_MODES → ES body 的 _source 值。
+    def source_clause(mode)
+      case mode
+      when :full  then index_class.source_fields
+      when :light then LIGHT_SOURCE_FIELDS
+      when :none  then false
+      else raise CbetaError.new(500), "未知的 _source 模式：#{mode}"
+      end
+    end
+
     # Exclude 查詢: 取全部候選、逐卷相減，再取當頁。
     # 與 all_in_one 走同一個 exclude_candidates，所以兩個 endpoint 的數字一致。
     def search_exclude(query, params:, start:, rows:, field:, default_sort:, t1:)
-      candidates = exclude_candidates(query, params:, field:, default_sort:)
+      # /search 與 /search/extended 沒有 facet 參數，候選階段不需要任何 _source。
+      candidates = exclude_candidates(query, params:, field:, default_sort:, source: :none)
       page = rows_by_ids(candidates[start, rows] || [], query)
 
       {

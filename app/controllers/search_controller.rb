@@ -491,8 +491,8 @@ class SearchController < ApplicationController
       @rows  = params.key?(:rows)  ? params[:rows].to_i  : 20
       r[:results] = r[:results][@start, @rows] || []
 
-      # Exclude 的候選是 light 模式取回的 (見 SearchService::LIGHT_SOURCE_FIELDS)，
-      # 當頁這十幾筆才需要完整欄位。
+      # Exclude 的候選沒帶完整欄位 (見 SearchService::SOURCE_MODES)，
+      # 當頁這十幾筆才需要。
       r[:results] = es_service.rows_by_ids(r[:results], query) if query.type == :exclude
     end
 
@@ -525,7 +525,11 @@ class SearchController < ApplicationController
   def all_in_one_fetch(query)
     case query.type
     when :exclude
-      rows = es_service.exclude_candidates(query, params: es_params, field: @text_field)
+      # facet=1 要在 Ruby 端逐卷累加 (my_facet)，候選階段才需要帶欄位；
+      # 否則候選只要 _id 與出現次數，完整欄位等分頁後由 rows_by_ids 補。
+      rows = es_service.exclude_candidates(
+        query, params: es_params, field: @text_field, source: @facet == 1 ? :light : :none
+      )
       {
         query_string: query.raw,
         num_found: rows.size,
