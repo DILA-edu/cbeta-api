@@ -222,7 +222,10 @@ class XMLForDocx1
     @log.puts "#{__LINE__} source_desc: #{@works[@work]['source_desc']}"
     @title = get_title(doc)
     @log.puts "#{__LINE__} title: #{@title}"
-    @works_title[@work] = @title
+
+    # 有些 work 跨冊, XML titleStmt 的 title 會帶卷號範圍
+    # 例: 大般若波羅蜜多經(第401卷-第600卷), 內文標題不需要這段
+    @works_title[@work] = @title.sub(/\(第\d+卷(?:-第\d+卷)?\)\z/, '')
 
     e = doc.at_xpath("//projectDesc/p[@lang='zh-Hant']")
     abort "找不到貢獻者" if e.nil?
