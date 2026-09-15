@@ -8,11 +8,14 @@ require 'zip'
 #
 # bundle: true 時另外產生全套打包檔 public/download/cbeta-<format>.zip
 class DownloadZipper
-  def initialize(format, bundle: false, download_dir: Rails.root.join('public/download'))
+  def initialize(format, bundle: false, download_dir: Rails.root.join('public/download'),
+                 release: Rails.configuration.cb.r.downcase, catalog_dir: Rails.configuration.x.work_info)
     @format = format.to_s
     @download_dir = Pathname.new(download_dir)
     @root = @download_dir.join(@format)
     @bundle = bundle
+    @release = release
+    @catalog_dir = catalog_dir
   end
 
   def zip
@@ -50,15 +53,27 @@ class DownloadZipper
     end
   end
 
-  # 全套打包檔, 內部路徑為 <format>/<canon>/<work>/<檔名>
+  # 全套打包檔, 內部路徑為 cbeta_<format>_<季別>/<canon>/<work>/<檔名>
+  # 最上層資料夾帶季別, 與 epub (cbeta_epub_2026r2), pdf (cbeta_pdf_1_2026r2) 的慣例一致,
+  # 使用者解壓後才不會拿到一個叫 docx 的通用名稱。
   def zip_bundle
     dest = @download_dir.join("cbeta-#{@format}.zip")
     files = @root.glob("**/*.#{@format}").sort
-    puts "#{dest} (#{files.size} 檔)"
+    root = "cbeta_#{@format}_#{@release}"
+    puts "#{dest} (#{files.size} 檔, 內部路徑 #{root}/)"
 
     write_zip(dest) do |zip|
-      files.each { |path| add_entry(zip, path, File.join(@format, path.relative_path_from(@root).to_s)) }
+      add_filelist(zip, root, files)
+      files.each { |path| add_entry(zip, path, File.join(root, path.relative_path_from(@root).to_s)) }
     end
+  end
+
+  # 經號對照表, 位置與 epub, pdf 一致: 與 <canon> 同層。
+  # 只收錄這次打包進去的經號, 檔名的季別與最上層資料夾相同, 下載者才能從資料夾名推出檔名。
+  def add_filelist(zip, root, files)
+    work_ids = files.map { |path| path.relative_path_from(@root).each_filename.to_a[1] }.uniq
+    zip.put_next_entry(File.join(root, "filelist_#{@release}.txt"))
+    zip.write(DownloadFilelist.new(work_ids, catalog_dir: @catalog_dir).to_s)
   end
 
   # 每次都重建: 沿用既有的 zip 會在加入同名 entry 時失敗, 重跑就掛。

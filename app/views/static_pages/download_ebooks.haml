@@ -50,7 +50,7 @@
 %h4#pdf_catalog Q: 下載的 PDF 裡有總目錄嗎？
 %p
   如果您一次下載全部 pdf 的 zip 檔，解壓縮後裡面有個 
-  = "filelist_#{Rails.configuration.cb.r}.txt"
+  = "filelist_#{q}.txt"
   這個檔案就是總目錄，內容如下：
 
 %pre
@@ -73,7 +73,7 @@
 
 %h2#docx DOCX
 %ul
-  %li 目前只提供《大正藏》。
+  %li 目前提供《大正藏》(T) 與《新纂卍續藏》(X)。
   %li 
     單卷 佛典 下載
     %ul
@@ -86,10 +86,11 @@
     全部 下載
     %ul
       %li= link_to_url '/download/cbeta-docx.zip'
+      %li 內含經號對照表 filelist_#{q}.txt，格式與 EPUB、PDF 版相同，收錄 zip 內所有佛典。
 
-%h2#docx ODT
+%h2#odt ODT
 %ul
-  %li 目前只提供《大正藏》。
+  %li 目前提供《大正藏》(T) 與《新纂卍續藏》(X)。
   %li 
     單卷 佛典 下載
     %ul
@@ -102,3 +103,4 @@
     全部 下載
     %ul
       %li= link_to_url '/download/cbeta-odt.zip'
+      %li 內含經號對照表 filelist_#{q}.txt，格式與 EPUB、PDF 版相同，收錄 zip 內所有佛典。
