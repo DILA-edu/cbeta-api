@@ -1120,16 +1120,47 @@ IPv6 這條路從頭到尾都不可能成功，這 50 毫秒純屬浪費。
 `localhost` 那一欄與線上 API 實測（854 / 920 / 953 / 1,431–2,039 / 1,753 ms）
 幾乎完全吻合，可以確認這就是全部的差額。
 
-上表是 client 端重現，不含 controller、`Variant.find_by`、最後的 `hit_count`
-與 JSON 輸出，因此**線上 API 會比這個數字高**；預估落在 0.15–0.3 秒，
-仍比 Manticore 的 0.35–0.73 秒快。**實際數字要等 staging 部署後重量才算數。**
+### 部署後的線上實測（2026-09-15，staging 5.6.1）
+
+上表是 client 端重現，不含 controller、`Variant.find_by`、`hit_count` 與 JSON 輸出。
+實際部署後對 API 重量（`cache=0`，5 次）：
+
+| 查詢 | 改前（2026-09-12 warm 中位數） | 改後 | Manticore |
+|---|---|---|---|
+| 無上正等正覺 | 970 ms | **101–161 ms** | 732 ms |
+| 大比丘三千威儀 | 888 ms | **72–111 ms** | 352 ms |
+| 阿耨多羅三藐三菩提 | 1,189 ms | **105–169 ms** | 407 ms |
+
+比預估的 0.15–0.3 秒還好，約**快 9–10 倍**，而且**反過來比 Manticore 快 3.7–9 倍**。
+異體字建議不再是 Elasticsearch 落後的項目。
+
+結果完全沒變：與 production（Manticore）逐項比對 `possibility`、`num_found`
+與每一筆 `(q, hits)`，五組查詢全部相同（例如「一切有為法如夢幻泡影」兩邊都是
+`一切有為法如夢幻泡景`/`一切有為灋如夢幻泡影`/`一切有為法如夣幻泡影` 各 1 次）。
 
 ### 影響範圍不只 `variants`
 
 這 50 毫秒是每一次 ES 查詢都在付，只是別的 endpoint 一次只打 1–2 次查詢，
 被淹沒在其他成本裡；`variants` 一次打 16–31 次，才把它放大成秒級延遲。
-因此 2026-09-12 那份對照表裡 Elasticsearch 的每一列都含有這筆成本，
-換算下來全部都會再快一些（幅度 = 該 endpoint 的 ES 呼叫次數 × 50 毫秒，尚未逐項重量）。
+
+不過部署後逐項重量，**其他 endpoint 的改善並不均勻**：
+
+| endpoint | 改前 | 改後 |
+|---|---|---|
+| `/search` 鬱多羅僧 | 129 ms | 28 ms |
+| `/search/title` 觀無量壽經 | 73 ms | 30 ms |
+| `/search` 如是我聞 | 175 ms | 82 ms |
+| `/search` 菩薩 | 49 ms | 47 ms |
+| `/search/notes` 菩薩 | 28 ms | 25 ms |
+| `/search/sc` 观无量寿经 | 43 ms | 45 ms |
+| `/search/similar` | 570 ms | 545 ms |
+| `/search/all_in_one` 排除 | 203 ms | 240 ms |
+
+有幾組明顯變快，其餘落在量測漂移範圍內（毫秒級項目本來就會漂 ±50%，
+見 2026-09-12 報告的限制一節）。推測與 DNS negative cache 的狀態有關
+——cache 還在時 AAAA 立刻回，HEv2 就不必等滿 50 毫秒；cache 過期時才會付全額。
+未進一步確認。**能確定的只有 `variants` 這種一次打十幾二十次查詢的 endpoint，
+改善是穩定且可重現的。**
 
 要付這 50 毫秒的條件是「**用 Ruby 的 socket、且 host 寫主機名**」——
 HEv2 會另外發一次 AF_INET6 的查詢，卡住的是那一次。
