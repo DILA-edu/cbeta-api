@@ -31,6 +31,32 @@ module CbetaEsAlias
   end
 end
 
+# Elasticsearch 連線 URL 的正規化。
+#
+# host 寫成 localhost 會讓每一次連線多花 50 毫秒:
+# /etc/hosts 通常只有 localhost 的 A record，AAAA 查不到就落到 DNS，
+# 而 Ruby 3.4 起 Socket.tcp 預設走 Happy Eyeballs v2 —— A record 先到時
+# 會再等 AAAA 最多 50 毫秒 (Resolution Delay) 才開始連線。
+# 實測 sakya: TCPSocket 連 localhost 穩定 50.5 ms、連 127.0.0.1 是 0.0 ms。
+#
+# 一次查詢要打好幾次 Elasticsearch (異體字建議一次 16~31 次)，這筆固定成本
+# 會被放大成秒級延遲，所以在這裡一律把 loopback 主機名換成 IP literal。
+#
+# 定義在這裡而不是 app/services: config/application.rb 執行時 autoload 還沒啟動。
+module CbetaEsUrl
+  def self.normalize(url)
+    uri = URI.parse(url.to_s)
+    return url unless uri.host == 'localhost'
+
+    userinfo = uri.userinfo # URI#host= 會把 userinfo 清掉，先存起來
+    uri.host = '127.0.0.1'
+    uri.userinfo = userinfo if userinfo
+    uri.to_s
+  rescue URI::InvalidURIError
+    url
+  end
+end
+
 module CbData
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
@@ -123,8 +149,9 @@ module CbData
     # 連線設定優先讀 config/cb.yml (該檔 gitignored、每台機器一份)，
     # 其次讀環境變數，最後才用本機開發預設值。
     es = config.cb.elasticsearch || {}
-    config.x.elasticsearch.url = es[:url] ||
-      ENV.fetch('ELASTICSEARCH_URL', 'http://localhost:9200')
+    config.x.elasticsearch.url = CbetaEsUrl.normalize(
+      es[:url] || ENV.fetch('ELASTICSEARCH_URL', 'http://127.0.0.1:9200')
+    )
     config.x.elasticsearch.request_timeout = (
       es[:request_timeout] || ENV.fetch('ELASTICSEARCH_REQUEST_TIMEOUT', 120)
     ).to_i

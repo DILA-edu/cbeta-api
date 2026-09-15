@@ -1042,3 +1042,110 @@ staging 的季號目錄雖然叫 `2026R3`（為下一季預備的環境），
 | `notes` 夾注「梵語」 | 3,852 | 4,180 | 同上 |
 | `similar` 一切有為法如夢幻泡影 | 16 | 17 | 候選階段評分機制不同，見第三期「延遲」一節 |
 | `all_in_one` `"阿含" NEAR/5 "迦葉"` | 58 | 43 | NEAR 距離邊界，見 F-1 第 3b 項 |
+
+## `variants` 再優化：連線用的是 `localhost`，每次 ES 查詢固定多付 50 毫秒
+
+2026-09-12 的效能對照裡，異體字建議是 Elasticsearch 唯一明顯落後 Manticore 的項目
+（0.89–1.19 秒 對 0.35–0.73 秒）。追下去發現瓶頸既不在 Elasticsearch、
+也不在第三期已經批次化過的 `expand_vars_array`，而在 **連線設定**。
+
+### 先排除 Elasticsearch 本身
+
+在 sakya 上直接對 ES 送與 `exist_all?` 完全相同的 `_msearch`：
+
+| 內容 | wall | `took` |
+|---|---|---|
+| text，1 個候選 | 11.5 ms | 1 ms |
+| text，20 個候選 | 19.5 ms | 3 ms |
+| notes，20 個候選 | 20.0 ms | 3 ms |
+
+再用 Python 完整重現整個展開流程（同一台機器、同一組查詢）：
+
+| 查詢 | 層數 | ES 呼叫次數 | wall | ES `took` 合計 |
+|---|---|---|---|---|
+| 無上正等正覺 | 6 | 16 | 245 ms | 141 ms |
+| 大比丘三千威儀 | 7 | 15 | 168 ms | 113 ms |
+| 阿耨多羅三藐三菩提 | 9 | 19 | 148 ms | 85 ms |
+| 一切有為法如夢幻泡影 | 10 | 26 | 156 ms | 74 ms |
+| 摩訶般若波羅蜜多心經觀自在 | 13 | 31 | 220 ms | 112 ms |
+
+**同樣的 16–31 次循序查詢，Python 只要 150–250 毫秒，API 卻回報 0.85–2.0 秒。**
+差額 ÷ 呼叫次數 = 每次約 41–57 毫秒，而且各查詢都對得上，
+指向「每次 ES 呼叫有一筆固定的 client 端成本」。
+
+### 真因：Happy Eyeballs v2 的 Resolution Delay
+
+`config/cb.yml` 的 `elasticsearch.url` 是 `http://localhost:9200`。在 sakya 上量 Ruby 的連線：
+
+```
+TCPSocket localhost   9.3 4.1 2.4 1.3 1.2 3.3 50.5 51.1 50.9 50.6 51.4 50.7
+TCPSocket 127.0.0.1   0.1 0.1 0.0 0.0 0.0 0.0  0.0  0.0  0.0  0.0  0.0  0.0
+TCPSocket localhost   1.3 0.2 0.1 0.1 1.2 0.3  0.2  0.1  0.1  0.1  0.6  0.8  (tcp_fast_fallback=false)
+```
+
+成因是三件事疊在一起：
+
+1. `/etc/hosts` 只有 `127.0.0.1 localhost`，**沒有 localhost 的 AAAA**
+   （`::1` 那行的名字是 `ip6-localhost`，不是 `localhost`）。
+2. `nsswitch.conf` 是 `hosts: files dns`，AAAA 在 `files` 查不到就落到 DNS。
+   實測 `Addrinfo.getaddrinfo('localhost', AF_INET6)` 首次要 **4.7 秒** 才逾時
+   （之後靠 negative cache 降到 1.5 ms）。
+3. Ruby 3.4 起 `Socket.tcp` 預設開啟 Happy Eyeballs v2。A record 先到、AAAA 還沒回時，
+   它會等滿 **50 毫秒的 Resolution Delay** 才用 IPv4 連線。
+
+所以每一次連 `localhost` 都固定多付 50 毫秒。前幾次比較快是 DNS negative cache
+還在作用，穩定之後就是 50.5–51.4 毫秒。ES 只 listen 在 `127.0.0.1:9200`，
+IPv6 這條路從頭到尾都不可能成功，這 50 毫秒純屬浪費。
+（前幾次比較快推測是 DNS negative cache 還在作用，未進一步確認是哪一層在快取。）
+
+### 改法
+
+`config/application.rb` 新增 `CbetaEsUrl.normalize`，把 URL 裡的 `localhost`
+一律換成 `127.0.0.1`（保留 path 與 userinfo），預設值也一併改掉。
+放在 code 而不是只改 `config/cb.yml`，是因為 `cb.yml` 不進版控、每台機器一份，
+改在 code 才能讓每台機器都受惠、也不會被下次抄設定檔改回去。
+
+### 結果：快 10.5–14 倍
+
+用 Ruby 的 ES client 完整重現 `variants` 的呼叫序列，只換 URL 的 host（同一台機器、3 次取中位數）：
+
+| 查詢 | ES 呼叫次數 | `localhost` | `127.0.0.1` | 倍率 |
+|---|---|---|---|---|
+| 無上正等正覺 | 16 | 941 ms | **89 ms** | 10.5× |
+| 大比丘三千威儀 | 15 | 868 ms | **83 ms** | 10.5× |
+| 阿耨多羅三藐三菩提 | 19 | 1,114 ms | **91 ms** | 12.3× |
+| 一切有為法如夢幻泡影 | 26 | 1,508 ms | **108 ms** | 14.0× |
+| 摩訶般若波羅蜜多心經觀自在 | 31 | 1,762 ms | **131 ms** | 13.4× |
+
+`localhost` 那一欄與線上 API 實測（854 / 920 / 953 / 1,431–2,039 / 1,753 ms）
+幾乎完全吻合，可以確認這就是全部的差額。
+
+上表是 client 端重現，不含 controller、`Variant.find_by`、最後的 `hit_count`
+與 JSON 輸出，因此**線上 API 會比這個數字高**；預估落在 0.15–0.3 秒，
+仍比 Manticore 的 0.35–0.73 秒快。**實際數字要等 staging 部署後重量才算數。**
+
+### 影響範圍不只 `variants`
+
+這 50 毫秒是每一次 ES 查詢都在付，只是別的 endpoint 一次只打 1–2 次查詢，
+被淹沒在其他成本裡；`variants` 一次打 16–31 次，才把它放大成秒級延遲。
+因此 2026-09-12 那份對照表裡 Elasticsearch 的每一列都含有這筆成本，
+換算下來全部都會再快一些（幅度 = 該 endpoint 的 ES 呼叫次數 × 50 毫秒，尚未逐項重量）。
+
+要付這 50 毫秒的條件是「**用 Ruby 的 socket、且 host 寫主機名**」——
+HEv2 會另外發一次 AF_INET6 的查詢，卡住的是那一次。
+走 C client 的就沒事：`getent ahosts localhost`（AF_UNSPEC）是立刻回的，
+所以 `config/database.yml` 雖然也寫 `host: localhost`，PostgreSQL 走 libpq 不受影響
+（而且有 connection pool，不是每次查詢都連線）。
+反過來說，**同一台機器上其他用 Ruby 連 `localhost` 的服務會有同樣的問題**，值得一併檢查。
+
+### 順帶一提：還沒做的 code 層優化
+
+真因確認後，下列改動的效益已經變得很小（整個展開只剩約 100 毫秒），列出備查：
+
+* **三個 index 併成一次 `_msearch`**：`filter_exist_in_cbeta` 目前是
+  text → notes → titles 循序三次。`_msearch` 的 header 可以逐條指定 `index`，
+  併成一次可把每層 3 次 round trip 降為 1 次（26 次 → 10 次）。
+  代價是已在 text 命中的候選也會多問 notes/titles。
+* **最後的計數迴圈批次化**：`variants_sub` 逐一呼叫 `variants_hit_count`。
+  實測 `possibility` 通常只有 1–4，省不了幾次。
+* **`Variant.find_by(k: c)` 逐字查**：可改成一次 `Variant.where(k: chars)`。
