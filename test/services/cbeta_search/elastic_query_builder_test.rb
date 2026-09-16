@@ -232,4 +232,52 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
 
     assert_equal '_score / 2', body.dig('script_score', 'script', 'source')
   end
+  # --- search#similar 的相鄰度重排 (proximity_rescore) ---
+  # 補回 Manticore ranker=proximity_bm25 裡 Lucene BM25 沒有的相鄰訊號。
+
+  def chunks_builder = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::ChunksIndex)
+
+  def quorum_query(q)
+    CbetaSearch::Query.new(type: :quorum, raw: q, phrase: q,
+                           quorum: CbetaSearch::ChunksIndex::QUORUM_RATIO)
+  end
+
+  def rescore_for(q, window: 50_000)
+    chunks_builder.proximity_rescore('content', quorum_query(q), window:)
+  end
+
+  test 'proximity_rescore: 逐個相鄰字對一個 match_phrase' do
+    rescore = rescore_for('諸惡莫作')
+
+    assert_equal 50_000, rescore['window_size']
+    assert_equal [
+      { 'match_phrase' => { 'content' => { 'query' => '諸惡' } } },
+      { 'match_phrase' => { 'content' => { 'query' => '惡莫' } } },
+      { 'match_phrase' => { 'content' => { 'query' => '莫作' } } }
+    ], rescore['query']['rescore_query']['bool']['should']
+  end
+
+  # 分數完全由相鄰字對決定，BM25 不參與 —— 對應 proximity_bm25 的 LCS 主導。
+  test 'proximity_rescore: BM25 的權重是 0' do
+    rescore = rescore_for('諸惡莫作')['query']
+
+    assert_equal 0, rescore['query_weight']
+    assert_equal 1, rescore['rescore_query_weight']
+  end
+
+  # 空的 bool.should 等於 match_all，整個 window 會同分為 0、退化成 docid 序。
+  test 'proximity_rescore: token 數少於 2 時回 nil' do
+    assert_nil rescore_for('佛')
+    assert_nil rescore_for('')
+  end
+
+  # TOKEN_PATTERN 把連續拉丁字母併成一個 token，逐字切會產生「An」這種
+  # analyze 後只剩單一 token 的字對，命中一堆無關文件。
+  test 'proximity_rescore: 拉丁字母以 token 為單位, 不逐字切' do
+    pairs = rescore_for('Ananda 白佛')['query']['rescore_query']['bool']['should']
+                .map { it['match_phrase']['content']['query'] }
+
+    assert_equal %w[ananda白 白佛], pairs.map(&:downcase)
+    assert_not_includes pairs, 'An'
+  end
 end

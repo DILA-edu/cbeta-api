@@ -65,7 +65,53 @@ module CbetaSearch
       append_tiebreaker(clauses)
     end
 
+    # search#similar 第一階段的相鄰度重排。
+    #
+    # Manticore 的 ranker=proximity_bm25 是「LCS × 1000 + BM25」—— 詞的相鄰程度
+    # 主導分數，BM25 只是 tiebreaker。Lucene 的 BM25 完全不看相鄰，而佛典單字詞多、
+    # 常用字重複率極高（「是」出現在 55% 的 chunk、IDF 只有 0.59），
+    # 相關度因此幾乎沒有鑑別力，真正的相似句常掉到 k 名之外。
+    #
+    # 這裡用「查詢的相鄰字對命中幾個」把相鄰訊號補回來。quorum 仍是唯一的
+    # recall gate（候選池完全不變），rescore 只重排 window 內的候選。
+    # 實測六個範例查詢：k=1000 對 Manticore 與現況 ES 的涵蓋率都是 100%，
+    # 現況的 Lucene BM25 要 k=20000 才到同一水準。
+    #
+    # 不能改用 match_phrase + slop：那是 all-or-nothing，18 個字的查詢在改寫過的
+    # 經文裡根本比不到（已實測，top 500 完全沒變）。
+    #
+    # 回傳 nil 表示這個查詢不適用（token 數 < 2），呼叫端應維持原本的 sort 路徑。
+    def proximity_rescore(field, query, window:)
+      pairs = adjacent_pairs(query.phrase)
+      return nil if pairs.empty?
+
+      {
+        'window_size' => window,
+        'query' => {
+          'rescore_query' => {
+            'bool' => { 'should' => pairs.map { |pair| match_phrase(field, pair) } }
+          },
+          # 分數完全由相鄰字對決定；一個都沒命中的文件同分，
+          # 由 Lucene 的 doc 順序 tiebreak。
+          'query_weight' => 0,
+          'rescore_query_weight' => 1
+        }
+      }
+    end
+
     private
+
+    # 查詢的相鄰 token 對。
+    #
+    # 必須用 index 的 TOKEN_RE，不能用 String#chars：TOKEN_PATTERN 會把連續的
+    # 拉丁字母併成一個 token（「Ananda」是一個 token），逐字切出來的「An」
+    # 送進 match_phrase 只會 analyze 成單一 token `an`，命中一堆無關文件。
+    #
+    # token 數 < 2 時回空陣列 —— 空的 bool.should 等於 match_all，
+    # 整個 window 會同分為 0、順序退化成 docid 序。
+    def adjacent_pairs(phrase)
+      phrase.to_s.scan(IndexBase::TOKEN_RE).each_cons(2).map(&:join)
+    end
 
     def append_tiebreaker(clauses)
       used = clauses.flat_map(&:keys)

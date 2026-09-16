@@ -102,10 +102,12 @@ module CbetaSearch
     # 回傳 { query_string:, time:, num_found:, total_term_hits:, cache_key:, results: }
     # results 各筆為 symbol key 的 Hash，欄位與舊 Manticore 回傳一致。
     def search(query, params:, start: 0, rows: 20, field: nil, default_sort: nil, count_hits: true,
-               track_total_hits: true)
+               track_total_hits: true, rescore_window: nil)
       field ||= default_field
       t1 = Time.now
       validate_window!(start, rows)
+      # ES 不接受同時有 rescore 與 sort，兩個都傳多半是呼叫端誤會，直接擋下來。
+      raise ArgumentError, 'rescore_window 與 default_sort 互斥' if rescore_window && default_sort
 
       # Exclude 的 term_hits 要靠「主要詞組次數 − 排除字串次數」逐卷相減才算得出來，
       # 沒辦法只看當頁，因此走另一條路徑 (與 all_in_one 相同的算法與結果)。
@@ -113,8 +115,16 @@ module CbetaSearch
       body = @builder.search_body(query, params:, field:)
       body['from'] = start
       body['size'] = rows
-      body['sort'] = @builder.sort(params, default: default_sort)
-      body['track_scores'] = true
+      rescore = rescore_window && @builder.proximity_rescore(field, query, window: rescore_window)
+      if rescore
+        # rescore 與 sort 互斥，兩個都送 ES 會直接拒絕。這條路徑（search#similar）
+        # 的排序只決定「取哪 k 筆候選」，最終順序由呼叫端的 Smith-Waterman 重算，
+        # 因此不吃 order 參數，也不需要 track_scores（沒有 sort 時 _score 必算）。
+        body['rescore'] = rescore
+      else
+        body['sort'] = @builder.sort(params, default: default_sort)
+        body['track_scores'] = true
+      end
       # search#similar 用不到精確的 num_found (最後會被 Smith-Waterman 過濾後的
       # 筆數蓋掉)，在 4 百多萬筆的 chunks index 上精算總數是白花時間。
       body['track_total_hits'] = false unless track_total_hits

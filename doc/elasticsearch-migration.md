@@ -615,7 +615,7 @@ Manticore 的 `xmlpipe_attr_string` 對缺少的欄位一律回**空字串**（�
 試過在 quorum 之上加一層 `match_phrase` 的 `rescore`（`slop: 50`）補回相鄰訊號，
 top 500 完全沒變 —— 18 個字的查詢在重排過的經文裡，slop 50 根本比對不到。
 要真的補回 proximity 得另外設計（例如 `intervals` 或 shingle 欄位），
-不在本期範圍。
+不在本期範圍。**已於 5.7.0 補上，見文末〈相鄰度重排〉。**
 
 ### 因此 `k` 的預設值由 500 調高為 2000（2026-09-10 確認）
 
@@ -1180,3 +1180,107 @@ HEv2 會另外發一次 AF_INET6 的查詢，卡住的是那一次。
 * **最後的計數迴圈批次化**：`variants_sub` 逐一呼叫 `variants_hit_count`。
   實測 `possibility` 通常只有 1–4，省不了幾次。
 * **`Variant.find_by(k: c)` 逐字查**：可改成一次 `Variant.where(k: chars)`。
+
+## 相鄰度重排 proximity_rescore（5.7.0）
+
+補回上一節列為「不在本期範圍」的那個訊號。
+
+### 為什麼 Lucene BM25 排不準
+
+Manticore 的 `ranker=proximity_bm25` 是「LCS × 1000 + BM25」——
+詞的相鄰程度主導分數，BM25 只是 tiebreaker。它的 `charset_table` 對 CJK 是
+`ngram_len = 1`，所以 LCS 裡的「word」就是單字，LCS 即「最長的相鄰單字序列」。
+
+Lucene 的 BM25 完全不看相鄰，而佛典單字詞多、常用字重複率極高
+（`cbeta_chunks_2026r3_001` 共 4,585,113 筆）：
+
+| unigram | df | 佔比 | IDF |
+|---|---|---|---|
+| 是 | 2,546,184 | 55.5% | 0.59 |
+| 法 | 2,014,998 | 43.9% | 0.82 |
+| 佛 | 1,533,283 | 33.4% | 1.10 |
+
+「諸惡莫作，眾善奉行，自淨其意，是諸佛教」逐 token 的中位數 df：
+unigram 980,979、bigram 6,808，**相差 144 倍**。
+IDF 幾乎攤平，相關度因此沒有鑑別力可用。
+
+### 做法
+
+`ElasticQueryBuilder#proximity_rescore`：把查詢切成相鄰字對，
+每對一個 `match_phrase` 放進 `bool.should`，用 `rescore` 重排候選。
+`query_weight: 0`，分數完全由「命中幾個相鄰字對」決定。
+
+* **quorum 仍是唯一的 recall gate**，候選池完全不變，單字詞不會少召回。
+* 字對是跨詞邊界的（「行自」「淨其」「意是」），這不是斷詞——
+  對找相似句而言，跨詞邊界的字對證明的是**原句的字序被保留了**，
+  而不是「用了同一個佛教術語」。它們的 IDF（6.4~7.2）反而比
+  「諸佛」(3.03)、「佛教」(4.51) 更高。
+* 切字對用 `IndexBase::TOKEN_RE` 而不是 `String#chars`：
+  `TOKEN_PATTERN` 會把連續拉丁字母併成一個 token，逐字切出的「An」
+  analyze 後只剩單一 token，會命中一堆無關文件。
+* token 數 < 2 時不做 rescore（空的 `bool.should` 等於 `match_all`）。
+* `rescore` 與 `sort` 互斥，這條路徑因此不送 `sort`、不吃 `order` 參數——
+  ES 的排序本來就只決定「取哪 k 筆」，最終順序由 Smith-Waterman 重算。
+
+`ChunksIndex::PROXIMITY_WINDOW = 50_000`：window 20,000 時對 Manticore 的
+涵蓋率 99.8%（438 筆差 1 筆），50,000 補到 100%，100,000 沒有再變化。
+
+### 驗證
+
+第一階段候選對基準的涵蓋率（六個範例查詢，識別 key 為 `work + juan + linehead`；
+Manticore 基準取自 `/stable`，合計 438 筆，與第三期記錄一致）：
+
+| 第一階段 | k=500 | k=1000 | k=2000 | k=20000 |
+|---|---|---|---|---|
+| quorum + BM25（5.2.0） | 60.7% | 80.8% | 91.1% | 99.8% |
+| quorum + proximity_rescore | **91.1%** | **100%** | 100% | 100% |
+
+端到端（`rake elastic:compare_similar`，對 5.6.1 的 `/dev`，k 均為 2000）：
+
+| 識別層級 | 結果 |
+|---|---|
+| `work + juan` | 舊 440 卷、新 467 卷，**交集 440，一卷未漏** |
+| `work + juan + linehead` | 交集 347 / 492，重疊率 68.2% |
+
+兩個數字差很多，原因是**去重的代表 chunk 換了**：`similar_rm_duplicate`
+依 `node[:id]` 相鄰去重、保留先出現的那個，而 rescore 改變了 ES 的回傳順序，
+同一段經文因此可能由相鄰的另一個 chunk 代表（chunks 每 100 字、前後重疊 50 字）。
+逐筆檢查唯一一筆「舊有新無」的 JB367/2，新版在同一卷找到的是同一段經文
+（`p0860c05` vs `p0860c08`，score 同為 18），只是 chunk 起點更早。
+
+**因此 `compare_similar` 的 `linehead` 識別會低估這類變更**，
+評估順序改動時要另外看 `work + juan` 層級。
+
+### 行為改變（版號 5.7.0）
+
+| # | 項目 | 舊版 | 新版 |
+|---|---|---|---|
+| 1 | `similar` 結果的 `linehead` | 依 BM25 順序決定代表 chunk | 依相鄰度順序決定，**同一段經文可能改由相鄰 chunk 代表**（內容相同，`linehead` 與 `highlight` 的邊界會變） |
+| 2 | `similar` 找到的卷數 | — | 增加（六題合計 440 → 467 卷） |
+| 3 | `similar` 的 `order` 參數 | 送進 ES 的 sort，但**從未影響回傳順序**（一律由 Smith-Waterman 決定） | 不再送進 ES（rescore 與 sort 互斥）。回傳順序與舊版一樣由 Smith-Waterman 決定 |
+
+### 為什麼沒有改用 shingle 欄位
+
+shingle 子欄位（方案 A）可以讓相鄰訊號進入第一階段的 retrieval，
+不受 rescore window 限制。實測比較後沒有採用：
+
+* **計分品質沒有差別。** 用實際 bigram df 當 `constant_score` 的 boost
+  模擬 shingle 欄位的 IDF，k=500 的涵蓋率是 90.4%，`match_phrase` 版是 91.1%，
+  差異在雜訊範圍。原因是多個字對的 `should` 累加後，
+  「命中幾個」本身就主導了排序，IDF 權重的差別不改變名次。
+* **window 天花板只值 0.2%**，且已由 `window = 50_000` 消除。
+* rescore 的成本很低：ES 端由 0.060 秒增為 0.105 秒（本機量測）。
+
+方案 A 需要改 mapping 並重建 chunks index（4,585,113 筆），
+換來的是無法量測的品質差異，因此維持純 query 層的做法。
+若日後查詢更長、pool 更大而 window 又不敷使用，再考慮升級。
+
+### `SIMILAR_K` 由 2000 降回 1000（2026-09-16 確認）
+
+5.2.0 把 k 由 500 調高為 2000，是因為當時第一階段只有 Lucene 的 BM25，
+真正的相似句常掉到 500 名之外，只能用加大 k 硬補召回率。
+相鄰訊號補回之後這個理由消失了：k=1000 對 Manticore 與 5.6.1 的涵蓋率都是 100%。
+
+第二階段的 Smith-Waterman 成本與 k 成正比，因此這一改讓它減半
+（staging 實測 k=2000 是 2.24 秒、k=1000 是 1.21 秒；加上 rescore 的成本，
+預估約 1.3~1.4 秒，實測見下）。

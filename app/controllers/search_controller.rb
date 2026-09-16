@@ -14,18 +14,22 @@ class SearchController < ApplicationController
 
   # search/similar 第一階段 (Elasticsearch) 取回的候選筆數上限，可用 k 參數覆寫。
   #
-  # 5.2.0 由 500 調高為 2000: 符合 quorum 的區塊動輒十萬筆，只有 top k 會進
-  # Smith-Waterman，因此「取哪 k 筆」幾乎決定了最終結果。Manticore 的
-  # proximity_bm25 把詞的相鄰程度算進分數，Lucene 的 BM25 不會，真正的相似句
-  # 常掉到 500 名之外 —— 實測 6 個範例查詢，k=500 只涵蓋 Manticore 結果的 52%，
-  # k=2000 涵蓋 76% 且總筆數還多一些。
+  # 符合 quorum 的區塊動輒十萬筆，只有 top k 會進 Smith-Waterman，
+  # 因此「取哪 k 筆」幾乎決定了最終結果。
   #
-  # 代價是延遲: 第二階段的 Smith-Waterman 是 Ruby 單執行緒、成本與 k 成正比。
-  # staging 實測 k=500 是 0.70 秒、k=2000 是 2.24 秒 (舊版 Manticore 0.79 秒)，
-  # 2026-09-10 與主管確認取結果完整度、接受這個延遲。
-  # 本機 macOS 量出來只有 1.1 秒 —— 這個數字會低估，要以 server 為準。
-  # 詳見 doc/elasticsearch-migration.md 的第三期實作結果。
-  SIMILAR_K = 2000
+  # 5.2.0 由 500 調高為 2000: 當時第一階段只有 Lucene 的 BM25，不看詞的相鄰程度
+  # （Manticore 的 proximity_bm25 會），真正的相似句常掉到 500 名之外，
+  # 只好用加大 k 硬補召回率，代價是延遲 —— 第二階段的 Smith-Waterman 是
+  # Ruby 單執行緒、成本與 k 成正比，staging 實測 k=2000 要 2.24 秒
+  # （k=500 是 0.70 秒、舊版 Manticore 0.79 秒）。
+  #
+  # 5.7.0 由 2000 降回 1000: 相鄰訊號已由 ElasticQueryBuilder#proximity_rescore
+  # 補回，k=1000 對 Manticore 與 5.6.1 的涵蓋率都是 100%，不必再靠加大 k 補召回，
+  # 第二階段的成本因此減半。2026-09-16 確認。
+  # 詳見 doc/elasticsearch-migration.md 的〈相鄰度重排〉。
+  #
+  # 本機 macOS 量到的延遲會嚴重低估，一律以 server 為準。
+  SIMILAR_K = 1000
   # search/similar 第二階段 (Smith-Waterman) 的最低分數，可用 score_min 參數覆寫。
   SCORE_MIN = 16
 
@@ -933,15 +937,20 @@ class SearchController < ApplicationController
     remove_puncs_from_query
     @canon_name = {}
 
-    # 第一階段: Elasticsearch 用 quorum (一半的字命中) + BM25 相關度取 top k 候選。
-    # 舊版是 Manticore 的 MATCH('"<q>"/0.5') + ranker=proximity_bm25。
+    # 第一階段: Elasticsearch 用 quorum (一半的字命中) 取候選，
+    # 再用相鄰字對重排 (proximity_rescore) 取 top k。
+    # 舊版是 Manticore 的 MATCH('"<q>"/0.5') + ranker=proximity_bm25，
+    # rescore 補的就是 proximity_bm25 裡 Lucene BM25 沒有的那個相鄰訊號。
+    #
+    # 不傳 default_sort: rescore 與 sort 互斥，且這裡的排序只決定「取哪 k 筆」，
+    # 最終順序由下面的 Smith-Waterman 重算 (見 SearchService#search)。
     query = CbetaSearch::Query.new(
       type: :quorum, raw: @q, phrase: @q,
       quorum: CbetaSearch::ChunksIndex::QUORUM_RATIO
     )
     r = es_service(CbetaSearch::ChunksIndex).search(
       query, params: es_params, start: 0, rows: @similar_k,
-      default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT,
+      rescore_window: CbetaSearch::ChunksIndex::PROXIMITY_WINDOW,
       count_hits: false, track_total_hits: false
     )
     hits = r[:results]

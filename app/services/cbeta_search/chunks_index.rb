@@ -17,6 +17,15 @@ module CbetaSearch
     # 但候選最後都要過 Smith-Waterman，這個差異會被 BM25 的排序差異蓋過去。
     QUORUM_RATIO = '50%'.freeze
 
+    # search#similar 第一階段的相鄰度重排 window
+    # （見 ElasticQueryBuilder#proximity_rescore）。
+    #
+    # 50,000 是實測的落點：window 20,000 時六個範例查詢對 Manticore 的涵蓋率是
+    # 99.8%（438 筆差 1 筆，那筆被 unigram BM25 排在兩萬名之外），
+    # 50,000 補到 100%，再放大到 100,000 沒有變化。
+    # ES 端成本 0.088 → 0.105 秒（本機量測，server 更慢，只能看相對關係）。
+    PROXIMITY_WINDOW = 50_000
+
     # Smith-Waterman 要拿全文比對，content 一定要進 _source。
     SOURCE_FIELDS = %w[
       canon category work title juan creators_with_id dynasty linehead content
