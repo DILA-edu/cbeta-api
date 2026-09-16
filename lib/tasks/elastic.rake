@@ -247,41 +247,71 @@ namespace :elastic do
   # 只保留穩定、可比對的欄位，避免 fixture 太大或被無關變動影響。
   GOLDEN_RESULT_FIELDS = %w[work juan term_hits q hits linehead].freeze
 
-  desc '比較兩個環境的 search/similar 結果重疊率，' \
-       '例：rake \'elastic:compare_similar[https://cbdata.dila.edu.tw/dev,http://localhost:3000]\''
+  # compare_similar 的三個識別層級，由寬到嚴。
+  #
+  # 只看 linehead 會嚴重低估「改變候選順序」的變更: similar_rm_duplicate 依
+  # node[:id] 相鄰去重、保留先出現的那個，順序一變，同一段經文就可能改由相鄰的
+  # chunk 代表 (chunks 每 100 字、前後重疊 50 字)，linehead 因此不同。
+  # 5.7.0 加入相鄰度重排時實測: linehead 重疊率只有 54.6%，但逐筆檢查
+  # 一個相似句都沒有漏 —— 判斷品質要看 juan 與 mark 這兩層。
+  SIMILAR_LEVELS = {
+    juan: ['卷 (work+juan)', ->(row) { [row['work'], row['juan']] }],
+    mark: ['相似句 (再含比對區域)', ->(row) { [row['work'], row['juan'], similar_marked_text(row)] }],
+    linehead: ['結果筆數 (再含 linehead)', ->(row) { [row['work'], row['juan'], row['linehead']] }]
+  }.freeze
+
+  desc '比較兩個環境的 search/similar 結果，' \
+       '例：rake \'elastic:compare_similar[https://cbdata.dila.edu.tw/stable,http://localhost:3000]\''
   task :compare_similar, %i[base_a base_b] => :environment do |_task, args|
     require 'faraday'
-    base_a = args[:base_a].presence || 'https://cbdata.dila.edu.tw/dev'
+    # 預設基準是 /stable (上一版)。5.2.0 遷移期間 /dev 還是 Manticore，
+    # 當時預設指向 /dev，現在 /dev 已經是最新版。
+    base_a = args[:base_a].presence || 'https://cbdata.dila.edu.tw/stable'
     base_b = args[:base_b].presence || 'http://localhost:3000'
     puts "A (基準): #{base_a}"
-    puts "B (本機): #{base_b}"
+    puts "B (受測): #{base_b}"
     puts
 
-    totals = { a: 0, b: 0, both: 0 }
+    totals = SIMILAR_LEVELS.keys.to_h { |level| [level, { a: 0, b: 0, both: 0, miss: 0 }] }
     SIMILAR_QUERIES.each do |q|
-      a = fetch_similar_keys(base_a, q)
-      b = fetch_similar_keys(base_b, q)
-      next puts format('  %-24s 取得失敗', q.first(12)) if a.nil? || b.nil?
+      rows_a = fetch_similar_rows(base_a, q)
+      rows_b = fetch_similar_rows(base_b, q)
+      next puts format('  %-14s 取得失敗', "#{q.first(12)}…") if rows_a.nil? || rows_b.nil?
 
-      both = (a & b).size
-      totals[:a] += a.size
-      totals[:b] += b.size
-      totals[:both] += both
-      puts format('  %-14s A=%-4d B=%-4d 交集=%-4d 重疊率=%s',
-                  "#{q.first(12)}…", a.size, b.size, both,
-                  overlap_ratio(both, a.size, b.size))
+      line = '  ' + pad_display("#{q.first(12)}…", 27)
+      SIMILAR_LEVELS.each do |level, (_label, key_fn)|
+        a = rows_a.map(&key_fn).to_set
+        b = rows_b.map(&key_fn).to_set
+        both = (a & b).size
+        t = totals[level]
+        t[:a] += a.size
+        t[:b] += b.size
+        t[:both] += both
+        t[:miss] += (a - b).size
+        line << format('  %s A=%-4d B=%-4d 交集=%-4d', level, a.size, b.size, both)
+      end
+      puts line
     end
 
     puts
-    puts format('  合計          A=%-4d B=%-4d 交集=%-4d 重疊率=%s',
-                totals[:a], totals[:b], totals[:both],
-                overlap_ratio(totals[:both], totals[:a], totals[:b]))
+    puts '  合計'
+    SIMILAR_LEVELS.each do |level, (label, _)|
+      t = totals[level]
+      puts '    ' + pad_display(label, 27) +
+           format('A=%-4d B=%-4d 交集=%-4d  涵蓋 A=%s (漏 %d)  另外找到 %d  重疊率=%s',
+                  t[:a], t[:b], t[:both],
+                  percentage(t[:both], t[:a]), t[:miss], t[:b] - t[:both],
+                  overlap_ratio(t[:both], t[:a], t[:b]))
+    end
     puts
     puts <<~MSG
-      重疊率 = 2 × 交集 / (A + B)。
-      第一階段的候選由 Manticore proximity_bm25 換成 Lucene BM25，
-      進入 Smith-Waterman 的 top k 不會完全相同，差異無法消除，
-      見 doc/elasticsearch-migration.md 的 §F-3 與第三期實作結果。
+      「涵蓋 A」是召回率 (A 有幾成也被 B 找到)，評估「有沒有漏掉舊版的結果」看這個；
+      「重疊率」= 2 × 交集 / (A + B)，是對稱的，B 多找到結果時會被拉低。
+
+      三個層級由寬到嚴，判斷品質請看 juan 與 mark 兩層:
+      linehead 那一層會把「同一段經文改由相鄰的 chunk 代表」也算成差異，
+      改變候選順序的變更 (例如 5.7.0 的相鄰度重排) 在這一層會嚴重失真。
+      見 doc/elasticsearch-migration.md 的〈相鄰度重排〉。
     MSG
   end
 
@@ -295,18 +325,36 @@ namespace :elastic do
     '是日已過，命亦隨減，如少水魚，斯有何樂'
   ].freeze
 
-  # 一筆結果的識別: 同一個區塊在兩邊的 id 不同 (index 重建過)，
-  # 但 work + juan + linehead 唯一決定它在藏經裡的位置。
-  def fetch_similar_keys(base, q)
+  # 取回 search/similar 的原始 results，識別 key 由 SIMILAR_LEVELS 各自產生。
+  # 同一個區塊在兩邊的 id 不同 (index 重建過)，因此一律以內容欄位識別。
+  def fetch_similar_rows(base, q)
     sleep GOLDEN_REQUEST_INTERVAL
     response = Faraday.get("#{base}/search/similar", q:, cache: '0')
     return nil unless response.success?
 
-    data = JSON.parse(response.body)
-    Array(data['results']).map { |row| [row['work'], row['juan'], row['linehead']] }.to_set
+    Array(JSON.parse(response.body)['results'])
   rescue StandardError => e
     puts "    #{e.class}: #{e.message}"
     nil
+  end
+
+  # highlight 裡被 <mark> 框起來的比對區域，去掉內層標記 (<del>、<em>)。
+  # 這是「Smith-Waterman 實際對上了哪一段」，不受代表 chunk 是哪一個影響。
+  def similar_marked_text(row)
+    row['highlight'].to_s.scan(%r{<mark>(.*?)</mark>}m).flatten.join.gsub(/<[^>]+>/, '')
+  end
+
+  # 補空白到指定的「顯示寬度」。CJK 在終端機佔兩格，String#ljust 只算字元數，
+  # 混中英文的欄位會對不齊。UTF-8 下 CJK 與全形標點都是 3 bytes。
+  def pad_display(str, width)
+    w = str.each_char.sum { |c| c.bytesize > 2 ? 2 : 1 }
+    str + (' ' * [width - w, 0].max)
+  end
+
+  def percentage(part, total)
+    return 'n/a' if total.zero?
+
+    format('%.1f%%', 100.0 * part / total)
   end
 
   def overlap_ratio(both, size_a, size_b)
