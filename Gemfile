@@ -30,6 +30,9 @@ gem 'bootsnap', '>= 1.1.0', require: false
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :windows]
+
+  # RuboCop: 採用 Rails 官方 omakase 規則集, 設定見 .rubocop.yml
+  gem 'rubocop-rails-omakase', require: false
 end
 
 group :development do

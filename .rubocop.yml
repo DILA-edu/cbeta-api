@@ -1,0 +1,39 @@
+# Rails 官方的 omakase 規則集為底, 只挑重要的規則, 不做過度的風格要求。
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
+# legacy code 的既有 offense 全部凍結在 todo, 只要求新寫的 code 乾淨。
+inherit_from: .rubocop_todo.yml
+
+AllCops:
+  # 必須指定 4.0, 否則 parser 會把「換行開頭的 ||」誤判為 syntax error
+  # (見 lib/tasks/x2h_for_ui.rb, lib/tasks/convert/xml4docx1.rake)
+  TargetRubyVersion: 4.0
+  # 升級 rubocop 時不要自動套用新 cop, 避免突然冒出一批 offense
+  NewCops: disable
+  Exclude:
+    - 'vendor/**/*'
+    - 'node_modules/**/*'
+    - 'db/schema.rb'
+    - 'bin/**/*'
+    - 'tmp/**/*'
+    - 'data/**/*'
+    - 'data-static/**/*'
+
+# omakase 預設把整個 Lint / Security department 關掉, 只留 3 個 Lint cop。
+# 這兩類抓的是真正的 bug 與風險, 不是風格偏好, 所以補開。
+# 注意: Lint 的既有 offense 刻意不進 .rubocop_todo.yml。凍結的作法是把檔案加進
+# Exclude, 那些檔案之後新寫的 code 也會一起靜音, 對 Lint 來說等於把 bug 藏起來。
+# 所以重新跑 `rubocop --auto-gen-config` 之後, 要再把產生出來的 Lint/* 區塊刪掉。
+Lint:
+  Enabled: true
+
+Security:
+  Enabled: true
+
+# 本專案慣用單引號, 不跟 omakase 的雙引號偏好。
+Style/StringLiterals:
+  EnforcedStyle: single_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: single_quotes
