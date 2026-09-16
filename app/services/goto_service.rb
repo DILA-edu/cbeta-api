@@ -40,13 +40,13 @@ class GotoService
     # 行首資訊格式，例：T01n0001_p0066c25, Y01n0001_pa001a01
     if lh.match(/^((?:#{CBETA::CANON})\d{2,3})n(.{5})p([a-z\d]\d{3}[a-z]\d+)$/)
       lh_exact = lh
-      r = info vol: $1, work: $2, lb: $3
+      r = info_from_citation vol: $1, work: $2, lb: $3
 
     # CBETA 引用格式，例：
     #   * CBETA, T01, no. 1, p. 67, a13
     #   * CBETA 2019.Q2, T01, no. 1, p. 1a6
     elsif lh.match(/^CBETA(?: \d+\.[QR]\d)?, *((?:#{CBETA::CANON})\d{2,3}), *no\. *(.*?), *p\. *([a-z]?\d+), *([a-z])(\d+)(\-.*)?$/)
-      r = info vol: $1, work: $2, page: $3, col: $4, line: $5
+      r = info_from_citation vol: $1, work: $2, page: $3, col: $4, line: $5
 
     # CBETA 2017 新引用格式，例：
     #   CBETA, T30, no. 1579, pp. 279a7-280b26
@@ -54,7 +54,7 @@ class GotoService
     #   CBETA, T30, no. 1579, p. 279a7-23
     #   CBETA, T30, no. 1579, p. 279a7
     elsif lh.match(/^CBETA(?: \d+\.[QR]\d)?, ?((?:#{CBETA::CANON})\d+), ?no\. ?([A-Za-z]?\d+[A-Za-z]?), ?pp?\. *([a-z]?\d+)([a-z])(\d+)/)
-      r = info vol: $1, work: $2, page: $3, col: $4, line: $5
+      r = info_from_citation vol: $1, work: $2, page: $3, col: $4, line: $5
 
     # 論文引用慣例，例如：
     #   * 沒有欄號：T51, no. 2087, pp. 868-888
@@ -62,12 +62,12 @@ class GotoService
     #   * 行號範圍：T15, no. 602, p. 64a14-b26
     #   * 頁碼範圍：T15, no. 606, pp. 215c22-216a2
     elsif lh.match(/^(#{CBETA::CANON}\d+), ?no\. ?([A-Za-z]?\d+[A-Za-z]?), ?pp?\. ?(\d+)([a-z])?(\d+)?/)
-      r = info vol: $1, work: $2, page: $3, col: $4, line: $5
+      r = info_from_citation vol: $1, work: $2, page: $3, col: $4, line: $5
     elsif lh.match(/^《大正藏》冊(\d+)，第(\d+[A-Za-z]?) ?號，卷(\d+)/)
       r = by_work canon: 'T', work: $2, juan: $3
     elsif lh.match(/^《大正藏》冊(\d+)，第(\d+[A-Za-z]?) ?號(?:，頁(\d+)([a-z])?(\d+)?)?/)
       # 《大正藏》冊19，第974C 號，頁386
-      r = info vol: "T#{$1}", work: $2, page: $3, col: $4, line: $5
+      r = info_from_citation vol: "T#{$1}", work: $2, page: $3, col: $4, line: $5
     elsif lh.match(/《續藏經》冊(\d+)，頁(\d+)([a-z])?(\d+)?/)
       #《續藏經》冊142，頁1003b
       opts = { vol: $1, page: $2, col: $3, line: $4 }
@@ -189,8 +189,8 @@ class GotoService
     params[:canon] + Work.normalize_no(params[:work].to_s.dup)
   end
 
-  def info(args = {})
-    logger.debug 'GotoService#info'
+  def info_from_citation(args = {})
+    logger.debug 'GotoService#info_from_citation'
     logger.debug args
     r = {}
     r[:vol] = args[:vol].sub(/^T(\d)$/, 'T0\1') # T2 => T02
