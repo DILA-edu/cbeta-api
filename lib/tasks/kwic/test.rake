@@ -1,5 +1,5 @@
 namespace :kwic do
-  task :test, [:env] => :environment do |t, args|
+  task :test, [:env] => :environment do |_t, args|
     KwicTest.new.run(args[:env])
   end
 end

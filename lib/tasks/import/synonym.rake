@@ -46,7 +46,7 @@ class ImportSynonym
 
   def arrange_synonyms
     @synonyms = {}
-    @groups.each_pair do |gid, terms|
+    @groups.each_pair do |_gid, terms|
       book_synonym_array(terms)
     end
   end

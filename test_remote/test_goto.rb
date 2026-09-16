@@ -23,7 +23,7 @@ class GotoTest < Minitest::Test
     assert_equal('0001a01', r['results'][0]['lb'])
 
     params = { canon: 'M', vol: 49 }
-    r = get_json(@url, params)
+    get_json(@url, params)
   end
 
   def test_goto_vol_page

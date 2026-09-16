@@ -224,7 +224,7 @@ class SearchController < ApplicationController
 
     # 簡轉繁
     cmd = 'opencc -c s2tw'
-    @q, status = Open3.capture2(cmd, stdin_data: params[:q])
+    @q, _ = Open3.capture2(cmd, stdin_data: params[:q])
 
     r = if @q == params[:q]
         { q: @q, hits: 0}
@@ -867,7 +867,6 @@ class SearchController < ApplicationController
 
     @exclude.match(/^(.*?)#{q}$/) do
       opts[:negative_lookbehind] = $1
-      t1 = Time.now
       r = se.search_juan(q, opts)
       #logger.debug "search_juan 花費時間: #{Time.now - t1}"
       return r

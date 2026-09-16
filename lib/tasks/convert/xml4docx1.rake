@@ -5,7 +5,7 @@ require 'my_cbeta_share'
 
 namespace :convert do
   desc "XML 轉 xml4docx 格式 Step 1"
-    task :xml4docx1, [:publish, :canon, :vol] => :environment do |t, args|
+    task :xml4docx1, [:publish, :canon, :vol] => :environment do |_t, args|
     xml_root = Rails.application.config.cbeta_xml
     dest1 = Rails.root.join('data', 'xml4docx1')
     XMLForDocx1.new(xml_root, dest1).convert(args)
@@ -55,7 +55,7 @@ class XMLForDocx1
     raise
   end
 
-  def convert_canon(args)
+  def convert_canon(_args)
     puts "\n[#{__LINE__}] canon: #{@canon}"
     @orig = @cbeta.get_canon_symbol(@canon)
     @canon_name = @my_cbeta_share.get_canon_name(@canon)
@@ -739,7 +739,7 @@ class XMLForDocx1
     r
   end
 
-  def e_note_add_mod(e, mode)
+  def e_note_add_mod(e, _mode)
     s = traverse(e, 'text')
 
     n = e['n']
@@ -756,7 +756,7 @@ class XMLForDocx1
     return "(#{traverse(e)})" if mode == 'text'
 
     if e.at_xpath('l')
-      r = traverse(e, 'text')
+      traverse(e, 'text')
       return "(%s)" % traverse(e, 'text')
     end
 
@@ -781,7 +781,7 @@ class XMLForDocx1
     return %(<seg rend="inlinenote">(#{r})</seg>)
   end
 
-  def e_note_orig(e, mode)
+  def e_note_orig(e, _mode)
     n = e['n']
     return '' if @mod_notes.key?(n)
 
@@ -1172,7 +1172,7 @@ class XMLForDocx1
 
     s = repl.keys.join()
 
-    @works.each do |k, v|
+    @works.each do |_k, v|
       v['title'].gsub!(/[#{s}]/, repl) if v.key?('title')
       v['byline'].gsub!(/[#{s}]/, repl) if v.key?('byline')
     end

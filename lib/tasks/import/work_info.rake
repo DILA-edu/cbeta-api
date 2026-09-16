@@ -657,7 +657,7 @@ class ImportWorkInfo
       csv << %w[category chars chars_no_spaces cjk_chars en_words]
       fn = Rails.root.join('data-static', 'categories.json')
       cats = JSON.load_file(fn)
-      cats.each do |k, cat|
+      cats.each do |_k, cat|
         h = @stat_cat[cat]
         csv << [cat, h[:chars], h[:chars2], h[:cjk_chars], h[:en_words]]
       end

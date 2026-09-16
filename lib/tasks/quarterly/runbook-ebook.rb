@@ -4,14 +4,14 @@ module RunbookSectionEbook
   def define_section_ebook(config)
     Runbook.section "製作電子書" do
       step '製作 EPUB' do
-        ruby_command do |rb_cmd, metadata, run|
+        ruby_command do |_rb_cmd, _metadata, _run|
           require_relative 'epub-main'
           CbetaEbook.new(config).convert
         end
       end
 
       step '壓縮全部 EPUB' do
-        ruby_command do |rb_cmd, metadata, run|
+        ruby_command do |_rb_cmd, _metadata, _run|
           q = config[:q2].downcase
           dest = "cbeta-epub-#{q}.zip"
           

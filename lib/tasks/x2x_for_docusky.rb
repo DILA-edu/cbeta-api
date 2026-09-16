@@ -106,7 +106,7 @@ class P5aToDocusky
     r + "</Paragraph>\n"
   end
 
-  def e_g(e, mode)
+  def e_g(e, _mode)
     gid = e['ref'][1..-1]
 
     if gid.start_with? 'CB'
@@ -130,7 +130,6 @@ class P5aToDocusky
    
     return g['uni_char'] if g.key?('uni_char') # 直接採用 unicode
 
-    default = ''
     if @gaiji_norm.last # 如果沒有特別指定不用通用字
       return g['norm_uni_char']  if g.key?('norm_uni_char')
       return g['norm_big5_char'] if g.key?('norm_big5_char')
@@ -144,7 +143,6 @@ class P5aToDocusky
   def e_head(e)
     r = ''
     unless e['type'] == 'added'
-      i = @open_divs.size
       r = %(<Paragraph type="head">%s</Paragraph>\n) % traverse(e)
     end
     r
@@ -248,7 +246,6 @@ class P5aToDocusky
   end
 
   def e_note(e)
-    n = e['n']
     if e.has_attribute?('type')
       t = e['type']
       case t
@@ -459,7 +456,7 @@ class P5aToDocusky
     }
   end
 
-  def handle_text(e, mode)
+  def handle_text(e, _mode)
     s = e.content().chomp
     return '' if s.empty?
     return '' if e.parent.name == 'app'

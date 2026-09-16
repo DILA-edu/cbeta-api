@@ -1,6 +1,6 @@
 namespace :convert do
   desc "XML 轉 Docusky"
-  task :docusky, [:canon] => :environment do |t, args|
+  task :docusky, [:canon] => :environment do |_t, args|
     c = ConvertDocusky.new
     c.convert(args[:canon])
   end

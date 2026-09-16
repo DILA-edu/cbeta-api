@@ -39,7 +39,7 @@ class ReportController < WebController
     @d2 = h2d(params[:d2])
     @visits = Visit.where(:accessed_at => @d1..@d2).group(:url, :referer)
     h = @visits.sum(:count)
-    @visits = h.sort_by { |k,v| -v }
+    @visits = h.sort_by { |_k,v| -v }
     @total = @visits.sum(0) { |x| x[1] }
 
     respond_to do |format|
@@ -53,7 +53,7 @@ class ReportController < WebController
     @d2 = h2d(params[:d2])
     @visits = Visit.where(:accessed_at => @d1..@d2).group(:referer)
     h = @visits.sum(:count)
-    @visits = h.sort_by { |k,v| -v }
+    @visits = h.sort_by { |_k,v| -v }
     @total = @visits.sum(0) { |x| x[1] }
 
     respond_to do |format|

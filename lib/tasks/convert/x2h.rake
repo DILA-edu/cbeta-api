@@ -1,7 +1,7 @@
 namespace :convert do  
   desc "XML 轉 HTML"
   # 只轉某部經： rake convert:x2h[2020-09,T10n0297]
-  task :x2h, [:publish, :canon] => :environment do |t, args|
+  task :x2h, [:publish, :canon] => :environment do |_t, args|
     c = ConvertX2h.new
     c.convert(args[:publish], args[:canon])
   end

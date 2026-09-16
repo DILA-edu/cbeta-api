@@ -16,7 +16,8 @@ class CbetaSearch::SearchServiceExcludeTest < ActiveSupport::TestCase
       @bodies = []
     end
 
-    def search(index:, body:)
+    # index: 是 Elasticsearch client 的介面, 這個 mock 用不到但簽名必須保留
+    def search(index:, body:) # rubocop:disable Lint/UnusedMethodArgument
       @bodies << Marshal.load(Marshal.dump(body))
       @responses.shift || empty_response
     end

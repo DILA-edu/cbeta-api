@@ -3,7 +3,7 @@ require 'my_cbeta_share'
 
 namespace :search_xml do  
   desc "將註解（校注、夾注）轉為 XML 供 Elasticsearch 建 Index"
-  task :notes, [:canon] => :environment do |t, args|
+  task :notes, [:canon] => :environment do |_t, args|
     t1 = Time.now
     SearchXmlNotes.new.convert(args[:canon])
     puts ElapsedTime.label(t1)
@@ -94,7 +94,7 @@ class SearchXmlNotes
     end
   end
   
-  def before_parse_xml(xml_fn)
+  def before_parse_xml(_xml_fn)
     @back = { 0 => '' }
     @back_orig = { 0 => '' }
     @dila_note = 0
@@ -142,7 +142,6 @@ class SearchXmlNotes
     w = Work.find_by n: @work_id
     return if w.nil?
 
-    t1 = Time.now
     before_parse_xml(xml_fn)
     return if @work_info.nil?
     @text = parse_xml(xml_fn)
@@ -195,7 +194,7 @@ class SearchXmlNotes
     r
   end
 
-  def e_lb(e, mode)
+  def e_lb(e, _mode)
     return '' if e['type']=='old'
     return '' if e['ed'] != @canon
     
@@ -286,8 +285,6 @@ class SearchXmlNotes
   end
 
   def e_note_add(e)
-    n = @notes_add[@juan].size + 1
-    n = "cb_note_#{n}"
     s = traverse(e, 'footnote')
     s << e_note_add_cf(e)
     @notes_add[@juan] << { lb: @lb, text: s }
@@ -340,7 +337,6 @@ class SearchXmlNotes
   
   def e_note_orig(e)
     n = e['n']
-    subtype = e['subtype']
     s = traverse(e, 'footnote')
 
     @notes_orig[@juan][n] = s

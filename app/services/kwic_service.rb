@@ -338,8 +338,8 @@ class KwicService
     i1 = 0
     i2 = 0
     while (i1 < pos1.size) and (i2 < pos2.size)
-      p1, sa1 = pos1[i1].last
-      p2, sa2 = pos2[i2]
+      p1, _ = pos1[i1].last
+      p2, _ = pos2[i2]
 
       if p1 > p2
         j = i1
@@ -667,7 +667,7 @@ class KwicService
   def paginate_by_location(q, sa_results)
     log_debug 'paginate_by_location'
     hits = []
-    sa_results.each do |sa_path, start, found|
+    sa_results.each do |_sa_path, start, found|
       hits.concat(result_hash(q, start, found))
     end
     hits.sort_by! { |x| x['offset_in_text_with_punc'] }
@@ -752,7 +752,6 @@ class KwicService
   end
 
   def read_text_for_info_array(info_array, q)
-    t1 = Time.now
     if @option[:kwic_w_punc] or @option[:kwic_wo_punc]
       if @option[:kwic_wo_punc]
         info_array.each do |data|      
@@ -841,13 +840,12 @@ class KwicService
     info['offset_in_text_with_punc']
   end
 
-  def read_text_with_punc(data, q)
+  def read_text_with_punc(data, _q)
     return nil unless @option.key?(:juan)
 
     text = cache_fetch_juan_text(data['vol'], data['work'], data['juan'])
     
     r = ''
-    position = nil
 
     # 如果 sort=b, offset 指向 q 的最後一個字，要先將 pointer 移至 q 的第一個字
     if @option[:sort] == 'b'
@@ -943,7 +941,6 @@ class KwicService
     
     if @option.key?(:juan)
       if @option.key?(:negative_lookbehind) or @option.key?(:negative_lookahead)
-        t1 = Time.now
         exclude_filter2(info_array, q)
       end
     end
@@ -974,7 +971,7 @@ class KwicService
   end
 
   # 單卷範圍內 做 NEAR 搜尋
-  def search_near_juan(query, args={})
+  def search_near_juan(query, _args={})
     sa_path = sa_rel_path
     return nil unless open_files(sa_path)
 
@@ -1036,7 +1033,6 @@ class KwicService
 
   def search_sa_after_open_files(q)
     log_debug "search_sa_after_open_files, q: #{q}"
-    t1 = Time.now
     i = bsearch(q, 0, @sa_last)
     return nil if i.nil?
   
@@ -1054,7 +1050,6 @@ class KwicService
   
   def search_sa_after_open_files_juan(q)
     log_debug "search_sa_after_open_files_juan, q: #{q}"
-    t1 = Time.now
     i = bsearch_juan(q, 0, @sa_last)
     if i.nil?
       log_debug 'bsearch_juan return nil'

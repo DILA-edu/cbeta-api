@@ -83,7 +83,7 @@ class Kwic3Controller < ApplicationController
 
     r = { num_found: num_found, time: Time.now-t1, results: a}
     my_render r
-  rescue Exception => e
+  rescue StandardError => e
     logger.debug $!
     e.backtrace.each { |s| logger.debug s }
     r = { 

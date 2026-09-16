@@ -1,7 +1,7 @@
 require 'cbeta_p5a_share'
 
 namespace :import do  
-  task :lines, [:arg1] => :environment do |t, args|
+  task :lines, [:arg1] => :environment do |_t, args|
     importer = ImportLines.new
     importer.import args[:arg1]
   end  
@@ -183,7 +183,7 @@ class ImportLines
     return traverse(e)
   end
 
-  def e_note_orig(e, anchor_type=nil)
+  def e_note_orig(e, _anchor_type=nil)
     n = e['n']
     subtype = e['subtype']
     s = traverse(e)

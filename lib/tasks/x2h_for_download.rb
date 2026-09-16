@@ -128,7 +128,7 @@ class P5aToHTMLForDownload
     node.to_s + "\n"
   end
 
-  def e_caesura(e, mode)
+  def e_caesura(e, _mode)
     if @lg_type == 'regular'
       return e.to_s
     else
@@ -159,7 +159,6 @@ class P5aToHTMLForDownload
 
   def e_div(e)
     @div_count += 1
-    n = @div_count
     if e.has_attribute? 'type' or e.key? 'rend'
       return e_div_node(e)
     else
@@ -405,7 +404,6 @@ class P5aToHTMLForDownload
     return e_note_foot(e) if mode == 'footnote'
     return '' if e['rend'] == 'hide'
 
-    n = e['n']
     if e.has_attribute?('type')
       t = e['type']
       case t
@@ -743,7 +741,7 @@ class P5aToHTMLForDownload
     }
   end
 
-  def handle_text(e, mode)
+  def handle_text(e, _mode)
     s = e.content().chomp
     return '' if s.empty?
     return '' if e.parent.name == 'app'
@@ -851,7 +849,7 @@ class P5aToHTMLForDownload
   end
 
   # 用於依原書換行的空格
-  def line_space(s)
+  def line_space(_s)
     ''
   end
 
@@ -979,7 +977,7 @@ class P5aToHTMLForDownload
     MyCbetaShare.cbeta_juan_declare(args)
   end
 
-  def zip_by_work(canon)
+  def zip_by_work(_canon)
     folder = File.join(@out_root, @canon)
     Dir.entries(folder).each do |work|
       next if work.start_with? '.'

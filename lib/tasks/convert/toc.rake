@@ -2,7 +2,7 @@ require 'cbeta_p5a_share'
 
 namespace :convert do  
   desc "XML 轉 目次 toc JSON 檔"
-  task :toc, [:arg1] => :environment do |t, args|
+  task :toc, [:arg1] => :environment do |_t, args|
     c = ConvertToc.new
     c.convert(args[:arg1])
   end
@@ -124,7 +124,7 @@ class ConvertToc
     current = @toc_stack[-1]
     data = { title: e.text, file: @file, juan: @juan, lb: @lb }
     data[:type] = e['type'] if e.key?('type')
-    if m = data[:title].match(/^(\d+)/)
+    if data[:title].match(/^(\d+)/)
       data[:n] = $1.to_i
     elsif e.key?('n')
       data[:n] = e['n'].to_i

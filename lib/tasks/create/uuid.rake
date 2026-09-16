@@ -63,7 +63,7 @@ class CreateUuid
         path = File.join(canon_path, f)
         s = File.read(path)
         juans = JSON.parse(s)
-        juans.each_pair do |k, v|
+        juans.each_pair do |k, _v|
           id = "#{work}_%03d" % k.to_i
           unless r.key? id
             r[id] = {

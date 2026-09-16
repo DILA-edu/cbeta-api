@@ -31,7 +31,6 @@ class Crf
   end
 
   def tag_file(fn, mode=3)
-    basename = File.basename(fn)
     text = File.read(fn)
     text.gsub!(/\n/, "/\n/")
     text.gsub!(/\/{2,}/, '/')

@@ -1,6 +1,6 @@
 namespace :convert do  
   desc "將 純文字版 自動分詞"
-  task :seg, [:canon] => :environment do |t, args|
+  task :seg, [:canon] => :environment do |_t, args|
     c = ConvertSeg.new
     c.convert(args[:canon])
   end

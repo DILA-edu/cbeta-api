@@ -221,7 +221,7 @@ class P5aToHTMLForUI
     node.to_s + "\n"
   end
 
-  def e_caesura(e, mode)
+  def e_caesura(e, _mode)
     if @lg_type == 'regular'
       return e.to_s
     else
@@ -260,7 +260,6 @@ class P5aToHTMLForUI
   def e_div(e, mode)
     return traverse(e, mode) if mode=='footnote'
     @div_count += 1
-    n = @div_count
     if e.has_attribute? 'type' or e.key? 'rend'
       r = e_div_node(e)
     else
@@ -509,7 +508,7 @@ class P5aToHTMLForUI
   def e_l_not_regular(content, e)
     s = content
     if e.key?('style')
-      e['style'].match(/text-indent: ?(-?\d+)em/) do |m|
+      e['style'].match(/text-indent: ?(-?\d+)em/) do |_m|
         s = line_space($1) + s
       end
     end
@@ -521,7 +520,7 @@ class P5aToHTMLForUI
     indent = nil
     spaces = nil
     if e.key?('style')
-      e['style'].match(/text-indent: ?(-?\d+)em/) do |m|
+      e['style'].match(/text-indent: ?(-?\d+)em/) do |_m|
         indent = $&
         spaces = line_space($1)
       end
@@ -531,7 +530,7 @@ class P5aToHTMLForUI
     if indent.nil? and @first_l
       lg = e.parent
       if lg.key?('style')
-        lg['style'].match(/text-indent: ?(-?\d+)em/) do |m|
+        lg['style'].match(/text-indent: ?(-?\d+)em/) do |_m|
           indent = $&
           spaces = line_space($1)
         end
@@ -750,14 +749,14 @@ class P5aToHTMLForUI
     node.to_s + "\n"
   end
 
-  def e_pb(e, mode)
+  def e_pb(e, _mode)
     if e['ed'] == 'J'
       @j_pages += 1
     end
     ''
   end
 
-  def e_rdg(e)
+  def e_rdg(_e)
     ''
   end
 
@@ -854,7 +853,7 @@ class P5aToHTMLForUI
     '(' + traverse(e, mode) + ')'
   end
   
-  def e_sic(e, mode)
+  def e_sic(_e, _mode)
     ''
   end
 
@@ -911,7 +910,7 @@ class P5aToHTMLForUI
     node.to_s
   end
 
-  def e_term(e, mode)
+  def e_term(e, _mode)
     norm = true
     if e['behaviour'] == "no-norm"
       norm = false
@@ -1327,7 +1326,7 @@ class P5aToHTMLForUI
 
   def stat_jm_facs
     i = 0
-    @jm_facsimile.each_pair do |k,v|
+    @jm_facsimile.each_pair do |_k,v|
       i += v.size
     end
     $stderr.print "\n#{i} 幅嘉興藏圖像的連結，"

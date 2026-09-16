@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 namespace :convert do
-  task :xml4docx2, [:filter] => :environment do |t, args|
+  task :xml4docx2, [:filter] => :environment do |_t, args|
     dir1 = Rails.root.join('data', 'xml4docx1')
     dir2 = Rails.root.join('data', 'xml4docx')
     XMLForDocx2.new.convert(dir1, dir2, filter: args[:filter])
@@ -194,7 +194,6 @@ class XMLForDocx2
 
     node = HTMLNode.new('p')
 
-    rend = e['rend'] || ''
     r = +''
     e.children.each do |c|
       if c.text?
@@ -262,7 +261,6 @@ class XMLForDocx2
 
     node = HTMLNode.new('seg')
 
-    rend = e['rend'] || ''
     r = +''
     e.children.each do |c|
       if c.text?

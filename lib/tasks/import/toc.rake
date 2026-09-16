@@ -2,7 +2,7 @@ require 'cbeta_p5a_share'
 
 namespace :import do    
   desc "匯入 佛典內目次"
-  task :toc, [:arg1] => :environment do |t, args|
+  task :toc, [:arg1] => :environment do |_t, args|
     ImportToc.new.import args[:arg1]
   end
 end

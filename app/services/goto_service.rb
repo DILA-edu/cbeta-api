@@ -219,8 +219,7 @@ class GotoService
       raise CbetaError.new(400), "頁碼格式錯誤：#{params[:page]}"
     end
 
-    if @work_id.nil? or @juan.nil?
-    else
+    unless @work_id.nil? or @juan.nil?
       vol, start_lb = JuanLine.get_first_lb_by_work_juan(@work_id, @juan)
       start_page = start_lb.sub(/^(\d{4}).*$/, '\1')
       if page < start_page

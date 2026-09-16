@@ -1,5 +1,5 @@
 namespace :kwic do
-  task :h2t, [:canon, :vol] => :environment do |t, args|
+  task :h2t, [:canon, :vol] => :environment do |_t, args|
     c = KwicHtml2Text.new
     c.convert(args[:canon], args[:vol], true)
     c.convert(args[:canon], args[:vol], false)
@@ -41,7 +41,7 @@ class KwicHtml2Text
   end
   
 
-  def read_file(base, rel_path)
+  def read_file(_base, rel_path)
     s1 = @builder.read_html_file(rel_path)
     @size += s1.size
     
@@ -89,7 +89,7 @@ class KwicHtml2Text
     if File.exist? fn
       # 反向排序，後面的檔案要放前面
       FileUtils.mv fn, 'temp.txt'
-      fo = File.open(fn, 'w:UTF-32LE') { |f| 
+      File.open(fn, 'w:UTF-32LE') { |f| 
         f.write(s2)
         IO.copy_stream('temp.txt', f)
       }

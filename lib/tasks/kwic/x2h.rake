@@ -1,5 +1,5 @@
 namespace :kwic do
-  task :x2h, [:canon] => :environment do |t, args|
+  task :x2h, [:canon] => :environment do |_t, args|
     xml   = Rails.configuration.cbeta_xml
     gaiji = Rails.configuration.cbeta_gaiji
     out   = Rails.configuration.x.kwic.html
@@ -28,7 +28,7 @@ class P5aToSimpleHTML
 
   # @param xml_root [String] 來源 CBETA XML P5a 路徑
   # @param output_root [String] 輸出 Text 路徑
-  def initialize(xml_root, gaiji_base, output_root, opts={})
+  def initialize(xml_root, _gaiji_base, output_root, opts={})
     @xml_root = xml_root
     @output_root = output_root
     @cbeta = CBETA.new

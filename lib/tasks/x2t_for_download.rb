@@ -185,7 +185,7 @@ class P5aToTextForDownload
     traverse(e) + "\n"
   end
   
-  def e_lb(e)
+  def e_lb(_e)
     return "\n" if @lb_break.last
     ''
   end
@@ -449,7 +449,7 @@ class P5aToTextForDownload
     text
   end
 
-  def traverse(e, mode=nil)
+  def traverse(e, _mode=nil)
     r = ''
     e.children.each { |c| 
       s = handle_node(c)
@@ -555,7 +555,7 @@ class P5aToTextForDownload
     end
   end
   
-  def zip_by_work(canon)
+  def zip_by_work(_canon)
     canon_folder = File.join(@params[:out_root], @canon)
     Dir.entries(canon_folder).each do |f|
       next if f.start_with? '.'

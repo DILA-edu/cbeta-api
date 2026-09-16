@@ -22,7 +22,7 @@ class WordSegService
       model = Rails.configuration.x.seg_model.to_s
       dest = File.join(dir, 'dest.txt')
       cmd = "crf_test -m #{model} #{src} > #{dest}"
-      stdout, stderr, status = Open3.capture3(cmd)
+      _, stderr, status = Open3.capture3(cmd)
       if status.success?
         s = tag2slash(File.read(dest))
         return OpenStruct.new(success?: true, result: s)

@@ -460,7 +460,6 @@ eos
   end
 
   def e_lg(e)
-    r = ''
     @lg_type = e['type']
 
     if @lg_type != 'regular'
@@ -549,7 +548,6 @@ eos
   end
 
   def e_note(e)
-    n = e['n']
     if e.has_attribute?('type')
       t = e['type']
       case t
@@ -729,7 +727,7 @@ eos
   end
 
 
-  def handle_text(e, mode)
+  def handle_text(e, _mode)
     s = e.content().chomp
     return '' if s.empty?
     return '' if e.parent.name == 'app'

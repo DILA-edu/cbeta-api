@@ -46,7 +46,7 @@ module P5aToHtmlShare
     indent = nil
     spaces = nil
     if e.key?('style')
-      e['style'].match(/text-indent: ?(-?\d+)em/) do |m|
+      e['style'].match(/text-indent: ?(-?\d+)em/) do |_m|
         indent = $&
         spaces = line_space($1)
       end
@@ -56,7 +56,7 @@ module P5aToHtmlShare
     if indent.nil? and @first_l
       lg = e.parent
       if lg.key?('style')
-        lg['style'].match(/text-indent: ?(-?\d+)em/) do |m|
+        lg['style'].match(/text-indent: ?(-?\d+)em/) do |_m|
           indent = $&
           spaces = line_space($1)
         end

@@ -1,6 +1,6 @@
 namespace :import do
   desc "匯入修訂紀錄"
-  task :changelog, [:arg1] => :environment do |t, args|
+  task :changelog, [:arg1] => :environment do |_t, args|
     ImportChangelog.new.import(args[:arg1])
   end
 end

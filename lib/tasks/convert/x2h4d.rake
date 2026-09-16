@@ -1,6 +1,6 @@
 namespace :convert do  
   desc "XML 轉 下載用 HTML"
-  task :x2h4d, [:publish, :canon] => :environment do |t, args|
+  task :x2h4d, [:publish, :canon] => :environment do |_t, args|
     c = ConvertX2hForDownload.new
     c.convert(args[:publish], args[:canon])
   end

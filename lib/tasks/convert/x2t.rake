@@ -1,6 +1,6 @@
 namespace :convert do  
   desc "XML 轉 Change Log 比對用 Text Normal 版"
-  task :x2t, [:q] => :environment do |t, args|
+  task :x2t, [:q] => :environment do |_t, args|
     v = args[:q] # 例: 2021Q1
     src = Rails.configuration.cbeta_xml
     gaiji = Rails.configuration.cbeta_gaiji

@@ -16,7 +16,7 @@ namespace :import do
   # 舊制標點規則 (即 migration 前 layers.rake 內建的 PUNCS)
   OLD_PUNCS = /[\n\r,.()\[\]\x20。．，、；？！：（）「」『』《》＜＞〈〉〔〕［］【】〖〗…—　▆■□○―→←△]/
 
-  task :migrate_layers_puncs, [:apply] => :environment do |t, args|
+  task :migrate_layers_puncs, [:apply] => :environment do |_t, args|
     apply = (args[:apply] == 'apply')
     layers_dir = Rails.root.join('data-static', 'layers')
     xml_base = Rails.application.config.cbeta_xml

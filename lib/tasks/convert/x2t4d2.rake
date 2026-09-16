@@ -1,6 +1,6 @@
 namespace :convert do  
   desc "XML 轉 下載用 Text (含校注)"
-  task :x2t4d2, [:publish, :canon] => :environment do |t, args|
+  task :x2t4d2, [:publish, :canon] => :environment do |_t, args|
     ConvertX2T4D2.new.convert(args[:publish], args[:canon])
   end
 end

@@ -358,7 +358,6 @@ class DiffToHTML
     @lines_count += i  
     r = ""
     
-    diff_html = nil
     # 逐行比對差異
     until a1.empty? or a2.empty?
       s1 = a1.first

@@ -65,7 +65,6 @@ module CbetaP5aShare
     return ele_note_in_foot(e, mode) if mode == 'footnote'
     return '' if e['rend'] == 'hide'
 
-    n = e['n']
     if e.has_attribute?('type')
       t = e['type']
       case t
@@ -102,7 +101,7 @@ module CbetaP5aShare
     end
   end
 
-  def ele_note_add(e, mode)
+  def ele_note_add(e, _mode)
     return '' unless @params[:notes]
 
     n = @notes_add[@juan].size + 1
@@ -139,7 +138,7 @@ module CbetaP5aShare
     ele_lem_cf(lem)
   end
 
-  def ele_note_mod(e, mode)
+  def ele_note_mod(e, _mode)
     return '' unless @params[:notes]
 
     n = e['n']
@@ -156,12 +155,11 @@ module CbetaP5aShare
     node['class'] = 'noteAnchor'
     node['href'] = "#n#{n}"
     node['data-key'] = e['note_key'] if e.key?('note_key')
-    node.to_s + "\n"
 
     return node.to_s
   end
 
-  def ele_note_orig(e, mode)
+  def ele_note_orig(e, _mode)
     return '' unless @params[:notes]
 
     n = e['n']
@@ -191,7 +189,7 @@ module CbetaP5aShare
     "<a class='noteAnchor' href='#n#{n}'#{label}></a>"
   end
 
-  def ele_note_star(e, mode)
+  def ele_note_star(e, _mode)
     return '' unless @params[:notes]
 
     n = e['corresp'].delete_prefix('#')
