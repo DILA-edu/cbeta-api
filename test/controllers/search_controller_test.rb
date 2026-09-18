@@ -52,10 +52,15 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # 這裡 raise 的是 CbetaError.new(400)。ApplicationController 有
+  # rescue_from CbetaError（會回真正的 HTTP status），但 SearchController 自己註冊了
+  # rescue_from Exception, with: :error_handler，子類別的 handler 優先，
+  # 所以這裡仍是回 200 + body 裡的 error 欄位（既有 client 依賴這個行為）。
   test '過長的 q 在連到後端之前就被擋下' do
     with_elasticsearch_config(url: 'http://127.0.0.1:9599') do
       get '/search', params: { q: '佛' * (ApplicationController::MAX_QUERY_LENGTH + 1) }
 
+      assert_response :success
       body = JSON.parse(response.body)
       assert_match(/長度不得大於/, body['error'])
     end
