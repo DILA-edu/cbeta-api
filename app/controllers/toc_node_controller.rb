@@ -2,6 +2,14 @@ class TocNodeController < ApplicationController
   include TocNodeHelper
 
   def index
+    # q 為 nil 或空字串時, search_by_query_term 的 else 分支會變成
+    # LIKE '%%' 全表掃描 (catalog + work + toc 三張表, 且每筆再查一次 work info),
+    # 實測會跑滿 rack-timeout 的 300 秒並佔住一個 Passenger process。
+    if params[:q].blank?
+      my_render(num_found: 0, results: [], error: '缺少 q 參數')
+      return
+    end
+
     # 限制查詢字串長度（字數）
     if query_too_long?(params[:q])
       my_render(num_found: 0, results: [], error: query_length_error)
@@ -50,8 +58,9 @@ class TocNodeController < ApplicationController
       row = { type: 'toc', label: t.label, label_path: t.label_path, work: t.work, lb: t.lb }
       w = Work.get_info_by_id(t.work)
       if w.nil?
+        # 這裡原本是 abort, 在 Passenger worker 裡會直接殺掉整個 process。
         logger.fatal "Error get_info_by_id(#{t.work})"
-        abort
+        next
       end
       row.merge! w
       row[:file] = t.file
