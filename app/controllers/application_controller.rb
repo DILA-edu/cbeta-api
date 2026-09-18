@@ -14,7 +14,7 @@ class ApplicationController < ActionController::Base
 
   EMPTY_RESULT = { num_found: 0, results: [] }
 
-  MAX_QUERY_LENGTH = 80 # 全文檢索 q 參數長度上限（字數）
+  MAX_QUERY_LENGTH = 40 # 全文檢索 q 參數長度上限（字數）
 
   def filter_cn?(n: nil, id: nil)
     unless n.nil?
