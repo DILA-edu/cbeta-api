@@ -2,6 +2,12 @@
 
 class ApplicationController < ActionController::Base
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_request_timeout
+
+  # CbetaError 帶著自己的 HTTP status code, 但先前沒有 handler, 未被 method 內的
+  # begin/rescue 接住的就一律變成 500。
+  # 註: SearchController 自己註冊了 rescue_from Exception, 子類別的 handler 優先,
+  #     所以它的行為不受這裡影響。method 內的 rescue CbetaError 也一樣優先。
+  rescue_from CbetaError, with: :handle_cbeta_error
   before_action :log_action_start
   before_action :record_visit
   after_action  :log_action_end
@@ -168,6 +174,18 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  def handle_cbeta_error(e)
+    code = e.code.is_a?(Integer) && e.code.between?(400, 599) ? e.code : 500
+    logger.warn "CbetaError(#{code}): #{e.message}"
+
+    r = { error: { code:, message: e.message } }
+    if params.key? 'callback'
+      render json: r, callback: params['callback'], content_type: 'application/javascript', status: code
+    else
+      render json: r, status: code
+    end
+  end
 
   def handle_request_timeout(e)
     logger.warn(e.class)
