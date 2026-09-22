@@ -27,6 +27,9 @@ module Xml4docxSupport
     'ranj' => 'Ranjana'
   }.freeze
 
+  # 這些特殊字型沒有數字 glyph, 註號若套上去, 在 MS Word 會變成空白
+  FONTS_WITHOUT_DIGITS = ['CBETA Supplement', 'Siddam', 'Ranjana'].freeze
+
   private
 
   # --- style ---
@@ -185,16 +188,26 @@ module Xml4docxSupport
   # --- 註腳 ---
 
   # CBETA 的註腳錨點放在被注內容之前, 注標的字級/字型跟著後面的內容走,
-  # 否則夾注小字的注標會被段落標題的大字撐大
+  # 否則夾注小字的注標會被段落標題的大字撐大。
+  # 例外: 後面的內容若是無數字 glyph 的特殊字型, 字型就不跟著走, 只跟字級
   def footnote_reference_style(node, inherited_style)
     sibling = node.next_sibling
     sibling = sibling.next_sibling while skip_before_footnote_reference?(sibling)
     return inherited_style unless sibling&.element?
 
     style = merge_styles(inherited_style, style_for(sibling))
-    return style unless sibling.name == 'font' && sibling['name'].present?
+    if sibling.name == 'font' && sibling['name'].present?
+      style = merge_styles(style, 'font-family' => font_name_for(sibling['name']))
+    end
 
-    merge_styles(style, 'font-family' => font_name_for(sibling['name']))
+    drop_digitless_font(style, inherited_style)
+  end
+
+  # 註腳錨點不會出現在 <font> 裡面, inherited_style 的字型一定有數字, 可以安心退回去
+  def drop_digitless_font(style, inherited_style)
+    return style unless FONTS_WITHOUT_DIGITS.include?(style['font-family'])
+
+    merge_styles(style.except('font-family'), inherited_style.slice('font-family'))
   end
 
   # 找被注內容時跳過 comment、空白、換行, 以及連續的註腳

@@ -244,6 +244,22 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "後面是無數字 glyph 的字型時, 注標只跟字級不跟字型" do
+    Dir.mktmpdir do |dir|
+      body = '<p style="font-size:24"><footnote>註一</footnote>' \
+             '<font name="sidd" style="font-size:10">先</font></p>'
+      path = write_xml(dir, body)
+
+      with_odt(path) do |odt, _warnings|
+        content = Nokogiri::XML(odt['content.xml'])
+        assert_equal '10pt', footnote_citation_size(content, 'ftn1')
+        assert_nil footnote_citation_font(content, 'ftn1')
+        # 被注的內容本身還是要用 Siddam
+        assert_includes odt['content.xml'], 'style:font-family-asian="Siddam"'
+      end
+    end
+  end
+
   private
 
   # 轉出 odt 並把 zip 內容讀成 { part 名稱 => 內容 }
@@ -301,10 +317,18 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
 
   # 包住註腳的 text:span 所用的字級
   def footnote_citation_size(content, note_id)
+    footnote_citation_properties(content, note_id).attribute('font-size').value
+  end
+
+  # 包住註腳的 text:span 所用的字型, 沒指定時回 nil
+  def footnote_citation_font(content, note_id)
+    footnote_citation_properties(content, note_id).attribute('font-family-asian')&.value
+  end
+
+  def footnote_citation_properties(content, note_id)
     span = content.at_xpath("//text:span[text:note[@text:id='#{note_id}']]")
     name = span.attribute('style-name').value
-    style = content.at_xpath("//style:style[@style:name='#{name}']/style:text-properties")
-    style.attribute('font-size').value
+    content.at_xpath("//style:style[@style:name='#{name}']/style:text-properties")
   end
 
   # 只要 header 正確就能讀出尺寸, 測縮放不需要完整的圖片資料
