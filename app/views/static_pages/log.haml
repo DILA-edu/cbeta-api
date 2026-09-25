@@ -60,24 +60,24 @@
 %h2 2026-04 Version 4.0.0
 %ul
   %li 內容更新至 CBETA 2026.R1。
-  %li 
-    電子書取消 MOBI 格式，新增 ODT 格式： 
+  %li
+    電子書取消 MOBI 格式，新增 ODT 格式：
     =link_to_url '/static_pages/download_ebooks'
-  %li 
+  %li
     原 Export 下多項功能 改至 Download 區：
     =link_to_url '/static_pages/download'
-  %li 
+  %li
     原 Export 下「各朝代 佛典數量」改至「統計報表」：
     =link_to_url '/static_pages/report'
 
 %h2 2025-12 Version 3.6.3
 %ul
   %li 內容更新至 CBETA 2025.R3。
-  %li 
-    新功能 佛典內容修訂紀錄： 
+  %li
+    新功能 佛典內容修訂紀錄：
     =link_to_url '/static_pages/changes'
-  %li 
-    電子書新增 DOCX 格式： 
+  %li
+    電子書新增 DOCX 格式：
     =link_to_url '/static_pages/download_ebooks#docx'
 
 %h2 2025-08 Version 3.5.2
@@ -90,7 +90,7 @@
   %li 「近義詞」加入 教育部《異形詞辨析手冊》所列「異形詞」。
   %li 缺字處理 擴大 Unicode 採用範圍。之前是 Unicode 10 以內才採用，現在是有 Unicode 就採用。
   %li 下載電子書檔名不含季號，例如 cbeta-epub-2025r1.zip 改為 cbeta-epub.zip
-  %li 
+  %li
     統計報表 新增「新式標點」統計:
     =link_to_url '/report'
   %li /toc?work=xxx 改為 /works/toc?work=xxx
@@ -102,7 +102,7 @@
   %li
     提供 全集成統計數字：
     =link_to_url '/report'
-  %li 
+  %li
     連 藏經掃描圖，新增 data-canon 屬性，屬性值為藏經 ID，詳見：
     =link_to_url '/static_pages/html_for_ui#facsimile'
 
@@ -112,7 +112,7 @@
 
 %h2 2024-06 Version 3.2.0
 %ul
-  %li 
+  %li
     大正藏 連 高麗藏掃描圖，詳見：
     =link_to_url '/static_pages/html_for_ui#facsimile'
 
@@ -122,23 +122,23 @@
   %li Search engine 改用 Manticore 6.2.12
   %li endpoint /sphinx 改為 /search，舊網址預定 2025 起停用。
   %li endpoint /kwic3/juan 改為 /search/kwic，舊網址預定 2025 起停用。
-  %li 
+  %li
     新增 /search/similar 相似搜尋功能，詳見：
     =link_to_url '/static_pages/search_similar'
-  %li 
-    ='/search/notes'
+  %li
+    \/search/notes
     %ul
       %li 含夾注
       %li around 參數決定回傳 highlight 欄位關鍵字前後字數
       %li 回傳 note_place 欄位
   %li
-    ='/search/variants 異體字查詢'
+    \/search/variants 異體字查詢
     %ul
       %li 如果「搜尋字串」中含「組字式」，會列出該缺字的：Unicode、Big5 通用字、Unicode 通用字。
-  %li 
+  %li
     文本 HTML
     %ul
-      %li 
+      %li
         新增 CBETA 內部連結，詳見：
         =link_to_url '/static_pages/html_for_ui#links'
       %li
@@ -147,7 +147,7 @@
 
 %h2 2023-12 Version 2.2.1
 %ul
-  %li 
+  %li
     「經目搜尋」新增回傳 linehead (行首資訊) ，例
     =link_to_url '/toc?q=譬喻'
 
@@ -161,12 +161,12 @@
 
 %h2 2023-08 Version 2.0.0
 %ul
-  %li 
+  %li
     Sphinx 全文 index 分兩套：含夾注、不含夾注 (預設含夾注)。
     %ul
       %li /sphinx/notes: 取消 note_place 參數
       %li /sphinx/all_in_one: 新增 note 參數，指定是否含夾注
-  %li 
+  %li
     KWIC index 分兩套：含夾注、不含夾注。
     %ul
       %li /kwic3/juan: 新增 note 參數，指定是否含夾注
@@ -188,17 +188,17 @@
 
 %h2 Version 1.3.0
 %ul
-  %li 
+  %li
     目錄：取消「分冊目錄」，比照 CBReader 提供「原書目錄」。詳見：
     =link_to_url '/static_pages/catalog'
-  %li 
+  %li
     佛典內文 HTML footnotes 原用 &lt;span class='footnote'>，因可能含多段落（例 B35n0195_p0798a03），改用 &lt;div class='footnote'>。
-  %li 
+  %li
     佛典資訊 成立地點 places 欄位多值，例：
     =link_to_url '/works?work=T1501'
   %li 存取紀錄可按 Referer 輸出報表。
-  %li 
-    Fix bug: 
+  %li
+    Fix bug:
     =link_to_url '/juans/goto?canon=LC&work=1'
 
 %h2 2022-11 Version 1.2.31
@@ -216,17 +216,17 @@
   %li 穩定版網址改為 https://cbdata.dila.edu.tw/stable, 舊網址 https://cbdata.dila.edu.tw/v1.2 將於 2023 Q1 起停用。
   %li 內容更新至 CBETA 2022 Q4
   %li KWIC 只限單卷。
-  %li 
+  %li
     校注
     %ul
-      %li 
+      %li
         星號校注新增流水號，詳見：
         =link_to_url '/static_pages/html_for_ui#note_star'
       %li
         提供資訊可用來連結至「CBETA 校訂考證資料庫」，見：
         =link_to_url '/static_pages/html_for_ui#note_research'
   %li Metadata for TextRef
-  %li 
+  %li
     佛典相關資訊（作譯者、年代等）改由
     =link_to "DILA Authority", "https://github.com/DILA-edu/Authority-Databases/tree/master/authority_catalog"
     取得。
@@ -236,20 +236,20 @@
     %ul
       %li Sphinx all_in_one 參數 canon 允許多值。
       %li sphinx/variants 異體字查詢，允許參數 scope=title，於經名中存在的才回傳。方便前端提供「搜尋經名」功能時可提供「異體字建議」。
-  %li 
+  %li
     存取紀錄
     %ul
       %li 新增 Referer 欄位，建議呼叫 API 時在 HTTP request header 設定 Referer，以便存取分析。
       %li 可匯出 CSV.
-  
+
 %h2 2022-07 Version 1.2.28
 %ul
   %li 內容更新至 CBETA 2022 Q3
   %li
     字數統計規則更新，並加說明:
     =link_to_url '/static_pages/word_count'
-  %li 
-    Download 純文字版佛典 => 一部佛典一個 zip 檔：新增目次，例如 
+  %li
+    Download 純文字版佛典 => 一部佛典一個 zip 檔：新增目次，例如
     =link_to_url '/download/text/T0001.txt.zip', 'T0001.txt.zip'
     裡面的 T0001-toc.txt
 
@@ -265,7 +265,7 @@
   %li
     Q1 新增《太虛大書全書》，Catalog 新增以下功能：
     %ul
-      %li 
+      %li
         各藏部別目錄：
         =link_to_url '/catalog_entry?q=bu'
       %li
@@ -275,4 +275,4 @@
     =link_to_url '/static_pages/catalog'
 
 %h2 更舊的紀錄
-%p=link_to '2017-2021', { controller: 'static_pages', action: 'log_old'}
+%p= link_to '2017-2021', static_pages_log_old_path
