@@ -1,43 +1,121 @@
 %h1 更新紀錄
 
-%h2 2026-09 Version 5.2.0
+%h2 目次
+%ul
+  %li=link_to 'Version 5.x（2026-09 起）', '#v5'
+  %li=link_to 'Version 4.x（2026-04 ~ 2026-09）', '#v4'
+  %li=link_to 'Version 3.x（2024-04 ~ 2025-12）', '#v3'
+  %li=link_to 'Version 2.x（2023-08 ~ 2023-12）', '#v2'
+  %li=link_to 'Version 1.x（2022-01 ~ 2023-07）', '#v1'
+  %li=link_to '更舊的紀錄（2017 ~ 2021）', static_pages_log_old_path
+
+%h2#v5 Version 5.x
+
+%h3 2026-09-22 Version 5.7.2
+%ul
+  %li
+    修正 DOCX、ODT 電子書：註號後文若是悉曇字、蘭札字等特殊字型，
+    註號在 MS Word 會顯示成空白。
+
+%h3 2026-09-18 Version 5.7.1
+%ul
+  %li
+    全文檢索的查詢字串 (q) 長度上限由 80 字降為 40 字，超過會回傳錯誤：
+    =link_to_url '/static_pages/search'
+  %li /search/toc 未帶 q 或 q 為空字串時，改為回傳錯誤訊息。
+  %li
+    參數錯誤等情況改依錯誤性質回傳對應的 HTTP status（例如 400），
+    不再一律回傳 500。/search/kwic、/search/toc 以外的 /search 系列維持原本的回傳方式。
+  %li /search/kwic 查詢逾時改為回傳 HTTP 504，原本回傳 200 與錯誤訊息。
+
+%h3 2026-09-16 Version 5.7.0
+%ul
+  %li
+    \/search/similar 第一階段取候選時，加入「詞的相鄰程度」重新排序，
+    真正相似的句子較不會被漏掉。
+  %li
+    \/search/similar 的 k 參數預設值由 2000 改為 1000，速度較快，結果依然完整。
+  %li
+    \/search/similar 同一段經文可能改由相鄰的區塊代表，
+    linehead 與 highlight 的起訖位置會與先前不同，內容相同。
+
+%h3 2026-09-15 Version 5.6.1
+%ul
+  %li 全文檢索效能改善，/search/variants 異體字建議的回應時間大幅縮短。
+
+%h3 2026-09-15 Version 5.6.0
+%ul
+  %li
+    DOCX、ODT 全套 zip 內附經號對照表 filelist_季別.txt，格式與 EPUB、PDF 版相同：
+    =link_to_url '/static_pages/download_ebooks#docx'
+  %li
+    DOCX、ODT 全套 zip 的最上層資料夾由 docx/、odt/ 改為
+    cbeta_docx_季別/、cbeta_odt_季別/（例如 cbeta_docx_2026r2/），
+    與 EPUB、PDF 的慣例一致。寫死舊資料夾名稱的下載程式需要調整。
+
+%h3 2026-09-14 Version 5.5.2
+%ul
+  %li
+    修正 DOCX、ODT 電子書：跨冊佛典（例如 T0220《大般若波羅蜜多經》）
+    每一卷的內文標題都誤掛上最末冊的卷號範圍。
+
+%h3 2026-09-12 Version 5.5.1
+%ul
+  %li 修正 /search/notes 使用 Exclude 語法時發生錯誤。
+
+%h3 2026-09-12 Version 5.5.0
+%ul
+  %li 含 Exclude 語法的全文檢索大幅加速，例如 "菩薩" -"諸菩薩"。
+
+%h3 2026-09-11 Version 5.4.0
+%ul
+  %li /search/similar 第二階段 Smith-Waterman 比對加速，結果不變。
+  %li /search/variants 異體字建議加速。
+
+%h3 2026-09-11 Version 5.3.0
+%ul
+  %li
+    API 存取次數限制改以實際連線的 IP 計算，不再採信 request 自帶的
+    X-Forwarded-For header。
+
+%h3 2026-09-10 Version 5.2.0
 %ul
   %li /search/similar 也改用 Elasticsearch，全文檢索後端全面由 Manticore 改為 Elasticsearch。
   %li
-    /search/similar 第一階段取候選的相關度演算法隨之改變，
+    \/search/similar 第一階段取候選的相關度演算法隨之改變，
     進入 Smith-Waterman 比對的候選不完全相同，結果順序與筆數與先前略有出入。
   %li
     修正 /search/similar：比對區域從區塊開頭起算或延伸到區塊結尾時，
     原本一律捨棄，程式裡「卷首、卷尾除外」的例外從未生效；現已修正。
     （實測 6 個範例查詢共 625 筆命中都沒落在這個情況，實務影響很小。）
   %li
-    /search/similar 的 k 參數（第一階段取回的候選筆數）預設由 500 改為 2000，
+    \/search/similar 的 k 參數（第一階段取回的候選筆數）預設由 500 改為 2000，
     結果比先前完整；k 必須大於 0，否則回傳 400 錯誤。
   %li /search/similar 的結果不再回傳僅供除錯用的 SQL 欄位。
 
-%h2 2026-09 Version 5.1.0
+%h3 2026-09-10 Version 5.1.0
 %ul
   %li /search/notes 與 /search/title 也改用 Elasticsearch。
   %li
-    /search/notes 的 NEAR 語法可以串接多個詞，例如
+    \/search/notes 的 NEAR 語法可以串接多個詞，例如
     %code "老子" NEAR/7 "道" NEAR/3 "經"
   %li /search/notes 不支援的查詢語法（括號分組、~n、&）改為回傳 400 錯誤。
   %li /search/notes 的 NEAR 查詢不再回傳 total_term_hits，只回傳 num_found。
   %li
-    /search/notes 的 NEAR 距離判定改為「兩詞相隔不超過 n 個字」，與說明文件
+    \/search/notes 的 NEAR 距離判定改為「兩詞相隔不超過 n 個字」，與說明文件
     及 /search/all_in_one、/search/kwic 一致。舊版少算一個字，
     因此結果會比舊版略多。
   %li /search/notes 的結果不再回傳僅供除錯用的 SQL 欄位。
   %li
-    /search/title 新增支援「限制搜尋範圍」的參數（藏經、部類、作譯者、朝代、年代），
+    \/search/title 新增支援「限制搜尋範圍」的參數（藏經、部類、作譯者、朝代、年代），
     原本傳這些參數會發生錯誤：
     =link_to_url '/static_pages/search_filter'
   %li /search/title 的相關度排序演算法改變，結果順序與先前不同。
   %li
-    /search/variants 多支援 102 個異體字（CJK 擴充 G/H、部首補充、圈號符號等），
+    \/search/variants 多支援 102 個異體字（CJK 擴充 G/H、部首補充、圈號符號等），
     這些字舊版搜尋引擎無法索引，因此以往不會出現在建議清單裡。
 
-%h2 2026-09 Version 5.0.0
+%h3 2026-09-08 Version 5.0.0
 %ul
   %li Search engine 由 Manticore 改用 Elasticsearch 9.4。
   %li
@@ -45,7 +123,7 @@
     原本查詢字串已含雙引號時語法會失效（例如 q="法鼓" 會被當成「法」AND「鼓」），
     現在正確視為一個詞。/search/all_in_one 不受影響。
   %li
-    /search 與 /search/extended 新增支援 NEAR 與 Exclude 語法，詳見：
+    \/search 與 /search/extended 新增支援 NEAR 與 Exclude 語法，詳見：
     =link_to_url '/static_pages/search_extended'
   %li 排序值相同時，一律再以 藏經、佛典編號、卷號 決定先後，分頁結果因此是穩定的。
   %li 不支援的查詢語法（括號分組、~n、&）改為回傳 400 錯誤，不再由搜尋引擎自行解讀。
@@ -53,11 +131,122 @@
   %li 搜尋結果不再回傳僅供除錯用的 SQL 欄位。
   %li start 參數的上限改為 start + rows 不得超過 100,000。
 
-%h2 2026-07
+%h2#v4 Version 4.x
+
+%h3 2026-09-08 Version 4.8.0
+%ul
+  %li 移除 /v1/tools/* 所有 endpoints，以及描述它們的 /openapi.json 與 /docs 文件頁。
+
+%h3 2026-09-07 Version 4.7.1
+%ul
+  %li 網站各頁加上 API key 的登入入口；產生 key 後可一鍵複製。
+  %li
+    DOCX、ODT 電子書修正：
+    %ul
+      %li MS Word 開啟時不再顯示「相容模式」。
+      %li 西文改用 Times New Roman，不再套用中文字型導致字母間距被撐開。
+      %li 外文字下方不再出現拼字、文法檢查的波浪線。
+      %li 字型名稱改為實際字型名稱，不再顯示 cbeta 等簡稱。
+      %li 註號字級跟著被注的內容，不再被標題段落撐大。
+      %li 移除「志工轉換」的製作說明，DOCX 已改由本站直接產生。
+
+%h3 2026-08-28 Version 4.6.3
+%ul
+  %li
+    修正 DOCX、ODT 電子書：原書 XML 的排版空白不再混入內文
+    （例如校勘後多出空白、詞句被空白切斷），並移除沒有內容的清單。
+
+%h3 2026-08-28 Version 4.6.2
+%ul
+  %li DOCX、ODT 電子書補上缺少的樣式定義。
+
+%h3 2026-08-22 Version 4.6.1
+%ul
+  %li
+    \/works 以經號範圍查詢時（work_start、work_end），canon 與經號格式不正確會回傳 400 錯誤，
+    不再靜默回傳錯誤範圍的資料。
+
+%h3 2026-08-21 Version 4.7.0
+%ul
+  %li
+    新增 API key：以 Google 或 GitHub 帳號登入即可申請。目前為過渡期，不帶 key 仍可使用。詳見：
+    =link_to_url '/static_pages/api_key'
+  %li API 存取次數限制：未帶 key 每分鐘 60 次（依 IP 計算），帶 key 每分鐘 300 次（依帳號計算）。
+  %li 流量報表限管理者瀏覽；使用者可在帳號頁查看自己的使用統計。
+  %li 移除 /mcp endpoint。
+
+%h3 2026-08-17 Version 4.6.0
+%ul
+  %li
+    新增 DOCX 全套下載 cbeta-docx.zip：
+    =link_to_url '/static_pages/download_ebooks#docx'
+
+%h3 2026-08-17 Version 4.5.0
+%ul
+  %li
+    新增 ODT 全套下載 cbeta-odt.zip：
+    =link_to_url '/static_pages/download_ebooks#odt'
+
+%h3 2026-08-17 Version 4.4.0
+%ul
+  %li ODT 電子書改由本站直接產生。
+
+%h3 2026-08-17 Version 4.3.0
+%ul
+  %li DOCX 電子書改由本站直接產生，原本由志工轉換。
+
+%h3 2026-08-13 Version 4.2.0
+%ul
+  %li
+    \/changes 不再回傳 id 欄位：它只是資料庫的流水號，重新匯入就可能變動，
+    不能當作永久 ID 使用：
+    =link_to_url '/static_pages/changes'
+
+%h3 2026-08-11 Version 4.1.6
+%ul
+  %li
+    目錄 (catalog_entry) 支援指向佛典中特定位置的節點，
+    例如 T0262《妙法蓮華經》卷7〈觀世音菩薩普門品〉。
+
+%h3 2026-08-10 Version 4.1.5
+%ul
+  %li
+    \/works 的 work 參數接受經號含小寫字母的佛典（例如 Ba001、ZWa073），
+    原本部分會被誤判為格式錯誤。
+
+%h3 2026-08-10 Version 4.1.4
+%ul
+  %li 修正目錄 (catalog_entry) 把部分佛典節點誤判為藏經節點，導致該節點與其下層缺漏。
+
+%h3 2026-08-06 Version 4.1.3
+%ul
+  %li 修正目錄 (catalog_entry) 漏掉單一佛典的節點，導致查詢下層時 num_found 為 0。
+
+%h3 2026-08-03 Version 4.1.2
+%ul
+  %li 修正 DOCX 電子書：偈頌中的夾注補上小括號。
+
+%h3 2026-07-30
 %ul
   %li 內容更新至 CBETA 2026.R2。
 
-%h2 2026-04 Version 4.0.0
+%h3 2026-07-16 Version 4.1.1
+%ul
+  %li 修正佛典 HTML 中人名、地名標記的位置，遇到標點、空格、缺字或「□」時不再偏移。
+  %li 新增 API 文件頁 /docs（已於 4.8.0 移除）。
+
+%h3 2026-06-30 Version 4.1.0
+%ul
+  %li
+    全文檢索的查詢字串 (q) 長度上限 80 字，超過會回傳錯誤（/search/sc 為 50 字）。
+  %li 移除舊版 Sphinx 說明頁。
+  %li
+    新增 /v1/tools/* 與 /mcp，供 AI 工具查詢 CBETA
+    （/mcp 已於 4.7.0 移除，/v1/tools/* 已於 4.8.0 移除）。
+  %li /search/variants 異體字建議加速。
+  %li 修正下載版 HTML 的偈頌對齊，並調整手機版面。
+
+%h3 2026-04-27 Version 4.0.0
 %ul
   %li 內容更新至 CBETA 2026.R1。
   %li
@@ -70,7 +259,9 @@
     原 Export 下「各朝代 佛典數量」改至「統計報表」：
     =link_to_url '/static_pages/report'
 
-%h2 2025-12 Version 3.6.3
+%h2#v3 Version 3.x
+
+%h3 2025-12 Version 3.6.3
 %ul
   %li 內容更新至 CBETA 2025.R3。
   %li
@@ -80,11 +271,11 @@
     電子書新增 DOCX 格式：
     =link_to_url '/static_pages/download_ebooks#docx'
 
-%h2 2025-08 Version 3.5.2
+%h3 2025-08 Version 3.5.2
 %ul
   %li 內容更新至 CBETA 2025.R2。
 
-%h2 2025-04 Version 3.5.0
+%h3 2025-04 Version 3.5.0
 %ul
   %li 內容更新至 CBETA 2025.R1。
   %li 「近義詞」加入 教育部《異形詞辨析手冊》所列「異形詞」。
@@ -96,7 +287,7 @@
   %li /toc?work=xxx 改為 /works/toc?work=xxx
   %li 停用 Sphinx, KWIC3
 
-%h2 2024-11 Version 3.4.7
+%h3 2024-11 Version 3.4.7
 %ul
   %li 內容更新至 CBETA 2024.R3。
   %li
@@ -106,17 +297,17 @@
     連 藏經掃描圖，新增 data-canon 屬性，屬性值為藏經 ID，詳見：
     =link_to_url '/static_pages/html_for_ui#facsimile'
 
-%h2 2024-07 Version 3.3.0
+%h3 2024-07 Version 3.3.0
 %ul
   %li 內容更新至 CBETA 2024.R2。
 
-%h2 2024-06 Version 3.2.0
+%h3 2024-06 Version 3.2.0
 %ul
   %li
     大正藏 連 高麗藏掃描圖，詳見：
     =link_to_url '/static_pages/html_for_ui#facsimile'
 
-%h2 2024-04 Version 3.0.0
+%h3 2024-04 Version 3.0.0
 %ul
   %li 內容更新至 CBETA 2024.R1。
   %li Search engine 改用 Manticore 6.2.12
@@ -145,21 +336,23 @@
         擴增 缺字資訊，詳見：
         =link_to_url '/static_pages/html_for_ui#gaiji'
 
-%h2 2023-12 Version 2.2.1
+%h2#v2 Version 2.x
+
+%h3 2023-12 Version 2.2.1
 %ul
   %li
     「經目搜尋」新增回傳 linehead (行首資訊) ，例
     =link_to_url '/toc?q=譬喻'
 
-%h2 2023-11 Version 2.2.0
+%h3 2023-11 Version 2.2.0
 %ul
   %li 內容更新至 CBETA 2023 Q4。
 
-%h2 2023-11 Version 2.1.0
+%h3 2023-11 Version 2.1.0
 %ul
   %li Sphinx title 搜尋 改為模糊搜尋，至少3個字符合。
 
-%h2 2023-08 Version 2.0.0
+%h3 2023-08 Version 2.0.0
 %ul
   %li
     Sphinx 全文 index 分兩套：含夾注、不含夾注 (預設含夾注)。
@@ -172,21 +365,23 @@
       %li /kwic3/juan: 新增 note 參數，指定是否含夾注
   %li Sphinx、KWIC 不區分大小寫。
 
-%h2 2023-07 Version 1.3.3
+%h2#v1 Version 1.x
+
+%h3 2023-07 Version 1.3.3
 %ul
   %li 內容更新至 CBETA 2023 Q3。
   %li new canon: CC
 
-%h2 2023-07 Version 1.3.2
+%h3 2023-07 Version 1.3.2
 %ul
   %li /juans/goto，回傳欄位 增加 linehead
 
-%h2 2023-02 Version 1.3.1
+%h3 2023-02 Version 1.3.1
 %ul
   %li 內容更新至 CBETA 2023 Q1。
   %li 全文檢索 Sphinx, KWIC 接受 單引號、雙引號、半形減號（須 escape）。
 
-%h2 Version 1.3.0
+%h3 Version 1.3.0
 %ul
   %li
     目錄：取消「分冊目錄」，比照 CBReader 提供「原書目錄」。詳見：
@@ -201,17 +396,17 @@
     Fix bug:
     =link_to_url '/juans/goto?canon=LC&work=1'
 
-%h2 2022-11 Version 1.2.31
+%h3 2022-11 Version 1.2.31
 %ul
   %li 存取紀錄若無 Referer，則記錄 IP。
   %li
     Fix bugs: 存取紀錄匯出 CSV
 
-%h2 2022-11 Version 1.2.30
+%h3 2022-11 Version 1.2.30
 %ul
   %li Referer 來自 *.cn 的屏蔽 TX, Y
 
-%h2 2022-10 Version 1.2.29
+%h3 2022-10 Version 1.2.29
 %ul
   %li 穩定版網址改為 https://cbdata.dila.edu.tw/stable, 舊網址 https://cbdata.dila.edu.tw/v1.2 將於 2023 Q1 起停用。
   %li 內容更新至 CBETA 2022 Q4
@@ -242,7 +437,7 @@
       %li 新增 Referer 欄位，建議呼叫 API 時在 HTTP request header 設定 Referer，以便存取分析。
       %li 可匯出 CSV.
 
-%h2 2022-07 Version 1.2.28
+%h3 2022-07 Version 1.2.28
 %ul
   %li 內容更新至 CBETA 2022 Q3
   %li
@@ -253,7 +448,7 @@
     =link_to_url '/download/text/T0001.txt.zip', 'T0001.txt.zip'
     裡面的 T0001-toc.txt
 
-%h2 2022-01 Version 1.2.27
+%h3 2022-01 Version 1.2.27
 %ul
   %li
     以前的版本，如果單詞被夾注切斷，會搜不到。例如：搜尋「差別」，搜不到「差(音雌)別」。
