@@ -27,10 +27,31 @@ class ImportVars
 
     puts "Variant records: #{number_with_delimiter(Variant.count)}"
     puts "total vars: #{number_with_delimiter(@total)}"
+
+    clear_variants_cache
     puts ElapsedTime.label(t1)
   end
-  
+
   private
+
+  # search/variants 的結果會進 Rails.cache (見 SearchController#variants)，
+  # key 以季別開頭但不含異體字表版本，也沒有期限。
+  # 同一季中途更新異體字表時，不清掉的話會一直回傳舊結果。
+  # 比對 "variants" 而不寫死 `"action" => "variants"`，
+  # 以免 key 裡 params 的 inspect 格式隨 Ruby 版本改變就失效；
+  # 誤刪其他 action 的少數快取也無妨。
+  #
+  # 只處理 Redis (staging): pattern 是 Redis glob，其他 store 的 delete_matched
+  # 要 Regexp 或根本不支援 (memcached)；memory_store 則是各 process 各自一份，
+  # 從 rake 清不到 web server 的快取。
+  def clear_variants_cache
+    if Rails.cache.is_a?(ActiveSupport::Cache::RedisCacheStore)
+      puts "清除 search/variants 快取"
+      Rails.cache.delete_matched('*"variants"*')
+    else
+      puts "#{Rails.cache.class.name} 未自動清除，請自行清除 search/variants 快取".colorize(:red)
+    end
+  end
 
   def cbeta_pua(s)
     return s unless s.start_with?('CB')
