@@ -97,7 +97,6 @@ class P5aToHTMLForUI
     @juan = 0
     @lg_row_open = false
     @mod_notes = Set.new
-    @next_line_buf = +''
     @notes_mod = {}
     @notes_add = {}
     @note_star_count = Hash.new(0)
@@ -603,11 +602,6 @@ class P5aToHTMLForUI
     r << facsimile_anchor(e)
     r << e_lb_p(e)
 
-    unless @next_line_buf.empty?
-      r << @next_line_buf
-      @next_line_buf = +''
-    end
-
     @first_l_in_line = true
 
     r
@@ -740,11 +734,6 @@ class P5aToHTMLForUI
     
     node.content << traverse(e)
 
-    
-    unless @next_line_buf.empty?
-      raise "p 結束了，但 next_line_buf 不是空的, lb: #{@lb}".red
-    end
-
     @tt_table = false
     node.to_s + "\n"
   end
@@ -876,19 +865,12 @@ class P5aToHTMLForUI
 
     return r if tt['place'] == 'inline'
 
-    # 處理雙行對照
+    # 處理雙行對照 (cb:tt > cb:ttr > cb:t)
+    # 每個 ttr 是一行, 行與行之間的 lb 在 tt 裡面, 依文件順序輸出即可
     # <tt type="tr"> 也是 雙行對照
     @tt_table = true
-    i = e.xpath('../t').index(e)
-    case i
-    when 0
-      return r + '　'
-    when 1
-      @next_line_buf << r + '　'
-      return ''
-    else
-      return r
-    end
+    r += '　' if e.parent.name == 'ttr'
+    r
   end
 
   def e_tt(e, mode)
@@ -1080,9 +1062,16 @@ class P5aToHTMLForUI
     return '' if s.empty?
     return '' if e.parent.name == 'app'
 
+    # 雙行對照 (tt > ttr > t) 裡排版用的空白、換行
+    if s.strip.empty?
+      return '' if e.parent.name == 'ttr'
+      return '' if e.parent.name == 'tt' && e.parent.at_xpath('ttr')
+    end
+
     # cbeta xml 文字之間會有多餘的換行
     s.gsub!(/[\n\r]/, '')
-    
+    return '' if s.empty?
+
     text_size = @cbs.remove_puncs(s).size
     s = handle_chars(s, mode)
     return s if mode=='footnote'
@@ -1185,53 +1174,6 @@ class P5aToHTMLForUI
     File.exist? path
   end
 
-  # 雙行對照的最後 lb 要在 p 裡面
-  # 例： T18n0859_p0178a18
-  #   T18n0860_p0182c10 雙行對照的第二行，lb 在 div 外面
-  #   T18n0867_p0254b01 雙行對照的第二行 在下一頁
-  def move_lb_in_tt_table(doc)
-    doc.root.xpath('//p[tt]').each do |p|
-      tt = p.at_xpath('tt')
-      
-      # 只處理 悉漢雙行對照的 tt
-      if tt['place'] == 'inline'
-        || tt['rend'] == 'normal' 
-        || %w[app single-line].include?(tt['type'])
-        next
-      end
-
-      move_lb(p)
-    end
-  end
-
-  def move_lb(p)
-    # 如果 p 的最後一個 child 是 lb，就不處理了
-    return if p.last_element_child.name == 'lb'
-
-    node = p
-    while node = node.at_xpath('following::node()[1]')
-      if node.text?
-        if node.text.strip.empty?
-          p.add_child(node.remove)
-        else
-          return
-        end
-      elsif node.element?
-        case node.name
-        when 'lb'
-          p.add_child(node.remove)
-          return
-        when 'pb'
-          p.add_child(node.remove)
-        else
-          return
-        end
-      else
-        p.add_child(node.remove)
-      end
-    end
-  end
-
   def open_xml(fn)
     s = File.read(fn)
 
@@ -1244,8 +1186,6 @@ class P5aToHTMLForUI
 
     doc = Nokogiri::XML(s)
     doc.remove_namespaces!()
-
-    move_lb_in_tt_table(doc)
     doc
   end
   

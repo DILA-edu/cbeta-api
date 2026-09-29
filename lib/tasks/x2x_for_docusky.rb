@@ -200,10 +200,6 @@ class P5aToDocusky
       r << "</div>\n"
       @lg_row_open = false
     end
-    unless @next_line_buf.empty?
-      r << @next_line_buf
-      @next_line_buf = ''
-    end
     
     r + %(<Lb Key="#{@lb}"/>)
   end
@@ -315,17 +311,10 @@ class P5aToDocusky
       return r if tt['rend'] == 'normal'
     end
 
-    # 處理雙行對照
-    i = e.xpath('../t').index(e)
-    case i
-    when 0
-      return r + '　'
-    when 1
-      @next_line_buf << r + '　'
-      return ''
-    else
-      return r
-    end
+    # 處理雙行對照 (cb:tt > cb:ttr > cb:t)
+    # 每個 ttr 是一行, 行與行之間的 lb 在 tt 裡面, 依文件順序輸出即可
+    r += '　' if e.parent.name == 'ttr'
+    r
   end
 
   def e_term(e)
@@ -427,7 +416,6 @@ class P5aToDocusky
     @juan = 0
     @lg_row_open = false
     @mod_notes = Set.new
-    @next_line_buf = ''
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
     
@@ -460,6 +448,12 @@ class P5aToDocusky
     s = e.content().chomp
     return '' if s.empty?
     return '' if e.parent.name == 'app'
+
+    # 雙行對照 (tt > ttr > t) 裡排版用的空白、換行
+    if s.strip.empty?
+      return '' if e.parent.name == 'ttr'
+      return '' if e.parent.name == 'tt' && e.parent.at_xpath('ttr')
+    end
 
     # cbeta xml 文字之間會有多餘的換行
     r = s.gsub(/[\n\r]/, '')

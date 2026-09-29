@@ -151,12 +151,14 @@ module SearchXml
     def e_lb(e)
       return '' if e['type'] == 'old'
 
-      r = ''
-      unless @next_line_buf.empty?
-        r << @next_line_buf + "\n"
-        @next_line_buf = ''
-      end
-      r
+      # 雙行對照 (tt > ttr) 列與列之間的 lb
+      return "\n" if tt_rows?(e.parent)
+
+      ''
+    end
+
+    def tt_rows?(e)
+      e&.name == 'tt' && !e.at_xpath('ttr').nil?
     end
 
     def e_milestone(e)
@@ -205,17 +207,10 @@ module SearchXml
         return r if tt['rend'] == 'normal'
       end
 
-      # 處理雙行對照
-      i = e.xpath('../t').index(e)
-      case i
-      when 0
-        r + '　'
-      when 1
-        @next_line_buf << r + '　'
-        ''
-      else
-        r
-      end
+      # 處理雙行對照 (cb:tt > cb:ttr > cb:t)
+      # 每個 ttr 是一行, 行與行之間的 lb 在 tt 裡面, 依文件順序輸出即可
+      r += '　' if e.parent.name == 'ttr'
+      r
     end
 
     def e_term(e)
@@ -241,7 +236,10 @@ module SearchXml
     end
 
     def e_tt(e)
-      traverse(e)
+      r = traverse(e)
+      # 雙行對照最後一列之後換行; tt 是段落最後一個元素時, 由段落換行
+      r << "\n" if tt_rows?(e) && !e.next_element.nil?
+      r
     end
 
     def handle_canon(c)
@@ -289,7 +287,6 @@ module SearchXml
       @juan = 0
       @lg_row_open = false
       @mod_notes = Set.new
-      @next_line_buf = ''
       @open_divs = []
       @sutra_no = File.basename(xml_fn, '.xml')
 
@@ -326,6 +323,12 @@ module SearchXml
       s = e.content().chomp
       return '' if s.empty?
       return '' if e.parent.name == 'app'
+
+      # 雙行對照 (tt > ttr > t) 裡排版用的空白、換行
+      if s.strip.empty?
+        return '' if e.parent.name == 'ttr'
+        return '' if e.parent.name == 'tt' && e.parent.at_xpath('ttr')
+      end
 
       # cbeta xml 文字之間會有多餘的換行
       s.gsub(/[\n\r]/, '')

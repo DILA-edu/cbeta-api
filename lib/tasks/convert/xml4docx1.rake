@@ -101,7 +101,6 @@ class XMLForDocx1
 
   def before_action(doc)
     p_note_lg(doc)
-    p_tt_lb(doc)
     read_lem_cf(doc)
 
     folder = Rails.root.join('data', 'xml4docx0', @canon, @vol)
@@ -109,17 +108,6 @@ class XMLForDocx1
     fn = File.join(folder, "#{@v_work}.xml")
     File.write(fn, doc.to_xml)
     @log.puts "#{__LINE__} #{@v_work} before_action 結束"
-  end
-
-  def before_parse(xml_file_path)
-    xml = File.read(xml_file_path)
-
-    # </cb:tt></p></cb:div><lb/>
-    # => 
-    # </cb:tt><lb/></p></cb:div>
-    xml.gsub!(/<\/cb:tt>(<\/p>(?:<\/cb:div>)?\s*)(<lb [^>]+?\/>』?)/, '</cb:tt>\2\1')
-
-    xml
   end
 
   def convert_vol(vol)
@@ -213,8 +201,7 @@ class XMLForDocx1
     src = File.join(@xml_root, @canon, @vol, fn)
     @works[@work]["updated_at"] = cb_xml_updated_at(path: src)
 
-    xml = before_parse(src)
-    doc = Nokogiri::XML(xml)
+    doc = Nokogiri::XML(File.read(src))
     doc.remove_namespaces!
     init_juan_styles(doc)
 
@@ -237,7 +224,6 @@ class XMLForDocx1
 
     @div_level = 0
     @list_level = 0
-    @next_line_buf = +''
     @juan = 0
     @inline_note = [false]
     @in_lg = false
@@ -934,14 +920,72 @@ class XMLForDocx1
       return traverse(e, mode)
     end
 
-    r = traverse(e, mode)
-    r.sub!(/<lb\/>\n?\z/m, '')
+    # 雙行對照 (cb:tt > cb:ttr > cb:t)
+    # 每個 ttr 是一行, 各 ttr 的第 i 個 t 上下疊成表格的第 i 個 cell
+    rows = e.xpath('ttr')
+    cells = []
+    before_table = +''
+    after_table = +''
+    lbs = +''
+    e.children.each do |c|
+      if c.element? && c.name == 'ttr'
+        lead, tail = e_ttr(c, mode, cells, first_row: c == rows.first)
+        # 第一列 t 之前的東西 (例如「二曰」) 放在表格之前
+        before_table << lead
+        # 最後一列 t 之後的東西放在表格之後, 其他列的接在最後一個 cell
+        if c == rows.last
+          after_table << tail
+        else
+          (cells[-1] ||= +'') << tail
+        end
+      elsif c.text? && c.text.strip.empty?
+        next
+      else
+        # ttr 之間的 lb, pb: 放到表格之後
+        lbs << handle_node(c, mode)
+      end
+    end
 
-    <<~XML
+    cells = cells.map do |s|
+      s = s.sub(/<lb\/>\s*\z/, '')
+      "<cell>#{s}</cell>\n"
+    end
+
+    before_table + <<~XML + lbs + after_table
       <table rend='table_tt'>
-        <row><cell>#{r}</cell>\n</row>
+        <row>#{cells.join}</row>
       </table>
     XML
+  end
+
+  # 處理一個 ttr, 第 i 個 t 接到 cells[i]
+  # t 之前的東西 (文字、校注等) 接在該 t 之前; 但第一列第一個 t 之前的東西另外回傳
+  # 回傳 [第一列第一個 t 之前的東西, 最後一個 t 之後的東西]
+  def e_ttr(e, mode, cells, first_row:)
+    lead = +''
+    i = 0
+    buf = +''
+    e.children.each do |c|
+      if c.element? && c.name == 't'
+        cells[i] ||= +''
+        if first_row && i.zero?
+          lead = buf
+        else
+          cells[i] << buf
+        end
+        cells[i] << e_t(c, mode)
+        buf = +''
+        i += 1
+      elsif c.text? && c.text.strip.empty?
+        next
+      else
+        buf << handle_node(c, mode)
+      end
+    end
+    # 沒有 t 的列
+    return [buf, +''] if i.zero? && first_row
+
+    [lead, buf]
   end
 
   def e_unclear(e)
@@ -1134,24 +1178,6 @@ class XMLForDocx1
     r['rend'] = rends.join(' ') unless rends.empty?
     @log.puts "#{__LINE__} #{r.to_xml}"
     r
-  end
-
-  # T18n0859_p0178a08 tt 雙行對照
-  # p 結束了，但第二行的 lb 在 p 外面
-  # 把 lb 移到 p 裡面
-  def p_tt_lb(doc)
-    doc.root.xpath("//p/tt[last()]").each do |tt|
-      next if %w(app single-line).include? tt['type']
-      next if tt['rend'] == 'normal'
-      next if tt['place'] == 'inline'
-      next unless tt.next_element.nil?
-
-      p = tt.parent
-      while node = p.next_element
-        break unless %w[lb pb].include?(node.name)
-        p.add_child(node)
-      end
-    end
   end
 
   def read_authority_catalog

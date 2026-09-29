@@ -185,9 +185,17 @@ class P5aToTextForDownload
     traverse(e) + "\n"
   end
   
-  def e_lb(_e)
+  def e_lb(e)
     return "\n" if @lb_break.last
+
+    # 雙行對照 (tt > ttr) 列與列之間的 lb
+    return "\n" if tt_rows?(e.parent)
+
     ''
+  end
+
+  def tt_rows?(e)
+    e&.name == 'tt' && !e.at_xpath('ttr').nil?
   end
 
   def e_milestone(e)
@@ -244,17 +252,10 @@ class P5aToTextForDownload
       return r if tt['rend'] == 'normal'
     end
 
-    # 處理雙行對照
-    i = e.xpath('../t').index(e)
-    case i
-    when 0
-      return r + '　'
-    when 1
-      @next_line_buf << r + '　'
-      return ''
-    else
-      return r
-    end
+    # 處理雙行對照 (cb:tt > cb:ttr > cb:t)
+    # 每個 ttr 是一行, 行與行之間的 lb 在 tt 裡面, 依文件順序輸出即可
+    r += '　' if e.parent.name == 'ttr'
+    r
   end
 
   def e_term(e)
@@ -280,7 +281,10 @@ class P5aToTextForDownload
   end
 
   def e_tt(e)
-    traverse(e)
+    r = traverse(e)
+    # 雙行對照最後一列之後換行; tt 是段落最後一個元素時, 由段落換行
+    r << "\n" if tt_rows?(e) && !e.next_element.nil?
+    r
   end
 
   def e_unclear(e)
@@ -348,7 +352,6 @@ class P5aToTextForDownload
     @juan = 0
     @lb_break = [false]
     @lg_row_open = false
-    @next_line_buf = ''
     @open_divs = []
     @sutra_no = File.basename(xml_fn, ".xml")
     @updated_at = cb_xml_updated_at
@@ -369,6 +372,12 @@ class P5aToTextForDownload
     s = e.content().chomp
     return '' if s.empty?
     return '' if e.parent.name == 'app'
+
+    # 雙行對照 (tt > ttr > t) 裡排版用的空白、換行
+    if s.strip.empty?
+      return '' if e.parent.name == 'ttr'
+      return '' if e.parent.name == 'tt' && e.parent.at_xpath('ttr')
+    end
 
     # cbeta xml 文字之間會有多餘的換行
     s.gsub(/[\n\r]/, '')

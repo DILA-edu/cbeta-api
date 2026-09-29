@@ -103,7 +103,6 @@ class SearchXmlNotes
     @juan = 0
     @lg_row_open = false
     @mod_notes = Set.new
-    @next_line_buf = ''
     @notes_mod    = {}
     @notes_orig   = {}
     @notes_add    = {}
