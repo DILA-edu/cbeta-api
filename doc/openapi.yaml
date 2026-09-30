@@ -1288,6 +1288,208 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreatorExport'
 
+  /chinese_tools/sc2tc:
+    get:
+      operationId: chineseToolsSc2tc
+      summary: 簡體轉繁體
+      description: 以 OpenCC（s2tw）將簡體中文轉為繁體中文，回傳純文字。
+      tags: [tools]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要轉換的簡體中文。未指定時回傳空字串。
+          schema:
+            type: string
+          example: 简体转繁体
+      responses:
+        '200':
+          description: 轉換後的繁體中文。
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: 簡體轉繁體
+
+  /word_seg:
+    get:
+      operationId: wordSeg
+      summary: 自動分詞（純文字）
+      description: |
+        回傳以 `/` 分隔的分詞結果，例如 `/觀自在菩薩/`。
+        只有一個字時直接回傳原字。
+        建議改用回傳 JSON 的 `/word_seg2`。
+      tags: [tools]
+      parameters:
+        - name: t
+          in: query
+          required: true
+          description: 要分詞的文字。
+          schema:
+            type: string
+            minLength: 1
+          example: 觀自在菩薩
+      responses:
+        '200':
+          description: 以 `/` 分隔的分詞結果。
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: /觀自在菩薩/
+
+  /word_seg2:
+    get:
+      operationId: wordSeg2
+      summary: 自動分詞
+      tags: [tools]
+      parameters:
+        - name: payload
+          in: query
+          required: true
+          description: 要分詞的文字。
+          schema:
+            type: string
+            minLength: 1
+          example: 觀自在菩薩，行深般若波羅蜜多時。
+      responses:
+        '200':
+          description: 分詞結果；缺少 `payload` 等錯誤時同樣是 200，見 `WordSegError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/WordSegResult'
+                  - $ref: '#/components/schemas/WordSegError'
+
+  /textref/meta.csv:
+    get:
+      operationId: textrefMeta
+      summary: TextRef 登錄用的 metadata
+      description: |
+        提供 [TextRef](https://textref.org/) 登錄用的 metadata（CSV）。
+        副檔名 `.csv` 可省略。
+      tags: [tools]
+      responses:
+        '200':
+          description: 兩欄（Field, Value）的 CSV。
+          content:
+            text/csv:
+              schema:
+                type: string
+              example: |
+                Field,Value
+                MetaURL,https://cbdata.dila.edu.tw/stable/textref/meta.csv
+                DataURL,https://cbdata.dila.edu.tw/stable/textref/data.csv
+                ShortName,CBETA
+
+  /textref/data.csv:
+    get:
+      operationId: textrefData
+      summary: TextRef 登錄用的全部典籍書目
+      description: |
+        提供 [TextRef](https://textref.org/) 登錄用的全部典籍書目（CSV，以 attachment 下載）。
+        副檔名 `.csv` 可省略。欄位：primary_id（佛典編號）、title、dynasty、author、
+        edition（藏經名稱）、fulltext_read、fulltext_search、fulltext_download、image。
+      tags: [tools]
+      responses:
+        '200':
+          description: 每部典籍一列的 CSV。
+          content:
+            text/csv:
+              schema:
+                type: string
+              example: |
+                primary_id,title,dynasty,author,edition,fulltext_read,fulltext_search,fulltext_download,image
+                A1057,新譯大方廣佛華嚴經音義,唐,慧菀,趙城金藏,y,y,y,n
+
+  /api/collections:
+    get:
+      operationId: asiaCollections
+      summary: 藏經清單
+      description: 列出所有藏經，每部藏經為一個 collection。
+      tags: [asia-network]
+      responses:
+        '200':
+          description: 藏經清單。
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AsiaCollection'
+
+  /api/collections/{uuid}/resources:
+    get:
+      operationId: asiaCollectionResources
+      summary: 某部藏經的典籍清單
+      tags: [asia-network]
+      parameters:
+        - $ref: '#/components/parameters/asiaUuid'
+      responses:
+        '200':
+          description: 典籍清單，每部典籍為一個 resource。
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AsiaResource'
+
+  /api/resources/{uuid}/sections:
+    get:
+      operationId: asiaResourceSections
+      summary: 某部典籍的卷清單
+      tags: [asia-network]
+      parameters:
+        - $ref: '#/components/parameters/asiaUuid'
+      responses:
+        '200':
+          description: 卷清單，每一卷為一個 section。
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AsiaSection'
+
+  /api/sections/{uuid}:
+    get:
+      operationId: asiaSection
+      summary: 某一卷的資訊
+      description: |
+        回傳的 `uuid` 是該卷內容（content unit）的 uuid，與 `/api/sections/{uuid}/content_units`
+        回傳的 `uuid` 相同；`uri` 指向該卷的純文字檔。
+      tags: [asia-network]
+      parameters:
+        - $ref: '#/components/parameters/asiaUuid'
+      responses:
+        '200':
+          description: 卷的資訊。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsiaSection'
+
+  /api/sections/{uuid}/content_units:
+    get:
+      operationId: asiaSectionContentUnits
+      summary: 某一卷的內文
+      tags: [asia-network]
+      parameters:
+        - $ref: '#/components/parameters/asiaUuid'
+      responses:
+        '200':
+          description: 只有一筆的陣列，內含整卷純文字；找不到文字檔時為 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/AsiaContentUnit'
+                  - $ref: '#/components/schemas/LegacyError'
+
 components:
   parameters:
     callback:
@@ -1425,6 +1627,15 @@ components:
           value: T0001
         file:
           value: T01n0001
+
+    asiaUuid:
+      name: uuid
+      in: path
+      required: true
+      description: 由上一層 API 回傳的 `uuid`。
+      schema:
+        type: string
+        format: uuid
 
   schemas:
     AllInOneResult:
@@ -2736,3 +2947,101 @@ components:
           description: 出現在作譯者行的別名。
           items:
             type: string
+
+    WordSegResult:
+      type: object
+      additionalProperties: false
+      required: [segmented]
+      properties:
+        segmented:
+          type: array
+          description: 分詞結果，標點符號也各自成為一個元素。
+          items:
+            type: string
+          example: [觀自在菩薩, ，, 行, 深, 般若波羅蜜多, 時, 。]
+
+    WordSegError:
+      type: object
+      description: |
+        分詞的錯誤回應（HTTP 200）。缺少 `payload` 時 `code` 為 400；
+        分詞程式執行失敗時只有 `message`。
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [message]
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+              example: 缺少 payload 參數
+
+    AsiaCollection:
+      type: object
+      additionalProperties: false
+      required: [uuid, name, resourceCount]
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: 藏經 ID 與名稱。
+          example: A 趙城金藏
+        resourceCount:
+          type: integer
+          description: 典籍數。
+
+    AsiaResource:
+      type: object
+      additionalProperties: false
+      required: [uuid, name]
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: 佛典編號與題名。
+          example: M1540 大慧普覺禪師普說
+
+    AsiaSection:
+      type: object
+      additionalProperties: false
+      required: [uuid, title, parentUuid, uri, contentUnitCount]
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: M1540 大慧普覺禪師普說 第1卷
+        parentUuid:
+          type: 'null'
+        uri:
+          type: string
+          format: uri
+          description: |
+            卷清單裡是 CBETA Online 的閱讀網址；`/api/sections/{uuid}` 裡是該卷純文字檔的網址。
+          example: http://cbetaonline.dila.edu.tw/M1540_001
+        contentUnitCount:
+          type: integer
+          const: 1
+
+    AsiaContentUnit:
+      type: object
+      additionalProperties: false
+      required: [uuid, title, contents]
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: M1540 大慧普覺禪師普說 第1卷
+        contents:
+          type: string
+          description: 整卷純文字（含檔頭的經文資訊）。
