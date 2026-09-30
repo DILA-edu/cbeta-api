@@ -9,7 +9,8 @@ module OpenapiHelper
 
   # path 為 spec 裡的 path (例: '/search/all_in_one')
   def self.response_schema(path, status: '200', method: 'get')
-    pointer = path.gsub('~', '~0').gsub('/', '~1')
+    # JSON pointer 放在 URI fragment 裡, path 參數的 {} 要 percent-encode
+    pointer = path.gsub('~', '~0').gsub('/', '~1').gsub('{', '%7B').gsub('}', '%7D')
     OPENAPI.ref("#/paths/#{pointer}/#{method}/responses/#{status}/content/application~1json/schema")
   end
 

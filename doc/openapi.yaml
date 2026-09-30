@@ -153,6 +153,312 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /search:
+    get:
+      operationId: search
+      summary: 一般全文檢索
+      description: |
+        以卷為單位回傳符合的佛典。未指定 `order` 時依關鍵詞出現次數遞減排序。
+        查詢語法（AND、OR、NOT、NEAR、Exclude）與 `/search/extended` 相同。
+
+        注意：
+        - 參數錯誤（例如 `q` 超過長度上限）時 HTTP status 仍是 200，
+          錯誤訊息放在 `error` 欄位（既有 client 依賴這個行為）。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - $ref: '#/components/parameters/searchQ'
+        - $ref: '#/components/parameters/searchNote'
+        - name: fields
+          in: query
+          description: |
+            指定 `results` 各筆要回傳哪些欄位，以逗號分隔，例如 `work,juan,term_hits`。
+            未列在允許值裡的欄位名稱會被忽略。
+          schema:
+            type: string
+          example: work,juan,term_hits
+        - $ref: '#/components/parameters/searchStart'
+        - $ref: '#/components/parameters/searchRows'
+        - name: order
+          in: query
+          description: |
+            排序欄位，可指定多個（以逗號分隔），例如 `time_from,time_to,work`。
+            欄位後加 `+` 為升冪、`-` 為降冪。可用欄位：`canon`、`category`、`juan`、
+            `vol`、`work`、`time_from`、`time_to`、`term_hits`。
+            指定 `time_from` 或 `time_to` 時，年代未知 (0) 的排在有年代的後面。
+            排序值相同時一律再以藏經、佛典編號、卷號決定先後。
+          schema:
+            type: string
+          example: time_from-
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 檢索結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SearchResult'
+                  - $ref: '#/components/schemas/LegacyError'
+            text/plain:
+              schema:
+                type: string
+              example: q 參數不能是空的
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search/extended:
+    get:
+      operationId: searchExtended
+      summary: 全文檢索（Extended 語法）
+      description: |
+        行為與 `/search` 相同，查詢語法統一解析；兩者只差在說明文件。
+        語法說明見 [Extended 語法](https://cbdata.dila.edu.tw/dev/static_pages/search_extended)。
+      tags: [search]
+      parameters:
+        - $ref: '#/components/parameters/searchQ'
+        - $ref: '#/components/parameters/searchNote'
+        - name: fields
+          in: query
+          description: |
+            指定 `results` 各筆要回傳哪些欄位，以逗號分隔，例如 `work,juan,term_hits`。
+            未列在允許值裡的欄位名稱會被忽略。
+          schema:
+            type: string
+          example: work,juan,term_hits
+        - $ref: '#/components/parameters/searchStart'
+        - $ref: '#/components/parameters/searchRows'
+        - name: order
+          in: query
+          description: |
+            排序欄位，可指定多個（以逗號分隔），例如 `time_from,time_to,work`。
+            欄位後加 `+` 為升冪、`-` 為降冪。可用欄位：`canon`、`category`、`juan`、
+            `vol`、`work`、`time_from`、`time_to`、`term_hits`。
+            指定 `time_from` 或 `time_to` 時，年代未知 (0) 的排在有年代的後面。
+            排序值相同時一律再以藏經、佛典編號、卷號決定先後。
+          schema:
+            type: string
+          example: time_from-
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 檢索結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SearchResult'
+                  - $ref: '#/components/schemas/LegacyError'
+            text/plain:
+              schema:
+                type: string
+              example: q 參數不能是空的
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search/facet/{facet_by}:
+    get:
+      operationId: searchFacet
+      summary: 全文檢索結果的 facet
+      description: |
+        回傳檢索結果依藏經、部類、作譯者、朝代或佛典分組的卷數與出現次數，
+        回應是一個陣列。
+
+        注意：
+        - 不支援 NEAR 與 Exclude 語法，會回傳 `LegacyError`。
+        - 不支援的 `facet_by` 也回傳 `LegacyError`（HTTP 200）。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - name: facet_by
+          in: path
+          required: true
+          description: 分組依據。
+          schema:
+            type: string
+            enum: [canon, category, creator, dynasty, work]
+        - $ref: '#/components/parameters/searchQ'
+        - $ref: '#/components/parameters/searchNote'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: |
+            facet 陣列，元素格式依 `facet_by` 而定；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/CanonFacet'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/CategoryFacet'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/CreatorFacet'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/DynastyFacet'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/WorkFacet'
+                  - $ref: '#/components/schemas/LegacyError'
+            text/plain:
+              schema:
+                type: string
+              example: q 參數不能是空的
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search/notes:
+    get:
+      operationId: searchNotes
+      summary: 搜尋校勘條目、註解
+      description: |
+        搜尋校註（腳注）與夾注。預設依藏經、冊號、行號排序。
+        查詢語法見 [註解檢索](https://cbdata.dila.edu.tw/dev/static_pages/search_notes)。
+
+        注意：
+        - 參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
+        - `facet=1` 不支援 NEAR 與 Exclude 語法，會回傳 `LegacyError`。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - $ref: '#/components/parameters/searchQ'
+        - name: around
+          in: query
+          description: 夾注的 `highlight` 欄位，關鍵字前後保留的字數。
+          schema:
+            type: integer
+            minimum: 0
+            default: 10
+        - $ref: '#/components/parameters/searchStart'
+        - $ref: '#/components/parameters/searchRows'
+        - name: facet
+          in: query
+          description: 是否回傳 facet。0：不回傳；1：回傳藏經、部類、作譯者、朝代、佛典五種 facet。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 檢索結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NotesSearchResult'
+                  - $ref: '#/components/schemas/LegacyError'
+            text/plain:
+              schema:
+                type: string
+              example: q 參數不能是空的
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search/title:
+    get:
+      operationId: searchTitle
+      summary: 搜尋佛典標題（經名）
+      description: |
+        模糊搜尋：至少符合 3 個字（查詢字串不足 3 個字時須全部符合），結果依相關度排序。
+
+        注意：
+        - 參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的經名。長度上限 40 字。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+          example: 觀無量壽經
+        - $ref: '#/components/parameters/searchStart'
+        - $ref: '#/components/parameters/searchRows'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 檢索結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TitleSearchResult'
+                  - $ref: '#/components/schemas/LegacyError'
+            text/plain:
+              schema:
+                type: string
+              example: q 參數不能是空的
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   parameters:
     callback:
@@ -226,6 +532,53 @@ components:
       schema:
         type: string
         enum: [textbody, non-textbody]
+
+    searchQ:
+      name: q
+      in: query
+      required: true
+      description: |
+        要搜尋的關鍵字，標點符號會被去除。長度上限 40 字。
+        支援 AND、OR、NOT、NEAR、Exclude 語法，見
+        [Extended 語法](https://cbdata.dila.edu.tw/dev/static_pages/search_extended)。
+        組字式要 escape，例如 `[幻-ㄠ%2B糸]`。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 40
+      examples:
+        phrase:
+          value: 法鼓
+        and:
+          value: '"法鼓" "迦葉"'
+        near:
+          value: '"法鼓" NEAR/7 "迦葉"'
+        exclude:
+          value: '"直心" -"正直心"'
+    searchNote:
+      name: note
+      in: query
+      description: 是否含夾注。0：不含夾注；1：含夾注。
+      schema:
+        type: string
+        enum: ['0', '1']
+        default: '1'
+    searchStart:
+      name: start
+      in: query
+      description: 分頁回傳起始位置。
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    searchRows:
+      name: rows
+      in: query
+      description: 每頁回傳筆數。
+      schema:
+        type: integer
+        minimum: 0
+        default: 20
 
   schemas:
     AllInOneResult:
@@ -496,3 +849,160 @@ components:
               type: integer
             message:
               type: string
+
+    SearchResult:
+      type: object
+      additionalProperties: false
+      required: [query_string, num_found, results]
+      properties:
+        query_string:
+          type: string
+          description: 正規化之後的查詢字串（標點會被去除）。
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。`q` 去除標點後為空時不回傳。
+        num_found:
+          type: integer
+          description: 符合的卷數。
+        total_term_hits:
+          type: integer
+          description: 關鍵字出現總次數。NEAR 查詢不回傳。
+        cache_key:
+          type: 'null'
+          description: 固定為 null。`q` 去除標點後為空時不回傳。
+        results:
+          type: array
+          description: |
+            各卷的檢索結果，格式同 `JuanHit`，但不含 `kwics`。
+            NEAR 查詢不含 `term_hits`。
+          items:
+            $ref: '#/components/schemas/JuanHit'
+
+    NotesSearchResult:
+      type: object
+      additionalProperties: false
+      required: [query_string, num_found, results]
+      properties:
+        query_string:
+          type: string
+          description: 正規化之後的查詢字串（標點會被去除）。
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。`q` 去除標點後為空時不回傳。
+        num_found:
+          type: integer
+          description: 符合的條目數。
+        total_term_hits:
+          type: integer
+          description: 關鍵字出現總次數。NEAR 查詢不回傳。
+        cache_key:
+          type: 'null'
+          description: 固定為 null。`q` 去除標點後為空時不回傳。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteHit'
+        facet:
+          $ref: '#/components/schemas/Facets'
+
+    NoteHit:
+      type: object
+      additionalProperties: false
+      required: [id, note_place, canon, category, vol, file, work, title, juan, lb, content, highlight]
+      properties:
+        id:
+          type: integer
+        term_hits:
+          type: integer
+          description: 關鍵字在這一條出現的次數。只有 Exclude 查詢會回傳。
+        note_place:
+          type: string
+          enum: [foot, inline]
+          description: '`foot`：校註（腳注）；`inline`：夾注。'
+        canon:
+          type: string
+          example: T
+        category:
+          type: string
+          example: 密教部類
+        vol:
+          type: string
+          example: T18
+        file:
+          type: string
+          example: T18n0894a
+        work:
+          type: string
+          example: T0894a
+        title:
+          type: string
+          description: 佛典題名。
+        juan:
+          type: integer
+        lb:
+          type: string
+          description: 行號。
+          example: 0692b03
+        n:
+          type: string
+          description: 校註編號。夾注 (`inline`) 不回傳。
+          example: n0692004
+        content:
+          type: string
+          description: 條目內容（已去除標點）。
+        highlight:
+          type: string
+          description: |
+            含標點的條目內容，關鍵字以 `<mark>` 標示。
+            夾注會附上前後文，前後各保留 `around` 字。
+
+    TitleSearchResult:
+      type: object
+      additionalProperties: false
+      required: [query_string, time, num_found, results]
+      properties:
+        query_string:
+          type: string
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        num_found:
+          type: integer
+          description: 符合的佛典數。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TitleHit'
+
+    TitleHit:
+      type: object
+      additionalProperties: false
+      required: [work, content, highlight]
+      description: 一部佛典的經名檢索結果。佛典資料查不到時只回傳 work、content、highlight。
+      properties:
+        work:
+          type: string
+          example: T1749
+        content:
+          type: string
+          description: 經名。
+          example: 觀無量壽經義疏
+        highlight:
+          type: string
+          description: 經名，符合的字以 `<mark>` 標示。
+          example: <mark>觀無量壽經</mark>義疏
+        byline:
+          type: string
+          example: 隋 慧遠撰
+        juan:
+          type: integer
+          description: 卷數。
+        creators_with_id:
+          type: string
+          example: 慧遠(A002000)
+        time_dynasty:
+          type: string
+        time_from:
+          type: integer
+        time_to:
+          type: integer
