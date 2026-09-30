@@ -50,6 +50,8 @@ group :test do
   gem 'selenium-webdriver'
   # test_remote/run.rb 用來輸出測試結果
   gem 'minitest-reporters'
+  # 以 OpenAPI 3.1 spec 驗證 API 回應（test_remote/test_openapi_*.rb）
+  gem 'json_schemer'
   # Easy installation and use of web drivers to run system tests with browsers
   #gem 'webdrivers'
 end

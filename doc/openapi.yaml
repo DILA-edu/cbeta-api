@@ -1,0 +1,469 @@
+# CBETA API 的 OpenAPI spec（POC 階段，目前只涵蓋 /search/all_in_one）。
+#
+# 回應 schema 由 test_remote/test_openapi_all_in_one.rb 對線上 API 驗證：
+#   rake remote:test[dev,openapi_all_in_one]
+# schema 一律 additionalProperties: false，API 多出或少掉欄位 test 就會失敗，
+# 用來避免文件與實作脫節（說明頁範例曾殘留已移除的 SQL 欄位）。
+#
+# info.version 不在這裡手動維護：日後公開提供時，由 server 以 VERSION 檔注入。
+openapi: 3.1.0
+info:
+  title: CBETA API
+  version: dev
+  description: |
+    CBETA 電子佛典的 API。
+
+    概念性的說明（檢索語法、限制搜尋範圍等）見各說明頁，例如
+    [All in One](https://cbdata.dila.edu.tw/dev/static_pages/search_all_in_one)、
+    [Extended 語法](https://cbdata.dila.edu.tw/dev/static_pages/search_extended)、
+    [限制搜尋範圍](https://cbdata.dila.edu.tw/dev/static_pages/search_filter)。
+# 只列 dev：本 spec 描述的是 dev branch 的行為，stable 跑的是 main（回應形狀不同）。
+servers:
+  - url: https://cbdata.dila.edu.tw/dev
+    description: 開發版
+paths:
+  /search/all_in_one:
+    get:
+      operationId: searchAllInOne
+      summary: 全文檢索，一併回傳 KWIC
+      description: |
+        分頁以卷為單位，每一卷附上該卷的 KWIC。可選擇是否連同 facet 一起回傳。
+
+        注意：
+        - 參數錯誤（例如 `q` 超過長度上限）時 HTTP status 仍是 200，
+          錯誤訊息放在 `error` 欄位（既有 client 依賴這個行為）。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: |
+            要搜尋的關鍵字，標點符號會被去除。長度上限 40 字。
+            支援 AND、OR、NOT、NEAR、Exclude 語法，見說明頁。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+          examples:
+            phrase:
+              value: 法鼓
+            and:
+              value: '"法鼓" "迦葉"'
+            near:
+              value: '"法鼓" NEAR/7 "迦葉"'
+            exclude:
+              value: '"直心" -"正直心"'
+        - name: note
+          in: query
+          description: 是否含夾注。0：不含夾注；1：含夾注。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '1'
+        - name: fields
+          in: query
+          description: |
+            指定 `results` 各筆要回傳哪些欄位，以逗號分隔，例如 `work,juan,term_hits`。
+            未列在允許值裡的欄位名稱會被忽略。要連同 KWIC 一起回傳，須列入 `kwics`。
+          schema:
+            type: string
+          example: work,juan,term_hits
+        - name: facet
+          in: query
+          description: 是否回傳 facet。0：不回傳；1：回傳藏經、部類、作譯者、朝代、佛典五種 facet。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - name: start
+          in: query
+          description: 分頁回傳起始位置。
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: rows
+          in: query
+          description: 每頁回傳筆數（卷數）。
+          schema:
+            type: integer
+            minimum: 0
+            default: 20
+        - name: around
+          in: query
+          description: KWIC 前後字數。
+          schema:
+            type: integer
+            minimum: 0
+            default: 10
+        - name: order
+          in: query
+          description: |
+            排序欄位：`canon`（依藏經重要性）、`work`、`time_from`、`time_to`。
+            欄位後加 `+` 為升冪、`-` 為降冪，例如 `time_from-`。
+            預設依「藏經重要性 + 經號 + 卷號」排序。
+          schema:
+            type: string
+          example: time_from+
+        - name: cache
+          in: query
+          description: 是否使用 cache。1：使用；0：不使用。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '1'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+      responses:
+        '200':
+          description: 檢索結果；參數錯誤時同樣是 200，見 `SearchError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AllInOneResult'
+                  - $ref: '#/components/schemas/SearchError'
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  parameters:
+    canon:
+      name: canon
+      in: query
+      description: 指定藏經 ID，允許以逗號分隔多值，例如 `T,X`。
+      schema:
+        type: string
+      example: T
+    category:
+      name: category
+      in: query
+      description: |
+        指定部類。`a,b+c,d` 表示 (a OR b) AND (c OR d)；URL 裡的 `+` 要 escape 為 `%2b`。
+      schema:
+        type: string
+      example: 阿含部類
+    work:
+      name: work
+      in: query
+      description: 指定一部佛典。
+      schema:
+        type: string
+      example: T0026
+    works:
+      name: works
+      in: query
+      description: 指定多部佛典，以逗號分隔。
+      schema:
+        type: string
+      example: T0026,T0099
+    creator:
+      name: creator
+      in: query
+      description: |
+        指定作譯者 ID，允許以逗號分隔多值。
+        `a,b+c,d` 表示 (a OR b) AND (c OR d)；URL 裡的 `+` 要 escape 為 `%2b`。
+      schema:
+        type: string
+      example: A000439
+    dynasty:
+      name: dynasty
+      in: query
+      description: 指定朝代，允許以逗號分隔多值。
+      schema:
+        type: string
+      example: 隋,唐
+    time:
+      name: time
+      in: query
+      description: 指定某一年（`800`）或範圍（`800..900`）。
+      schema:
+        type: string
+        pattern: '^-?\d+(\.\.-?\d+)?$'
+      example: 800..900
+    work_type:
+      name: work_type
+      in: query
+      description: 指定文本類型：`textbody`（正文）或 `non-textbody`（非正文）。
+      schema:
+        type: string
+        enum: [textbody, non-textbody]
+
+  schemas:
+    AllInOneResult:
+      type: object
+      additionalProperties: false
+      required: [query_string, time, num_found, results]
+      properties:
+        query_string:
+          type: string
+          description: 原始查詢字串。
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        num_found:
+          type: integer
+          description: 符合的卷數。
+        total_term_hits:
+          type: integer
+          description: 關鍵字出現總次數。
+        cache_key:
+          type: [string, 'null']
+          description: 使用 cache 時的 cache key；`cache=0` 時為 null。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/JuanHit'
+        facet:
+          $ref: '#/components/schemas/Facets'
+
+    JuanHit:
+      type: object
+      description: |
+        一卷的檢索結果。指定 `fields` 參數時只回傳其中部分欄位，
+        因此這裡不列 required。
+      additionalProperties: false
+      properties:
+        id:
+          type: integer
+        term_hits:
+          type: integer
+          description: 關鍵字在這一卷出現的次數。
+        canon:
+          type: string
+          description: 藏經 ID。
+          example: T
+        category:
+          type: string
+          description: 部類名稱。
+          example: 阿含部類
+        file:
+          type: string
+          example: T01n0026
+        work:
+          type: string
+          description: 佛典編號。
+          example: T0026
+        juan:
+          type: integer
+          description: 卷號。
+        title:
+          type: string
+          description: 佛典題名。
+        byline:
+          type: string
+          example: 東晉 瞿曇僧伽提婆譯
+        creators:
+          type: string
+          example: 僧伽提婆
+        creators_with_id:
+          type: string
+          example: 僧伽提婆(A001589)
+        time_dynasty:
+          type: string
+          example: 東晉
+        time_from:
+          type: integer
+          description: 成立年代起（西元年）。
+        time_to:
+          type: integer
+          description: 成立年代迄（西元年）。
+        juan_list:
+          type: string
+          description: 這部佛典所有卷號，以逗號分隔。
+          example: 1,2
+        kwics:
+          $ref: '#/components/schemas/KwicList'
+
+    KwicList:
+      type: object
+      additionalProperties: false
+      required: [num_found, results]
+      properties:
+        num_found:
+          type: integer
+        time:
+          type: number
+          description: KWIC 處理時間（秒）。只有 NEAR 查詢會回傳。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kwic'
+
+    Kwic:
+      type: object
+      additionalProperties: false
+      required: [vol, lb, kwic, linehead]
+      properties:
+        vol:
+          type: string
+          description: 冊號。
+          example: T01
+        work:
+          type: string
+          description: 佛典編號。只有 NEAR 與 Exclude 查詢會回傳。
+        juan:
+          type: integer
+          description: 卷號。只有 NEAR 與 Exclude 查詢會回傳。
+        offset_in_text_with_punc:
+          type: integer
+          description: 在含標點的卷文字中的位置。
+        lb:
+          type: string
+          description: 行號。
+          example: 0724c01
+        kwic:
+          type: string
+          description: 前後文，關鍵字以 `<mark>` 標示。
+          example: 法界、甘露界、多鼓、<mark>法鼓</mark>、甘露鼓、法鏡、四品
+        linehead:
+          type: string
+          description: 行首資訊。
+          example: T01n0026_p0724c01
+
+    Facets:
+      type: object
+      additionalProperties: false
+      required: [canon, category, creator, dynasty, work]
+      properties:
+        canon:
+          type: array
+          items:
+            $ref: '#/components/schemas/CanonFacet'
+        category:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryFacet'
+        creator:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreatorFacet'
+        dynasty:
+          type: array
+          items:
+            $ref: '#/components/schemas/DynastyFacet'
+        work:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkFacet'
+
+    FacetCount:
+      type: object
+      required: [docs, hits]
+      properties:
+        docs:
+          type: integer
+          description: 符合的卷數。
+        hits:
+          type: integer
+          description: 關鍵字出現次數。
+
+    CanonFacet:
+      allOf:
+        - $ref: '#/components/schemas/FacetCount'
+      type: object
+      unevaluatedProperties: false
+      required: [canon]
+      properties:
+        canon:
+          type: string
+        canon_name:
+          type: string
+          example: 大正藏
+
+    CategoryFacet:
+      allOf:
+        - $ref: '#/components/schemas/FacetCount'
+      type: object
+      unevaluatedProperties: false
+      required: [category_name]
+      properties:
+        category_id:
+          type: integer
+          description: 部類 ID。NEAR 與 Exclude 查詢不會回傳。
+        category_name:
+          type: string
+          example: 禪宗部類
+
+    CreatorFacet:
+      allOf:
+        - $ref: '#/components/schemas/FacetCount'
+      type: object
+      unevaluatedProperties: false
+      required: [creator_id]
+      properties:
+        creator_id:
+          type: string
+          example: A023393
+        creator_name:
+          type: string
+          description: 作譯者名稱；查無此 ID 時不回傳。
+          example: 釋印順
+
+    DynastyFacet:
+      allOf:
+        - $ref: '#/components/schemas/FacetCount'
+      type: object
+      unevaluatedProperties: false
+      required: [dynasty]
+      properties:
+        dynasty:
+          type: string
+          example: 唐
+
+    WorkFacet:
+      allOf:
+        - $ref: '#/components/schemas/FacetCount'
+      type: object
+      unevaluatedProperties: false
+      required: [work]
+      properties:
+        work:
+          type: string
+          example: T0270
+        title:
+          type: string
+          example: 大法鼓經
+
+    SearchError:
+      type: object
+      description: |
+        參數錯誤時的回應（HTTP 200）。實際回應另含 `query_string`、`backtrace`
+        等欄位，不屬於公開契約，因此這裡不限制額外欄位。
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: q 參數長度不得大於 40 字
+        num_found:
+          type: integer
+          const: 0
+        results:
+          type: array
+          maxItems: 0
+
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
