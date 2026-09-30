@@ -1001,6 +1001,293 @@ paths:
                   - $ref: '#/components/schemas/JuansGotoResult'
                   - $ref: '#/components/schemas/LegacyCodedError'
 
+  /works:
+    get:
+      operationId: getWorks
+      summary: 取得佛典資訊，或依範圍、作譯者、時間搜尋佛典
+      description: |
+        依參數決定查詢方式，同時給多種參數時依下列順序只取第一個：
+        `work` → `creator` → `creator_id` → `creator_name` → `vol_start` →
+        `work_start` → `time_start` → `dynasty` → `uuid`。
+        都沒有給時回傳空結果。
+
+        參數錯誤時 HTTP status 仍是 200，回應為 `Error` 格式。
+
+        指定 `uuid` 時回傳格式不同（見 `AsiaResource`），且不支援 `callback`。
+      tags: [catalog]
+      parameters:
+        - name: work
+          in: query
+          description: 取得某部佛典的資訊，例如 `T1501`。
+          schema:
+            type: string
+          example: T1501
+        - name: creator
+          in: query
+          description: 以作譯者姓名搜尋（部分比對），不論是否已確認作譯者 ID。
+          schema:
+            type: string
+          example: 竺法護
+        - name: creator_id
+          in: query
+          description: 以作譯者 ID 搜尋。
+          schema:
+            type: string
+          example: A000439
+        - name: creator_name
+          in: query
+          description: 以作譯者姓名搜尋（部分比對），只搜尋尚未確認作譯者 ID 的佛典。
+          schema:
+            type: string
+          example: 竺
+        - name: canon
+          in: query
+          description: 藏經 ID。搭配 `vol_start` 或 `work_start` 使用。
+          schema:
+            type: string
+          example: T
+        - name: vol_start
+          in: query
+          description: 起始冊數（數字），須同時指定 `canon`。
+          schema:
+            type: integer
+          example: 1
+        - name: vol_end
+          in: query
+          description: 結束冊數（數字），預設同 `vol_start`。
+          schema:
+            type: integer
+          example: 2
+        - name: work_start
+          in: query
+          description: 起始經號，不含藏經 ID（例如 `1`、`150A`），須同時指定 `canon`。
+          schema:
+            type: string
+          example: '1'
+        - name: work_end
+          in: query
+          description: 結束經號，預設同 `work_start`。
+          schema:
+            type: string
+          example: '2'
+        - name: time_start
+          in: query
+          description: 成立年代範圍起（西元年），須同時指定 `time_end`。
+          schema:
+            type: integer
+          example: 600
+        - name: time_end
+          in: query
+          description: 成立年代範圍迄（西元年）。
+          schema:
+            type: integer
+          example: 700
+        - name: dynasty
+          in: query
+          description: 以朝代名稱搜尋，允許以逗號分隔多值。
+          schema:
+            type: string
+          example: 符秦,前秦
+        - name: uuid
+          in: query
+          description: 藏經的 UUID，列出該藏經的所有佛典。
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 查詢結果；參數錯誤時同樣是 200，見 `Error`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/WorkList'
+                  - type: array
+                    description: 指定 `uuid` 時的回傳格式。
+                    items:
+                      $ref: '#/components/schemas/AsiaResource'
+                  - $ref: '#/components/schemas/Error'
+
+  /works/toc:
+    get:
+      operationId: getWorkToc
+      summary: 取得某部佛典的目次
+      description: 回傳該佛典的目次（`mulu`）與卷目次（`juan`）。
+      tags: [catalog]
+      parameters:
+        - name: work
+          in: query
+          required: true
+          description: 佛典編號。
+          schema:
+            type: string
+          example: T0001
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 目次；查無此佛典時 `results` 為空陣列。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkTocList'
+
+  /toc:
+    get:
+      operationId: searchToc
+      summary: 經目搜尋
+      description: |
+        在部類目錄、佛典標題（經名）、佛典內目次三部份中搜尋，
+        以 `type` 區分結果來源。`/search/toc` 與本 API 相同。
+
+        `q` 的格式若是佛典編號（例如 `T0001`）或「冊號 + 經號」（例如 `T01n0001`），
+        則改為依編號直接取得佛典。
+
+        參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
+      tags: [catalog]
+      parameters:
+        - $ref: '#/components/parameters/toc_q'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 搜尋結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TocSearchList'
+                  - $ref: '#/components/schemas/LegacyError'
+
+  /search/toc:
+    get:
+      operationId: searchTocAlias
+      summary: 經目搜尋（同 /toc）
+      description: 與 `/toc` 相同。
+      tags: [catalog]
+      parameters:
+        - $ref: '#/components/parameters/toc_q'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 搜尋結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TocSearchList'
+                  - $ref: '#/components/schemas/LegacyError'
+
+  /catalog_entry:
+    get:
+      operationId: getCatalogEntry
+      summary: 取得目錄節點的下層節點
+      description: |
+        CBETA 的各種目錄（部類目錄、原書目錄等）以樹狀節點表示，
+        以節點編號 `q` 取得其下一層節點。都不給參數時回傳根目錄。
+      tags: [catalog]
+      parameters:
+        - name: q
+          in: query
+          description: |
+            目錄節點編號。`root`：根目錄；`CBETA`：部類目錄；`orig`：原書目錄；
+            `orig-<藏經 ID>`：某部藏經的原書目錄（例如 `orig-T`）；
+            其他節點編號取自回傳結果的 `n`。
+          schema:
+            type: string
+          examples:
+            root:
+              value: root
+            category:
+              value: CBETA
+            orig:
+              value: orig-T
+            node:
+              value: CBETA.001
+        - name: vol
+          in: query
+          description: 冊號，取得該冊的目錄節點，例如 `T01`。優先於 `q`。
+          schema:
+            type: string
+          example: T01
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 下層節點；查無節點時 `results` 為空陣列。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogEntryList'
+
+  /changes:
+    get:
+      operationId: getChanges
+      summary: 內容修訂紀錄
+      description: |
+        收錄自 2021Q1 起的內容修訂紀錄，標點修訂不記錄。`lb` 與 `work` 至少須指定一個。
+
+        預設回傳 JSON；以 `format=html` 或路徑 `/changes.html` 改回傳 HTML
+        （依版本分段，每行為「行首資訊║修訂內容」），HTML 不支援 `callback`。
+
+        參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
+      tags: [catalog]
+      parameters:
+        - name: lb
+          in: query
+          description: CBETA 行首資訊。
+          schema:
+            type: string
+          example: A091n1057_p0321a10
+        - name: work
+          in: query
+          description: 佛典編號。
+          schema:
+            type: string
+          example: T0026
+        - name: juan
+          in: query
+          description: 卷號，須同時指定 `work`。
+          schema:
+            type: integer
+          example: 4
+        - name: format
+          in: query
+          description: 回傳格式。
+          schema:
+            type: string
+            enum: [json, html]
+            default: json
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 修訂紀錄；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ChangeList'
+                  - $ref: '#/components/schemas/LegacyError'
+            text/html:
+              schema:
+                type: string
+              example: |
+                <h2>2025R2</h2>
+                T19n0951_p0253b17║<span class="del">密</span><span class="ins">蜜</span>、酪一呪一燒<br>
+
+  /export/all_creators2:
+    get:
+      operationId: exportAllCreators
+      summary: 匯出所有作譯者及其別名
+      tags: [catalog]
+      parameters:
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 所有作譯者，以作譯者 ID 為 key。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorExport'
+
 components:
   parameters:
     callback:
@@ -1121,6 +1408,23 @@ components:
         type: integer
         minimum: 0
         default: 20
+
+    toc_q:
+      name: q
+      in: query
+      required: true
+      description: 要搜尋的關鍵詞。長度上限 40 字。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 40
+      examples:
+        keyword:
+          value: 阿含
+        work:
+          value: T0001
+        file:
+          value: T01n0001
 
   schemas:
     AllInOneResult:
@@ -2012,3 +2316,423 @@ components:
               example: 404
             message:
               type: string
+
+    WorkInfoFields:
+      type: object
+      description: |
+        佛典資訊的各欄位（供其他 schema 組合使用）。
+        CBETA 未收錄全文的佛典（有 `alt`）沒有 `file`、`juan_start`，
+        `juan_list`、`cjk_chars`、`en_words` 為 null。
+      properties:
+        work:
+          type: string
+          description: 佛典編號（經號）。
+          example: T1501
+        uuid:
+          type: string
+          format: uuid
+        canon:
+          type: string
+          description: 藏經 ID。
+          example: T
+        category:
+          type: string
+          description: 所屬部類（CBETA 分類），未分類時為空字串。
+          example: 律部類
+        orig_category:
+          type: string
+          description: 底本分部，例如大正藏的阿含部、本緣部；沒有時為空字串。
+          example: 律部
+        vol:
+          type: string
+          description: 冊號；跨冊的佛典以 `..` 表示範圍，例如 `T05..T07`。
+          example: T24
+        title:
+          type: string
+          description: 佛典題名（經名）。
+          example: 菩薩戒本
+        juan:
+          type: integer
+          description: 卷數。
+        juan_list:
+          type: [string, 'null']
+          description: 所有卷號，以逗號分隔。
+          example: '1'
+        cjk_chars:
+          type: [integer, 'null']
+          description: 中日韓文字數（不含標點）。
+        en_words:
+          type: [integer, 'null']
+          description: 英文、半形數字、梵文、巴利文的 word 數。
+        alt:
+          type: string
+          description: CBETA 未收錄此經全文時，對應到的其他藏經佛典編號。
+          example: T0293
+        file:
+          type: string
+          description: 第一個 XML 檔的主檔名。
+          example: T24n1501
+        juan_start:
+          type: integer
+          description: 於 `file` 中的起始卷號。
+        byline:
+          type: string
+          description: 作譯者行。
+          example: 彌勒菩薩說 唐 玄奘譯
+        creators:
+          type: string
+          description: 作者、譯者或其他貢獻者姓名，以逗號分隔。
+          example: 彌勒菩薩,玄奘
+        creators_with_id:
+          type: string
+          description: 附作譯者 ID 的姓名，以分號分隔。
+          example: 彌勒菩薩(A001428);玄奘(A000294)
+        time_dynasty:
+          type: string
+          description: 成立的朝代。
+          example: 唐
+        time_from:
+          type: integer
+          description: 成立年代起（西元年）。
+        time_to:
+          type: integer
+          description: 成立年代迄（西元年）。
+        places:
+          type: array
+          description: 成立地點，多值。
+          items:
+            $ref: '#/components/schemas/WorkPlace'
+
+    WorkInfo:
+      allOf:
+        - $ref: '#/components/schemas/WorkInfoFields'
+      type: object
+      unevaluatedProperties: false
+      required: [work, uuid, canon, category, orig_category, vol, title, juan,
+                 juan_list, cjk_chars, en_words]
+
+    WorkPlace:
+      type: object
+      additionalProperties: false
+      required: [name, id]
+      properties:
+        name:
+          type: string
+          example: 大慈恩寺
+        id:
+          type: string
+          description: 地名權威 ID。
+          example: PL000000042410
+        latitude:
+          type: number
+        longitude:
+          type: number
+
+    WorkList:
+      type: object
+      additionalProperties: false
+      required: [num_found, results]
+      properties:
+        num_found:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInfo'
+
+    WorkTocList:
+      type: object
+      additionalProperties: false
+      required: [num_found, time, results]
+      properties:
+        num_found:
+          type: integer
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        results:
+          type: array
+          maxItems: 1
+          items:
+            $ref: '#/components/schemas/WorkToc'
+
+    WorkToc:
+      type: object
+      additionalProperties: false
+      required: [mulu, juan]
+      properties:
+        mulu:
+          type: array
+          description: 佛典內目次。
+          items:
+            $ref: '#/components/schemas/WorkTocNode'
+        juan:
+          type: array
+          description: 卷目次。
+          items:
+            $ref: '#/components/schemas/WorkTocJuan'
+
+    WorkTocNode:
+      type: object
+      additionalProperties: false
+      required: [title, file, juan, lb]
+      properties:
+        title:
+          type: string
+          description: 目次節點標題。
+          example: 1 分
+        file:
+          type: string
+          description: 所在 XML 檔的主檔名。
+          example: T01n0001
+        juan:
+          type: integer
+          description: 所在卷號。
+        lb:
+          type: string
+          description: 所在頁、欄、行。
+          example: 0001b11
+        type:
+          type: string
+          description: 節點類型，例如「1 分」的 type 為「分」。
+          example: 分
+        n:
+          type: integer
+          description: 節點序號，例如「1 分」的 n 為 1。
+        isFolder:
+          type: boolean
+          description: 為 true 時表示有 `children`。
+        children:
+          type: array
+          description: 下層目次節點。
+          items:
+            $ref: '#/components/schemas/WorkTocNode'
+
+    WorkTocJuan:
+      type: object
+      additionalProperties: false
+      required: [title, file, juan, lb]
+      properties:
+        title:
+          type: string
+          example: 第一
+        file:
+          type: string
+          example: T01n0001
+        juan:
+          type: integer
+        lb:
+          type: string
+          example: 0001b08
+
+    TocSearchList:
+      type: object
+      additionalProperties: false
+      required: [num_found, time, results]
+      properties:
+        num_found:
+          type: integer
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        results:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/TocSearchCatalogHit'
+              - $ref: '#/components/schemas/TocSearchWorkHit'
+              - $ref: '#/components/schemas/TocSearchTocHit'
+
+    TocSearchCatalogHit:
+      description: 在部類目錄中找到的節點。節點若對應到某部佛典，另附該佛典的資訊。
+      allOf:
+        - $ref: '#/components/schemas/WorkInfoFields'
+      type: object
+      unevaluatedProperties: false
+      required: [type, n, label]
+      properties:
+        type:
+          const: catalog
+        n:
+          type: string
+          description: 目錄節點編號，可用於 `/catalog_entry?q=`。
+          example: CBETA.001
+        label:
+          type: string
+          example: 01 阿含部類 T01-02,25,33 etc.
+
+    TocSearchWorkHit:
+      description: 在佛典標題（經名）中找到的佛典。
+      allOf:
+        - $ref: '#/components/schemas/WorkInfoFields'
+      type: object
+      unevaluatedProperties: false
+      required: [type, work, uuid, canon, category, orig_category, vol, title, juan,
+                 juan_list, cjk_chars, en_words]
+      properties:
+        type:
+          const: work
+
+    TocSearchTocHit:
+      description: |
+        在佛典內目次標題中找到的節點，另附該佛典的資訊；
+        其中 `file`、`juan_start` 為該目次節點所在的檔案與卷號。
+      allOf:
+        - $ref: '#/components/schemas/WorkInfoFields'
+      type: object
+      unevaluatedProperties: false
+      required: [type, label, label_path, work, lb, linehead]
+      properties:
+        type:
+          const: toc
+        label:
+          type: string
+          description: 目次節點標題。
+          example: 1 大本經
+        label_path:
+          type: string
+          description: 從最上層到此節點的標題路徑，以 `/` 分隔。
+          example: 1 分/1 大本經
+        lb:
+          type: string
+          description: 目次節點所在頁、欄、行。
+          example: 0001b11
+        linehead:
+          type: string
+          description: 目次節點的行首資訊。
+          example: T01n0001_p0001b11
+
+    CatalogEntryList:
+      type: object
+      additionalProperties: false
+      required: [num_found, label, results]
+      properties:
+        num_found:
+          type: integer
+        label:
+          type: [string, 'null']
+          description: 查詢節點本身的標題；`q=root` 或查無節點時為 null。
+          example: 部類目錄
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogEntryNode'
+
+    CatalogEntryNode:
+      type: object
+      additionalProperties: false
+      required: [n, node_type]
+      properties:
+        n:
+          type: string
+          description: 目錄節點編號，可用於取得下層節點。
+          example: CBETA.001
+        label:
+          type: string
+          example: 01 阿含部類 T01-02,25,33 etc.
+        node_type:
+          type: [string, 'null']
+          enum: [work, alt, html, null]
+          description: |
+            `work`：指向某部佛典；`alt`：CBETA 未收錄此經全文，對應到其他藏經的全文；
+            `html`：指向說明文件（`file` 為其路徑）；null：一般目錄節點。
+        work:
+          type: string
+          description: 佛典編號（`node_type` 為 `work` 時）。
+          example: T0001
+        category:
+          type: string
+          description: 佛典所屬部類（`node_type` 為 `work` 時）。
+        creators:
+          type: string
+          description: 佛典的作譯者（`node_type` 為 `work` 時）。
+        juan_start:
+          type: integer
+          description: 節點所指向的起始卷。節點可能只指向佛典的部份卷數。
+        juan_end:
+          type: [integer, 'null']
+          description: 節點所指向的結束卷。
+        file:
+          type: string
+          description: XML 檔的主檔名；`node_type` 為 `html` 時為說明文件路徑。
+          example: T01n0001
+        lb:
+          type: string
+          description: 節點所指向的頁、欄、行。
+          example: 0540a16
+
+    ChangeList:
+      type: object
+      additionalProperties: false
+      required: [num_found, results]
+      properties:
+        num_found:
+          type: integer
+        results:
+          type: array
+          description: 依版本由新到舊排序。
+          items:
+            $ref: '#/components/schemas/ChangeEntry'
+
+    ChangeEntry:
+      type: object
+      additionalProperties: false
+      required: [work, juan, lb, html, ver]
+      properties:
+        work:
+          type: string
+          example: A1057
+        juan:
+          type: integer
+        lb:
+          type: string
+          description: 行首資訊。
+          example: A091n1057_p0321a10
+        html:
+          type: string
+          description: 修訂後的該行內容，刪除的文字以 `<span class="del">`、新增的文字以 `<span class="ins">` 標示。
+        ver:
+          type: string
+          description: 修訂所在的 CBETA 版本。
+          example: 2025R2
+        del_chars:
+          type: [integer, 'null']
+          description: 刪除的字數。
+        ins_chars:
+          type: [integer, 'null']
+          description: 新增的字數。
+
+    CreatorExport:
+      type: object
+      additionalProperties: false
+      required: [num_found, results]
+      properties:
+        num_found:
+          type: integer
+        results:
+          type: object
+          description: 以作譯者 ID 為 key。
+          propertyNames:
+            pattern: '^A\d{6}$'
+          additionalProperties:
+            $ref: '#/components/schemas/CreatorAliases'
+
+    CreatorAliases:
+      type: object
+      additionalProperties: false
+      required: [regular_name]
+      properties:
+        regular_name:
+          type: string
+          description: 作譯者的正式名稱。
+          example: 金總持
+        aliases_all:
+          type: array
+          description: 所有別名。
+          items:
+            type: string
+        aliases_byline:
+          type: array
+          description: 出現在作譯者行的別名。
+          items:
+            type: string
