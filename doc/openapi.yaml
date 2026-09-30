@@ -25,6 +25,17 @@ info:
 servers:
   - url: https://cbdata.dila.edu.tw/dev
     description: 開發版
+tags:
+  - name: search
+    description: 全文檢索與相關查詢
+  - name: text
+    description: 取得佛典內文 (卷、行、KWIC)
+  - name: catalog
+    description: 目錄、典籍資訊、目次、修訂紀錄
+  - name: tools
+    description: 繁簡轉換、斷詞、引用格式等工具
+  - name: asia-network
+    description: 提供 Asia Network 使用的 API
 paths:
   /search/all_in_one:
     get:
@@ -125,15 +136,16 @@ paths:
         - $ref: '#/components/parameters/dynasty'
         - $ref: '#/components/parameters/time'
         - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
       responses:
         '200':
-          description: 檢索結果；參數錯誤時同樣是 200，見 `SearchError`。
+          description: 檢索結果；參數錯誤時同樣是 200，見 `LegacyError`。
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/AllInOneResult'
-                  - $ref: '#/components/schemas/SearchError'
+                  - $ref: '#/components/schemas/LegacyError'
         '502':
           description: 全文檢索後端（Elasticsearch）暫時無法使用。
           content:
@@ -143,6 +155,17 @@ paths:
 
 components:
   parameters:
+    callback:
+      name: callback
+      in: query
+      description: |
+        JSONP 的函式名稱。指定時回應改為 `application/javascript`，
+        內容為 `/**/<callback>(<JSON>)`，其中的 JSON 與未指定時相同。
+        所有回傳 JSON 的 API 都支援。
+      schema:
+        type: string
+        pattern: '^[A-Za-z_$][0-9A-Za-z_$.]*$'
+      example: cb
     canon:
       name: canon
       in: query
@@ -440,11 +463,13 @@ components:
           type: string
           example: 大法鼓經
 
-    SearchError:
+    LegacyError:
       type: object
       description: |
-        參數錯誤時的回應（HTTP 200）。實際回應另含 `query_string`、`backtrace`
-        等欄位，不屬於公開契約，因此這裡不限制額外欄位。
+        舊式的錯誤回應：HTTP status 仍是 200，錯誤訊息放在 `error` 字串
+        （既有 client 依賴這個行為）。多數 API 的參數錯誤都是這個格式。
+        實際回應可能另含 `query_string`、`backtrace` 等欄位，不屬於公開契約，
+        因此這裡不限制額外欄位。
       required: [error]
       properties:
         error:

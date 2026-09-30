@@ -29,11 +29,11 @@ class OpenapiSpecTest < ActionDispatch::IntegrationTest
     conf.url = original
   end
 
-  test '過長的 q 回應符合 SearchError schema' do
+  test '過長的 q 回應符合 LegacyError schema' do
     get '/search/all_in_one', params: { q: '佛' * (ApplicationController::MAX_QUERY_LENGTH + 1) }
 
     assert_response :success
-    assert_conform 'SearchError', JSON.parse(response.body)
+    assert_conform 'LegacyError', JSON.parse(response.body)
   end
 
   test 'q 的 maxLength 與 MAX_QUERY_LENGTH 一致' do

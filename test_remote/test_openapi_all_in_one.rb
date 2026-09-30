@@ -1,14 +1,10 @@
 require 'minitest/autorun'
-require 'json_schemer'
-require 'yaml'
+require_relative 'openapi_helper'
 
 # 以 doc/openapi.yaml 驗證線上 search/all_in_one 的回應。
 # schema 一律 additionalProperties: false，API 多出或少掉欄位就會失敗。
 class OpenapiAllInOneTest < Minitest::Test
-  OPENAPI = JSONSchemer.openapi(YAML.safe_load_file(File.expand_path('../doc/openapi.yaml', __dir__)))
-  RESPONSE_200 = OPENAPI.ref(
-    '#/paths/~1search~1all_in_one/get/responses/200/content/application~1json/schema'
-  )
+  include OpenapiHelper
 
   def setup
     @url = 'search/all_in_one'
@@ -78,10 +74,5 @@ class OpenapiAllInOneTest < Minitest::Test
 
   private
 
-  def assert_conform(params)
-    r = get_json(@url, params)
-    errors = RESPONSE_200.validate(r).map { it['error'] }
-    assert_empty errors, "#{@url} #{params.inspect} 的回應不符合 doc/openapi.yaml:\n#{errors.join("\n")}"
-    r
-  end
+  def assert_conform(params) = super(@url, params)
 end
