@@ -36,8 +36,10 @@ class OpenapiCatalogTest < Minitest::Test
   end
 
   # 只搜尋尚未確認作譯者 ID 的佛典
+  # creator_name 只找尚未確認 ID 的作譯者，這類資料很少
   def test_works_by_creator_name
-    assert_conform('works', { creator_name: '竺' })
+    r = assert_conform('works', { creator_name: '集雲堂' })
+    refute_empty r['results']
   end
 
   def test_works_by_canon_uuid

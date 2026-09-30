@@ -78,4 +78,11 @@ class NotFoundResponsesTest < ActionDispatch::IntegrationTest
     refute_includes response.body, 'backtrace'
     refute_includes response.body, Rails.root.to_s
   end
+
+  test '錯誤訊息裡的檔案路徑去掉伺服器的絕對路徑' do
+    get '/search/kwic', params: { work: 'T0001', juan: 999, q: '法' }
+
+    assert_match(%r{\A檔案不存在: data/kwic/}, response.parsed_body['error'])
+    refute_includes response.body, Rails.root.to_s
+  end
 end
