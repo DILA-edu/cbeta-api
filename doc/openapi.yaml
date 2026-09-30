@@ -459,6 +459,251 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /search/sc:
+    get:
+      operationId: searchSimplifiedChinese
+      summary: 以簡體字查詢，回傳轉為繁體後的筆數
+      description: |
+        使用 OpenCC 將簡體轉為繁體，再做全文檢索，回傳關鍵字出現次數。
+        轉換前後相同（例如 `q=上烏`）時不做檢索，`hits` 為 0，且不回傳 `time`。
+
+        注意：
+        - 參數錯誤（例如 `q` 超過長度上限）時 HTTP status 仍是 200，
+          錯誤訊息放在 `error` 欄位（既有 client 依賴這個行為）。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 簡體字的查詢字串。長度上限 40 字。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+          example: 四圣谛
+        - name: note
+          in: query
+          description: 是否含夾注。0：不含夾注；1：含夾注。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '1'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 轉換結果與筆數；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ScResult'
+                  - $ref: '#/components/schemas/LegacyError'
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search/similar:
+    get:
+      operationId: searchSimilar
+      summary: 相似搜尋
+      description: |
+        找出與 `q` 相似（但不完全相同）的段落。分兩階段：
+        先以 Elasticsearch 模糊搜尋（至少一半的字命中即為候選）取 top k，
+        再以 Smith-Waterman 演算法逐筆比對，分數達 `score_min` 才回傳，依分數排序。
+        完全包含 `q` 的段落不回傳。不分頁，回傳全部結果。
+
+        以預設的 `gain`（2）與 `score_min`（16）而言，至少要有 8 個字對得上才會有結果，
+        因此 `q` 太短時一律找不到。
+
+        注意：
+        - 參數錯誤（例如 `k` 小於 1）時 HTTP status 仍是 200，
+          錯誤訊息放在 `error` 欄位（既有 client 依賴這個行為）。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要搜尋的字串，標點符號會被去除。長度上限 40 字。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+          example: 是日已過，命亦隨減，如少水魚，斯有何樂
+        - name: k
+          in: query
+          description: 第一階段取回的候選筆數。
+          schema:
+            type: integer
+            minimum: 1
+            default: 1000
+        - name: gain
+          in: query
+          description: Smith-Waterman 演算法 match 時的加分。
+          schema:
+            type: integer
+            minimum: 0
+            default: 2
+        - name: penalty
+          in: query
+          description: Smith-Waterman 演算法 miss、insertion、deletion 的減分。
+          schema:
+            type: integer
+            maximum: 0
+            default: -1
+        - name: score_min
+          in: query
+          description: Smith-Waterman 分數的最小值，低於此分數的不回傳。
+          schema:
+            type: integer
+            default: 16
+        - name: facet
+          in: query
+          description: 是否回傳 facet。0：不回傳；1：回傳藏經、部類、作譯者、朝代、佛典五種 facet。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - name: cache
+          in: query
+          description: 是否使用 cache。1：使用；0：不使用。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '1'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 相似段落；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SimilarResult'
+                  - $ref: '#/components/schemas/LegacyError'
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search/synonym:
+    get:
+      operationId: searchSynonym
+      summary: 近義詞查詢
+      description: |
+        根據近義詞表，回傳 `q` 的近義詞。查無此詞時 `results` 為空陣列。
+
+        注意：
+        - 參數錯誤（例如 `q` 超過長度上限）時 HTTP status 仍是 200，
+          錯誤訊息放在 `error` 欄位（既有 client 依賴這個行為）。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要查詢的詞。長度上限 40 字。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+          example: 文殊師利
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 近義詞清單；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SynonymResult'
+                  - $ref: '#/components/schemas/LegacyError'
+
+  /search/variants:
+    get:
+      operationId: searchVariants
+      summary: 異體字查詢
+      description: |
+        根據異體字表列出 `q` 可能的異體字變化，並回傳各變化在 CBETA 中的出現次數。
+        只列出確實出現過的變化，不含 `q` 本身。
+
+        注意：
+        - 參數錯誤（例如 `q` 超過長度上限）時 HTTP status 仍是 200，
+          錯誤訊息放在 `error` 欄位（既有 client 依賴這個行為）。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 要查詢的字詞，標點符號會被去除。長度上限 40 字。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+          example: 著衣持鉢
+        - name: scope
+          in: query
+          description: |
+            設為 `title` 時，只列出存在於佛典題名中的異體字變化，
+            `hits` 為題名中的出現次數。未指定時以全文計算。
+          schema:
+            type: string
+            enum: [title]
+        - name: cache
+          in: query
+          description: 是否使用 cache。1：使用；0：不使用。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '1'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 異體字變化與出現次數；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/VariantsResult'
+                  - $ref: '#/components/schemas/LegacyError'
+        '502':
+          description: 全文檢索後端（Elasticsearch）暫時無法使用。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   parameters:
     callback:
@@ -1006,3 +1251,221 @@ components:
           type: integer
         time_to:
           type: integer
+
+    ScResult:
+      type: object
+      additionalProperties: false
+      required: [q, hits]
+      properties:
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。轉換前後相同時不回傳。
+        q:
+          type: string
+          description: 轉為繁體後的查詢字串。
+          example: 四聖諦
+        hits:
+          type: integer
+          description: 關鍵字出現總次數。轉換前後相同時為 0。
+
+    SimilarResult:
+      type: object
+      additionalProperties: false
+      required: [query_string, time, num_found, cache_key, results]
+      properties:
+        query_string:
+          type: string
+          description: 去除標點後的查詢字串。
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        num_found:
+          type: integer
+          description: 回傳的段落數。
+        cache_key:
+          type: string
+          description: cache key。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimilarHit'
+        facet:
+          $ref: '#/components/schemas/SimilarFacets'
+
+    SimilarHit:
+      type: object
+      additionalProperties: false
+      required: [id, canon, category, work, title, juan, creators_with_id, dynasty,
+                 linehead, content, score, highlight]
+      properties:
+        id:
+          type: integer
+        canon:
+          type: string
+          description: 藏經 ID。
+          example: X
+        category:
+          type: string
+          description: 部類名稱，可能以逗號分隔多值。
+          example: 禪宗部類
+        work:
+          type: string
+          description: 佛典編號。
+          example: X1318
+        title:
+          type: string
+          description: 佛典題名。
+        juan:
+          type: integer
+          description: 卷號。
+        creators_with_id:
+          type: string
+          description: 作譯者及其 ID，多位以分號分隔；無作譯者時為空字串。
+          example: 師明(A000913)
+        dynasty:
+          type: string
+          description: 朝代；不詳時為 `unknown`。
+          example: 宋
+        linehead:
+          type: string
+          description: 段落起始的行首資訊。
+          example: X68n1318_p0394c06
+        content:
+          type: string
+          description: 段落文字（不含標點）。
+        score:
+          type: integer
+          description: Smith-Waterman 分數。
+        highlight:
+          type: string
+          description: |
+            段落文字加上標記：最長符合的字串以 `<mark>` 標記，
+            其中與 `q` 不同的字以 `<del>` 標記；`<mark>` 以外、包含在 `q` 內的字以 `<em>` 標記。
+
+    SimilarFacets:
+      type: object
+      description: 以回傳的段落計算；`hits` 為段落數。
+      additionalProperties: false
+      required: [canon, category, creator, dynasty, work]
+      properties:
+        canon:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [canon, hits]
+            properties:
+              canon:
+                type: string
+              canon_name:
+                type: string
+                example: 新纂卍續藏
+              hits:
+                type: integer
+        category:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [category_name, hits]
+            properties:
+              category_name:
+                type: string
+                example: 禪宗部類
+              hits:
+                type: integer
+        creator:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [creator_id, hits]
+            properties:
+              creator_id:
+                type: string
+                example: A000913
+              creator_name:
+                type: string
+                example: 師明
+              hits:
+                type: integer
+        dynasty:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [dynasty, hits]
+            properties:
+              dynasty:
+                type: string
+                example: 宋
+              hits:
+                type: integer
+        work:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [work, hits]
+            properties:
+              work:
+                type: string
+                example: X1318
+              title:
+                type: string
+                example: 續古尊宿語要
+              hits:
+                type: integer
+
+    SynonymResult:
+      type: object
+      additionalProperties: false
+      required: [time, num_found, results]
+      properties:
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        num_found:
+          type: integer
+          description: 近義詞數量。
+        results:
+          type: array
+          description: 近義詞。
+          items:
+            type: string
+          example: [曼殊室利, 妙吉祥, 文殊]
+
+    VariantsResult:
+      type: object
+      additionalProperties: false
+      required: [time, num_found, cache_key, possibility, results]
+      properties:
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        num_found:
+          type: integer
+          description: 回傳的異體字變化數量。
+        cache_key:
+          type: [string, 'null']
+          description: 使用 cache 時的 cache key；`cache=0` 時為 null。
+        possibility:
+          type: integer
+          description: 存在於 CBETA 的變化總數（含 `q` 本身）。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariantsHit'
+
+    VariantsHit:
+      type: object
+      additionalProperties: false
+      required: [q, hits]
+      properties:
+        q:
+          type: string
+          description: 異體字變化後的字串。
+          example: 著衣持缽
+        hits:
+          type: integer
+          description: 出現次數。
