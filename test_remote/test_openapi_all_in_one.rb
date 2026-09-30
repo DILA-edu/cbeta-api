@@ -35,10 +35,16 @@ class OpenapiAllInOneTest < Minitest::Test
     assert_equal %w[juan term_hits work], r['results'].first.keys.sort
   end
 
-  # KWIC 要讀 work 與 juan；fields 沒列這兩個欄位時不應該因此出錯。
+  # KWIC 要讀 work 與 juan、行首資訊要讀 work；fields 沒列這些欄位時不應該因此出錯。
+  # NEAR 與 Exclude 走另一條 code path，一併驗證。
   def test_fields_with_kwics
     r = assert_conform(q: '法鼓', rows: 1, fields: 'work,kwics')
     assert_equal %w[kwics work], r['results'].first.keys.sort
+
+    [ '"法鼓" NEAR/5 "迦葉"', '"法鼓" -"大法鼓"' ].each do |q|
+      r = assert_conform(q:, rows: 1, fields: 'juan,kwics')
+      assert_equal %w[juan kwics], r['results'].first.keys.sort, q
+    end
   end
 
   def test_filter_and_order

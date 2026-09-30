@@ -334,14 +334,15 @@ class SearchController < ApplicationController
   end
 
   # 對應舊的 sphinx_search（已移除）
-  def es_search(index: es_index, default_sort: nil, count_hits: true)
+  # filter_fields: all_in_one 傳 false，等 KWIC 與行首資訊都算完才過濾 (見 all_in_one_sub)。
+  def es_search(index: es_index, default_sort: nil, count_hits: true, filter_fields: true)
     r = es_service(index).search(
       es_query,
       params: es_params, start: @start, rows: @rows,
       field: @text_field, default_sort:, count_hits:
     )
     r.delete(:total_term_hits) if r.key?(:total_term_hits) && r[:total_term_hits].nil?
-    filter_es_fields!(r[:results])
+    filter_es_fields!(r[:results]) if filter_fields
     r
   end
 
@@ -508,10 +509,6 @@ class SearchController < ApplicationController
       kwic_by_juan(r) unless query.type == :near
     end
 
-    # 平常這件事由 es_search 做掉，Exclude / NEAR 走的是別條路。
-    # 順序固定在 kwic_by_juan 之後 —— KWIC 要讀 work / juan，先過濾會拿不到。
-    filter_es_fields!(r[:results]) if two_phase || query.type == :exclude
-
     if r.key?(:results)
       log_debug "results size: #{r[:results].size}"
       # 回傳 行首資訊
@@ -526,6 +523,10 @@ class SearchController < ApplicationController
     else
       log_debug "#{__LINE__} r 沒有 results"
     end
+
+    # 依 fields 過濾欄位，各種查詢都在最後才做 ——
+    # KWIC 要讀 work / juan、行首資訊要讀 work，先過濾會拿不到。
+    filter_es_fields!(r[:results])
 
     r
   end
@@ -564,7 +565,7 @@ class SearchController < ApplicationController
         results: rows
       }
     else
-      es_search
+      es_search(filter_fields: false)
     end
   end
 
