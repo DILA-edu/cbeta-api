@@ -57,11 +57,12 @@ class StaticPagesControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, '雙引號不可省略'
   end
 
-  # search/sc 有更嚴格的 50 字上限，說明頁需呈現該值。
-  test "static_pages/search_sc 顯示 50 字上限" do
+  # search/sc 與其他檢索共用 init 的長度檢查，說明頁需呈現實際生效的上限。
+  # (早期全站上限 80 字時 sc 另有更嚴格的 50 字，全站降到 40 字後已無作用而移除。)
+  test "static_pages/search_sc 顯示實際的長度上限" do
     get '/static_pages/search_sc'
     assert_response :success
-    assert_includes response.body, '長度上限為 50 字'
+    assert_includes response.body, "長度上限為 #{ApplicationController::MAX_QUERY_LENGTH} 字"
   end
 
   # API key 說明頁的額度數字必須跟實際生效的常數一致，

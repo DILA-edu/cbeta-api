@@ -11,6 +11,19 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-09-30 Version 5.8.3
+%ul
+  %li 修正 works：以 creator_name 搜尋一律回傳錯誤。
+  %li 修正 catalog_entry 的 vol 參數、toc 以冊號 (例：T01) 查詢，一律回傳錯誤。
+  %li
+    修正查無資料或缺少參數時回傳錯誤 (HTTP 500) 的問題：
+    lines、juans、works/toc，以及 toc 以不存在的經號查詢。
+  %li Asia Network API (/api/*) 的 uuid 不存在時，改為回傳 HTTP 404。
+  %li juans/goto 缺少參數時，錯誤碼由 520 改為 400。
+  %li search/facet 不指定 facet 種類時，依說明頁一次回傳五種 facet。
+  %li 錯誤回應不再附上程式的 backtrace。
+  %li 修正多個說明頁的參數說明與範例。
+
 %h3 2026-09-30 Version 5.8.2
 %ul
   %li OpenAPI 文件 #{link_to_url '/docs'} 擴充為涵蓋所有 API。

@@ -43,7 +43,7 @@ class StaticPagesController < ApplicationController
 
   def search_similar
     @examples = [
-      '已得善提捨不證', 
+      '觀音菩薩大慈悲，已得善提捨不證', 
       '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。', 
       '諸惡莫作，眾善奉行，自淨其意，是諸佛教', 
       '斷愛欲，轉諸結，慢無間等，究竟苦邊',

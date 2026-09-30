@@ -61,10 +61,28 @@
     %td 選項
     %td 回傳 kwic 欄位中的關鍵字前後是否加 mark 標記： 0: 不加(預設值)。 1: 要加。
   %tr
-    %td sort
+    %td around
     %td 選項
-    %td
-      'f': forward concordance, 以關鍵字後面的字排序。<br/>
-      'b': backword concordance, 以關鍵字前面的字排序。<br/>
-      'location': 搜尋範圍在單卷之中才能使用，依關鍵字出現的位置排序。<br/>
-      預設為 'f'。
+    %td 前後文的字數，預設為 5。
+  %tr
+    %td kwic_w_punc
+    %td 選項
+    %td 是否回傳含標點的前後文 (kwic 欄位)： 0: 不回傳。 1: 回傳(預設值)。
+  %tr
+    %td kwic_wo_punc
+    %td 選項
+    %td 是否回傳不含標點的前後文 (kwic_no_punc 欄位)： 0: 不回傳(預設值)。 1: 回傳。
+  %tr
+    %td place
+    %td 選項
+    %td 是否附上這部佛典的地理資訊 (place_* 欄位)： 0: 不附(預設值)。 1: 附上。
+  %tr
+    %td negative_lookbehind
+    %td 選項
+    %td 排除前搭配，見上方 Exclude 的例子。
+  %tr
+    %td negative_lookahead
+    %td 選項
+    %td 排除後搭配，見上方 Exclude 的例子。
+
+%p 回傳全卷所有符合的結果，依關鍵字出現的位置排序。
