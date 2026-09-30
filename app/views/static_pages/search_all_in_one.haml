@@ -24,15 +24,17 @@
     %td fields
     %td 選項
     %td 
-      指定要回傳哪些欄位，例：
-      =link_to_url '/search/all_in_one?q=法鼓&fields=work,juan,term_hits'
+      %p
+        指定要回傳哪些欄位，例：
+        =link_to_url '/search/all_in_one?q=法鼓&fields=work,juan,term_hits'
+      %p 要連同 KWIC 一起回傳，須列入 kwics。
   %tr
     %td facet
     %td 選項
     %td 
       %p 是否回傳 facet。
       %p 預設為 0: 不回傳 facet。
-      %p 若設為 1 則會回傳四種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。
+      %p 若設為 1 則會回傳五種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。
   =render partial: 'search-arg-paginate'
   %tr
     %td around
@@ -70,46 +72,70 @@
         "category": [
           {
             "category_id": 17,
-            "juans": 283,
+            "docs": 283,
+            "hits": 352,
             "category_name": "禪宗部類"
           },
           {
             "category_id": 23,
-            "juans": 151,
+            "docs": 201,
+            "hits": 321,
             "category_name": "新編部類"
           }...
         ],
         "creator": [
           {
-            "creator_id": "A001519",
-            "juans": 23
+            "creator_id": "A023393",
+            "docs": 19,
+            "hits": 54,
+            "creator_name": "釋印順"
           },
           {
-            "creator_id": "A001755",
-            "juans": 21
+            "creator_id": "A000527",
+            "docs": 3,
+            "hits": 47,
+            "creator_name": "求那跋陀羅"
           }...
         ],
         "dynasty": [
           {
-            "dynasty": "清",
-            "juans": 216
+            "dynasty": "東漢",
+            "docs": 4,
+            "hits": 5
           },
           {
-            "dynasty": "唐",
-            "juans": 164
+            "dynasty": "曹魏",
+            "docs": 2,
+            "hits": 2
           }...
         ],
         "work": [
           {
-            "work": "B0088",
-            "title": "古今圖書集成選輯（上）",
-            "juans": 32
+            "work": "T0270",
+            "docs": 2,
+            "hits": 46,
+            "title": "大法鼓經"
           },
           {
-            "work": "B0192",
-            "title": "釋文紀",
-            "juans": 17
-          },...
+            "work": "B0088",
+            "docs": 32,
+            "hits": 40,
+            "title": "古今圖書集成選輯"
+          }...
+        ],
+        "canon": [
+          {
+            "canon": "T",
+            "docs": 382,
+            "hits": 569,
+            "canon_name": "大正藏"
+          },
+          {
+            "canon": "X",
+            "docs": 272,
+            "hits": 384,
+            "canon_name": "新纂卍續藏"
+          }...
         ]
       }
     }
