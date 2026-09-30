@@ -19,6 +19,8 @@ class TocNodeController < ApplicationController
 
     start = Time.now
     result = search_by_query_term
+    return if performed? # 冊號查詢已 redirect 到 catalog_entry
+
     result = [] if result.nil?
 
     result.each do |r|
@@ -86,13 +88,17 @@ class TocNodeController < ApplicationController
   def search_by_query_term
     q = params[:q]
     if q.match(/^(#{CBETA::CANON})\d{2,3}$/) # ex: T01
-      canon = $1
-      parent = "Vol-#{canon}"
-      ce = CatalogEntry.where("(parent=?) AND (label LIKE ?)", parent, "#{q}%").first
+      ce = CatalogEntry.find_by_vol(q)
+      return [] if ce.nil?
+
+      # 呼叫端 (index) 看到 performed? 就不再 render
       redirect_to controller: 'catalog_entry', action: 'index', q: ce.n
+      return
     elsif q.match(/^(#{CBETA::CANON})\d{2,3}n(\w{4,5})$/) # ex: T01n0001
       q = $1 + $2
       w = Work.find_by n: q
+      return [] if w.nil?
+
       row = { type: 'work' }
       row.merge! w.to_hash
       result = [row]

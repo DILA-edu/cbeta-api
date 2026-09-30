@@ -179,6 +179,21 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # 回傳給 client 的錯誤訊息。不回傳 backtrace（會洩漏伺服器路徑），完整錯誤寫進 log。
+  # CbetaError 的訊息是寫給使用者看的，但部分訊息含檔案路徑，去掉 Rails.root 前綴；
+  # 其他例外的訊息是內部細節，一律不對外。
+  def public_error_message(e)
+    logger.error "#{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}"
+    return '伺服器內部錯誤' unless e.is_a?(CbetaError)
+
+    e.message.gsub("#{Rails.root}/", '')
+  end
+
+  # Asia Network API (/api/*) 的 uuid 查無資料
+  def render_asia_not_found(uuid)
+    render json: { error: { code: 404, message: "uuid 不存在: #{uuid}" } }, status: :not_found
+  end
+
   # 全文檢索 q 參數是否超過長度上限（字數）
   def query_too_long?(q)
     q.to_s.size > MAX_QUERY_LENGTH

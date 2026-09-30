@@ -54,14 +54,15 @@ class WorksController < ApplicationController
     my_render(r)
   rescue => e
     r = { 
-      error: { code: 500, message: $!, backtrace: e.backtrace } 
+      error: { code: 500, message: public_error_message(e) }
     }
     my_render(r)
   end
 
   def toc
     start = Time.now
-    toc = get_toc_by_work_id(params[:work])
+    # work 會用來組檔案路徑，格式不對 (含缺少) 就當作查無資料
+    toc = params[:work].to_s.match?(CBETA::WORK_ID) ? get_toc_by_work_id(params[:work]) : nil
     result = toc.nil? ? [] : [toc]
     r = {
       num_found: result.size,
@@ -76,6 +77,8 @@ class WorksController < ApplicationController
   def search_by_canon_uuid
     uuid = params[:uuid]
     canon = Canon.find_by uuid: uuid
+    return render_asia_not_found(uuid) if canon.nil?
+
     works = Work.where(canon: canon.id2).where(alt: nil).order(:n)
     r = []
     works.each do |w|
@@ -111,7 +114,8 @@ class WorksController < ApplicationController
   # 以作譯者姓名搜尋，只搜尋還沒有 ID 的
   def search_by_creator_name
     q = params[:creator_name]
-    works = Work.where("(creators_with_id IS ?) AND (creators LIKE ?)", nil, "%#{q}%").order(:n)
+    # 尚未確認 ID：匯入時沒有任何作譯者有 ID 會存成空字串 (見 import:work_info)
+    works = Work.where(creators_with_id: [nil, '']).where("creators LIKE ?", "%#{q}%").order(:n)
     r = []
     works.each do |w|
       r << w.to_hash

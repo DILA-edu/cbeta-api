@@ -7,7 +7,12 @@ class JuansController < ApplicationController
   
   def index
     work = params[:work]
-    
+    # work 會用來組檔案路徑，格式不對 (含缺少) 就當作查無資料
+    unless work.to_s.match?(CBETA::WORK_ID)
+      my_render EMPTY_RESULT
+      return
+    end
+
     if referer_cn? and filter_cn?(id: work)
       my_render EMPTY_RESULT
       return
@@ -52,8 +57,8 @@ class JuansController < ApplicationController
     end
     
     if result.nil?
-      r = { 
-        error: { code: 520, message: "Unknown Error" }
+      r = {
+        error: { code: 400, message: '缺少參數：須指定 linehead，或 canon 加上 vol 或 work' }
       }
     elsif result.key?(:error)
       r = result
@@ -74,11 +79,11 @@ class JuansController < ApplicationController
     
     my_render(r)
   rescue CbetaError => e
-    r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
+    r = { error: { code: e.code, message: public_error_message(e) } }
     my_render(r)
   rescue => e
     r = { 
-      error: { code: 500, message: $!, backtrace: e.backtrace } 
+      error: { code: 500, message: public_error_message(e) }
     }
     my_render(r)
   end
@@ -86,6 +91,8 @@ class JuansController < ApplicationController
   def list_for_asia_network
     uuid = params[:uuid]
     work = Work.find_by uuid: uuid
+    return render_asia_not_found(uuid) if work.nil?
+
     juans = JuanLine.where(work: work.n).order(:juan)
     
     r = []
@@ -104,6 +111,8 @@ class JuansController < ApplicationController
   def content_for_asia_network
     uuid = params[:uuid]
     juan = JuanLine.find_by uuid: uuid
+    return render_asia_not_found(uuid) if juan.nil?
+
     work = Work.find_by n: juan.work
     
     fn = "#{work.n}_%03d.txt" % juan.juan
@@ -120,10 +129,7 @@ class JuansController < ApplicationController
         }
       ]
     else
-      r = { 
-        error: 'file not found',
-        file_path: fn
-      }
+      r = { error: 'file not found' }
     end
     
     render json: r
@@ -132,6 +138,8 @@ class JuansController < ApplicationController
   def show_for_asia_network
     uuid = params[:uuid]
     juan = JuanLine.find_by uuid: uuid
+    return render_asia_not_found(uuid) if juan.nil?
+
     work = Work.find_by n: juan.work
     
     uri = File.join(root_url, 'download', 'text-for-asia-network', work.canon, work.n, "#{work.n}_%03d.txt" % juan.juan)

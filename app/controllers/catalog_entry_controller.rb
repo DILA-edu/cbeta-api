@@ -59,14 +59,10 @@ class CatalogEntryController < ApplicationController
   end
   
   def get_entries_by_vol(vol)
-    if vol.match(/^(#{CBETA::CANON})\d{2,3}$/) # ex: T01
-      canon = $1
-      parent = "Vol-#{canon}"
-      catalog_entry = CatalogEntry.where("(parent=?) AND (label LIKE ?)", parent, "#{vol}%").first
-      get_entries_by_parent(catalog_entry.n)
-    else
-      []
-    end
+    catalog_entry = CatalogEntry.find_by_vol(vol) # ex: T01
+    return [] if catalog_entry.nil?
+
+    get_entries_by_parent(catalog_entry.n)
   end
   
   def get_label_by_entry(id)

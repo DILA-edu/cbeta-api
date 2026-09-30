@@ -52,7 +52,7 @@ Rails.application.routes.draw do
 
   match 'search/all_in_one',      to: 'search#all_in_one', via: [:get, :post]
   match 'search/extended',        to: 'search#extended',   via: [:get, :post]
-  match 'search/facet/:facet_by', to: 'search#facet',      via: [:get, :post]
+  match 'search/facet(/:facet_by)', to: 'search#facet',    via: [:get, :post]
   match 'search/kwic',            to: 'kwic3#juan',        via: [:get, :post]
   match 'search/notes',           to: 'search#notes',      via: [:get, :post]
   match 'search/sc',              to: 'search#sc',         via: [:get, :post]

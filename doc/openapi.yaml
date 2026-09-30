@@ -278,6 +278,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /search/facet:
+    get:
+      operationId: searchFacetAll
+      summary: 檢索結果一次回傳五種 facet
+      description: |
+        與 `/search/facet/{facet_by}` 相同，但一次回傳藏經、部類、作譯者、朝代、佛典五種 facet。
+
+        注意：
+        - 不支援 NEAR 與 Exclude 語法，會回傳 `LegacyError`。
+        - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
+      tags: [search]
+      parameters:
+        - $ref: '#/components/parameters/searchQ'
+        - $ref: '#/components/parameters/searchNote'
+        - $ref: '#/components/parameters/canon'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/work'
+        - $ref: '#/components/parameters/works'
+        - $ref: '#/components/parameters/creator'
+        - $ref: '#/components/parameters/dynasty'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/work_type'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 五種 facet；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Facets'
+                  - $ref: '#/components/schemas/LegacyError'
+            text/plain:
+              schema:
+                type: string
+              example: q 參數不能是空的
+
   /search/facet/{facet_by}:
     get:
       operationId: searchFacet
@@ -1106,6 +1143,12 @@ paths:
                     items:
                       $ref: '#/components/schemas/AsiaResource'
                   - $ref: '#/components/schemas/Error'
+        '404':
+          description: 指定 `uuid` 時，該 uuid 不存在。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /works/toc:
     get:
@@ -1433,6 +1476,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AsiaResource'
+        '404':
+          description: uuid 不存在。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/resources/{uuid}/sections:
     get:
@@ -1450,6 +1499,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AsiaSection'
+        '404':
+          description: uuid 不存在。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/sections/{uuid}:
     get:
@@ -1468,6 +1523,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AsiaSection'
+        '404':
+          description: uuid 不存在。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/sections/{uuid}/content_units:
     get:
@@ -1487,6 +1548,12 @@ paths:
                     items:
                       $ref: '#/components/schemas/AsiaContentUnit'
                   - $ref: '#/components/schemas/LegacyError'
+        '404':
+          description: uuid 不存在。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   parameters:
@@ -1876,7 +1943,7 @@ components:
       description: |
         舊式的錯誤回應：HTTP status 仍是 200，錯誤訊息放在 `error` 字串
         （既有 client 依賴這個行為）。多數 API 的參數錯誤都是這個格式。
-        實際回應可能另含 `query_string`、`backtrace` 等欄位，不屬於公開契約，
+        實際回應可能另含 `query_string` 等欄位，不屬於公開契約，
         因此這裡不限制額外欄位。
       required: [error]
       properties:
@@ -2512,7 +2579,7 @@ components:
       type: object
       description: |
         舊式的錯誤回應：HTTP status 仍是 200，錯誤放在 `error` 物件，`code` 為對應的
-        HTTP status。實際回應可能另含 `backtrace` 等欄位，不屬於公開契約，
+        HTTP status。實際回應可能另含其他欄位，不屬於公開契約，
         因此這裡不限制額外欄位。
       required: [error]
       properties:

@@ -93,12 +93,16 @@ class LinesController < ApplicationController
   
   def get_next_lines(linehead, after, result)
     line = Line.find_by(linehead:)
+    return if line.nil? # linehead 不存在: 不加前後行, 結果為空
+
     lines = Line.where("ser_no > ?", line.ser_no).order(:ser_no).first(after)
     add_lines_to_result result, lines
   end
   
   def get_previous_lines(linehead, before, result)
     line = Line.find_by(linehead:)
+    return if line.nil? # linehead 不存在: 不加前後行, 結果為空
+
     lines = Line.where("ser_no < ?", line.ser_no).order(ser_no: :desc).first(before)
     add_lines_to_result result, lines
   end

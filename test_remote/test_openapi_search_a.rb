@@ -1,7 +1,7 @@
 require 'minitest/autorun'
 require_relative 'openapi_helper'
 
-# 以 OpenAPI spec 驗證 /search、/search/extended、/search/facet/{facet_by}、
+# 以 OpenAPI spec 驗證 /search、/search/extended、/search/facet(/{facet_by})、
 # /search/notes、/search/title 的回應。
 class OpenapiSearchATest < Minitest::Test
   include OpenapiHelper
@@ -47,6 +47,11 @@ class OpenapiSearchATest < Minitest::Test
       r = assert_conform("search/facet/#{facet_by}", { q: '法鼓' }, path: '/search/facet/{facet_by}')
       refute_empty r, facet_by
     end
+  end
+
+  def test_facet_all
+    r = assert_conform('search/facet', { q: '法鼓' })
+    assert_equal %w[canon category creator dynasty work], r.keys.sort
   end
 
   def test_facet_errors

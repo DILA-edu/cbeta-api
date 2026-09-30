@@ -75,14 +75,14 @@ class SearchController < ApplicationController
     my_render r
   rescue Elastic::Transport::Transport::Error, Elasticsearch::UnsupportedProductError, Faraday::Error
     # 交給 elasticsearch_error_handler 統一處理（回 502、不回 backtrace）。
-    # 必須放在下面兩個 rescue 之前，否則會被它們攔下來變成 500 加 backtrace。
+    # 必須放在下面兩個 rescue 之前，否則會被它們攔下來變成 200 加 error。
     raise
   rescue CbetaError => e
-    r = { error: { code: e.code, message: $!, backtrace: e.backtrace } }
+    r = { error: { code: e.code, message: public_error_message(e) } }
     my_render(r)
   rescue => e
     r = { 
-      error: { code: 500, message: $!, backtrace: e.backtrace } 
+      error: { code: 500, message: public_error_message(e) }
     }
     my_render(r)
   end
@@ -218,8 +218,6 @@ class SearchController < ApplicationController
 
   # 以簡體字查詢
   def sc
-    raise CbetaError.new(400), "q 參數長度不得大於 50" if params[:q].size > 50
-
     t1 = Time.now
 
     # 簡轉繁
@@ -1167,8 +1165,7 @@ class SearchController < ApplicationController
     end
 
     r = empty_result
-    r[:error] = e.message
-    r[:backtrace] = e.backtrace
+    r[:error] = public_error_message(e)
     my_render r
   end
 end
