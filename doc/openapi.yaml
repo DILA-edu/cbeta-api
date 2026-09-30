@@ -1,6 +1,6 @@
-# CBETA API 的 OpenAPI spec（POC 階段，目前只涵蓋 /search/all_in_one）。
+# CBETA API 的 OpenAPI spec。
 #
-# 回應 schema 由 test_remote/test_openapi_all_in_one.rb 對線上 API 驗證：
+# 回應 schema 由 test_remote/test_openapi_*.rb 對線上 API 驗證，例如：
 #   rake remote:test[dev,openapi_all_in_one]
 # schema 一律 additionalProperties: false，API 多出或少掉欄位 test 就會失敗，
 # 用來避免文件與實作脫節（說明頁範例曾殘留已移除的 SQL 欄位）。
@@ -13,8 +13,6 @@ info:
   version: dev
   description: |
     CBETA 電子佛典的 API。
-
-    **試行階段**：目前只涵蓋 `/search/all_in_one`，其餘 API 請見各說明頁。
 
     概念性的說明（檢索語法、限制搜尋範圍等）見各說明頁，例如
     [All in One](https://cbdata.dila.edu.tw/dev/static_pages/search_all_in_one)、
@@ -1498,7 +1496,7 @@ components:
       description: |
         JSONP 的函式名稱。指定時回應改為 `application/javascript`，
         內容為 `/**/<callback>(<JSON>)`，其中的 JSON 與未指定時相同。
-        所有回傳 JSON 的 API 都支援。
+        各 API 有列出此參數才支援。
       schema:
         type: string
         pattern: '^[A-Za-z_$][0-9A-Za-z_$.]*$'
