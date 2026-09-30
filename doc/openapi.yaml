@@ -704,6 +704,303 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /search/kwic:
+    get:
+      operationId: searchKwic
+      summary: 單卷 KWIC (Keyword in Context)
+      description: |
+        在指定的一卷裡搜尋關鍵字，回傳前後文。夾注不列入搜尋範圍（可跨夾注檢索），
+        但前後文會含夾注，15 字以上的夾注會節略。
+
+        回傳該卷全部的符合結果，依出現位置排序。
+
+        參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位；
+        只有 `q` 為空字串時回 400。
+      tags: [search]
+      parameters:
+        - name: work
+          in: query
+          required: true
+          description: 佛典編號。
+          schema:
+            type: string
+          example: X0600
+        - name: juan
+          in: query
+          required: true
+          description: 卷號。
+          schema:
+            type: integer
+            minimum: 1
+          example: 11
+        - name: q
+          in: query
+          required: true
+          description: |
+            要搜尋的關鍵字，多個關鍵字以半形逗點區隔，例如 `法鼓,聖嚴`。長度上限 40 字。
+            也可使用 NEAR 語法，例如 `"老子" NEAR/7 "道"`。
+            關鍵字含雙引號、單引號、半形減號時需以反斜線 escape。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 40
+          examples:
+            phrase:
+              value: 法鼓
+            multiple:
+              value: 法鼓,聖嚴
+            near:
+              value: '"老子" NEAR/7 "道"'
+        - name: note
+          in: query
+          description: 是否含夾注。0：不含夾注；1：含夾注。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '1'
+        - name: mark
+          in: query
+          description: 前後文中的關鍵字是否以 `<mark>` 標記。0：不標記；1：標記。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - name: around
+          in: query
+          description: 前後文的字數。
+          schema:
+            type: integer
+            minimum: 0
+            default: 5
+        - name: kwic_w_punc
+          in: query
+          description: 是否回傳含標點的前後文 (`kwic` 欄位)。0：不回傳；1：回傳。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '1'
+        - name: kwic_wo_punc
+          in: query
+          description: 是否回傳不含標點的前後文 (`kwic_no_punc` 欄位)。0：不回傳；1：回傳。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - name: place
+          in: query
+          description: 是否附上這部佛典的地理資訊 (`place_*` 欄位)。0：不附；1：附上。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - name: negative_lookbehind
+          in: query
+          description: 排除前搭配。例如搜尋「直心」並指定 `正`，會排除「正直心」。
+          schema:
+            type: string
+          example: 正
+        - name: negative_lookahead
+          in: query
+          description: 排除後搭配。例如搜尋「舍利」並指定 `弗`，會排除「舍利弗」。
+          schema:
+            type: string
+          example: 弗
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 搜尋結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/KwicJuanResult'
+                  - $ref: '#/components/schemas/LegacyError'
+        '400':
+          description: '`q` 為空字串。'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /lines:
+    get:
+      operationId: getLines
+      summary: 取得行文字
+      description: |
+        以行首資訊取得一行或一段範圍的文字。指定 `linehead`，或同時指定
+        `linehead_start` 與 `linehead_end`；兩者都沒有時回傳空結果。
+
+        若要取得全部佛典全文，建議改用下載的全文檔案。
+      tags: [text]
+      parameters:
+        - name: linehead
+          in: query
+          description: 單獨指定某一行的行首資訊。
+          schema:
+            type: string
+          example: T01n0001_p0001a04
+        - name: before
+          in: query
+          description: 指定 `linehead` 時，一併取得前面幾行。
+          schema:
+            type: integer
+            minimum: 0
+        - name: after
+          in: query
+          description: 指定 `linehead` 時，一併取得後面幾行。
+          schema:
+            type: integer
+            minimum: 0
+        - name: linehead_start
+          in: query
+          description: 範圍的起始行首資訊，須與 `linehead_end` 一起使用。
+          schema:
+            type: string
+          example: T01n0001_p0001a04
+        - name: linehead_end
+          in: query
+          description: 範圍的結束行首資訊，須與 `linehead_start` 一起使用。
+          schema:
+            type: string
+          example: T01n0001_p0001a06
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 各行文字，依行首資訊排序。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinesResult'
+
+  /juans:
+    get:
+      operationId: getJuan
+      summary: 取得某卷 HTML
+      description: |
+        回傳一卷的 HTML，內有各種標記供前端 UI 使用，格式見
+        [HTML for UI 格式說明](https://cbdata.dila.edu.tw/dev/static_pages/html_for_ui)。
+        查無此卷時回傳 `num_found: 0` 與空的 `results`。
+      tags: [text]
+      parameters:
+        - name: work
+          in: query
+          required: true
+          description: 佛典編號。
+          schema:
+            type: string
+          example: T0001
+        - name: juan
+          in: query
+          required: true
+          description: 卷號。
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+        - name: toc
+          in: query
+          description: 是否一併回傳這部佛典的目次。0：不回傳；1：回傳。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - name: work_info
+          in: query
+          description: 是否一併回傳佛典資訊。0：不回傳；1：回傳。
+          schema:
+            type: string
+            enum: ['0', '1']
+            default: '0'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 該卷 HTML。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JuansResult'
+
+  /juans/goto:
+    get:
+      operationId: gotoJuan
+      summary: 依經卷、冊頁或引用格式定位
+      description: |
+        把「經號 + 卷 / 頁 / 欄 / 行」、「冊號 + 頁 / 欄 / 行」或行首資訊、
+        CBETA 引用格式，換算成對應的卷與行首資訊。三種方式擇一：
+
+        - 經卷結構：`canon` + `work`，可再加 `juan` 或 `page`、`col`、`line`
+        - 書本結構：`canon` + `vol`，可再加 `page`、`col`、`line`
+        - `linehead`：行首資訊、CBETA 引用格式，或常用的簡稱
+
+        錯誤時 HTTP status 仍是 200，見 `LegacyCodedError`。
+      tags: [text]
+      parameters:
+        - name: canon
+          in: query
+          description: 藏經 ID，與 `work` 或 `vol` 一起使用。
+          schema:
+            type: string
+          example: T
+        - name: work
+          in: query
+          description: 經號，不含藏經 ID，例如大正藏第一經為 `1`。
+          schema:
+            type: string
+          example: '1'
+        - name: vol
+          in: query
+          description: 冊號，不含藏經 ID，例如大正藏第一冊為 `1`。
+          schema:
+            type: string
+          example: '1'
+        - name: juan
+          in: query
+          description: 卷號，與 `work` 一起使用。
+          schema:
+            type: integer
+            minimum: 1
+        - name: page
+          in: query
+          description: 頁碼。
+          schema:
+            type: string
+          example: '11'
+        - name: col
+          in: query
+          description: 欄，例如 `a`、`b`、`c`。
+          schema:
+            type: string
+          example: b
+        - name: line
+          in: query
+          description: 行號。
+          schema:
+            type: string
+          example: '10'
+        - name: linehead
+          in: query
+          description: |
+            行首資訊（例 `T01n0001_p0066c25`）或 CBETA 引用格式
+            （例 `CBETA, T01, no. 1, p. 67, a13`、`CBETA 2019.Q3, T30, no. 1579, p. 279a7-23`）。
+            引用格式需 URL encode。
+          schema:
+            type: string
+          examples:
+            linehead:
+              value: T01n0001_p0066c25
+            citation:
+              value: CBETA, T01, no. 1, p. 67, a13
+        - $ref: '#/components/parameters/callback'
+      responses:
+        '200':
+          description: 定位結果；錯誤時同樣是 200，見 `LegacyCodedError`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/JuansGotoResult'
+                  - $ref: '#/components/schemas/LegacyCodedError'
+
 components:
   parameters:
     callback:
@@ -1469,3 +1766,249 @@ components:
         hits:
           type: integer
           description: 出現次數。
+
+    KwicJuanResult:
+      type: object
+      additionalProperties: false
+      required: [num_found, time, results]
+      properties:
+        num_found:
+          type: integer
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/KwicJuanHit'
+
+    KwicJuanHit:
+      type: object
+      additionalProperties: false
+      required: [vol, lb]
+      properties:
+        vol:
+          type: string
+          description: 冊號。一卷可能跨冊。
+          example: X30
+        lb:
+          type: string
+          description: 行號。
+          example: 0236a11
+        kwic:
+          type: string
+          description: 含標點的前後文；`kwic_w_punc=0` 時不回傳。
+          example: 吹法螺擊大法鼓，度脫一切
+        kwic_no_punc:
+          type: string
+          description: 不含標點的前後文；`kwic_wo_punc=1` 時才回傳。
+        place_name:
+          type: string
+          description: 地名；`place=1` 且這部佛典有地理資訊時才回傳，其他 `place_*` 欄位亦同。
+          example: 長安
+        place_id:
+          type: string
+          example: PL000000042393
+        place_long:
+          type: number
+          description: 經度。
+        place_lat:
+          type: number
+          description: 緯度。
+
+    LinesResult:
+      type: object
+      additionalProperties: false
+      required: [num_found, results]
+      properties:
+        num_found:
+          type: integer
+        time:
+          type: number
+          description: 伺服器處理時間（秒）。
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinesLine'
+
+    LinesLine:
+      type: object
+      additionalProperties: false
+      required: [linehead, html]
+      properties:
+        linehead:
+          type: string
+          description: 行首資訊。
+          example: T01n0001_p0001a04
+        html:
+          type: string
+          description: 該行文字。有註解的話會有 `<a class="noteAnchor">` 標記。
+        notes:
+          type: object
+          description: 該行的註解，key 為註號；沒有註解時不回傳。
+          additionalProperties:
+            type: string
+          example:
+            '0001002': 長安【大】，〔－〕【宋】
+
+    JuansResult:
+      type: object
+      additionalProperties: false
+      required: [num_found, results]
+      properties:
+        num_found:
+          type: integer
+          description: 找到該卷時為 1，否則為 0。
+        uuid:
+          type: string
+          format: uuid
+          description: 卷的 UUID；查無此卷時不回傳。
+        content:
+          type: string
+          format: uuid
+          description: 卷內容的 UUID；查無此卷時不回傳。
+        results:
+          type: array
+          maxItems: 1
+          items:
+            type: string
+            description: 該卷的 HTML。
+        toc:
+          description: 目次；`toc=1` 時才回傳，這部佛典沒有目次時為 null。
+          oneOf:
+            - $ref: '#/components/schemas/JuansToc'
+            - type: 'null'
+        work_info:
+          description: 佛典資訊；`work_info=1` 時才回傳。
+          oneOf:
+            - $ref: '#/components/schemas/JuansWorkInfo'
+            - type: 'null'
+
+    JuansToc:
+      type: object
+      additionalProperties: false
+      required: [mulu, juan]
+      properties:
+        mulu:
+          type: array
+          description: 章節目次。
+          items:
+            $ref: '#/components/schemas/JuansTocNode'
+        juan:
+          type: array
+          description: 卷目次。
+          items:
+            $ref: '#/components/schemas/JuansTocJuan'
+
+    JuansTocNode:
+      type: object
+      additionalProperties: false
+      required: [title, file, juan, lb]
+      properties:
+        title:
+          type: string
+          example: 序
+        file:
+          type: string
+          example: T01n0001
+        juan:
+          type: integer
+        lb:
+          type: string
+          example: 0001a02
+        type:
+          type: string
+          example: 序
+        n:
+          type: integer
+          description: 節點編號；有子節點時才回傳。
+        isFolder:
+          type: boolean
+          description: 有子節點時才回傳。
+        children:
+          type: array
+          description: 子節點。
+          items:
+            $ref: '#/components/schemas/JuansTocNode'
+
+    JuansTocJuan:
+      type: object
+      additionalProperties: false
+      required: [file, juan, lb, title]
+      properties:
+        file:
+          type: string
+          example: T01n0001
+        juan:
+          type: integer
+        lb:
+          type: string
+          example: 0001b08
+        title:
+          type: string
+          example: 第一
+
+    JuansWorkInfo:
+      description: 卷所屬佛典的資訊，欄位見 `WorkInfoFields`。
+      allOf:
+        - $ref: '#/components/schemas/WorkInfoFields'
+      type: object
+      unevaluatedProperties: false
+      required: [work, uuid, canon, category, orig_category, vol, title, juan, juan_list]
+
+    JuansGotoResult:
+      type: object
+      additionalProperties: false
+      required: [num_found, results]
+      properties:
+        num_found:
+          type: integer
+        results:
+          type: array
+          maxItems: 1
+          items:
+            $ref: '#/components/schemas/JuansGotoTarget'
+
+    JuansGotoTarget:
+      type: object
+      additionalProperties: false
+      required: [vol, work, file, juan, lb, linehead]
+      properties:
+        vol:
+          type: string
+          example: T01
+        work:
+          type: string
+          example: T0001
+        file:
+          type: string
+          example: T01n0001
+        juan:
+          type: integer
+        lb:
+          type: string
+          example: 0011b10
+        linehead:
+          type: string
+          example: T01n0001_p0011b10
+        title:
+          type: string
+          example: 長阿含經
+
+    LegacyCodedError:
+      type: object
+      description: |
+        舊式的錯誤回應：HTTP status 仍是 200，錯誤放在 `error` 物件，`code` 為對應的
+        HTTP status。實際回應可能另含 `backtrace` 等欄位，不屬於公開契約，
+        因此這裡不限制額外欄位。
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: integer
+              example: 404
+            message:
+              type: string
