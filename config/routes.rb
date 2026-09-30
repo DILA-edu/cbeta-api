@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   root 'static_pages#home'
   get '/health', to: proc { [200, {}, ['success']] }
+  # OpenAPI spec (doc/openapi.yaml)；文件頁是靜態的 public/docs.html
+  get '/openapi.json', to: 'openapi#show', format: false, as: :openapi
 
   # --- 登入（OmniAuth）---
   # request phase 只收 POST（OmniAuth 2 的預設，防 login CSRF），

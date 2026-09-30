@@ -42,6 +42,23 @@ class OpenapiSpecTest < ActionDispatch::IntegrationTest
     assert_equal ApplicationController::MAX_QUERY_LENGTH, q.dig('schema', 'maxLength')
   end
 
+  test '/openapi.json 的版號取自 VERSION、servers 指向目前的站台' do
+    get '/openapi.json'
+
+    assert_response :success
+    spec = response.parsed_body
+    assert_equal Rails.configuration.x.ver, spec.dig('info', 'version')
+    assert_equal [ { 'url' => 'http://www.example.com' } ], spec['servers']
+    assert_empty(JSONSchemer.openapi(spec).validate.map { it['error'] })
+  end
+
+  test '/openapi.json 不納管 API key' do
+    get '/openapi.json'
+
+    assert_response :success
+    assert_nil response.headers['X-CBETA-API-Key']
+  end
+
   private
 
   def assert_conform(name, body)

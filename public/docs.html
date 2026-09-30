@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CBETA API Reference</title>
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <style>
+      body { margin: 0; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Scalar API Reference。spec 來源為同站的 openapi.json (OpenapiController#show)。
+      放在 public/ 而非 Rails view: 靜態檔不經過 Rails 的 CSP header,
+      Scalar 需要 inline script 與執行時插入的 inline style。
+    -->
+    <div id="app"></div>
+    <!-- 固定版號, 避免 CDN 更新後畫面無預警改變 -->
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.72.2"></script>
+    <script>
+      Scalar.createApiReference('#app', {
+        // 用相對路徑 (不加開頭斜線), 才能同時相容於掛在路徑前綴下的部署
+        // (https://cbdata.dila.edu.tw/dev/docs → /dev/openapi.json)
+        // 與本機根目錄 (http://localhost:3000/docs → /openapi.json)。
+        url: 'openapi.json',
+        // 深色/淺色由系統偏好決定
+        theme: 'default',
+        // 關掉 Scalar 預設開啟的使用統計, 以及導向 Scalar 自家服務的功能
+        // (Ask AI、Generate MCP、localhost 才出現的 Developer Tools 工具列)
+        telemetry: false,
+        agent: { disabled: true },
+        mcp: { disabled: true },
+        showDeveloperTools: 'never',
+        showToolbar: 'never',
+      })
+    </script>
+  </body>
+</html>

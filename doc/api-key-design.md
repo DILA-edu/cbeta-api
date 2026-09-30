@@ -311,6 +311,7 @@ rate limit 的 `by:` 與 401 的 fail2ban log 也一併改用它（見 6.6）。
 
 **不納管**：
 - `/health`
+- `/openapi.json` 與 `/docs`（API 文件，後者是靜態檔 `public/docs.html`）
 - `static_pages/*`（HTML 說明文件）
 - `/download`（靜態檔）
 - 登入與帳號管理頁（`/auth/*`、`/account/*`）
