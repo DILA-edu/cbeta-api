@@ -61,8 +61,8 @@ class SearchController < ApplicationController
 
     t1 = Time.now
     r = if @use_cache
-          key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
-          Rails.cache.fetch(key) do
+          key = response_cache_key("#{params}-#{@referer_cn}")
+          fetch_response_cache(key) do
             all_in_one_sub
           end
         else
@@ -102,10 +102,10 @@ class SearchController < ApplicationController
   def similar
     t1 = Time.now
 
-    key = "#{Rails.configuration.cb.r}/search/similar/#{params}-#{@referer_cn}"
+    key = response_cache_key("search/similar/#{params}-#{@referer_cn}")
 
     r = if @use_cache
-          Rails.cache.fetch(key) do
+          fetch_response_cache(key) do
             similar_sub
           end
         else
@@ -202,8 +202,8 @@ class SearchController < ApplicationController
     t1 = Time.now
 
     r = if @use_cache
-          key = "#{Rails.configuration.cb.r}/#{params}-#{@referer_cn}"
-          Rails.cache.fetch(key) do
+          key = response_cache_key("#{params}-#{@referer_cn}")
+          fetch_response_cache(key) do
             variants_sub
           end
         else
@@ -325,6 +325,20 @@ class SearchController < ApplicationController
   # 傳給 CbetaSearch::ElasticQueryBuilder 的參數 (filter 與排序)。
   # 直接取值而不用 params.permit: 其餘參數 (q / start / rows / fields …) 由
   # controller 自己處理，若走 permit 會被當成 unpermitted parameters。
+  # API 回應的快取 (all_in_one、similar、variants)。
+  # key 含季別與程式版號: 換季或升版 (回應格式可能改變) 都自動失效，
+  # 否則格式修正對已快取的查詢要等到下一季才生效。
+  # 另設有效期限: staging 的 Redis 沒有淘汰機制，舊 key 會一直累積。
+  RESPONSE_CACHE_TTL = 30.days
+
+  def response_cache_key(suffix)
+    "#{Rails.configuration.cb.r}/#{Rails.configuration.x.ver}/#{suffix}"
+  end
+
+  def fetch_response_cache(key, &)
+    Rails.cache.fetch(key, expires_in: RESPONSE_CACHE_TTL, &)
+  end
+
   ES_PARAM_KEYS = %i[canon work works category creator dynasty time work_type order].freeze
 
   def es_params

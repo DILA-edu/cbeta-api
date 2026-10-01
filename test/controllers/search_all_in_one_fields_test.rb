@@ -71,6 +71,37 @@ class SearchAllInOneFieldsTest < ActionDispatch::IntegrationTest
     assert_equal %w[kwics], body['results'].first.keys
   end
 
+  # 回應格式隨程式版本改變，快取 key 要含版號；另有 30 天期限
+  test '回應快取的 key 含程式版號，30 天後失效' do
+    original = Rails.cache
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
+    service = CountingSearchService.new
+
+    replace_new(CbetaSearch::SearchService, service) do
+      replace_new(KwicService, FakeKwicService.new) do
+        2.times { get '/search/all_in_one', params: { q: '法鼓', rows: 1 } }
+        assert_equal 1, service.calls, '第二次應命中快取'
+        assert_includes response.parsed_body['cache_key'], "/#{Rails.configuration.x.ver}/"
+
+        travel 31.days do
+          get '/search/all_in_one', params: { q: '法鼓', rows: 1 }
+        end
+        assert_equal 2, service.calls, '超過期限應重新查詢'
+      end
+    end
+  ensure
+    Rails.cache = original
+  end
+
+  class CountingSearchService < FakeSearchService
+    attr_reader :calls
+
+    def search(query, **)
+      @calls = calls.to_i + 1
+      super
+    end
+  end
+
   private
 
   def all_in_one(params)

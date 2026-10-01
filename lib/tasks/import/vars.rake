@@ -35,7 +35,7 @@ class ImportVars
   private
 
   # search/variants 的結果會進 Rails.cache (見 SearchController#variants)，
-  # key 以季別開頭但不含異體字表版本，也沒有期限。
+  # key 含季別與程式版號、期限 30 天 (見 SearchController#response_cache_key)，但不含異體字表版本。
   # 同一季中途更新異體字表時，不清掉的話會一直回傳舊結果。
   # 比對 "variants" 而不寫死 `"action" => "variants"`，
   # 以免 key 裡 params 的 inspect 格式隨 Ruby 版本改變就失效；
