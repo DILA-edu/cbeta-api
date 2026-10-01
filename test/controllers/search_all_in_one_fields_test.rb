@@ -54,6 +54,23 @@ class SearchAllInOneFieldsTest < ActionDispatch::IntegrationTest
     assert_equal %w[juan term_hits work], body['results'].first.keys.sort
   end
 
+  # NEAR / Exclude 的 facet 由 Ruby 端 my_facet 計算，部類也要有 category_id
+  test 'NEAR 的 category facet 有 category_id' do
+    Canon.create!(id2: 'T', name: '大正藏')
+    body = all_in_one(q: '"法鼓" NEAR/5 "迦葉"', facet: '1')
+
+    assert_response :success
+    assert_equal [ { 'category_id' => 1, 'category_name' => '阿含部類', 'hits' => 1, 'docs' => 1 } ],
+                 body.dig('facet', 'category')
+  end
+
+  test 'fields 只列 kwics 時只回傳 kwics' do
+    body = all_in_one(q: '法鼓', fields: 'kwics')
+
+    assert_response :success
+    assert_equal %w[kwics], body['results'].first.keys
+  end
+
   private
 
   def all_in_one(params)

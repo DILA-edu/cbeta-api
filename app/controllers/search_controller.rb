@@ -347,7 +347,9 @@ class SearchController < ApplicationController
   # 依 fields 參數過濾回傳欄位 (舊版是在 SQL 的 select list 做這件事)。
   # kwics 由 all_in_one 另外加上，其保留與否見 kwic_by_juan。
   def filter_es_fields!(rows)
-    return rows if rows.blank? || @field_keys.blank?
+    # @field_keys 為 nil 表示該 action 不吃 fields (見 init)。
+    # 空陣列也要過濾: 例如 fields=kwics 時其他欄位都不回傳
+    return rows if rows.blank? || @field_keys.nil?
 
     keys = @field_keys.map(&:to_sym)
     rows.each { |row| row.select! { |k, _| keys.include?(k) || k == :kwics } }
@@ -745,11 +747,17 @@ class SearchController < ApplicationController
     dest[k][:docs] += 1 unless action_name == 'similar'
   end
 
+  # 部類名稱 → ID, 與 decorate_facet! 讀同一個 data-static/categories.json
+  def category_ids
+    @category_ids ||= JSON.parse(File.read(Rails.root.join('data-static', 'categories.json')))
+                          .to_h { |id, name| [name, id.to_i] }
+  end
+
   # 部類可能有多值, 例如 T0310 的部類: "寶積部類,淨土宗部類"
   def my_facet_catetory(juan, dest)
     juan[:category].split(',').each do |c|
       unless dest.key?(c)
-        dest[c] = { category_name: c, hits: 0 }
+        dest[c] = { category_id: category_ids[c], category_name: c, hits: 0 }.compact
         dest[c][:docs] = 0 unless action_name == 'similar'
       end
       dest[c][:hits] += (juan[:term_hits] || 1)

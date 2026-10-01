@@ -1358,7 +1358,8 @@ paths:
       summary: 自動分詞（純文字）
       description: |
         回傳以 `/` 分隔的分詞結果，例如 `/觀自在菩薩/`。
-        只有一個字時直接回傳原字。
+        只有一個字時直接回傳原字。缺少 `t` 時回傳「缺少 t 參數」，
+        分詞失敗時回傳「斷詞失敗」（HTTP 200）。
         建議改用回傳 JSON 的 `/word_seg2`。
       tags: [tools]
       parameters:
@@ -1395,13 +1396,13 @@ paths:
           example: 觀自在菩薩，行深般若波羅蜜多時。
       responses:
         '200':
-          description: 分詞結果；缺少 `payload` 等錯誤時同樣是 200，見 `WordSegError`。
+          description: 分詞結果；缺少 `payload` 等錯誤時同樣是 200，見 `LegacyCodedError`。
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/WordSegResult'
-                  - $ref: '#/components/schemas/WordSegError'
+                  - $ref: '#/components/schemas/LegacyCodedError'
 
   /textref/meta.csv:
     get:
@@ -1889,11 +1890,11 @@ components:
         - $ref: '#/components/schemas/FacetCount'
       type: object
       unevaluatedProperties: false
-      required: [category_name]
+      required: [category_id, category_name]
       properties:
         category_id:
           type: integer
-          description: 部類 ID。NEAR 與 Exclude 查詢不會回傳。
+          description: 部類 ID。
         category_name:
           type: string
           example: 禪宗部類
@@ -2244,8 +2245,10 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [category_name, hits]
+            required: [category_id, category_name, hits]
             properties:
+              category_id:
+                type: integer
               category_name:
                 type: string
                 example: 禪宗部類
@@ -3024,25 +3027,6 @@ components:
           items:
             type: string
           example: [觀自在菩薩, ，, 行, 深, 般若波羅蜜多, 時, 。]
-
-    WordSegError:
-      type: object
-      description: |
-        分詞的錯誤回應（HTTP 200）。缺少 `payload` 時 `code` 為 400；
-        分詞程式執行失敗時只有 `message`。
-      additionalProperties: false
-      required: [error]
-      properties:
-        error:
-          type: object
-          additionalProperties: false
-          required: [message]
-          properties:
-            code:
-              type: integer
-            message:
-              type: string
-              example: 缺少 payload 參數
 
     AsiaCollection:
       type: object
