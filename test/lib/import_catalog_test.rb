@@ -39,6 +39,29 @@ class ImportCatalogTest < ActiveSupport::TestCase
     assert_equal 3, entry.sort
   end
 
+  test "卷號範圍節點填入起訖卷與 node_type" do
+    node = build_node("T0220_001..400 T0220 (卷1-400) 大般若波羅蜜多經第1會")
+
+    @importer.send(:handle_juan_node, "CBETA.003.001", node: node, start: 1)
+
+    entry = CatalogEntry.last
+    assert_equal "T0220 (卷1-400) 大般若波羅蜜多經第1會", entry.label
+    assert_equal "work", entry.node_type
+    assert_equal "T0220", entry.work
+    assert_equal 1, entry.juan_start
+    assert_equal 400, entry.juan_end
+  end
+
+  test "單卷節點的起訖卷相同" do
+    node = build_node("T0220_576 T0220 (卷576) 大般若波羅蜜多經第8會那伽室利分")
+
+    @importer.send(:handle_juan_node, "CBETA.003.008", node: node, start: 1)
+
+    entry = CatalogEntry.last
+    assert_equal 576, entry.juan_start
+    assert_equal 576, entry.juan_end
+  end
+
   test "行首資訊在 CBETA 裡找不到就中止匯入" do
     node = build_node("T09n0262_p9999a01 T0262 不存在的行")
 

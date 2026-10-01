@@ -365,16 +365,20 @@ div { margin-left: 1em; }
     if s1 =~ JUAN_REGEX
       work = $1
       j1 = $2.to_i
+      j2 = $3 ? $3.to_i : j1 # 單卷 (T0220_576) 沒有 ..結束卷
     else
       raise "格式不符: #{node.to_xml}"
     end
 
+    # node_type 用 'work' 的理由同 handle_linehead_node
     add_node(
       parent:,
       n: serial_no(parent, start),
       label:,
+      node_type: 'work',
       work:,
       juan_start: j1,
+      juan_end: j2,
       sort: start
     )
   end
