@@ -11,6 +11,13 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-10-01 Version 5.9.0
+%ul
+  %li
+    移除兩個從未正常運作的 API：/category/{部類}（一律回傳錯誤）、
+    /work/{佛典編號}/juan/{卷號}/edition/{版本}（沒有實作）。
+    依部類查詢請改用各 API 的 category 參數。
+
 %h3 2026-09-30 Version 5.8.3
 %ul
   %li 修正 works：以 creator_name 搜尋一律回傳錯誤。

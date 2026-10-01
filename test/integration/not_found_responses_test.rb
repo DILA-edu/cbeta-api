@@ -71,6 +71,13 @@ class NotFoundResponsesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # 從未正常運作而移除的 route (/category 永遠 500、edition 沒有對應的 action)
+  test '已移除的 route 回 404' do
+    %w[/category/阿含部類 /work/T0001/juan/1/edition/CBETA].each do |path|
+      assert_raises(ActionController::RoutingError, path) { Rails.application.routes.recognize_path(path) }
+    end
+  end
+
   test '錯誤回應不帶 backtrace' do
     get '/search', params: { q: '佛' * (ApplicationController::MAX_QUERY_LENGTH + 1) }
 

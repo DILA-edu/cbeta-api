@@ -31,8 +31,6 @@ Rails.application.routes.draw do
         via: [:get, :post]
   match '/api/sections/:uuid', to: 'juans#show_for_asia_network', via: [:get, :post]
 
-  match 'category/:category', to: 'juans#index', via: [:get, :post]
-
   match 'changes', to: 'changes#index', via: [:get, :post]
 
   match 'chinese_tools/sc2tc', via: [:get, :post]
@@ -120,7 +118,6 @@ Rails.application.routes.draw do
   match 'word_seg', to: 'word_seg#index', via: [:get, :post]
 
   match 'works/toc', via: [:get, :post]
-  match 'work/:work_id/juan/:juan/edition/:ed', to: 'juans#edition', via: [:get, :post]
   match 'works', to: 'works#index', via: [:get, :post]
 
   # --- CORS 預檢 ---
