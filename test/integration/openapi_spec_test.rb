@@ -36,6 +36,35 @@ class OpenapiSpecTest < ActionDispatch::IntegrationTest
     assert_conform 'LegacyError', JSON.parse(response.body)
   end
 
+  # 範例跟 schema 脫節時 (例如欄位改名) 要能發現
+  test '回應範例都符合各自的 schema' do
+    checked = 0
+    @document['paths'].each do |path, item|
+      item.each do |method, op|
+        op['responses'].each do |status, response|
+          response['content'].to_h.each do |type, media|
+            next unless media['examples']
+
+            pointer = [ 'paths', path, method, 'responses', status, 'content', type, 'schema' ]
+                      .map { it.gsub('~', '~0').gsub('/', '~1').gsub('{', '%7B').gsub('}', '%7D') }.join('/')
+            schema = @openapi.ref("#/#{pointer}")
+            media['examples'].each do |name, example|
+              errors = schema.validate(example['value']).map { it['error'] }
+              assert_empty errors, "#{path} #{status} 範例 #{name}"
+              checked += 1
+            end
+          end
+        end
+      end
+    end
+    assert_operator checked, :>, 0
+  end
+
+  test 'order 說明的藏經順序與 CBETA::SORT_ORDER 一致' do
+    order = @document.dig('paths', '/search/all_in_one', 'get', 'parameters').find { it['name'] == 'order' }
+    assert_includes order['description'], "藏經重要性的順序：#{CBETA::SORT_ORDER.join(' ')}"
+  end
+
   # 各 API 的 q 長度上限都寫在 spec 裡，要跟程式的常數一致
   test 'q 的 maxLength 與 MAX_QUERY_LENGTH 一致' do
     params = @document.dig('components', 'parameters').values +

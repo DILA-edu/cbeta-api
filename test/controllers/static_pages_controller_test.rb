@@ -38,6 +38,14 @@ class StaticPagesControllerTest < ActionDispatch::IntegrationTest
     'search_all_in_one' => '/search/all_in_one'
   }.freeze
 
+  # 參數與回傳格式改由 OpenAPI 文件提供，說明頁連過去
+  test 'static_pages/search_all_in_one 連到 API 文件的對應段落' do
+    get '/static_pages/search_all_in_one'
+
+    assert_response :success
+    assert_includes response.body, '/docs#tag/search/GET/search/all_in_one'
+  end
+
   QUOTE_RULE_PAGES.each do |page, path|
     test "static_pages/#{page} 說明 q 的雙引號規則, 且範例指向自己的 endpoint" do
       get "/static_pages/#{page}"

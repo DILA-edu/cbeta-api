@@ -79,9 +79,12 @@ paths:
         - name: order
           in: query
           description: |
-            排序欄位：`canon`（依藏經重要性）、`work`、`time_from`、`time_to`。
+            排序欄位：`canon`（依藏經重要性）、`work`（依佛典編號）、
+            `time_from`（依成立年代起）、`time_to`（依成立年代迄）。
             欄位後加 `+` 為升冪、`-` 為降冪，例如 `time_from-`。
             預設依「藏經重要性 + 經號 + 卷號」排序。
+
+            藏經重要性的順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC TX YP CC
           schema:
             type: string
           example: time_from+
@@ -110,6 +113,138 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/AllInOneResult'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                default:
+                  summary: q=法鼓&rows=2
+                  value:
+                    query_string: 法鼓
+                    time: 0.27
+                    num_found: 1106
+                    total_term_hits: 1582
+                    cache_key:
+                    results:
+                    - id: 5832
+                      term_hits: 1
+                      canon: T
+                      category: 阿含部類
+                      file: T01n0026
+                      work: T0026
+                      juan: 47
+                      title: 中阿含經
+                      byline: 東晉 瞿曇僧伽提婆譯
+                      creators: 僧伽提婆
+                      creators_with_id: 僧伽提婆(A001589)
+                      time_dynasty: 東晉
+                      time_from: 397
+                      time_to: 398
+                      juan_list: '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60'
+                      kwics:
+                        num_found: 1
+                        results:
+                        - vol: T01
+                          offset_in_text_with_punc: 10345
+                          lb: 0724c01
+                          kwic: 法界、甘露界、多鼓、<mark>法鼓</mark>、甘露鼓、法鏡、四品
+                          linehead: T01n0026_p0724c01
+                    - id: 5944
+                      term_hits: 1
+                      canon: T
+                      category: 阿含部類
+                      file: T02n0099
+                      work: T0099
+                      juan: 25
+                      title: 雜阿含經
+                      byline: 劉宋 求那跋陀羅譯
+                      creators: 求那跋陀羅
+                      creators_with_id: 求那跋陀羅(A000527)
+                      time_dynasty: 劉宋
+                      time_from: 435
+                      time_to: 443
+                      juan_list: '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50'
+                      kwics:
+                        num_found: 1
+                        results:
+                        - vol: T02
+                          offset_in_text_with_punc: 1725
+                          lb: '0178b16'
+                          kwic: 法炬，然煩惱火，壞正<mark>法鼓</mark>，毀正法輪，消正法海
+                          linehead: T02n0099_p0178b16
+                facet:
+                  summary: q=法鼓&rows=1&facet=1 (facet 各取前兩筆)
+                  value:
+                    query_string: 法鼓
+                    time: 0.31
+                    num_found: 1106
+                    total_term_hits: 1582
+                    cache_key:
+                    results:
+                    - id: 5832
+                      term_hits: 1
+                      canon: T
+                      category: 阿含部類
+                      file: T01n0026
+                      work: T0026
+                      juan: 47
+                      title: 中阿含經
+                      byline: 東晉 瞿曇僧伽提婆譯
+                      creators: 僧伽提婆
+                      creators_with_id: 僧伽提婆(A001589)
+                      time_dynasty: 東晉
+                      time_from: 397
+                      time_to: 398
+                      juan_list: '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60'
+                      kwics:
+                        num_found: 1
+                        results:
+                        - vol: T01
+                          offset_in_text_with_punc: 10345
+                          lb: 0724c01
+                          kwic: 法界、甘露界、多鼓、<mark>法鼓</mark>、甘露鼓、法鏡、四品
+                          linehead: T01n0026_p0724c01
+                    facet:
+                      category:
+                      - category_id: 17
+                        docs: 283
+                        hits: 352
+                        category_name: 禪宗部類
+                      - category_id: 23
+                        docs: 201
+                        hits: 321
+                        category_name: 新編部類
+                      creator:
+                      - creator_id: A023393
+                        docs: 19
+                        hits: 54
+                        creator_name: 釋印順
+                      - creator_id: A000527
+                        docs: 3
+                        hits: 47
+                        creator_name: 求那跋陀羅
+                      dynasty:
+                      - dynasty: 東漢
+                        docs: 4
+                        hits: 5
+                      - dynasty: 曹魏
+                        docs: 2
+                        hits: 2
+                      work:
+                      - work: T0270
+                        docs: 2
+                        hits: 46
+                        title: 大法鼓經
+                      - work: B0088
+                        docs: 32
+                        hits: 40
+                        title: 古今圖書集成選輯
+                      canon:
+                      - canon: T
+                        docs: 382
+                        hits: 569
+                        canon_name: 大正藏
+                      - canon: X
+                        docs: 272
+                        hits: 384
+                        canon_name: 新纂卍續藏
             text/plain:
               schema:
                 type: string
