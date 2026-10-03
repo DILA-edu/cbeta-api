@@ -36,10 +36,14 @@ class OpenapiSpecTest < ActionDispatch::IntegrationTest
     assert_conform 'LegacyError', JSON.parse(response.body)
   end
 
+  # 各 API 的 q 長度上限都寫在 spec 裡，要跟程式的常數一致
   test 'q 的 maxLength 與 MAX_QUERY_LENGTH 一致' do
-    parameters = @document.dig('paths', '/search/all_in_one', 'get', 'parameters')
-    q = parameters.find { it['name'] == 'q' }
-    assert_equal ApplicationController::MAX_QUERY_LENGTH, q.dig('schema', 'maxLength')
+    params = @document.dig('components', 'parameters').values +
+             @document['paths'].values.flat_map { it.dig('get', 'parameters').to_a }
+    limits = params.select { it['name'] == 'q' }.filter_map { it.dig('schema', 'maxLength') }
+
+    assert_operator limits.size, :>, 1
+    assert_equal [ ApplicationController::MAX_QUERY_LENGTH ], limits.uniq
   end
 
   test '/openapi.json 的版號取自 VERSION、servers 指向目前的站台' do
@@ -50,6 +54,21 @@ class OpenapiSpecTest < ActionDispatch::IntegrationTest
     assert_equal Rails.configuration.x.ver, spec.dig('info', 'version')
     assert_equal [ { 'url' => 'http://www.example.com' } ], spec['servers']
     assert_empty(JSONSchemer.openapi(spec).validate.map { it['error'] })
+  end
+
+  test '/health 的回應符合 spec' do
+    get '/health'
+
+    assert_response :success
+    assert_equal @document.dig('paths', '/health', 'get', 'responses', '200', 'content', 'text/plain', 'schema', 'const'),
+                 response.body
+  end
+
+  test '/openapi.json 的回應符合 spec 描述的格式' do
+    get '/openapi.json'
+
+    schema = @openapi.ref('#/paths/~1openapi.json/get/responses/200/content/application~1json/schema')
+    assert_empty(schema.validate(response.parsed_body).map { it['error'] })
   end
 
   test '/openapi.json 不納管 API key' do
