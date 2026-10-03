@@ -290,6 +290,8 @@ paths:
             `vol`、`work`、`time_from`、`time_to`、`term_hits`。
             指定 `time_from` 或 `time_to` 時，年代未知 (0) 的排在有年代的後面。
             排序值相同時一律再以藏經、佛典編號、卷號決定先後。
+
+            `canon` 依藏經重要性排序，藏經重要性的順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC TX YP CC
           schema:
             type: string
           example: time_from-
@@ -311,6 +313,46 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/SearchResult'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                default:
+                  summary: q=法鼓&rows=2
+                  value:
+                    query_string: 法鼓
+                    time: 0.03
+                    num_found: 1106
+                    total_term_hits: 1582
+                    cache_key:
+                    results:
+                    - id: 7246
+                      term_hits: 31
+                      canon: T
+                      category: 法華部類
+                      file: T09n0270
+                      work: T0270
+                      juan: 1
+                      title: 大法鼓經
+                      byline: 劉宋 求那跋陀羅譯
+                      creators: 求那跋陀羅
+                      creators_with_id: 求那跋陀羅(A000527)
+                      time_dynasty: 劉宋
+                      time_from: 435
+                      time_to: 443
+                      juan_list: '1,2'
+                    - id: 7247
+                      term_hits: 15
+                      canon: T
+                      category: 法華部類
+                      file: T09n0270
+                      work: T0270
+                      juan: 2
+                      title: 大法鼓經
+                      byline: 劉宋 求那跋陀羅譯
+                      creators: 求那跋陀羅
+                      creators_with_id: 求那跋陀羅(A000527)
+                      time_dynasty: 劉宋
+                      time_from: 435
+                      time_to: 443
+                      juan_list: '1,2'
             text/plain:
               schema:
                 type: string
@@ -351,6 +393,8 @@ paths:
             `vol`、`work`、`time_from`、`time_to`、`term_hits`。
             指定 `time_from` 或 `time_to` 時，年代未知 (0) 的排在有年代的後面。
             排序值相同時一律再以藏經、佛典編號、卷號決定先後。
+
+            `canon` 依藏經重要性排序，藏經重要性的順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC TX YP CC
           schema:
             type: string
           example: time_from-
@@ -415,6 +459,53 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/Facets'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                default:
+                  summary: q=法鼓 (各 facet 取前兩筆)
+                  value:
+                    canon:
+                    - canon: T
+                      docs: 382
+                      hits: 569
+                      canon_name: 大正藏
+                    - canon: X
+                      docs: 272
+                      hits: 384
+                      canon_name: 新纂卍續藏
+                    category:
+                    - category_id: 17
+                      docs: 283
+                      hits: 352
+                      category_name: 禪宗部類
+                    - category_id: 23
+                      docs: 201
+                      hits: 321
+                      category_name: 新編部類
+                    creator:
+                    - creator_id: A023393
+                      docs: 19
+                      hits: 54
+                      creator_name: 釋印順
+                    - creator_id: A000527
+                      docs: 3
+                      hits: 47
+                      creator_name: 求那跋陀羅
+                    dynasty:
+                    - dynasty: 東漢
+                      docs: 4
+                      hits: 5
+                    - dynasty: 曹魏
+                      docs: 2
+                      hits: 2
+                    work:
+                    - work: T0270
+                      docs: 2
+                      hits: 46
+                      title: 大法鼓經
+                    - work: B0088
+                      docs: 32
+                      hits: 40
+                      title: 古今圖書集成選輯
             text/plain:
               schema:
                 type: string
@@ -498,6 +589,7 @@ paths:
         注意：
         - 參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
         - `facet=1` 不支援 NEAR 與 Exclude 語法，會回傳 `LegacyError`。
+        - 不支援括號分組 (…)、鄰近運算子 `~n` 與 `&` 運算子；其中 `~n` 與 `&` 會回傳 `LegacyError` 說明原因。
         - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
       tags: [search]
       parameters:
@@ -647,6 +739,18 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ScResult'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                same:
+                  summary: q=上烏 (繁簡相同，不做檢索)
+                  value:
+                    q: 上烏
+                    hits: 0
+                converted:
+                  summary: q=四圣谛
+                  value:
+                    time: 0.04
+                    q: 四聖諦
+                    hits: 3197
             text/plain:
               schema:
                 type: string
@@ -664,7 +768,7 @@ paths:
       summary: 相似搜尋
       description: |
         找出與 `q` 相似（但不完全相同）的段落。分兩階段：
-        先以 Elasticsearch 模糊搜尋（至少一半的字命中即為候選）取 top k，
+        先以 Elasticsearch 模糊搜尋（至少一半的字命中即為候選），依相關度排序後取前 k 筆，
         再以 Smith-Waterman 演算法逐筆比對，分數達 `score_min` 才回傳，依分數排序。
         完全包含 `q` 的段落不回傳。不分頁，回傳全部結果。
 
@@ -745,6 +849,27 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/SimilarResult'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                default:
+                  summary: q=諸惡莫作，眾善奉行，自淨其意，是諸佛教
+                  value:
+                    query_string: 諸惡莫作眾善奉行自淨其意是諸佛教
+                    time: 1.2
+                    num_found: 268
+                    cache_key: 2026R3/5.9.5/search/similar/{"q" => "諸惡莫作，眾善奉行，自淨其意，是諸佛教", "controller" => "search", "action" => "similar"}-
+                    results:
+                    - id: 69715
+                      canon: B
+                      category: 新編部類
+                      work: B0006
+                      title: 泰國大藏經小部經
+                      juan: 1
+                      creators_with_id: 黃謹良(A035002)
+                      dynasty: unknown
+                      linehead: B06n0006_p0290b14
+                      content: 陀正念禪定是大賢者常樂出家寂靜自居是大智者為人天之所敬慕得人身難人間活命難聞妙法難值佛出世難諸惡莫作眾善奉行自淨其意是諸佛法忍受即忍辱是最上苦行諸有智者以涅槃為最勝法侵害眾生者不名為出家沙門不誹罵不殺
+                      score: 30
+                      highlight: 陀正念禪定<em>是</em>大賢者常樂出家寂靜<em>自</em>居<em>是</em>大智者為人天之所敬慕得人身難人間活命難聞妙法難值<em>佛</em>出世難<mark>諸惡莫作眾善奉行自淨其意是諸佛</mark>法忍受即忍辱<em>是</em>最上苦<em>行</em><em>諸</em>有智者以涅槃為最勝法侵害<em>眾</em>生者不名為出家沙門不誹罵不殺
             text/plain:
               schema:
                 type: string
@@ -800,6 +925,7 @@ paths:
       description: |
         根據異體字表列出 `q` 可能的異體字變化，並回傳各變化在 CBETA 中的出現次數。
         只列出確實出現過的變化，不含 `q` 本身。
+        異體字表為開放資料：<https://github.com/DILA-edu/cbeta-metadata/tree/master/variants>
 
         注意：
         - 參數錯誤（例如 `q` 超過長度上限）時 HTTP status 仍是 200，
@@ -849,6 +975,21 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/VariantsResult'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                default:
+                  summary: q=著衣持鉢
+                  value:
+                    time: 0.09
+                    num_found: 3
+                    cache_key:
+                    possibility: 4
+                    results:
+                    - q: 著衣持缽
+                      hits: 51
+                    - q: 著衣持盋
+                      hits: 3
+                    - q: 着衣持鉢
+                      hits: 17
             text/plain:
               schema:
                 type: string
@@ -1027,6 +1168,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LinesResult'
+              examples:
+                linehead:
+                  summary: linehead=T01n0001_p0001a04
+                  value:
+                    num_found: 1
+                    time: 0.02
+                    results:
+                    - linehead: T01n0001_p0001a04
+                      html: <a class="noteAnchor" href="#n0001002"></a>長安釋僧肇<a class="noteAnchor" href="#n0001003"></a>述<br />
+                      notes:
+                        '0001002': 長安【大】，〔－〕【宋】
+                        '0001003': 述【大】，〔－〕【宋】
 
   /juans:
     get:
@@ -1075,6 +1228,92 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JuansResult'
+              examples:
+                work_info:
+                  summary: work=T0001&juan=1&work_info=1（results 的 HTML 已截短）
+                  value:
+                    num_found: 1
+                    uuid: 7f5913a2-bc18-48cf-84e5-4797573795b6
+                    content: 72a12e41-9cd2-4cd4-a4ea-84f5a70fea57
+                    results:
+                    - |-
+                      <html>
+                      <head>
+                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+                      <title>長阿含經</title>
+                      </head>
+                      <body>
+                      <div id='body' data-punc="CBETA"><span cl...
+                    work_info:
+                      work: T0001
+                      uuid: f84c8d22-ce0c-470c-8e94-20059f4d89c2
+                      canon: T
+                      category: 阿含部類
+                      orig_category: 阿含部
+                      vol: T01
+                      title: 長阿含經
+                      juan: 22
+                      juan_list: '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22'
+                      cjk_chars: 198436
+                      en_words: 2
+                      file: T01n0001
+                      juan_start: 1
+                      byline: 後秦 佛陀耶舍共竺佛念譯
+                      creators: 佛陀耶舍,竺佛念
+                      creators_with_id: 佛陀耶舍(A000439);竺佛念(A000435)
+                      time_dynasty: 後秦
+                      time_from: 412
+                      time_to: 413
+                      places:
+                      - name: 長安
+                        id: PL000000042393
+                        latitude: 34.3288
+                        longitude: 108.9064
+                toc:
+                  summary: work=T0001&juan=1&toc=1（results 的 HTML 已截短，目次只列前幾筆）
+                  value:
+                    num_found: 1
+                    uuid: 7f5913a2-bc18-48cf-84e5-4797573795b6
+                    content: 72a12e41-9cd2-4cd4-a4ea-84f5a70fea57
+                    results:
+                    - |-
+                      <html>
+                      <head>
+                      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+                      <title>長阿含經</title>
+                      </head>
+                      <body>
+                      <div id='body' data-punc="CBETA"><span cl...
+                    toc:
+                      mulu:
+                      - title: 序
+                        file: T01n0001
+                        juan: 1
+                        lb: 0001a02
+                        type: 序
+                      - title: 1 分
+                        file: T01n0001
+                        juan: 1
+                        lb: 0001b11
+                        type: 分
+                        "n": 1
+                        isFolder: true
+                        children:
+                        - title: 1 大本經
+                          file: T01n0001
+                          juan: 1
+                          lb: 0001b11
+                          type: 經
+                          "n": 1
+                      juan:
+                      - file: T01n0001
+                        juan: 1
+                        lb: 0001b08
+                        title: 第一
+                      - file: T01n0001
+                        juan: 2
+                        lb: 0011a04
+                        title: 第二
 
   /juans/goto:
     get:
@@ -1139,6 +1378,9 @@ paths:
             行首資訊（例 `T01n0001_p0066c25`）或 CBETA 引用格式
             （例 `CBETA, T01, no. 1, p. 67, a13`、`CBETA 2019.Q3, T30, no. 1579, p. 279a7-23`）。
             引用格式需 URL encode。
+            也接受論文慣用的引用格式（例如 `《大正藏》冊47，第1970 號，卷6`、`T46, no. 1911, p. 18c`），
+            以及快速代碼（例如 `DA1`、`SN1.1`；完整對照表見
+            [cbeta-metadata 的 goto-list.txt](https://github.com/DILA-edu/cbeta-metadata/blob/master/goto/goto-list.txt)）。
           schema:
             type: string
           examples:
@@ -1264,6 +1506,40 @@ paths:
                     items:
                       $ref: '#/components/schemas/AsiaResource'
                   - $ref: '#/components/schemas/Error'
+              examples:
+                work:
+                  summary: work=T1501
+                  value:
+                    num_found: 1
+                    results:
+                    - work: T1501
+                      uuid: 310699e8-2abd-4430-8403-d33b2777d5ca
+                      canon: T
+                      category: 律部類
+                      orig_category: 律部
+                      vol: T24
+                      title: 菩薩戒本
+                      juan: 1
+                      juan_list: '1'
+                      cjk_chars: 7748
+                      en_words: 0
+                      file: T24n1501
+                      juan_start: 1
+                      byline: 彌勒菩薩說 唐 玄奘譯
+                      creators: 彌勒菩薩,玄奘
+                      creators_with_id: 彌勒菩薩(A001428);玄奘(A000294)
+                      time_dynasty: 唐
+                      time_from: 649
+                      time_to: 649
+                      places:
+                      - name: 大慈恩寺
+                        id: PL000000042410
+                        latitude: 34.219161
+                        longitude: 108.959356
+                      - name: 翠微寺
+                        id: PL000000042513
+                        latitude: 33.839563
+                        longitude: 108.928138
         '404':
           description: 指定 `uuid` 時，該 uuid 不存在。
           content:
@@ -1301,6 +1577,8 @@ paths:
       description: |
         在部類目錄、佛典標題（經名）、佛典內目次三部份中搜尋，
         以 `type` 區分結果來源。`/search/toc` 與本 API 相同。
+        部類目錄的結果依出現次序排列；經名與目次的結果依藏經重要性、再依佛典編號排列。
+        藏經重要性的順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC TX YP CC
 
         `q` 的格式若是佛典編號（例如 `T0001`）或「冊號 + 經號」（例如 `T01n0001`），
         則改為依編號直接取得佛典。
@@ -1338,6 +1616,65 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/TocSearchList'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                default:
+                  summary: q=阿含 (三種 type 各取一筆)
+                  value:
+                    num_found: 155
+                    time: 0.42
+                    results:
+                    - type: catalog
+                      "n": orig-T.001
+                      label: T01 阿含部上 T0001-0098
+                    - type: work
+                      work: T0001
+                      uuid: f84c8d22-ce0c-470c-8e94-20059f4d89c2
+                      canon: T
+                      category: 阿含部類
+                      orig_category: 阿含部
+                      vol: T01
+                      title: 長阿含經
+                      juan: 22
+                      juan_list: '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22'
+                      cjk_chars: 198436
+                      en_words: 2
+                      file: T01n0001
+                      juan_start: 1
+                      byline: 後秦 佛陀耶舍共竺佛念譯
+                      creators: 佛陀耶舍,竺佛念
+                      creators_with_id: 佛陀耶舍(A000439);竺佛念(A000435)
+                      time_dynasty: 後秦
+                      time_from: 412
+                      time_to: 413
+                      places:
+                      - name: 長安
+                        id: PL000000042393
+                        latitude: 34.3288
+                        longitude: 108.9064
+                    - type: toc
+                      label: 後出中阿含經記
+                      label_path: 後出中阿含經記
+                      work: T0026
+                      lb: '0809b01'
+                      uuid: 2a8c78aa-65ec-4dba-b95f-76b527e140fd
+                      canon: T
+                      category: 阿含部類
+                      orig_category: 阿含部
+                      vol: T01
+                      title: 中阿含經
+                      juan: 60
+                      juan_list: '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60'
+                      cjk_chars: 527801
+                      en_words: 0
+                      file: T01n0026
+                      juan_start: 60
+                      byline: 東晉 瞿曇僧伽提婆譯
+                      creators: 僧伽提婆
+                      creators_with_id: 僧伽提婆(A001589)
+                      time_dynasty: 東晉
+                      time_from: 397
+                      time_to: 398
+                      linehead: T01n0026_p0809b01
 
   /catalog_entry:
     get:
@@ -1379,6 +1716,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CatalogEntryList'
+              examples:
+                category:
+                  summary: q=CBETA：部類目錄
+                  value:
+                    num_found: 23
+                    label: 部類目錄
+                    results:
+                    - "n": CBETA.001
+                      label: 01 阿含部類 T01-02,25,33 etc.
+                      node_type:
+                    - "n": CBETA.002
+                      label: 02 本緣部類 T03-04, X20-21 etc.
+                      node_type:
+                alt:
+                  summary: q=orig-J.001：CBETA 未收錄全文的佛典 (node_type 為 alt)
+                  value:
+                    num_found: 42
+                    label: J01
+                    results:
+                    - "n": orig-J.001.001
+                      label: JA001 (=T0293) 大方廣佛華嚴經
+                      node_type: alt
+                    - "n": orig-J.001.002
+                      label: JA002 (=T0663) 金光明經
+                      node_type: alt
+                juan_range:
+                  summary: q=CBETA.003.001：指向佛典的部份卷數
+                  value:
+                    num_found: 1
+                    label: 01 上品般若(大般若經第1會) T05-06
+                    results:
+                    - "n": CBETA.003.001.001
+                      work: T0220
+                      label: T0220 大般若波羅蜜多經 (卷1-400) 〈第1會〉
+                      category: 般若部類
+                      creators: 玄奘
+                      juan_start: 1
+                      juan_end: 400
+                      file: T05n0220
+                      node_type: work
 
   /changes:
     get:
@@ -1428,6 +1805,19 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/ChangeList'
                   - $ref: '#/components/schemas/LegacyError'
+              examples:
+                default:
+                  summary: lb=A091n1057_p0321a10
+                  value:
+                    num_found: 3
+                    results:
+                    - work: A1057
+                      juan: 1
+                      lb: A091n1057_p0321a10
+                      html: 見真理，故常生疑惑也。翳字又作翳。<span class="del">蒙</span><span class="ins">薆</span><span class="del">言</span><span class="ins">音</span>愛也。）漂淪（淪，力勻反。《玉篇》曰：「淪，
+                      ver: 2026R1
+                      del_chars: 2
+                      ins_chars: 2
             text/html:
               schema:
                 type: string
@@ -1505,6 +1895,7 @@ paths:
     get:
       operationId: wordSeg2
       summary: 自動分詞
+      description: GET、POST 皆可，參數相同。
       tags: [tools]
       parameters:
         - name: payload
@@ -1524,6 +1915,18 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/WordSegResult'
                   - $ref: '#/components/schemas/LegacyCodedError'
+              examples:
+                default:
+                  summary: payload=觀自在菩薩，行深般若波羅蜜多時。
+                  value:
+                    segmented:
+                    - 觀自在菩薩
+                    - "，"
+                    - 行
+                    - 深
+                    - 般若波羅蜜多
+                    - 時
+                    - "。"
 
   /textref/meta.csv:
     get:
@@ -2147,7 +2550,7 @@ components:
       properties:
         query_string:
           type: string
-          description: 正規化之後的查詢字串（標點會被去除）。
+          description: 正規化之後的查詢字串（標點會被去除，組字式會轉為 Unicode PUA）。
         time:
           type: number
           description: 伺服器處理時間（秒）。`q` 去除標點後為空時不回傳。
@@ -2173,7 +2576,7 @@ components:
       properties:
         query_string:
           type: string
-          description: 正規化之後的查詢字串（標點會被去除）。
+          description: 正規化之後的查詢字串（標點會被去除，組字式會轉為 Unicode PUA）。
         time:
           type: number
           description: 伺服器處理時間（秒）。`q` 去除標點後為空時不回傳。

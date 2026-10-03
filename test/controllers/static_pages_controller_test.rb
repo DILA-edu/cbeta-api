@@ -38,12 +38,42 @@ class StaticPagesControllerTest < ActionDispatch::IntegrationTest
     'search_all_in_one' => '/search/all_in_one'
   }.freeze
 
-  # 參數與回傳格式改由 OpenAPI 文件提供，說明頁連過去
-  test 'static_pages/search_all_in_one 連到 API 文件的對應段落' do
-    get '/static_pages/search_all_in_one'
+  # 參數與回傳格式改由 OpenAPI 文件提供，說明頁連到 /docs 的對應段落。
+  # anchor 依 spec 裡該 operation 的 tag 組成，tag 改了這裡會提醒一起改說明頁。
+  DOCS_LINKS = {
+    'search_all_in_one' => '/search/all_in_one',
+    'search' => '/search',
+    'search_facet' => '/search/facet/{facet_by}',
+    'search_notes' => '/search/notes',
+    'search_title' => '/search/title',
+    'search_sc' => '/search/sc',
+    'search_similar' => '/search/similar',
+    'search_synonym' => '/search/synonym',
+    'search_vars' => '/search/variants',
+    'search_kwic' => '/search/kwic',
+    'search_toc' => '/search/toc',
+    'get_html' => '/juans',
+    'goto' => '/juans/goto',
+    'line' => '/lines',
+    'toc' => '/works/toc',
+    'work' => '/works',
+    'works' => '/works',
+    'creators' => '/works',
+    'time' => '/works',
+    'catalog' => '/catalog_entry',
+    'changes' => '/changes',
+    'word_seg' => '/word_seg2',
+    'sc2tc' => '/chinese_tools/sc2tc'
+  }.freeze
 
-    assert_response :success
-    assert_includes response.body, '/docs#tag/search/GET/search/all_in_one'
+  DOCS_LINKS.each do |page, path|
+    test "static_pages/#{page} 連到 API 文件的 #{path}" do
+      tag = YAML.load_file(Rails.root.join('doc/openapi.yaml')).dig('paths', path, 'get', 'tags').first
+      get "/static_pages/#{page}"
+
+      assert_response :success
+      assert_includes response.body, "/docs#tag/#{tag}/GET#{path}"
+    end
   end
 
   QUOTE_RULE_PAGES.each do |page, path|

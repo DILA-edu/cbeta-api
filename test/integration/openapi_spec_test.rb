@@ -60,9 +60,11 @@ class OpenapiSpecTest < ActionDispatch::IntegrationTest
     assert_operator checked, :>, 0
   end
 
-  test 'order 說明的藏經順序與 CBETA::SORT_ORDER 一致' do
-    order = @document.dig('paths', '/search/all_in_one', 'get', 'parameters').find { it['name'] == 'order' }
-    assert_includes order['description'], "藏經重要性的順序：#{CBETA::SORT_ORDER.join(' ')}"
+  # 藏經重要性的順序寫在多處 (all_in_one、search、extended 的 order 等)
+  test '藏經重要性的順序與 CBETA::SORT_ORDER 一致' do
+    texts = YAML.load_file(SPEC_PATH).to_s.scan(/藏經重要性的順序：([A-Z ]+)/).flatten
+    assert_operator texts.size, :>=, 3
+    texts.each { assert_equal CBETA::SORT_ORDER.join(' '), it.strip }
   end
 
   # 各 API 的 q 長度上限都寫在 spec 裡，要跟程式的常數一致
