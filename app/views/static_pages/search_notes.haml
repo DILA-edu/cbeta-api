@@ -1,37 +1,13 @@
 %h1 搜尋：校勘條目、註解、夾注
 
-%ul
-  %li=link_to '1 參數', '#arguments'
-  %li=link_to '2 回傳資料', '#return'
+%p
+  參數與回傳格式的完整說明，見 API 文件：
+  = link_to_url '/docs#tag/search/GET/search/notes', 'search/notes'
 
-%h2#arguments 1 參數
-%table.table
-  %tr
-    %td 參數名稱
-    %td
-    %td 說明
-  %tr
-    %td q
-    %td 必須
-    %td
-      要搜尋的字詞，於下詳述。
-      =render partial: 'q-length-limit'
-  %tr
-    %td around
-    %td 選項
-    %td 回傳 highlight 欄位關鍵字週圍的字數，預設值為 10.
-  =render partial: 'search-arg-paginate'
-  %tr
-    %td facet
-    %td 選項
-    %td 
-      %p 是否回傳 facet。
-      %p 預設為 0: 不回傳 facet。
-      %p 若設為 1 則會回傳五種 facet： 藏經 (canon)、部類 (category)、作譯者 (creator)、朝代 (dynasty)、佛典 (work)。
-
-%h3 1.1 q 參數
+%h2 q 查詢語法
 .ml-4
   =render partial: 'q-quotes', locals: { path: '/search/notes' }
+  =render partial: 'q-length-limit'
 
   %p 以下範例均要做 URL encode, 例如：
   %pre "波羅蜜" | "波羅密"
@@ -39,36 +15,27 @@
   %p 要編碼為
   %pre %22波羅蜜%22%20%7C%20%22波羅密%22
 
-  %h4 1.1.1 AND
+  %h4 AND
   %p 多個字詞都必須出現。將每個詞用雙引號括起來，再以空格隔開多個字詞。
   %p 例：#{link_to_url '/search/notes?q="法鼓" "印順"'}
 
-  %h4 1.1.2 OR
+  %h4 OR
   %p 例：#{link_to_url '/search/notes?q="波羅蜜"|"波羅密"'}
 
-  %h4 1.1.3 NOT
+  %h4 NOT
   %p 例：#{link_to_url '/search/notes?q="迦葉" !"迦葉佛"'}
 
-  %h4 1.1.4 NEAR
+  %h4 NEAR
   %p 例：#{link_to_url '/search/notes?q="阿含" NEAR/5 "迦葉"'}
   %p 上例表示「阿含」跟「迦葉」之間距離不超過5個字。
   %p 也可以串接多個 NEAR，例：#{link_to_url '/search/notes?q="老子" NEAR/7 "道" NEAR/3 "經"'}
   %p.text-muted NEAR 查詢不回傳 total_term_hits，只回傳 num_found。
 
-  %h4 1.1.5 不支援的語法
-  %p 括號分組 (…)、鄰近運算子 ~n、以及 & 運算子都不支援，會回傳 400 並說明原因。
+  %h4 不支援的語法
+  %p 括號分組 (…)、鄰近運算子 ~n、以及 & 運算子都不支援。其中 ~n 與 & 會在回傳的 error 欄位說明原因。
 
-%h3 1.2 限制搜尋範圍
+%h2 限制搜尋範圍
 %p 參考 #{link_to_url '/static_pages/search_filter'}
 
-%h2#return 2 回傳資料
-.ml-4
-  %h3 2.1 排序
-  %p 預設依冊號、行號排序。
-  %h3 2.2 回傳欄位
-  %ul
-    %li note_place: 註解出現的位置，可能是 "foot" 或 "inline" 兩種類型。
-    %li content: note 的內容
-    %li highlight: 關鍵字詞出現於 note 週圍的文字
-    %li num_found: 符合的註解筆數
-    %li total_term_hits: 關鍵字詞出現的總次數（NEAR 查詢不回傳此欄位）
+%h2 排序
+%p 預設依藏經、冊號、行號排序。

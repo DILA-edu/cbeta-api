@@ -8,16 +8,11 @@
 
 =render partial: 'q-length-limit'
 
-%h2 參數
-%table.table
-  %tr
-    %td 參數名稱
-    %td
-    %td 說明
-  =render partial: 'search-arg-paginate'
-  %tr
-    %td 限制搜尋範圍
-    %td 選項
-    %td
-      請參考：
-      =link_to nil, controller: 'static_pages', action: 'search_filter' 
+%p
+  參數與回傳格式的完整說明，見 API 文件：
+  = link_to_url '/docs#tag/search/GET/search/title', 'search/title'
+
+%h2 限制搜尋範圍
+%p
+  請參考：
+  =link_to nil, controller: 'static_pages', action: 'search_filter'

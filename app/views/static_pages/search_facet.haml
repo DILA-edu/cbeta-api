@@ -1,5 +1,13 @@
 %h1 Facet
+%p 依藏經、部類、作譯者、朝代或佛典，分組回傳檢索結果的卷數與關鍵字出現次數。
 =render partial: 'q-length-limit'
+
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/search/GET/search/facet/{facet_by}', 'search/facet/{facet_by}'
+  、
+  = link_to_url '/docs#tag/search/GET/search/facet', 'search/facet'
+
 %h2 藏經編號
 %p
   例：#{link_to_url '/search/facet/canon?q=法鼓'}
@@ -7,8 +15,6 @@
 %h2 部類
 %p
   例：#{link_to_url '/search/facet/category?q=法鼓'}
-
-%p 回傳在各部類的符合卷數
 
 %h2 朝代
 %p
@@ -25,13 +31,3 @@
 %h2 一次回傳五種 facet
 %p
   不指定 facet 種類，例：#{link_to_url '/search/facet?q=法鼓'}
-%p 回傳資料是一個 hash:
-%pre
-  :preserve
-    {
-      "canon": [...],
-      "category": [...],
-      "creator": [...],
-      "dynasty": [...],
-      "work": [...]
-    }

@@ -6,165 +6,24 @@
   =link_to 'Extended 語法', controller: 'static_pages', action: 'search_extended'
   (AND、OR、NOT、NEAR、Exclude)，例：
   =link_to_url '/search?q="波羅蜜" | "波羅密"'
-%h2 參數
-%table.table
-  %tr
-    %td 參數名稱
-    %td
-    %td 說明
-  %tr
-    %td q
-    %td 必須
-    %td
-      要搜尋的字詞，可以包含組字式。
-      =render partial: 'q-quotes', locals: { path: '/search' }
-      %p 例如 《新集藏經音義隨函錄(第13卷-第30卷)》卷17：「[幻-ㄠ+糸]術」(CBETA, K35, no. 1257, p. 189b6), 組字式 escape 之後：[幻-ㄠ%2B糸]
-      %p
-        查詢 URL: #{link_to_url '/search?q=[幻-ㄠ%2B糸]'}
-      %p
-        單引號需 escape 例：
-        =link_to_url "/search?q=samantato \\%27nantanāvāptiśāsani"
-      =render partial: 'q-length-limit'
-  %tr
-    %td fields
-    %td 選項
-    %td 
-      指定要回傳哪些欄位，例：
-      =link_to_url '/search?q=法鼓&fields=work,juan,term_hits'
-  =render partial: 'search-arg-paginate'
-  %tr
-    %td order
-    %td 選項
-    %td
-      %p 排序，例如按照文獻成立的年代排序：#{link_to_url '/search?q=法鼓&order=year'}
-      %p 也可以指定多個排序欄位，例如先以年代排序、再以經號排序：
-      %p=link_to_url '/search?q=法鼓&order=time_from,time_to,work'
-      %p 指定 time_from 或 time_to 時，年代未知 (0) 的會排在有年代的後面。
-      %p 排序值相同時，一律再以 藏經、佛典編號、卷號 決定先後，因此分頁結果是穩定的。
-      %p 每一個排序欄位都可以指定使用升冪排序或降冪排序：
-      %ul
-        %li 指定升冪排序：order=time_from+
-        %li 指定降冪排序：order=time_from-
-      %p 可用做排序的欄位：
-      %ul
-        %li canon: 藏經 ID，依照 CBETA 制定的檢索順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB
-        %li category: 部類
-        %li juan: 卷號
-        %li vol: 冊號，例如：T01
-        %li work: 佛典編號，例如：T0001
-        %li time_from: 佛典成立的起始年代
-        %li time_to: 佛典成立的結束年代
-        %li term_hits: 該卷中關鍵字出現的筆數
 
-%h2 回傳總資訊
-%table.table
-  %tr
-    %th 欄位名稱
-    %th 內容
-  %tr
-    %td query_string
-    %td 正規化之後的搜尋字串。（搜尋字串中的標點會被去除，組字式會轉為 UPA)
-  %tr
-    %td num_found
-    %td 符合條件的卷數
-  %tr
-    %td total_term_hits
-    %td 關鍵詞出現的總次數
-  %tr
-    %td results
-    %td 符合條件的各卷詳細資訊
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/search/GET/search', 'search'
 
-%h2 回傳 hits 中的單筆資訊
-%table.table
-  %tr
-    %th 欄位名稱
-    %th 內容
-  %tr
-    %td juan
-    %td 卷號
-  %tr
-    %td category
-    %td 部類，例如「阿含部類」。
-  %tr
-    %td canon
-    %td 藏經 ID，例如「T」。
-  %tr
-    %td vol
-    %td 冊號，例如「T01」。
-  %tr
-    %td term_hits
-    %td 關鍵詞出現的次數。
-  %tr
-    %td work
-    %td 佛典編號，例如「T0026」。
-  %tr
-    %td 其他
-    %td 以及其他關於該部佛典的相關資訊，詳見：#{link_to_url '/static_pages/work'}。
-    
-%h2 回傳範例
-%pre
-  :preserve
-    {
-      "num_found": 2628,
-      "total_term_hits": 3860,
-      "results": [
-        {
-          "id": 12298,
-          "juan": 1,
-          "category": "法華部類",
-          "canon": "T",
-          "vol": "T09",
-          "work": "T0270",
-          "term_hits": 31,
-          "work": "T0270",
-          "category": "法華部",
-          "title": "大法鼓經",
-          "creators": "求那跋陀羅",
-          "file": "T09n0270",
-          "juan_start": 1,
-          "byline": "劉宋 求那跋陀羅譯",
-          "time_dynasty": "劉宋",
-          "time_from": 420,
-          "time_to": 479
-        },
-        {
-          "id": 12297,
-          "juan": 1,
-          "category": "法華部類",
-          "canon": "T",
-          "vol": "T09",
-          "work": "T0270",
-          "term_hits": 30,
-          "work": "T0270",
-          "category": "法華部",
-          "title": "大法鼓經",
-          "creators": "求那跋陀羅",
-          "file": "T09n0270",
-          "juan_start": 1,
-          "byline": "劉宋 求那跋陀羅譯",
-          "time_dynasty": "劉宋",
-          "time_from": 420,
-          "time_to": 479
-        },
-        {
-          "id": 12299,
-          "juan": 1,
-          "category": "法華部類",
-          "canon": "T",
-          "vol": "T09",
-          "work": "T0270",
-          "term_hits": 30,
-          "work": "T0270",
-          "category": "法華部",
-          "title": "大法鼓經",
-          "creators": "求那跋陀羅",
-          "file": "T09n0270",
-          "juan_start": 1,
-          "byline": "劉宋 求那跋陀羅譯",
-          "time_dynasty": "劉宋",
-          "time_from": 420,
-          "time_to": 479
-        },
-        ...
-      ]
-    }
+%h2 q 查詢語法
+%p 要搜尋的字詞，可以包含組字式。
+=render partial: 'q-quotes', locals: { path: '/search' }
+%p 例如 《新集藏經音義隨函錄(第13卷-第30卷)》卷17：「[幻-ㄠ+糸]術」(CBETA, K35, no. 1257, p. 189b6), 組字式 escape 之後：[幻-ㄠ%2B糸]
+%p
+  查詢 URL: #{link_to_url '/search?q=[幻-ㄠ%2B糸]'}
+%p
+  單引號需 escape 例：
+  =link_to_url "/search?q=samantato \\%27nantanāvāptiśāsani"
+=render partial: 'q-length-limit'
+
+%h2 限制搜尋範圍
+%p
+  可用藏經、部類、佛典、作譯者、朝代、年代等參數限制搜尋範圍，見
+  = link_to '限制搜尋範圍', controller: 'static_pages', action: 'search_filter'
+  。

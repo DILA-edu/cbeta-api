@@ -6,13 +6,11 @@
 
 %p 例: #{link_to_url '/search/sc?q=四圣谛'}
 
-%p 如果繁簡相同，例如 q=上烏，則回傳：
-%pre
-  :preserve
-    {
-      "q": "上烏",
-      "hits": 0
-    }
+%p 如果繁簡相同，例如 q=上烏，則不做搜尋，回傳的 hits 為 0。
+
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/search/GET/search/sc', 'search/sc'
 
 %p
   =link_to "限制搜尋範圍", controller: "static_pages", action: "search_filter"
