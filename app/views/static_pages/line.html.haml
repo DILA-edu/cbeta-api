@@ -1,57 +1,12 @@
 %h1 取得行號範圍文字
 %p 
   如果您是要取得 CBETA 全部佛典全文，建議您使用更有效率的方式，請參考
-  =link_to "下載各種格式的 CBETA 全文", "https://cbdata.dila.edu.tw/static_pages/download_fulltext"
+  =link_to "下載各種格式的 CBETA 全文", controller: "static_pages", action: "download"
   。
-%h2 參數
-%table.table
-  %tr
-    %th 參數名稱
-    %th 參數說明
-  %tr
-    %td linehead
-    %td 單獨指定某一行的行首資訊
-  %tr
-    %td linehead_start
-    %td 行首資訊 開始
-  %tr
-    %td linehead_end
-    %td 行首資訊 結束
-  %tr
-    %td before
-    %td 指定 linehead 時，可以再指定包含前面的幾行
-  %tr
-    %td after
-    %td 指定 linehead 時，可以再指定包含後面的幾行
 
-%h2 回傳
-%table.table
-  %tr
-    %th 欄位名稱
-    %th 內容
-  %tr
-    %td html
-    %td 該行文字。有註解的話會有 anchor 標記。
-  %tr
-    %td notes
-    %td 註解
-
-%p 例如：
-%pre
-  :preserve
-    {
-      "num_found": 1,
-      "results": [
-        {
-          "linehead": "T01n0001_p0001a04",
-          "html": "&lt;a class=\"noteAnchor\" href=\"#n0001002\">&lt;/a>長安釋僧肇&lt;a class=\"noteAnchor\" href=\"#n0001003\">&lt;/a>述",
-          "notes": {
-            "0001002": "〔長安〕－【宋】",
-            "0001003": "〔述〕－【宋】"
-          }
-        }
-      ]
-    }
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/text/GET/lines', 'lines'
 
 %h2 範例    
 %h3 取得某行文字

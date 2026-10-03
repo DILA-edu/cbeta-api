@@ -16,7 +16,7 @@ class StaticPagesController < ApplicationController
       'T51, no. 2087, pp. 868-888',
       'T46, no. 1911, p. 18c',
       'T2, no. 150A, p. 878a24',
-      'T15, no. 602, p. 64a14-b26.',
+      'T15, no. 602, p. 164a14-b26.',
       'T15, no. 606, pp. 215c22-216a2.',
       '《大正藏》冊47，第1969 號',
       '《大正藏》冊47，第1970 號，卷6',

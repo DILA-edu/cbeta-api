@@ -1,4 +1,9 @@
 %h1 Go to
+%p
+  把經號、冊號、頁欄行、行首資訊或引用格式，換算成對應的卷與行首資訊。
+  參數與回傳格式的完整說明，見 API 文件：
+  = link_to_url '/docs#tag/text/GET/juans/goto', 'juans/goto'
+
 %ul
   %li= link_to '經卷結構', '#chap1'
   %li= link_to '書本結構', '#chap2'
@@ -6,30 +11,7 @@
 
 %h2#chap1 一、經卷結構
 .chapter
-  %p 參數：
-  %table.table{style: 'width: auto'}
-    %tr
-      %th 參數名稱
-      %th 說明
-    %tr
-      %td canon
-      %td 藏經
-    %tr
-      %td work
-      %td 經號
-    %tr
-      %td juan
-      %td 卷數
-    %tr
-      %td page
-      %td 頁數
-    %tr
-      %td col
-      %td 欄
-    %tr
-      %td line
-      %td 行數
-
+  %p 以 canon (藏經) 加 work (經號) 指定佛典，可再加 juan (卷數)，或 page (頁數)、col (欄)、line (行數) 指定位置。
   %p 例如：
   %ul
     %li
@@ -47,6 +29,7 @@
 
 %h2#chap2 二、書本結構
 .chapter
+  %p 以 canon (藏經) 加 vol (冊數) 指定，可再加 page、col、line 指定位置。
   %p 例如：
   %ul
     %li

@@ -3,32 +3,6 @@
   例如取得 T0001 的目次:
   = link_to_url '/works/toc?work=T0001'
 
-%h2 回傳資料
-%table.table
-  %tr
-    %th 欄位名稱
-    %th 說明
-  %tr
-    %td title
-    %td 目次節點 標題
-  %tr
-    %td file
-    %td 目次節點 所在 xml 檔 主檔名。
-  %tr
-    %td juan
-    %td 目次節點 所在卷號。
-  %tr
-    %td lb
-    %td 目次節點 所在 頁、欄、行。
-  %tr 
-    %td type
-    %td 例如 T0001 目次節點「1 分」，回傳 type 為「分」。
-  %tr
-    %td n
-    %td 例如 T0001 目次節點「1 分」，回傳 n 為 1.
-  %tr
-    %td isFolder
-    %td 預設值為 false，若為 true，表示有 children.
-  %tr
-    %td children
-    %td 下層目次節點
+%p
+  回傳欄位的完整說明，見 API 文件：
+  = link_to_url '/docs#tag/catalog/GET/works/toc', 'works/toc'
