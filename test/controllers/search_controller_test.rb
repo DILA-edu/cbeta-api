@@ -66,6 +66,29 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # 以下錯誤都在連到 Elasticsearch 之前就擋下，回 200 + error (既有 client 依賴這個行為)。
+  # /search 走 error_handler (error 為字串)；all_in_one 有自己的 rescue (error 為物件)。
+  test '不支援的排序欄位回傳錯誤，不再靜默忽略' do
+    with_elasticsearch_config(url: 'http://127.0.0.1:9599') do
+      get '/search', params: { q: '法鼓', order: 'year' }
+      assert_match(/order 參數不支援的欄位：year/, response.parsed_body['error'])
+
+      get '/search/all_in_one', params: { q: '法鼓', order: 'year', cache: '0' }
+      assert_equal 400, response.parsed_body.dig('error', 'code')
+      assert_match(/order 參數不支援的欄位：year/, response.parsed_body.dig('error', 'message'))
+    end
+  end
+
+  test '括號分組回傳錯誤，不再被當成標點去掉' do
+    with_elasticsearch_config(url: 'http://127.0.0.1:9599') do
+      get '/search/notes', params: { q: '("法鼓" | "印順") "迦葉"' }
+      assert_match(/不支援括號分組/, response.parsed_body['error'])
+
+      get '/search/all_in_one', params: { q: '("法鼓" | "印順") "迦葉"', cache: '0' }
+      assert_equal 400, response.parsed_body.dig('error', 'code')
+    end
+  end
+
   private
 
   # 暫時改寫 Elasticsearch 設定；SearchService 每個 request 都會重新讀，

@@ -59,7 +59,7 @@ module CbetaSearch
         if order.blank?
           default
         else
-          order.split(',').flat_map { |token| sort_clauses_for(token) }.presence || default
+          order.split(',').reject(&:blank?).flat_map { |token| sort_clauses_for(token) }.presence || default
         end
 
       append_tiebreaker(clauses)
@@ -337,7 +337,10 @@ module CbetaSearch
       return [{ '_score' => { 'order' => direction == 'asc' ? 'asc' : 'desc' } }] if field == 'term_hits'
 
       es_field = index.sort_fields[field]
-      return [] if es_field.blank?
+      if es_field.blank?
+        allowed = (index.sort_fields.keys + ['term_hits']).join(', ')
+        raise CbetaError.new(400), "order 參數不支援的欄位：#{field}。可用的欄位：#{allowed}"
+      end
 
       clauses = []
       if %w[time_from time_to].include?(field)

@@ -22,6 +22,16 @@ module CbetaSearch
 
     UNSUPPORTED = /[()~&]/
 
+    # q 用了雙引號語法，且雙引號外有括號 (半形或全形) → 括號分組。
+    # 呼叫端去除標點時會把括號一起去掉，括號分組因此到不了 parse，
+    # 要在去標點之前先用這個判斷擋下。雙引號內的括號仍視為標點。
+    def self.grouping?(raw_query)
+      masked = ESCAPES.reduce(raw_query.to_s) { |acc, (from, to)| acc.gsub(from, to) }
+      return false unless masked.include?('"')
+
+      masked.gsub(/"[^"]*"/, '').match?(/[()（）]/)
+    end
+
     def parse(raw_query)
       raw = raw_query.to_s.strip
       raise CbetaError.new(400), '缺少 q 參數' if raw.empty?

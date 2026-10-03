@@ -82,7 +82,7 @@ paths:
             排序欄位：`canon`（依藏經重要性）、`work`（依佛典編號）、
             `time_from`（依成立年代起）、`time_to`（依成立年代迄）。
             欄位後加 `+` 為升冪、`-` 為降冪，例如 `time_from-`。
-            預設依「藏經重要性 + 經號 + 卷號」排序。
+            預設依「藏經重要性 + 經號 + 卷號」排序。不支援的欄位會回傳錯誤。
 
             藏經重要性的順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC TX YP CC
           schema:
@@ -106,13 +106,16 @@ paths:
         - $ref: '#/components/parameters/callback'
       responses:
         '200':
-          description: 檢索結果；參數錯誤時同樣是 200，見 `LegacyError`。
+          description: |
+            檢索結果；參數錯誤時同樣是 200：`q` 過長等見 `LegacyError`，
+            不支援的 `order` 欄位、括號分組等見 `LegacyCodedError`。
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/AllInOneResult'
                   - $ref: '#/components/schemas/LegacyError'
+                  - $ref: '#/components/schemas/LegacyCodedError'
               examples:
                 default:
                   summary: q=法鼓&rows=2
@@ -289,7 +292,7 @@ paths:
             欄位後加 `+` 為升冪、`-` 為降冪。可用欄位：`canon`、`category`、`juan`、
             `vol`、`work`、`time_from`、`time_to`、`term_hits`。
             指定 `time_from` 或 `time_to` 時，年代未知 (0) 的排在有年代的後面。
-            排序值相同時一律再以藏經、佛典編號、卷號決定先後。
+            排序值相同時一律再以藏經、佛典編號、卷號決定先後。不支援的欄位會回傳錯誤。
 
             `canon` 依藏經重要性排序，藏經重要性的順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC TX YP CC
           schema:
@@ -392,7 +395,7 @@ paths:
             欄位後加 `+` 為升冪、`-` 為降冪。可用欄位：`canon`、`category`、`juan`、
             `vol`、`work`、`time_from`、`time_to`、`term_hits`。
             指定 `time_from` 或 `time_to` 時，年代未知 (0) 的排在有年代的後面。
-            排序值相同時一律再以藏經、佛典編號、卷號決定先後。
+            排序值相同時一律再以藏經、佛典編號、卷號決定先後。不支援的欄位會回傳錯誤。
 
             `canon` 依藏經重要性排序，藏經重要性的順序：T X A K S F C D U P J L G M N ZS I ZW B GA GB Y LC TX YP CC
           schema:
@@ -589,7 +592,7 @@ paths:
         注意：
         - 參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
         - `facet=1` 不支援 NEAR 與 Exclude 語法，會回傳 `LegacyError`。
-        - 不支援括號分組 (…)、鄰近運算子 `~n` 與 `&` 運算子；其中 `~n` 與 `&` 會回傳 `LegacyError` 說明原因。
+        - 不支援括號分組 (…)、鄰近運算子 `~n` 與 `&` 運算子，會回傳 `LegacyError` 說明原因。
         - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
       tags: [search]
       parameters:
@@ -2194,6 +2197,7 @@ components:
         要搜尋的關鍵字，標點符號會被去除。長度上限 40 字。
         支援 AND、OR、NOT、NEAR、Exclude 語法，見
         [Extended 語法](https://cbdata.dila.edu.tw/dev/static_pages/search_extended)。
+        不支援括號分組，會回傳錯誤（雙引號內的括號視為標點，會被去除）。
         組字式要 escape，例如 `[幻-ㄠ%2B糸]`。
       schema:
         type: string

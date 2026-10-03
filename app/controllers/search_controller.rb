@@ -909,6 +909,10 @@ class SearchController < ApplicationController
 
   # 去除標點
   def remove_puncs_from_query
+    if CbetaSearch::QueryParser.grouping?(@q)
+      raise CbetaError.new(400), '不支援括號分組。支援的語法見 /static_pages/search_extended'
+    end
+
     # 允許 NEAR/7 語法，數字要保留
     @q = CbetaString.new(allow_digit: true).remove_puncs(@q)
   end

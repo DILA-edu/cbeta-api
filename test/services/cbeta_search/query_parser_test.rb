@@ -127,4 +127,16 @@ class CbetaSearch::QueryParserTest < ActiveSupport::TestCase
     error = assert_raises(CbetaError) { @parser.parse('!"迦葉佛"') }
     assert_equal 400, error.code
   end
+
+  # 括號在去除標點時會被拿掉，要在那之前判斷
+  test 'grouping?: 雙引號外的括號是括號分組' do
+    assert CbetaSearch::QueryParser.grouping?('("法鼓" | "印順") "迦葉"')
+    assert CbetaSearch::QueryParser.grouping?('（"法鼓" | "印順"） "迦葉"')
+  end
+
+  test 'grouping?: 沒用雙引號語法、或括號在雙引號內，都不是括號分組' do
+    assert_not CbetaSearch::QueryParser.grouping?('差(音雌)別')
+    assert_not CbetaSearch::QueryParser.grouping?('"差(音雌)別" "法鼓"')
+    assert_not CbetaSearch::QueryParser.grouping?('"Your" "\\"mang\\-kun\\""')
+  end
 end

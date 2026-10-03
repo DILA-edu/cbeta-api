@@ -92,4 +92,12 @@ class OpenapiSearchATest < Minitest::Test
   def test_title_filter
     assert_conform('search/title', { q: '法鼓', rows: 2, canon: 'T' })
   end
+
+  def test_invalid_order_and_grouping
+    r = assert_conform('search', { q: '法鼓', order: 'year' })
+    assert_match(/不支援的欄位/, r['error'])
+
+    r = assert_conform('search/notes', { q: '("法鼓" | "印順") "迦葉"' })
+    assert_match(/不支援括號分組/, r['error'])
+  end
 end

@@ -67,6 +67,14 @@ class OpenapiAllInOneTest < Minitest::Test
     assert_includes r, 'facet'
   end
 
+  def test_invalid_order_and_grouping
+    r = assert_conform(q: '法鼓', order: 'year')
+    assert_equal 400, r.dig('error', 'code')
+
+    r = assert_conform(q: '("法鼓" | "印順") "迦葉"')
+    assert_equal 400, r.dig('error', 'code')
+  end
+
   def test_query_too_long
     r = assert_conform(q: '法' * 41)
     assert_includes r, 'error'

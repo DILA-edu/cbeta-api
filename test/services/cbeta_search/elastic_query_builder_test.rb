@@ -75,6 +75,17 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
     assert_equal({ '_score' => { 'order' => 'desc' } }, @builder.sort({ order: 'term_hits' }).first)
   end
 
+  test '不支援的排序欄位回 400，並列出可用欄位' do
+    e = assert_raises(CbetaError) { @builder.sort({ order: 'work,year' }) }
+    assert_equal 400, e.code
+    assert_match(/不支援的欄位：year/, e.message)
+    assert_match(/time_from/, e.message)
+  end
+
+  test '排序參數裡的空欄位略過' do
+    assert_equal({ 'work' => { 'order' => 'asc' } }, @builder.sort({ order: 'work,' }).first)
+  end
+
   test '排序方向以 + - 指定' do
     assert_equal({ 'work' => { 'order' => 'desc' } }, @builder.sort({ order: 'work-' }).first)
     assert_equal({ 'work' => { 'order' => 'asc' } }, @builder.sort({ order: 'work+' }).first)
@@ -85,11 +96,6 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
 
     assert_equal 'asc', clauses[0]['_script']['order']
     assert_equal({ 'time_from' => { 'order' => 'asc' } }, clauses[1])
-  end
-
-  test '未知的排序欄位被忽略, 全部無效時退回預設' do
-    assert_equal({ 'work' => { 'order' => 'asc' } }, @builder.sort({ order: 'nonexistent,work' }).first)
-    assert_equal CbetaSearch::TextIndex::DEFAULT_SORT, @builder.sort({ order: 'nonexistent' })
   end
 
   # 舊版 Manticore 平手時是不可預期的內部順序，這裡改成穩定的排序。
@@ -166,8 +172,8 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
     notes = CbetaSearch::ElasticQueryBuilder.new(index: CbetaSearch::NotesIndex)
 
     assert_equal({ 'lb' => { 'order' => 'asc' } }, notes.sort({ order: 'lb' }).first)
-    # text index 沒有 lb 欄位, 無效的排序欄位被忽略後退回預設
-    assert_equal CbetaSearch::TextIndex::DEFAULT_SORT, @builder.sort({ order: 'lb' })
+    # text index 沒有 lb 欄位
+    assert_raises(CbetaError) { @builder.sort({ order: 'lb' }) }
   end
 
   test 'titles index 沒有 juan, tiebreaker 只到 work' do
