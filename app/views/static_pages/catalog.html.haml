@@ -9,24 +9,6 @@
   取得 CBETA 部類目錄:
   =link_to_url '/catalog_entry?q=CBETA'
 
-%p 回傳：
-%pre
-  :preserve
-    {
-      "num_found": 21,
-      "results": [
-        {
-          "n": "CBETA.001",
-          "label": "01 阿含部類 T01-02,25,33 etc."
-        },
-        ...
-        {
-          "n": "CBETA.021",
-          "label": "21 新編部類 ZS01, ZW01-09, I01"
-        }
-      ]
-    }
-
 %h2 三、原書目錄
 %p 
   取得原書目錄：
@@ -42,6 +24,8 @@
     "orig-" 
   之後加上藏經 ID。
 
-%h2 四、回傳欄位
-.chapter
-  =render partial: 'catalog-return'
+%p
+  回傳的每個節點以編號
+  %code n
+  再查詢下一層目錄。參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/catalog/GET/catalog_entry', 'catalog_entry'

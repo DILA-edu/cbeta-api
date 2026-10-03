@@ -5,6 +5,16 @@
   %li 標點修訂不記錄。
   %li 收錄自 2021Q1 起的修訂紀錄。
 
+%p 例：
+%ul
+  %li 某一行的修訂紀錄：#{link_to_url '/changes?lb=A091n1057_p0321a10'}
+  %li 某部佛典的修訂紀錄：#{link_to_url '/changes?work=T0026'}
+  %li 某部佛典某一卷的修訂紀錄：#{link_to_url '/changes?work=T0951&juan=4'}
+
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/catalog/GET/changes', 'changes'
+
 %h2 Format
 %p 預設回傳 JSON 格式，若要回傳 HTML 格式：
 %p= link_to_url '/changes.html?work=T0026'
@@ -12,56 +22,3 @@
 %ul
   %li &ltspan class="del"> 刪除的文字
   %li &ltspan class="ins"> 新增的文字
-
-%h2 Parameters
-%table.table
-  %tr
-    %th 參數名稱
-    %th 說明
-  %tr
-    %td lb
-    %td
-      %ul
-        %li CBETA 行首資訊
-        %li lb 或 work 必須指定其中之一。
-        %li 
-          example: 
-          =link_to_url '/changes?lb=A091n1057_p0321a10'
-  %tr
-    %td work
-    %td
-      %ul
-        %li 典籍編號 (經號)
-        %li lb 或 work 必須指定其中之一。
-        %li 
-          example: 
-          =link_to_url '/changes?work=T0026'
-  %tr
-    %td juan
-    %td
-      %ul
-        %li 卷號
-        %li type: integer
-        %li 必須指定 work 才能指定 juan。
-        %li 
-          example: 
-          =link_to_url '/changes?work=T0951&juan=4'
-
-%h2 Response
-.code
-  %pre
-    :escaped
-      {
-        num_found: 1,
-        results: [
-          {
-            work: "A1057",
-            juan: 1,
-            lb: "A091n1057_p0321a10",
-            html: "見真理，故常生疑惑也。翳字又作翳。蒙言愛也。）漂淪（淪，力<span class="del">勺</span><span class="ins">勻</span>反。《<span class="del">王</span><span class="ins">玉</span>篇》曰：「逾，",
-            ver: "2025R2",
-            del_chars:2,
-            ins_chars:2
-          }
-        ]
-      }

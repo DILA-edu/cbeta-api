@@ -3,23 +3,6 @@
 %p 請求 URL： #{ link_to_url '/word_seg2' }
 %p 例： #{ link_to_url '/word_seg2?payload=觀自在菩薩，行深般若波羅蜜多時。' }
 
-%h2 參數
-%table.table
-  %tr
-    %th 參數名稱
-    %th 說明
-  %tr
-    %td payload
-    %td 要對其進行自動分詞的文字
-
-%h2 回傳欄位
-%table.table
-  %tr
-    %th 欄位名稱
-    %th 說明
-  %tr
-    %td segmented
-    %td 分詞後結果
-  %tr
-    %td error
-    %td 錯誤
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/tools/GET/word_seg2', 'word_seg2'
