@@ -62,6 +62,28 @@ class ImportCatalogTest < ActiveSupport::TestCase
     assert_equal 576, entry.juan_end
   end
 
+  test "沒有全文的佛典依 works.alt 展開對照" do
+    Work.create!(n: 'X0002', canon: 'X', title: '父子合集經', alt: 'T0320')
+
+    @importer.send(:add_work, "CBETA.001", 1, 'X0002', {})
+
+    entry = CatalogEntry.find_by(n: "CBETA.001.001")
+    assert_equal "alt", entry.node_type
+    assert_equal %w[T0320], CatalogEntry.where(parent: entry.n).pluck(:work)
+  end
+
+  # 對照清單含有佛典本身 = CBETA 收錄其中一部分 (選錄)
+  test "works.alt 含有佛典本身時視為一般佛典，不展開" do
+    Work.create!(n: 'JB214', canon: 'J', title: '蕅益大師佛學十種', alt: 'X0615+X60n1123_p0540a16+JB214')
+
+    @importer.send(:add_work, "orig-J.027.013", 9, 'JB214', {})
+
+    entry = CatalogEntry.find_by(n: "orig-J.027.013.009")
+    assert_equal "work", entry.node_type
+    assert_equal "JB214", entry.work
+    assert_equal 0, CatalogEntry.where(parent: entry.n).count
+  end
+
   test "行首資訊在 CBETA 裡找不到就中止匯入" do
     node = build_node("T09n0262_p9999a01 T0262 不存在的行")
 

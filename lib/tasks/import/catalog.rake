@@ -6,6 +6,8 @@ namespace :import do
   end
 end
 
+# 來源格式見 doc/catalog-format.md
+#
 # 匯入全部: rake import:catalog
 # 只匯入某個目錄: rake import:catalog[Vol-L]
 #
@@ -181,8 +183,11 @@ class ImportCatalog
       @log.puts "</div>\n"
       return
     end
-    type = w.alt.nil? ? 'work' : 'alt'
-    
+    # 對照清單含有佛典本身 (例 JB214: X0615+...+JB214) 表示 CBETA 收錄其中一部分 (選錄)，
+    # 視為一般佛典，不展開 (見 doc/catalog-format.md)
+    alts = w.alt&.split('+')
+    type = alts.nil? || alts.include?(w.n) ? 'work' : 'alt'
+
     data = { parent: parent }
     data[:n] = serial_no(parent, index)
     data[:sort] = index
