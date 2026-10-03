@@ -5,21 +5,9 @@
 
 =render partial: 'q-length-limit'
 
-%p 回傳：
-%pre
-  :preserve
-    {
-      "num_found": 46,
-      "time": 0.418639706,
-      "results": [
-        {
-          "type": "catalog",
-          "n": "Cat-T.001",
-          "label": "TB01 阿含部 T01~02 (1~151 經)"
-        },
-        ...
-      ]
-    }
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/catalog/GET/search/toc', 'search/toc'
 
 %h2 回傳結果排序
 %p 經目搜尋功能會在三大部份中搜尋：
@@ -62,21 +50,10 @@
       %li B  (民國新編、新譯—大藏經補編)  
       %li GA (民國新編—中國佛寺志-A)
       %li GB (民國新編—中國佛寺志-B)
+      %li Y  (印順法師佛學著作集)
+      %li LC (呂澂佛學著作集)
+      %li TX (太虛大師全書)
+      %li YP (演培法師全集)
+      %li CC (CBETA 選集)
 
 %p 佛典內目次搜尋結果排序同上。
-
-%h2 回傳結果中的 type
-%table.table
-  %tr
-    %th type 欄位的值
-    %th 說明
-  %tr
-    %td catalog
-    %td 在部類目錄中搜尋的結果
-  %tr
-    %td work
-    %td 在 佛典標題（經名）中搜尋的結果
-  %tr
-    %td toc
-    %td 在 佛典內目次標題 中搜尋的結果
-</ul>

@@ -2,58 +2,25 @@
 %p
   列出可能的異體字變化，例：#{link_to_url '/search/variants?q=著衣持鉢'}
 
+=render partial: 'q-length-limit'
+
 %h2 資料來源
 %ul
-  %li 
-    開放資料： 
+  %li
+    開放資料：
     =link_to nil, 'https://github.com/DILA-edu/cbeta-metadata/tree/master/variants'
 
-%h2 參數
-%table.table
-  %tr
-    %td 參數名稱
-    %td
-    %td 說明
-  %tr
-    %td q
-    %td 必須
-    %td
-      要搜尋的字詞。
-      =render partial: 'q-length-limit'
-  %tr
-    %td scope
-    %td 選項
-    %td 
-      如果 scope=title，則僅列出存在於佛典題名中的異體字變化。例如：
-      %br
-      #{link_to_url '/search/variants?q=神咒&scope=title'}
-      。
-      %br
-      前端可利用此功能，在搜尋經名時提供「異體字建議」。
-  =render partial: 'arg-cache'
+%h2 只列出題名中的異體字
+%p
+  scope=title 時，僅列出存在於佛典題名中的異體字變化，例如：
+  #{link_to_url '/search/variants?q=神咒&scope=title'}
+%p 前端可利用此功能，在搜尋經名時提供「異體字建議」。
 
+%p
+  參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
+  = link_to_url '/docs#tag/search/GET/search/variants', 'search/variants'
+
+%h2 限制搜尋範圍
 %p
   限制搜尋範圍的參數也都可以使用，參考：
   =link_to '限制搜尋範圍', controller: 'static_pages', action: 'search_filter'
-
-%h2 回傳範例
-%pre
-  :preserve
-    {
-      "time": 0.085839963,
-      "num_found": 3,
-      "results": [
-        {
-          "q": "着衣持鉢",
-          "hits": 43
-        },
-        {
-          "q": "著衣持缽",
-          "hits": 101
-        },
-        {
-          "q": "著衣持盋",
-          "hits": 8
-        }
-      ]
-    }
