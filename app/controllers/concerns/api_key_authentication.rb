@@ -80,7 +80,10 @@ module ApiKeyAuthentication
     #
     # 額度設計與 fail2ban 的分工見設計文件 6.2: cbeta-api-r3 jail 的實際上限
     # 約 540 req/min 且懲罰是 ban 整個 IP 一小時,所以 Rails 的 per-user 上限
-    # 訂在它之下 (300),429 會先發生,fail2ban 退居最後一道防線。
+    # 訂在它之下 (300),流量平均分散時 429 會先發生,fail2ban 退居最後一道防線。
+    # 但 jail 的時間窗只有 5 秒 (45 次): 短時間集中送出時,即使還沒到每分鐘
+    # 額度也會直接被 ban,不會先收到 429。被 429 擋下的 request 一樣會寫
+    # "Started" log,也算進 jail 的次數。因此說明頁另外建議 client 每秒不超過 4 次。
     #
     # by: 用 remote_addr 而不是 remote_ip —— remote_ip 會優先採信 client 送來的
     # X-Forwarded-For。本站是 Apache + Passenger 直接對外,前面沒有反向 proxy,

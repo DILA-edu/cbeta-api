@@ -114,6 +114,25 @@
   超過額度會收到 <code>429</code>，並帶 <code>Retry-After</code> header
   告知要等幾秒。請依照它退讓重試，不要持續重打。
 
+-# 建議值取各層封鎖門檻的 50%。每秒 4 次是依伺服器 fail2ban 的門檻換算
+-# (見 doc/api-key-design.md 2.7),依專案決定不在此頁公開實際門檻。
+.alert.alert-warning
+  %h5 建議的呼叫頻率
+  %p
+    除了上面的額度之外，伺服器還有一道依 IP 計算的防護：
+    <strong>短時間內集中送出大量 request，整個 IP 會被封鎖一段時間</strong>，
+    期間所有呼叫都會失敗，而且不會收到 <code>429</code> 提醒。
+    為了安全，建議把流量控制在以下範圍：
+  %ul
+    %li 沒帶 key：每分鐘不超過 #{ApiKeyAuthentication::ANONYMOUS_LIMIT / 2} 次
+    %li 帶有效的 key：每分鐘不超過 #{ApiKeyAuthentication::KEYED_LIMIT / 2} 次
+    %li <strong>不論有沒有帶 key，每秒都不要超過 4 次</strong>，也不要同時平行送出多個 request
+  %p.mb-0
+    要注意的是：
+  %ul.mb-0
+    %li 被回 <code>429</code> 的 request 仍然算在流量裡，收到後若繼續重打，最後還是會被封鎖。
+    %li 這道防護是依 IP 計算，同一個對外 IP 後面的多台電腦（例如同一個機構的網路）流量會合併計算。
+
 %h2 管理您的 key
 
 %p
