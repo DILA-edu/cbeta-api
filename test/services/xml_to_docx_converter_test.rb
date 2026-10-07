@@ -164,6 +164,44 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "table 預設佔滿整頁, style 寫 width:auto 時依內容調寬並靠左" do
+    Dir.mktmpdir do |dir|
+      body = '<table cols="1"><row><cell>甲</cell></row></table>' \
+             '<p>本文</p>' \
+             '<table style="width:auto"><row><cell>乙</cell><cell>丙丙丙丙</cell></row></table>'
+      with_docx(write_xml(dir, body)) do |docx, _warnings|
+        full, fitted = Nokogiri::XML(docx['word/document.xml']).xpath('//w:tbl')
+
+        assert_equal 'fixed', full.at_xpath('w:tblPr/w:tblLayout')['w:type']
+        assert_nil full.at_xpath('w:tblPr/w:jc')
+        assert_equal %w[9000], grid_widths(full)
+
+        assert_equal 'autofit', fitted.at_xpath('w:tblPr/w:tblLayout')['w:type']
+        assert_equal 'left', fitted.at_xpath('w:tblPr/w:jc')['w:val']
+        assert_equal %w[tblW jc tblBorders tblLayout tblCellMar], fitted.at_xpath('w:tblPr').element_children.map(&:name)
+        # 欄寬依內容估算: 字數多的欄比較寬, 總寬遠小於整頁
+        narrow, wide = grid_widths(fitted).map(&:to_i)
+        assert_operator narrow, :<, wide
+        assert_operator narrow + wide, :<, 4000
+      end
+    end
+  end
+
+  test "相鄰的 width:auto table 之間插入空段落, 避免被合併成同一個 table" do
+    Dir.mktmpdir do |dir|
+      body = '<table cols="1"><row><cell>甲</cell></row></table>' \
+             '<table cols="2"><row><cell>乙</cell><cell>丙</cell></row></table>' \
+             '<table style="width:auto"><row><cell>丁</cell></row></table>' \
+             '<table style="width:auto"><row><cell>戊</cell><cell>己</cell></row></table>'
+      with_docx(write_xml(dir, body)) do |docx, _warnings|
+        blocks = Nokogiri::XML(docx['word/document.xml']).xpath('//w:body/*').map(&:name)
+
+        # 一般 table 相鄰時維持原樣
+        assert_equal %w[tbl tbl p tbl p tbl sectPr], blocks
+      end
+    end
+  end
+
   test "註腳開頭就是 table 時仍保有註腳編號" do
     Dir.mktmpdir do |dir|
       body = '<p>本文<footnote><table cols="1"><row><cell>甲</cell></row></table></footnote></p>'
@@ -239,6 +277,10 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
 
   def border_values(table)
     table.xpath('./w:tblPr/w:tblBorders/*').map { it['w:val'] }
+  end
+
+  def grid_widths(table)
+    table.xpath('./w:tblGrid/w:gridCol').map { it['w:w'] }
   end
 
   # 注標所在 run 的字級 (half-point)

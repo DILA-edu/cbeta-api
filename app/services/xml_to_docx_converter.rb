@@ -36,6 +36,15 @@ class XmlToDocxConverter
   # w:tblBorders 各邊的屬性
   TABLE_BORDER = 'w:val="single" w:sz="4" w:space="0" w:color="808080"'
   TABLE_NO_BORDER = 'w:val="none" w:sz="0" w:space="0" w:color="auto"'
+  TABLE_GRID_WIDTH_TWIPS = 9000
+  # 相鄰的兩個 w:tbl 會被 Word 與 LibreOffice 合併成同一個 table; 依內容調寬的 table 欄寬各不相同,
+  # 合併後欄寬錯亂, 中間夾一個極小的空段落隔開。一般 table 欄寬一致, 維持合併 (避免上下框線疊成粗線)
+  TABLE_SEPARATOR_XML = '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/>' \
+                        '<w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>'
+  # tblCellMar 左右各 80, 再加估算誤差的餘裕 (約一個 12pt 字寬); 估得太窄 LibreOffice 會把字擠到下一行
+  TABLE_CELL_PADDING_TWIPS = 160 + 240
+  # 估算欄寬時算一個字寬的字元: 中日韓、全形標點、私用區 (悉曇等特殊字型的造字); 其餘算半個字寬
+  FULL_WIDTH_CHAR = /[\u2E80-\uFFFF\u{20000}-\u{3FFFF}]/
 
   # relationship id 前綴, 每個 part 各自一組 relationship
   IMAGE_REL_PREFIXES = { document: 'rIdImg', footnotes: 'rIdFnImg' }.freeze
@@ -89,7 +98,13 @@ class XmlToDocxConverter
     body = @xml.at_xpath('/document/body')
     raise "Missing /document/body in #{@input_path}" unless body
 
-    blocks = body.element_children.map { |node| block_xml(node) }.join
+    blocks = +''
+    previous = nil
+    body.element_children.each do |node|
+      blocks << TABLE_SEPARATOR_XML if separate_tables?(previous, node)
+      blocks << block_xml(node)
+      previous = node
+    end
 
     xml_decl(
       <<~XML
@@ -172,13 +187,16 @@ class XmlToDocxConverter
     style = merge_styles(inherited_style, style_for(node))
     rows = node.xpath('./row').to_a
     column_count = table_column_count(node, rows)
+    auto_width = auto_width?(style)
 
+    # w:tblPr 子元素順序由 schema 規定: tblW → jc → tblBorders → tblLayout → tblCellMar
     <<~XML
       <w:tbl>
         <w:tblPr>
           #{width_xml(style['width'], 'w:tblW')}
+          #{'<w:jc w:val="left"/>' if auto_width}
           #{table_borders_xml(style)}
-          <w:tblLayout w:type="fixed"/>
+          <w:tblLayout w:type="#{auto_width ? 'autofit' : 'fixed'}"/>
           <w:tblCellMar>
             <w:top w:w="80" w:type="dxa"/>
             <w:left w:w="80" w:type="dxa"/>
@@ -186,10 +204,16 @@ class XmlToDocxConverter
             <w:right w:w="80" w:type="dxa"/>
           </w:tblCellMar>
         </w:tblPr>
-        #{table_grid_xml(column_count)}
+        #{table_grid_xml(column_count, auto_width ? estimated_column_widths(rows, column_count, style) : nil)}
         #{table_rows_xml(rows, style)}
       </w:tbl>
     XML
+  end
+
+  def separate_tables?(previous, node)
+    return false unless previous&.name == 'table' && node.name == 'table'
+
+    auto_width?(style_for(previous)) || auto_width?(style_for(node))
   end
 
   def table_borders_xml(style)
@@ -199,10 +223,49 @@ class XmlToDocxConverter
     "<w:tblBorders>#{sides.join}</w:tblBorders>"
   end
 
-  def table_grid_xml(column_count)
-    width = (9000 / column_count).floor
-    columns = Array.new(column_count) { "<w:gridCol w:w=\"#{width}\"/>" }.join
+  def table_grid_xml(column_count, widths = nil)
+    widths ||= Array.new(column_count, (TABLE_GRID_WIDTH_TWIPS / column_count).floor)
+    columns = widths.map { |width| "<w:gridCol w:w=\"#{width}\"/>" }.join
     "<w:tblGrid>#{columns}</w:tblGrid>"
+  end
+
+  # Word 會依內容重算 autofit table 的欄寬, 但 LibreOffice 直接採用 w:tblGrid, 所以先從內容估出欄寬。
+  # 有跨欄跨列時欄位對不準, 回傳 nil 改用平均欄寬。超過版面寬度時等比縮小。
+  def estimated_column_widths(rows, column_count, table_style)
+    cells = rows.map { |row| row.xpath('./cell').to_a }
+    return nil if cells.flatten.any? { |cell| positive_integer(cell['cols'], 1) > 1 || positive_integer(cell['rows'], 1) > 1 }
+
+    widths = Array.new(column_count, 0)
+    cells.each do |row_cells|
+      row_cells.each_with_index do |cell, column|
+        lines = text_line_widths(cell.children, merge_styles(table_style, style_for(cell)))
+        widths[column] = [widths[column], (lines.max * 1.1).ceil + TABLE_CELL_PADDING_TWIPS].max
+      end
+    end
+
+    total = widths.sum
+    return widths if total <= TABLE_GRID_WIDTH_TWIPS
+
+    widths.map { |width| width * TABLE_GRID_WIDTH_TWIPS / total }
+  end
+
+  # 依 <lb/> 分行, 回傳每行估計寬度 (twips)
+  def text_line_widths(nodes, style, lines = [0])
+    font_size = font_size_points(merge_styles(@default_style, style)['font-size']) || 12
+
+    nodes.each do |node|
+      if node.text?
+        lines[-1] += normalize_text(node.text).each_char.sum { |char| char.match?(FULL_WIDTH_CHAR) ? 20 : 10 } * font_size
+      elsif node.element?
+        case node.name
+        when 'lb' then lines << 0
+        when 'footnote' then lines[-1] += 20 * font_size
+        when 'seg', 'font', 'p' then text_line_widths(node.children, merge_styles(style, style_for(node)), lines)
+        end
+      end
+    end
+
+    lines
   end
 
   def table_rows_xml(rows, table_style)

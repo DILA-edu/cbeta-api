@@ -71,6 +71,11 @@ module Xml4docxSupport
     %w[none 0].include?(style['border'].to_s.strip.downcase)
   end
 
+  # table 的 style 寫 width:auto (例如 table_tt) 時依內容調整寬度, 不佔滿整頁
+  def auto_width?(style)
+    style['width'].to_s.strip.downcase == 'auto'
+  end
+
   # rend 可能是多個名稱, 取第一個有定義的當段落 style
   def paragraph_style_name(node)
     rend = node['rend'].to_s.strip
