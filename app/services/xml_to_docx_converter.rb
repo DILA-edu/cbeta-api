@@ -33,6 +33,10 @@ class XmlToDocxConverter
   MAX_IMAGE_WIDTH_EMU = (PAGE_WIDTH_TWIPS - (PAGE_MARGIN_TWIPS * 2)) * EMU_PER_TWIP
   MAX_IMAGE_HEIGHT_EMU = ((PAGE_HEIGHT_TWIPS - (PAGE_MARGIN_TWIPS * 2)) * EMU_PER_TWIP * 0.9).round
 
+  # w:tblBorders 各邊的屬性
+  TABLE_BORDER = 'w:val="single" w:sz="4" w:space="0" w:color="808080"'
+  TABLE_NO_BORDER = 'w:val="none" w:sz="0" w:space="0" w:color="auto"'
+
   # relationship id 前綴, 每個 part 各自一組 relationship
   IMAGE_REL_PREFIXES = { document: 'rIdImg', footnotes: 'rIdFnImg' }.freeze
 
@@ -173,14 +177,7 @@ class XmlToDocxConverter
       <w:tbl>
         <w:tblPr>
           #{width_xml(style['width'], 'w:tblW')}
-          <w:tblBorders>
-            <w:top w:val="single" w:sz="4" w:space="0" w:color="808080"/>
-            <w:left w:val="single" w:sz="4" w:space="0" w:color="808080"/>
-            <w:bottom w:val="single" w:sz="4" w:space="0" w:color="808080"/>
-            <w:right w:val="single" w:sz="4" w:space="0" w:color="808080"/>
-            <w:insideH w:val="single" w:sz="4" w:space="0" w:color="808080"/>
-            <w:insideV w:val="single" w:sz="4" w:space="0" w:color="808080"/>
-          </w:tblBorders>
+          #{table_borders_xml(style)}
           <w:tblLayout w:type="fixed"/>
           <w:tblCellMar>
             <w:top w:w="80" w:type="dxa"/>
@@ -193,6 +190,13 @@ class XmlToDocxConverter
         #{table_rows_xml(rows, style)}
       </w:tbl>
     XML
+  end
+
+  def table_borders_xml(style)
+    border = borderless?(style) ? TABLE_NO_BORDER : TABLE_BORDER
+    sides = %w[top left bottom right insideH insideV].map { |side| "<w:#{side} #{border}/>" }
+
+    "<w:tblBorders>#{sides.join}</w:tblBorders>"
   end
 
   def table_grid_xml(column_count)

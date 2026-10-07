@@ -128,6 +128,27 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "table 預設有框線, style 寫 border:none 時連補位的空 cell 都不畫" do
+    Dir.mktmpdir do |dir|
+      body = '<table cols="1"><row><cell>甲</cell></row></table>' \
+             '<table cols="2" style="border:none">' \
+             '<row><cell>乙</cell><cell rows="2">丙</cell></row><row/></table>'
+      with_odt(write_xml(dir, body)) do |odt, _warnings|
+        doc = Nokogiri::XML(odt['content.xml'])
+        border_of = lambda do |cell|
+          doc.at_xpath(%(//style:style[@style:name="#{cell['table:style-name']}"]/style:table-cell-properties))['fo:border']
+        end
+        bordered, borderless = doc.xpath('//table:table')
+
+        assert_equal XmlToOdtConverter::TABLE_BORDER, border_of.call(bordered.at_xpath('.//table:table-cell'))
+        # 第二列的第一欄沒有 cell, 會補一個空 cell
+        cells = borderless.xpath('.//table:table-cell')
+        assert_equal 3, cells.size
+        assert_equal %w[none], cells.map { border_of.call(it) }.uniq
+      end
+    end
+  end
+
   test "註腳就地展開, 不需要獨立的 part" do
     Dir.mktmpdir do |dir|
       body = '<p>本文<footnote>註腳說明</footnote></p>'

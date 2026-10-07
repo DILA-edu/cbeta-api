@@ -256,7 +256,7 @@ class XmlToOdtConverter
         next
       end
 
-      cells << empty_cell_xml
+      cells << empty_cell_xml(table_style)
       column += 1
     end
 
@@ -279,8 +279,8 @@ class XmlToOdtConverter
     "<table:table-cell#{attributes}>#{content}</table:table-cell>"
   end
 
-  def empty_cell_xml
-    %(<table:table-cell table:style-name="#{cell_style_name({})}" office:value-type="string"><text:p/></table:table-cell>)
+  def empty_cell_xml(table_style)
+    %(<table:table-cell table:style-name="#{cell_style_name(table_style)}" office:value-type="string"><text:p/></table:table-cell>)
   end
 
   def cell_content_xml(node, style)
@@ -515,7 +515,7 @@ class XmlToOdtConverter
   end
 
   def cell_style_name(style)
-    attributes = [%(fo:border="#{TABLE_BORDER}"), %(fo:padding="#{format_length(TABLE_CELL_PADDING_CM)}cm")]
+    attributes = [%(fo:border="#{borderless?(style) ? 'none' : TABLE_BORDER}"), %(fo:padding="#{format_length(TABLE_CELL_PADDING_CM)}cm")]
     if (fill = odf_color(style['background-color']))
       attributes << %(fo:background-color="#{fill}")
     end

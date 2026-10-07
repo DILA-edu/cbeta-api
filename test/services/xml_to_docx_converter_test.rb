@@ -150,6 +150,20 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "table 預設有框線, style 寫 border:none 時不畫" do
+    Dir.mktmpdir do |dir|
+      body = '<table cols="1"><row><cell>甲</cell></row></table>' \
+             '<table cols="2" style="border:none"><row><cell>乙</cell></row></table>'
+      with_docx(write_xml(dir, body)) do |docx, _warnings|
+        bordered, borderless = Nokogiri::XML(docx['word/document.xml']).xpath('//w:tbl')
+
+        assert_equal %w[single], border_values(bordered).uniq
+        assert_equal %w[none], border_values(borderless).uniq
+        assert_equal 6, border_values(borderless).size
+      end
+    end
+  end
+
   test "註腳開頭就是 table 時仍保有註腳編號" do
     Dir.mktmpdir do |dir|
       body = '<p>本文<footnote><table cols="1"><row><cell>甲</cell></row></table></footnote></p>'
@@ -221,6 +235,10 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
       end
       yield parts, warnings
     end
+  end
+
+  def border_values(table)
+    table.xpath('./w:tblPr/w:tblBorders/*').map { it['w:val'] }
   end
 
   # 注標所在 run 的字級 (half-point)

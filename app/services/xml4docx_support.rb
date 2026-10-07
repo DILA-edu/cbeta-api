@@ -66,6 +66,11 @@ module Xml4docxSupport
     styles.compact.each_with_object({}) { |style, merged| merged.merge!(style) }
   end
 
+  # table 的 style 寫 border:none (例如 table_tt、no-border_table) 時不畫框線
+  def borderless?(style)
+    %w[none 0].include?(style['border'].to_s.strip.downcase)
+  end
+
   # rend 可能是多個名稱, 取第一個有定義的當段落 style
   def paragraph_style_name(node)
     rend = node['rend'].to_s.strip
