@@ -111,8 +111,9 @@
       %td 每分鐘 300 次（依帳號計算）
 
 %p
-  超過額度會收到 <code>429</code>，並帶 <code>Retry-After</code> header
+  額度是<strong>硬上限</strong>，超過會收到 <code>429</code>，並帶 <code>Retry-After</code> header
   告知要等幾秒。請依照它退讓重試，不要持續重打。
+  下面的建議值則是為了保留安全餘裕。
 
 -# 建議值取各層封鎖門檻的 50%。每秒 4 次是依伺服器 fail2ban 的門檻換算
 -# (見 doc/api-key-design.md 2.7),依專案決定不在此頁公開實際門檻。
@@ -126,7 +127,9 @@
   %ul
     %li 沒帶 key：每分鐘不超過 #{ApiKeyAuthentication::ANONYMOUS_LIMIT / 2} 次
     %li 帶有效的 key：每分鐘不超過 #{ApiKeyAuthentication::KEYED_LIMIT / 2} 次
-    %li <strong>不論有沒有帶 key，每秒都不要超過 4 次</strong>，也不要同時平行送出多個 request
+    %li
+      <strong>平均分散送出，不要在短時間內集中送出</strong>：
+      任何一秒都不要超過 4 次，也不要同時平行送出多個 request
   %p.mb-0
     要注意的是：
   %ul.mb-0
