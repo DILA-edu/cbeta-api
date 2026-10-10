@@ -146,6 +146,12 @@ class GotoService
     end
 
     file = work.first_file
+    # 與其他典籍重複而未收錄的 (例: X0344 同 T1782), works table 有記錄但沒有 XML
+    if file.nil?
+      return {
+        error: { code: 404, message: unpublished_work_message(work) }
+      }
+    end
     @vol = file.sub(/^(.*?)n.*$/, '\1')
 
     if params.key? :juan
@@ -180,6 +186,12 @@ class GotoService
   end
 
   private
+
+  def unpublished_work_message(work)
+    msg = "CBETA 未收錄此典籍：#{work.n}"
+    msg += "，內容同 #{work.alt}" if work.alt.present?
+    msg
+  end
 
   # 呼叫端指定的佛典編號，例: canon "T" + work "1" => "T0001"
   # 沒指定 work 就回 nil，表示不比對。

@@ -92,6 +92,13 @@ class GotoServiceTest < ActiveSupport::TestCase
     assert_equal 404, r.dig(:error, :code)
   end
 
+  test "by_work 未收錄的典籍回傳 404 並指出重複的典籍" do
+    r = @service.by_work(canon: "X", work: "344")
+
+    assert_equal 404, r.dig(:error, :code)
+    assert_includes r.dig(:error, :message), "T1782"
+  end
+
   test "get_linehead 組出行首資訊字串" do
     assert_equal "T01n0001_p0001a01",
                  GotoService.get_linehead("T0001", "T01n0001", "0001a01")

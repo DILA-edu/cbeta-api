@@ -37,3 +37,16 @@ t0262:
   sort_order: T0262
   work_type: 一般
   uuid: 00000000-0000-0000-0000-000000000262
+
+# 樣本資料:X0344 說無垢稱經贊。與 T1782 重複, CBETA 未收錄,
+# 所以 works 有記錄但沒有 xml_files。
+x0344:
+  n: X0344
+  canon: X
+  vol: X19
+  title: 說無垢稱經贊
+  alt: T1782
+  juan: 6
+  sort_order: BX0344
+  work_type: textbody
+  uuid: 00000000-0000-0000-0000-000000000344
