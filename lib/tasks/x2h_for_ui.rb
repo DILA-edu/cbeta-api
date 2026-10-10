@@ -40,7 +40,7 @@ class P5aToHTMLForUI
     @params = params
     @cbeta = CBETA.new
     @my_cbeta_share = MyCbetaShare.new
-    @gaijis = CBETA::Gaiji.new
+    @gaijis = MyCbetaShare.cbeta_gaiji_object
     @gaijis_skt = MyCbetaShare.get_cbeta_gaiji_skt
 
     fn = Rails.root.join('data-static', 'facsimile', 'JM.json')

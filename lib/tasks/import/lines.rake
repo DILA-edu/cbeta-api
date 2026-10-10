@@ -23,7 +23,7 @@ class ImportLines
   def initialize
     @cbeta = CBETA.new
     @xml_base = Rails.application.config.cbeta_xml
-    @gaijis = CBETA::Gaiji.new
+    @gaijis = MyCbetaShare.cbeta_gaiji_object
   end
   
   def import(arg)

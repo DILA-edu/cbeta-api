@@ -10,7 +10,7 @@ end
 class CheckGaiji
   def initialize
     @xml_root = Rails.application.config.cbeta_xml
-    @gaiji = CBETA::Gaiji.new
+    @gaiji = MyCbetaShare.cbeta_gaiji_object
   end
   
   def check

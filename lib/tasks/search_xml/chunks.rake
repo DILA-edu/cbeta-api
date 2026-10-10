@@ -23,7 +23,7 @@ class SearchXmlChunks
     @log = File.open(f, 'w')
 
     @xml_root = Rails.application.config.cbeta_xml
-    @cb_gaiji = CBETA::Gaiji.new
+    @cb_gaiji = MyCbetaShare.cbeta_gaiji_object
     @dynasty_labels = read_dynasty_labels
     @cs = CbetaString.new(allow_digit: true, allow_space: false)
   end

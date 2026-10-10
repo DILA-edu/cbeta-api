@@ -27,7 +27,7 @@ class XMLForDocx1
     @git = Git.open(@xml_root)
     @dest_root = Pathname.new(dest)
     @cbeta = CBETA.new
-    @gaiji = CBETA::Gaiji.new
+    @gaiji = MyCbetaShare.cbeta_gaiji_object
     @my_cbeta_share = MyCbetaShare.new
 
     fn = Rails.root.join('lib', 'tasks', 'xml4docx-styles.yaml')

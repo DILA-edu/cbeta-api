@@ -79,6 +79,16 @@ class MyCbetaShare
     JSON.parse(s)
   end
 
+  # 建立 CBETA::Gaiji, 讀 cbeta_gaiji repo 的缺字資料 (與 get_cbeta_gaiji 同一份),
+  # 而不是 cbeta gem 內建的那份, 避免兩份資料不同步。
+  def self.cbeta_gaiji_object(folder = nil)
+    folder ||= Rails.application.config.cbeta_gaiji
+    CBETA::Gaiji.new(
+      gaiji_path: File.join(folder, 'cbeta_gaiji.json'),
+      sanskrit_path: File.join(folder, 'cbeta_sanskrit.json')
+    )
+  end
+
   def self.get_work_categories
     r = {}
     folder = Rails.configuration.x.work_info
