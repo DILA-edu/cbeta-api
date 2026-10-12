@@ -38,8 +38,11 @@ rake zip:odt               # 一經一個 zip, 另外產生全套的 cbeta-odt.z
 產 docx、odt 的 zip 時，最新的 epub 可能還沒做好。
 
 參數是 `[filter,workers]`，filter 會比對來源路徑（例如 `T01`），
-省略則全部重轉並先清空輸出目錄；workers 預設為 CPU 核心數。
+省略則全部重轉並先清空輸出目錄。
+workers 預設在 development 為 CPU 核心數，其他環境為一半，
+另一半留給同一台 server 上的線上服務；不論環境都會降到 nice 19（`BatchWorkers`）。
 全量 14047 檔在 10 個 process 下約 20 秒。
+在 server 上跑時，可再加 `ionice -c3` 讓磁碟 I/O 也讓位給線上服務。
 
 轉檔邏輯：
 

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'etc'
 require 'json'
 
 # 把 data/xml4docx 整批轉成 public/download/<format>, 以多 process 平行處理。
@@ -19,13 +18,14 @@ class Xml4docxBatchConverter
     @format = format.to_sym
     @converter = FORMATS.fetch(@format) { raise ArgumentError, "未支援的格式: #{format}" }
     @filter = filter
-    @workers = (workers || Etc.nprocessors).to_i.clamp(1, 64)
+    @workers = BatchWorkers.count(workers)
     @src = Rails.root.join('data/xml4docx')
     @dest = Rails.root.join('public/download', @format.to_s)
     @figures = Rails.configuration.x.figures
   end
 
   def convert
+    BatchWorkers.lower_priority!
     files = source_files
     if files.empty?
       puts "找不到符合的 xml4docx 檔案: #{@src}"
