@@ -28,6 +28,10 @@ rake zip:docx              # 一經一個 zip, 另外產生全套的 cbeta-docx.
 rake zip:odt               # 一經一個 zip, 另外產生全套的 cbeta-odt.zip
 ```
 
+`rake quarterly` 的 section-convert 最後一步會依序跑以上五個 task
+（convert:docx → check:docx → convert:odt → zip:docx → zip:odt），
+check:docx 有錯誤時會中止，不會打包。
+
 全套打包檔在 `public/download/cbeta-<format>.zip`，內部路徑為
 `cbeta_<format>_<季別>/<canon>/<work>/<檔名>`，最上層資料夾帶季別，
 與 CBETA epub (`cbeta_epub_2026r2`)、pdf (`cbeta_pdf_1_2026r2`) 的慣例一致。

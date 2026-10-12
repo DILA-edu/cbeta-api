@@ -11,6 +11,31 @@ module SectionConvert
       step_t4d
       step_zip_text
       step_convert_docusky
+      step_docx_odt
+    end
+  end
+
+  # 必須在 heaven 比對完 xml4docx (section-html) 之後, 確保用的是定稿
+  def step_docx_odt
+    run_step '產生供下載用的 docx、odt 並打包 (rake convert:docx, check:docx, convert:odt, zip:docx, zip:odt)' do
+      t1 = Time.now
+      command 'rake convert:docx'
+      command 'rake check:docx'
+      command 'rake convert:odt'
+
+      confirm <<~MSG
+        打包檔的資料夾名稱與 filelist 用 Rails.configuration.cb.r 當季別,
+        目前是: #{Rails.configuration.cb.r}
+        請確認正確再繼續 (cb.r 在 config/cb.yml)。
+      MSG
+      command 'rake zip:docx'
+      command 'rake zip:odt'
+      puts ElapsedTime.label(t1, prefix: "step docx_odt 花費時間: ")
+
+      confirm <<~MSG
+        cbeta-docx.zip、cbeta-odt.zip 內的 filelist 是 cbeta-ebook-renamer 依賴的格式,
+        解壓確認後請通知 renamer 維護者。
+      MSG
     end
   end
 

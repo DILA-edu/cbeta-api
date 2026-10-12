@@ -67,6 +67,16 @@
 
 以上程式會將輸出先暫存在 data/docusky-tmp, 再移到 data/download/docusky
 
+## docx、odt
+
+由 xml4docx 轉出 docx、odt，檢查後打包，參考 docx.md。
+
+    rake convert:docx
+    rake check:docx
+    rake convert:odt
+    rake zip:docx
+    rake zip:odt
+
 ## Footnotes for download
 
 在「產生 xml for sphinx」時一起做，參考 sphinx-build-index.md。
