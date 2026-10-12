@@ -23,6 +23,7 @@ xml4docx 可以轉成 docx 與 odt 兩種格式，兩者都是純 Ruby 直接產
 ```
 rake 'convert:docx[,10]'   # 輸出 public/download/docx
 rake 'convert:odt[,10]'    # 輸出 public/download/odt
+rake 'check:docx[,10]'     # 比對 xml4docx 與 docx, 見下方「檢查 docx」
 rake zip:docx              # 一經一個 zip, 另外產生全套的 cbeta-docx.zip
 rake zip:odt               # 一經一個 zip, 另外產生全套的 cbeta-odt.zip
 ```
@@ -43,6 +44,24 @@ workers 預設在 development 為 CPU 核心數，其他環境為一半，
 另一半留給同一台 server 上的線上服務；不論環境都會降到 nice 19（`BatchWorkers`）。
 全量 14047 檔在 10 個 process 下約 20 秒。
 在 server 上跑時，可再加 `ionice -c3` 讓磁碟 I/O 也讓位給線上服務。
+
+## 檢查 docx
+
+`rake 'check:docx[filter,workers]'` 逐檔比對 xml4docx 與 `public/download/docx`
+（`DocxChecker`、`DocxBatchChecker`），參數與 workers 預設同 `convert:docx`：
+
+* package 結構：各 part 是合法 XML、`[Content_Types].xml` 涵蓋所有 part、
+  relationship 的 Target 存在且引用的 id 都有定義、註腳引用與定義一一對應、
+  `wp:docPr` id 不重複
+* 內容：footnote、table、graphic 數量一致；本文與每個註腳的文字一致
+  （去掉 ASCII 空白後比對，全形空白照樣比）
+* docx 比 xml4docx 舊、有 docx 卻沒有對應的 xml4docx
+
+有錯誤時 exit code 為 1，清單寫在 `log/check_docx.log`。
+全量在本機 10 個 process 下約 1 分半。
+
+文字比對會補上 converter 加的項目符號（`1.`、`•`），
+`Xml4docxSupport#list_marker` 若有改動，`DocxChecker#list_marker` 要跟著改。
 
 轉檔邏輯：
 
