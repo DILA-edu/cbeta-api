@@ -95,6 +95,9 @@ gem 'diff-lcs'
 gem 'unihan2', '>= 1.2.0'
 gem 'open3'
 gem 'faraday'
+# accounts DB 備份到 Firebase (Firestore REST API) 用的 service account 認證。
+# 刻意不用 google-cloud-firestore: 它依賴 grpc native extension, 見 doc/accounts-backup.md
+gem 'googleauth', '~> 1.17'
 gem 'csv', '~> 3.3', '>= 3.3.2'
 gem 'will_paginate', '~> 4.0'
 gem 'will_paginate-bootstrap-style'

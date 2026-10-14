@@ -23,6 +23,10 @@
 
 參考 annual-rotation.md
 
+## 使用者與 API key 資料備份
+
+參考 accounts-backup.md
+
 ## 移除舊版
 
 參考 remove-old.md

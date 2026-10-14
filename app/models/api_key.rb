@@ -11,6 +11,8 @@
 #
 # 見 doc/api-key-design.md 4.3
 class ApiKey < AccountsRecord
+  include AccountsBackupTrigger
+
   # 加前綴便於辨識,也有利於 secret scanning 工具偵測
   TOKEN_PREFIX = 'cbeta_'
   TOKEN_BYTES = 32

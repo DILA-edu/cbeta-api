@@ -49,8 +49,9 @@ Rails.application.configure do
   # config.cache_store = :mem_cache_store
   config.cache_store = :mem_cache_store, { value_max_bytes: 2_000_000 }
 
-  # Replace the default in-process and non-durable queuing backend for Active Job.
-  # config.active_job.queue_adapter = :resque
+  # Active Job 用 Rails 預設的 :async (web process 內的 thread),不另開 worker。
+  # 目前只有 AccountsBackupJob,量極少;job 遺失由每日 cron 補上。見 doc/accounts-backup.md
+  config.active_job.queue_adapter = :async
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.

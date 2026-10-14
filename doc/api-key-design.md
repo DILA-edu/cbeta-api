@@ -326,6 +326,7 @@ rate limit 的 `by:` 與 401 的 fail2ban log 也一併改用它（見 6.6）。
 primary（內容）DB 每年隨 CBETA 資料更新全部清掉重建 2～3 次，**使用者資料絕對不能放
 primary**。也不放 analytics —— 語意不符，且備份策略不同：analytics 掉了可以重跑統計，
 users / api_keys 掉了所有人的 key 立即失效，需要更嚴格的備份。
+備份到 Firebase 的做法見 [accounts-backup.md](accounts-backup.md)。
 
 `config/database.yml` 各環境新增 `accounts` 區塊（沿用現有命名慣例）：
 

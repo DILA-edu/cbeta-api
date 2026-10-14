@@ -65,9 +65,9 @@ Rails.application.configure do
     namespace: 'cbapi_dev' # namespace: 防止 key 衝突
   }
 
-  # Use a real queuing backend for Active Job (and separate queues per environment).
-  # config.active_job.queue_adapter     = :resque
-  # config.active_job.queue_name_prefix = "cbdata9_production"
+  # Active Job 用 Rails 預設的 :async (web process 內的 thread),不另開 worker。
+  # 目前只有 AccountsBackupJob,量極少;job 遺失由每日 cron 補上。見 doc/accounts-backup.md
+  config.active_job.queue_adapter = :async
 
   config.action_mailer.perform_caching = false
 

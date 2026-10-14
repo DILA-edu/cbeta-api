@@ -8,6 +8,8 @@
 #
 # 見 doc/api-key-design.md 4.2
 class User < AccountsRecord
+  include AccountsBackupTrigger
+
   # 每個 user 同時最多幾把有效 key。
   # 2 把是為了支援無縫 rotation: 先建新 key → 換完 → 再撤銷舊 key。
   MAX_ACTIVE_API_KEYS = 2

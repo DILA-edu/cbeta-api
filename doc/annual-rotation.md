@@ -132,6 +132,10 @@ accounts DB**，固定為：
 
 附帶效果：staging 測試期間產生的帳號留在 `accounts_dev`，不會汙染 production。
 
+Firebase 備份同理：每個 slot 的 `shared/config/cb.yml` 在 `production:` 與
+`staging:` 區塊各自設好 `firebase_backup`，備份目標就跟著 `Rails.env` 切換；
+cron 用角色 symlink 路徑，也不必改。見 [accounts-backup.md](accounts-backup.md)。
+
 ## 注意事項
 
 - Capistrano 的 `deploy_to` 指向 symlink 完全正常，`releases/` 與 `shared/`

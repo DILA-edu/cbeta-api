@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# accounts DB 每日 pg_dump。檔名用星期幾 (1-7),七天後自動覆蓋,不必另外清舊檔。
+#
+# 用途: Firebase 備份會同步刪除,若本機 accounts DB 出問題 (被誤清空等),
+# 錯誤也可能同步上去;這份 dump 是那種情況的退路。見 doc/accounts-backup.md
+#
+# 刻意不經過 Rails: database.yml 指錯 DB 時,用 Rails 備份也會備到錯的那個。
+#
+# 用法: bin/accounts-db-dump <DB 名稱> <輸出目錄> [檔名前綴]
+# 連線用 libpq 環境變數 (PGUSER 等) 與 ~/.pgpass,PGHOST 預設 127.0.0.1。
+set -euo pipefail
+
+if [ $# -lt 2 ]; then
+  echo "用法: $0 <DB 名稱> <輸出目錄> [檔名前綴]" >&2
+  exit 2
+fi
+
+db=$1
+dir=$2
+label=${3:-$db}
+export PGHOST=${PGHOST:-127.0.0.1}
+
+# users 是空的就不 dump: 否則 DB 被清空後,七份好的備份會一天一份被空資料蓋掉
+users=$(psql -d "$db" -tAc 'SELECT count(*) FROM users')
+if [ "$users" -eq 0 ]; then
+  echo "$db 的 users 是空的,不 dump (避免用空資料覆蓋好的備份)" >&2
+  exit 1
+fi
+
+mkdir -p "$dir"
+chmod 700 "$dir"
+out="$dir/$label-$(date +%u).dump"
+
+# 先寫暫存檔,成功才覆蓋,失敗時不會毀掉上週同一天的那份
+pg_dump -Fc -d "$db" -f "$out.tmp"
+chmod 600 "$out.tmp"
+mv "$out.tmp" "$out"
