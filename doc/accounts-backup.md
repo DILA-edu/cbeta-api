@@ -98,9 +98,14 @@ job 會延後約 2 分鐘才執行：sync 會略過 1 分鐘內才更新的列�
 （同一個 project 開兩個 named database 也可以，`database_id` 設成該 DB 名稱即可，
 但兩個環境的 service account 權限要另外用 IAM condition 隔開。）
 
-1. Firebase console 建 project，啟用 **Cloud Firestore**（Native mode），
-   location 選離 server 近的（例如 `asia-east1`）。
-2. Security rules 維持「全部拒絕」：
+1. Firebase console 建 project，進入 **Cloud Firestore** 按「建立資料庫」：
+   - 版本選 **Standard**（Enterprise 是 MongoDB 相容版，用不到）
+   - 資料庫 ID 保持 **`(default)`**（cb.yml 就不必寫 `database_id`）
+   - 位置選離 server 近的，例如 **`asia-east1`（台灣）**。**建立後不能改**
+   - 安全性規則選 **「以正式版模式啟動」**（不要選測試模式，它會開放讀寫 30 天）
+
+   Spark 免費方案即可，資料量遠低於免費額度。
+2. Security rules 維持「全部拒絕」（正式版模式的預設值就是這樣）：
 
    ```
    rules_version = '2';
@@ -113,13 +118,22 @@ job 會延後約 2 分鐘才執行：sync 會略過 1 分鐘內才更新的列�
 
    service account 走 IAM，不受 rules 限制；rules 只擋 client SDK，
    而這份資料不該被任何 client 讀到。
-3. Google Cloud console → IAM → 建 service account，角色給
-   **Cloud Datastore User**（`roles/datastore.user`），建立 JSON key 並下載。
-4. 把 JSON key 放到 server 上 **repo 以外**的地方，權限 600：
+3. Google Cloud console →「IAM 與管理」→「服務帳戶」→「建立服務帳戶」，
+   角色只給 **Cloud Datastore User**（`roles/datastore.user`）。建好後在「金鑰」分頁
+   新增 JSON 金鑰並下載。
+   - 不要用 Firebase「專案設定 → 服務帳戶」產生的 Admin SDK 金鑰，權限大得多。
+   - 若建立金鑰時被組織政策 `iam.disableServiceAccountKeyCreation` 擋住，
+     要請組織管理員為這個專案解除。
+4. 把 JSON key 放到 server 上**不隨 slot 輪替**的位置，例如 `~/.config/cbeta-api/`
+   （目錄 700、檔案 600）。不要放 `shared/config/`：角色 symlink 輪替後會指向
+   另一個 slot，金鑰就得跟著搬。Passenger 執行 app 的使用者必須讀得到這個檔案。
 
    ```sh
-   chmod 600 /var/www/cbeta-api-staging/shared/config/firebase-backup.json
+   mkdir -p ~/.config/cbeta-api && chmod 700 ~/.config/cbeta-api
+   chmod 600 ~/.config/cbeta-api/firebase-staging.json
    ```
+
+   下載到本機的那份，上傳後即刪除。
 
 5. `config/cb.yml`（gitignored，每個 slot 的 `shared/config/` 各一份）加上：
 
@@ -173,7 +187,7 @@ job 會延後約 2 分鐘才執行：sync 會略過 1 分鐘內才更新的列�
 # 每日保底 sync (推變更、同步刪除、推前一天的 api_key_usages)
 15 3 * * * cd /var/www/cbeta-api-staging/current && RAILS_ENV=staging flock -n /tmp/accounts-backup-staging.lock /var/www/cbeta-api-staging/shared/asdf-wrapper bundle exec rake accounts_backup:sync >> /var/www/cbeta-api-staging/shared/log/accounts-backup.log 2>&1
 # 每日 pg_dump,保留 7 份 (檔名用星期幾,自動覆蓋)
-45 3 * * * /var/www/cbeta-api-staging/current/bin/accounts-db-dump accounts_dev /var/www/cbeta-api-staging/shared/backups staging
+45 3 * * * /var/www/cbeta-api-staging/current/bin/accounts-db-dump accounts_dev /home/ray/backups/cbeta-accounts staging
 ```
 
 - production 把上面的 `staging` 換成 `production`、DB 換成 `cb_accounts`。
@@ -183,8 +197,19 @@ job 會延後約 2 分鐘才執行：sync 會略過 1 分鐘內才更新的列�
 - `bin/accounts-db-dump` 只在失敗時輸出（cron mail 會收到）。它不經過 Rails、直接指名
   DB：`database.yml` 指錯 DB 時，用 Rails 備份也會備到錯的那個。`users` 是空的時候
   拒絕 dump，避免七份好的備份一天一份被空資料蓋掉。
-- `pg_dump` 的連線用 `~/.pgpass`（權限 600）與 `PGUSER` 環境變數，可寫在 crontab 開頭：
-  `PGUSER=<accounts DB 的 owner>`。
+- dump 放在**不隨 slot 輪替**的固定位置（與金鑰同理），staging 與 production
+  用檔名前綴區分。
+- `pg_dump` 的連線用 `~/.pgpass` 與 `PGUSER` 環境變數（寫在 crontab 開頭：
+  `PGUSER=<accounts DB 的 owner>`）。`.pgpass` 的 host 欄位要寫 `127.0.0.1`
+  （libpq 逐字比對，script 連的是 `127.0.0.1`），權限必須是 600 ——
+  權限太寬時 libpq 會忽略整個檔案，手動執行時改問密碼，cron 裡則直接失敗。
+  加 crontab 前先用 `-w`（絕不詢問密碼）模擬 cron 確認：
+
+  ```sh
+  PGUSER=<owner> psql -h 127.0.0.1 -d accounts_dev -w -tAc 'SELECT 1'
+  ```
+- crontab 用 `ray` 自己的 `crontab -e`，**不要加 sudo**：那會變成 root 的 crontab，
+  讀不到 `~ray/.pgpass`，產生的檔案擁有者也會是 root。
 - 兩個 Passenger app 的 web process 也會在資料變更時自己排 job，不需要另外設定。
 
 ## 還原
@@ -212,7 +237,7 @@ job 會延後約 2 分鐘才執行：sync 會略過 1 分鐘內才更新的列�
 2. 選擇要用哪一天的檔案（`<前綴>-<星期幾>.dump`，1 = 星期一），還原：
 
    ```sh
-   pg_restore -h 127.0.0.1 -d accounts_dev --clean --if-exists --no-owner /var/www/cbeta-api-staging/shared/backups/staging-3.dump
+   pg_restore -h 127.0.0.1 -d accounts_dev --clean --if-exists --no-owner /home/ray/backups/cbeta-accounts/staging-3.dump
    ```
 
 3. 整份重推到 Firestore。還原回來的列 `updated_at` 都比 watermark 舊，
