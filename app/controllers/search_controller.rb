@@ -162,8 +162,7 @@ class SearchController < ApplicationController
 
     if params[:facet] == '1'
       # key 的順序與舊版一致
-      r['facet'] = %w[category creator dynasty work canon]
-                   .to_h { |f| [f, es_facet(f, index: CbetaSearch::NotesIndex)] }
+      r['facet'] = es_facets(%w[category creator dynasty work canon], index: CbetaSearch::NotesIndex)
     end
 
     notes_highlight(r)
@@ -180,7 +179,7 @@ class SearchController < ApplicationController
       if params.key? :facet_by
         es_facet(params[:facet_by])
       else
-        %w[canon category creator dynasty work].to_h { |f| [f, es_facet(f)] }
+        es_facets(%w[canon category creator dynasty work])
       end
 
     my_render r
@@ -381,15 +380,21 @@ class SearchController < ApplicationController
   # 對應舊的 facet_by_sphinx（已移除）: Elasticsearch 算出 docs / hits，
   # 這裡補上名稱與排序。
   def es_facet(facet_by, index: es_index)
+    es_facets([facet_by], index:)[facet_by]
+  end
+
+  # 多個 facet 維度一次查詢 (見 SearchService#facets)，回傳 { facet_by => rows }，
+  # key 的順序依 facet_bys。
+  def es_facets(facet_bys, index: es_index)
     # NEAR / Exclude 走 intervals，_score 不是出現次數，加總得到的 hits 沒有意義。
     # 舊版是把整串當詞組 (搜不到、回空陣列)，這裡改成明確報錯。
     unless es_query.es_countable?
       raise CbetaError.new(400), 'facet 不支援 NEAR 與 Exclude 語法'
     end
 
-    read_dynasty_order if facet_by == 'dynasty'
-    rows = es_service(index).facet(es_query, params: es_params, facet_by:, field: @text_field)
-    decorate_facet!(facet_by, rows)
+    read_dynasty_order if facet_bys.include?('dynasty')
+    all = es_service(index).facets(es_query, params: es_params, facet_bys:, field: @text_field)
+    facet_bys.to_h { |f| [f, decorate_facet!(f, all[f])] }
   end
 
   def decorate_facet!(facet_by, rows)
@@ -509,7 +514,6 @@ class SearchController < ApplicationController
       @exclude = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
       @q = query.phrase # kwic_boolean_exclude 需要「不含排除條件」的查詢詞
     end
-    @q_orig = @q
 
     r = all_in_one_fetch(query)
 
@@ -603,7 +607,7 @@ class SearchController < ApplicationController
   end
 
   def es_facet_all(dest)
-    %w[category creator dynasty work canon].each { |f| dest[f] = es_facet(f) }
+    dest.merge!(es_facets(%w[category creator dynasty work canon]))
   end
   
   def empty_result
@@ -642,22 +646,18 @@ class SearchController < ApplicationController
     phrases.select { found[it] }
   end
 
-  # 單純詞組查詢 (variants 的計數用): 不經 QueryParser，
-  # 因為異體字展開後的字串可能含雙引號等字元，不該被當成查詢語法。
-  def es_phrase_query(phrase)
-    CbetaSearch::Query.new(type: :phrase, raw: phrase, phrase: phrase.downcase)
-  end
-
-  # variants 的計數。scope=title 查 titles index 的 freq sub-field
+  # variants 的計數，一次問一整批 (_msearch)，回傳 { 詞組 => 次數 }。
+  # scope=title 查 titles index 的 freq sub-field
   # (主欄位掛的是 BM25，算不出出現次數)，其餘查 text index。
-  def variants_hit_count(phrase)
+  def variants_hit_counts(phrases)
+    return {} if phrases.empty?
+
     if params[:scope] == 'title'
-      es_service(CbetaSearch::TitlesIndex).hit_count(
-        es_phrase_query(phrase), params: es_params,
-        field: CbetaSearch::TitlesIndex::FREQ_SUBFIELD
+      es_service(CbetaSearch::TitlesIndex).hit_count_all(
+        phrases, params: es_params, field: CbetaSearch::TitlesIndex::FREQ_SUBFIELD
       )
     else
-      es_service(CbetaSearch::TextIndex).hit_count(es_phrase_query(phrase), params: es_params)
+      es_service(CbetaSearch::TextIndex).hit_count_all(phrases, params: es_params)
     end
   end
 
@@ -875,16 +875,13 @@ class SearchController < ApplicationController
     a = []
     num_found = 0
 
-    q = @q_orig
-    log_debug "q: #{q}"
-    q.gsub!(/[!\-]"[^"]+"/, '') # 去除 not 之後的關鍵字
-    q.gsub!(/(?<!\\)"/, '') # 沒有 escape 的單引號、雙引號 去掉
-    q.gsub!(/\\(['"])/, '\1')
-    log_debug "q: #{q}"
-    keys = q.split
+    # 與 Elasticsearch 端相同的計分詞組 (QueryParser 已處理引號、escape、NOT、OR、大小寫)。
+    # 原本自己用空白切 q: 不加引號的 Pāli Text Society 會被拆成三個詞分別計數，
+    # OR 的 | 也會被當成關鍵字去查。
+    keys = es_query.scoring_terms
+    log_debug "keys: #{keys}"
 
-    keys.each do |k|
-      k2 = k.downcase
+    keys.each do |k2|
       h = se.search(k2, opts)
       num_found += h[:num_found]
       a += h[:results]
@@ -899,21 +896,16 @@ class SearchController < ApplicationController
     { num_found: num_found, results: a}
   end
 
+  # 前後搭配直接用 QueryParser 算好的 exclude_prefix / exclude_suffix (與 ES 端一致)。
+  # 原本用使用者輸入組 regex 重新推導，詞組含 | . 等字元時會比對失敗或排除失效。
   def kwic_boolean_exclude(se, opts)
-    q = @q.sub(/^"(.*)"$/, '\1')
-    @exclude.match(/^#{q}(.*)$/) do
-      opts[:negative_lookahead] = $1
-      return se.search_juan(q, opts)
+    query = es_query
+    if query.exclude_suffix
+      opts[:negative_lookahead] = query.exclude_suffix
+    else
+      opts[:negative_lookbehind] = query.exclude_prefix
     end
-
-    @exclude.match(/^(.*?)#{q}$/) do
-      opts[:negative_lookbehind] = $1
-      r = se.search_juan(q, opts)
-      #logger.debug "search_juan 花費時間: #{Time.now - t1}"
-      return r
-    end
-
-    raise CbetaError.new(400), "語法錯誤，Exclude #{@exclude} 應包含原始字串 #{q}，原查詢字串：#{params[:q]}"
+    se.search_juan(query.phrase, opts)
   end
 
   def read_dynasty_order
@@ -1115,11 +1107,11 @@ class SearchController < ApplicationController
     log_debug "variants_sub, q: #{@q}"
     q_ary = get_query_variants(@q)
         
+    others = q_ary.reject { it == @q }
+    counts = variants_hit_counts(others)
     results = []
-    q_ary.each do |q|
-      next if q == @q
-
-      i = variants_hit_count(q)
+    others.each do |q|
+      i = counts.fetch(q)
       results << { q: q, hits: i } unless i.zero?
     end
     

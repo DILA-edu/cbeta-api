@@ -127,9 +127,16 @@ class CbetaSearch::SearchServiceExcludeTest < ActiveSupport::TestCase
     assert_empty svc.exclude_candidates(exclude_query, params: {})
   end
 
+  # composite aggregation 的回應: 排除字串的逐卷 (work/juan) 出現次數
+  def subtract_agg(*buckets)
+    { 'aggregations' => { 'juans' => { 'buckets' => buckets.map do |work, juan, hits|
+      { 'key' => { 'work' => work, 'juan' => juan }, 'hits' => { 'value' => hits } }
+    end } } }
+  end
+
   test 'exclude_candidates source: :light 時只有候選階段帶欄位' do
     responses = [
-      { 'hits' => { 'hits' => [bare_hit(1, 3.0)] } },
+      subtract_agg([ 'T0001', 1, 3.0 ]),
       { 'hits' => { 'hits' => [hit(1, 10.0, source(work: 'T0001', juan: 1))] } }
     ]
     svc, client = service(responses)
@@ -139,7 +146,26 @@ class CbetaSearch::SearchServiceExcludeTest < ActiveSupport::TestCase
     assert_equal 7, rows.first[:term_hits]
     assert_equal 'T0001', rows.first[:work], 'facet=1 要靠這些欄位'
     assert_equal false, client.bodies.first['_source'], '排除字串那一次仍然不必讀'
+    assert_equal 0, client.bodies.first['size'], '排除字串改用 aggregation, 不逐筆取回'
+    assert client.bodies.first.dig('aggs', 'juans', 'composite'), '以 work/juan 分組'
     assert_equal CbetaSearch::SearchService::LIGHT_SOURCE_FIELDS, client.bodies.last['_source']
+  end
+
+  test 'exclude_candidates 帶 work/juan 時以 work/juan 對應相減' do
+    responses = [
+      subtract_agg([ 'T0002', 1, 2.0 ], [ 'T0001', 2, 6.0 ]),
+      { 'hits' => { 'hits' => [
+        hit(1, 6.0, source(work: 'T0001', juan: 1)),
+        hit(2, 6.0, source(work: 'T0001', juan: 2)),
+        hit(3, 6.0, source(work: 'T0002', juan: 1))
+      ] } }
+    ]
+    svc, = service(responses)
+
+    rows = svc.exclude_candidates(exclude_query, params: {}, source: :light)
+
+    assert_equal [ [ 'T0001', 1, 6 ], [ 'T0002', 1, 4 ] ], rows.map { [ it[:work], it[:juan], it[:term_hits] ] },
+                 'T0001/2 被扣光不算符合; 同 juan 不同 work 不可混淆'
   end
 
   test 'rows_by_ids 補回完整欄位, 並保留候選階段算好的 term_hits' do

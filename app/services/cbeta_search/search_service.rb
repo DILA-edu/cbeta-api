@@ -282,12 +282,23 @@ module CbetaSearch
       base = Query.new(type: :phrase, raw: query.raw, phrase: query.phrase)
       minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
 
-      # 兩次查詢打的是同一個 index，同一卷就是同一份 document，
-      # 因此用 _id 對應即可，不必為了湊 key 去讀 work / juan。
-      subtract = simple_search(minus, params:, field:)
+      # 排除字串的逐卷次數:
+      #   * 候選帶 work / juan 時 (:light / :full，all_in_one 的 facet=1 走這裡)，
+      #     用 composite aggregation 取得 (同 #exclude_search)，不必逐筆取回 ——
+      #     「"菩薩" -"諸菩薩"」原本要逐筆取回 6,803 卷。text index 一卷一份
+      #     document (work + juan 唯一)，以 work/juan 對應與以 _id 對應結果相同。
+      #   * :none 的候選沒有 work / juan，只能逐筆取回、以 _id 對應
+      #     (ES 預設不能對 _id 做 aggregation)。
+      if source == :none
+        subtract = simple_search(minus, params:, field:)
+        key_of = ->(row) { row[:id] }
+      else
+        subtract = exclude_subtract_map(minus, params:, field:)
+        key_of = ->(row) { subtract_key(row[:work], row[:juan]) }
+      end
 
       all_candidates(base, params:, field:, default_sort:, source:).filter_map do |row|
-        hits = row[:term_hits] - subtract.fetch(row[:id], 0)
+        hits = row[:term_hits] - subtract.fetch(key_of.(row), 0)
         row.merge(term_hits: hits) if hits.positive?
       end
     end
@@ -340,6 +351,37 @@ module CbetaSearch
       response.dig('aggregations', 'total_term_hits', 'value').to_f.round
     end
 
+    # 批次版的 hit_count: 一次問一整批詞組，回傳 { 詞組 => 出現總次數 }。
+    # 每個詞組的查詢內容與 #hit_count 相同，只是改用 _msearch 一次送出
+    # (variants 原本每個異體字組合各發一次 HTTP 請求)。
+    def hit_count_all(phrases, params: {}, field: nil, batch_size: MSEARCH_BATCH_SIZE)
+      field ||= default_field
+      result = {}
+
+      phrases.uniq.each_slice(batch_size) do |batch|
+        body = batch.flat_map do |phrase|
+          query = Query.new(type: :phrase, raw: phrase, phrase: phrase.downcase)
+          search_body = @builder.search_body(query, params:, field:)
+          search_body['size'] = 0
+          search_body['aggs'] = { 'total_term_hits' => SUM_SCORE_AGG }
+          [{}, search_body]
+        end
+
+        responses = client.msearch(index:, body:).dig('responses') || []
+        batch.each_with_index do |phrase, i|
+          response = responses[i] || {}
+          # _msearch 的單筆失敗不會丟例外，不可默默當成 0 次
+          if response['error'] || !response.key?('aggregations')
+            raise CbetaError.new(502), "Elasticsearch _msearch 第 #{i} 筆失敗: #{response['error'] || '無 aggregations'}"
+          end
+
+          result[phrase] = response.dig('aggregations', 'total_term_hits', 'value').to_f.round
+        end
+      end
+
+      result
+    end
+
     # 對應舊的 exist_in_index: 只問「有沒有」，不算次數
     def exist?(query, params: {}, field: nil)
       field ||= default_field
@@ -384,29 +426,42 @@ module CbetaSearch
     # 舊版用 Manticore 的 GROUPBY() + SUM(weight())，ES 改用 terms aggregation
     # 搭配 scripted_metric 子 aggregation。
     def facet(query, params:, facet_by:, field: nil)
+      facets(query, params:, facet_bys: [facet_by], field:)[facet_by]
+    end
+
+    # 多個 facet 一次 request: 回傳 { facet_by => rows }，rows 格式同 #facet。
+    # 原本每個維度各發一次，同一個查詢在 ES 裡要比對五次。
+    # size 為 0，不取 hit，沒有 top-k 剪枝的問題 (見 #search 註解)，
+    # 各 aggregation 拿到的 _score 與分開查詢相同。
+    def facets(query, params:, facet_bys:, field: nil)
       field ||= default_field
-      es_field, key = facet_field_and_key(facet_by)
+      fields = facet_bys.to_h { |f| [f, facet_field_and_key(f)] }
 
       body = @builder.search_body(query, params:, field:)
       body['size'] = 0
-      body['aggs'] = {
-        'facet' => {
-          'terms' => { 'field' => es_field, 'size' => FACET_MAX },
-          'aggs' => { 'hits' => SUM_SCORE_AGG }
-        }
-      }
+      body['aggs'] = fields.to_h do |facet_by, (es_field, _key)|
+        [
+          facet_agg_name(facet_by),
+          {
+            'terms' => { 'field' => es_field, 'size' => FACET_MAX },
+            'aggs' => { 'hits' => SUM_SCORE_AGG }
+          }
+        ]
+      end
 
       response = client.search(index:, body:)
-      buckets = response.dig('aggregations', 'facet', 'buckets') || []
-      rows = buckets.map do |bucket|
-        {
-          key => bucket['key'],
-          docs: bucket['doc_count'],
-          hits: bucket.dig('hits', 'value').to_f.round
-        }
+      fields.to_h do |facet_by, (_es_field, key)|
+        buckets = response.dig('aggregations', facet_agg_name(facet_by), 'buckets') || []
+        rows = buckets.map do |bucket|
+          {
+            key => bucket['key'],
+            docs: bucket['doc_count'],
+            hits: bucket.dig('hits', 'value').to_f.round
+          }
+        end
+        rows.sort_by! { |row| -row[:hits] }
+        [facet_by, rows]
       end
-      rows.sort_by! { |row| -row[:hits] }
-      rows
     end
 
     private
@@ -516,6 +571,8 @@ module CbetaSearch
       raise CbetaError.new(400),
             "start 參數超出範圍: #{start}, start + rows 不得超過 #{IndexBase::MAX_RESULT_WINDOW}"
     end
+
+    def facet_agg_name(facet_by) = "facet_#{facet_by}"
 
     # facet 名稱 → [ES 欄位, 回傳的 key]。與舊 facet_by_sphinx 的欄位對應一致。
     def facet_field_and_key(facet_by)
