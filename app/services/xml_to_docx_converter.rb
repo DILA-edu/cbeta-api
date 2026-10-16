@@ -118,20 +118,6 @@ class XmlToDocxConverter
     )
   end
 
-  def block_xml(node, list_context = nil)
-    case node.name
-    when 'p'
-      paragraph_xml(node, list_context: list_context)
-    when 'list'
-      list_xml(node)
-    when 'table'
-      table_xml(node)
-    else
-      warn_once("Skipping unsupported block element <#{node.name}>.")
-      ''
-    end
-  end
-
   def paragraph_xml(node, list_context: nil, prefix: nil, inherited_style: nil)
     style = merge_styles(inherited_style, style_for(node))
     pstyle_name = paragraph_style_name(node)
@@ -151,36 +137,6 @@ class XmlToDocxConverter
         #{runs}
       </w:p>
     XML
-  end
-
-  def list_xml(node)
-    level = positive_integer(node['level'], 1)
-    type = node['type'].to_s.empty? ? 'bullet' : node['type'].to_s
-
-    node.xpath('./item').each_with_index.map do |item, index|
-      item_xml(item, level, type, index)
-    end.join
-  end
-
-  def item_xml(item, level, type, index)
-    list_context = { level: level, type: type }
-    marker = list_marker(type, index)
-
-    item.element_children.map.with_index do |child, child_index|
-      case child.name
-      when 'p'
-        paragraph_xml(child, list_context: list_context, prefix: child_index.zero? ? marker : nil)
-      when 'list'
-        list_xml(child)
-      when 'seg'
-        synthetic = Nokogiri::XML::Node.new('p', @xml)
-        synthetic.add_child(child.dup)
-        paragraph_xml(synthetic, list_context: list_context, prefix: child_index.zero? ? marker : nil)
-      else
-        warn_once("Skipping unsupported list item element <#{child.name}>.")
-        ''
-      end
-    end.join
   end
 
   def table_xml(node, inherited_style: nil)
@@ -266,12 +222,6 @@ class XmlToDocxConverter
     end
 
     lines
-  end
-
-  def table_rows_xml(rows, table_style)
-    active_spans = {}
-
-    rows.map { |row| row_xml(row, table_style, active_spans) }.join
   end
 
   def row_xml(node, table_style, active_spans)
@@ -573,19 +523,6 @@ class XmlToDocxConverter
     # 註腳至少要有一個段落, 且 w:tbl 之後必須再接一個段落
     blocks << footnote_paragraph_xml('', reference: reference_pending) if last_kind.nil? || last_kind == :table
     blocks
-  end
-
-  # 把註腳子節點切成 [:inline, nodes] 與 [:table, node] 兩種區段
-  def footnote_groups(children)
-    children.each_with_object([]) do |child, groups|
-      if child.element? && child.name == 'table'
-        groups << [:table, child]
-      elsif groups.last&.first == :inline
-        groups.last[1] << child
-      else
-        groups << [:inline, [child]]
-      end
-    end
   end
 
   def footnote_paragraph_xml(runs, reference: false)

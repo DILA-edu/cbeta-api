@@ -134,20 +134,6 @@ class XmlToOdtConverter
     )
   end
 
-  def block_xml(node, list_context = nil)
-    case node.name
-    when 'p'
-      paragraph_xml(node, list_context: list_context)
-    when 'list'
-      list_xml(node)
-    when 'table'
-      table_xml(node)
-    else
-      warn_once("Skipping unsupported block element <#{node.name}>.")
-      ''
-    end
-  end
-
   def paragraph_xml(node, list_context: nil, prefix: nil, inherited_style: nil)
     style = merge_styles(inherited_style, style_for(node))
     content = +''
@@ -167,36 +153,6 @@ class XmlToOdtConverter
 
   def heading_level(name)
     name.to_s.match(/\A標題 ([1-9])\z/) { |match| match[1].to_i }
-  end
-
-  def list_xml(node)
-    level = positive_integer(node['level'], 1)
-    type = node['type'].to_s.empty? ? 'bullet' : node['type'].to_s
-
-    node.xpath('./item').each_with_index.map do |item, index|
-      item_xml(item, level, type, index)
-    end.join
-  end
-
-  def item_xml(item, level, type, index)
-    list_context = { level: level, type: type }
-    marker = list_marker(type, index)
-
-    item.element_children.map.with_index do |child, child_index|
-      case child.name
-      when 'p'
-        paragraph_xml(child, list_context: list_context, prefix: child_index.zero? ? marker : nil)
-      when 'list'
-        list_xml(child)
-      when 'seg'
-        synthetic = Nokogiri::XML::Node.new('p', @xml)
-        synthetic.add_child(child.dup)
-        paragraph_xml(synthetic, list_context: list_context, prefix: child_index.zero? ? marker : nil)
-      else
-        warn_once("Skipping unsupported list item element <#{child.name}>.")
-        ''
-      end
-    end.join
   end
 
   # --- table ---
@@ -219,12 +175,6 @@ class XmlToOdtConverter
   def table_width_cm(style)
     percentage = percentage_value(style['width'])
     percentage ? CONTENT_WIDTH_CM * percentage / 100 : CONTENT_WIDTH_CM
-  end
-
-  def table_rows_xml(rows, table_style)
-    active_spans = {}
-
-    rows.map { |row| row_xml(row, table_style, active_spans) }.join
   end
 
   def row_xml(node, table_style, active_spans)
@@ -398,19 +348,6 @@ class XmlToOdtConverter
 
     # note-body 至少要有一個段落
     blocks.empty? ? footnote_paragraph_xml('') : blocks
-  end
-
-  # 把註腳子節點切成 [:inline, nodes] 與 [:table, node] 兩種區段
-  def footnote_groups(children)
-    children.each_with_object([]) do |child, groups|
-      if child.element? && child.name == 'table'
-        groups << [:table, child]
-      elsif groups.last&.first == :inline
-        groups.last[1] << child
-      else
-        groups << [:inline, [child]]
-      end
-    end
   end
 
   def footnote_paragraph_xml(content, leading_space: false)

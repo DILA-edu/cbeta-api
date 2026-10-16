@@ -56,29 +56,10 @@ class Xml4docxBatchConverter
   end
 
   def convert_in_parallel(files)
-    # 交錯分配, 讓各 worker 拿到的檔案大小較平均
-    slices = files.group_by.with_index { |_file, i| i % @workers }.values
-    $stdout.flush
-    ActiveRecord::Base.connection_handler.clear_all_connections!
-
-    readers = []
-    slices.each_with_index do |slice, index|
-      reader, writer = IO.pipe
-      pid = fork do
-        reader.close
-        # 只讓第一個 worker 印進度, 以它的進度乘上 worker 數估算整體進度
-        writer.write(JSON.generate(convert_files(slice, total: index.zero? ? files.size : nil)))
-        writer.close
-        exit!(0)
-      end
-      writer.close
-      readers << [pid, reader]
+    BatchWorkers.fork_map(files, @workers, symbolize_names: true) do |slice, index|
+      # 只讓第一個 worker 印進度, 以它的進度乘上 worker 數估算整體進度
+      convert_files(slice, total: index.zero? ? files.size : nil)
     end
-
-    # 先讀完 pipe 再等 child 結束, 避免 pipe buffer 塞滿造成 deadlock
-    results = readers.map { |_pid, reader| JSON.parse(reader.read, symbolize_names: true).tap { reader.close } }
-    readers.each { |pid, _reader| Process.wait(pid) }
-    results
   end
 
   def convert_files(files, total: nil)

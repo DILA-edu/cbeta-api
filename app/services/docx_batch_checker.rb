@@ -31,27 +31,10 @@ class DocxBatchChecker
     files
   end
 
-  # 與 Xml4docxBatchConverter 相同的 fork + pipe 做法
   def check_in_parallel(files)
-    slices = files.group_by.with_index { |_file, i| i % @workers }.values
-    $stdout.flush
-
-    readers = slices.each_with_index.map do |slice, index|
-      reader, writer = IO.pipe
-      pid = fork do
-        reader.close
-        writer.write(JSON.generate(check_files(slice, total: index.zero? ? files.size : nil)))
-        writer.close
-        exit!(0)
-      end
-      writer.close
-      [ pid, reader ]
-    end
-
-    # 先讀完 pipe 再等 child 結束, 避免 pipe buffer 塞滿造成 deadlock
-    results = readers.flat_map { |_pid, reader| JSON.parse(reader.read).tap { reader.close } }
-    readers.each { |pid, _reader| Process.wait(pid) }
-    results
+    BatchWorkers.fork_map(files, @workers) do |slice, index|
+      check_files(slice, total: index.zero? ? files.size : nil)
+    end.flatten(1)
   end
 
   # 回傳 [[檔名, [錯誤訊息...]], ...], 只含有錯誤的檔案
