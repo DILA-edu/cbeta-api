@@ -42,6 +42,7 @@ class ImportLayers
     @target = target_work
     @count = { 'place' => 0, 'person' => 0 }
     @mismatch = 0
+    @line_cache = {}
     @log = File.open(LOG, 'w')
 
     Dir.entries(@layers).each do |f|
@@ -223,7 +224,8 @@ class ImportLayers
       next if row['lb'].start_with? 'f'
 
       begin
-        line = Line.find_by_vol_lb(@vol, row['lb'])
+        # 同一行常有多筆 (例 GA010n0009: 21919 筆只有 4610 個行號)，查過的不再查
+        line = (@line_cache[[@vol, row['lb']]] ||= Line.find_by_vol_lb(@vol, row['lb']))
         work = line.work
         juan = line.juan
       rescue => e
@@ -241,6 +243,7 @@ class ImportLayers
         abort "error #{__LINE__} 檔案不存在: #{@html_fn}" unless File.exist?(@html_fn)
         puts "read html file: #{@html_fn}"
         @html_doc = File.open(@html_fn) { |f| Nokogiri::HTML(f) }
+        index_html_doc
         lb = @html_doc.at_xpath("//span[@class='lb']")
         @work = lb['id'].split('_').first
         @current_juan = juan
@@ -289,7 +292,7 @@ class ImportLayers
     @line_text = ''
     id = "#{@work}_p#{lb}"
 
-    start_lb = @html_doc.at_xpath("//span[@class='lb' and @id='#{id}']")
+    start_lb, first_t = @lb_index[id]
     if start_lb.nil?
       @mismatch += 1
       @log.puts "<hr>\n"
@@ -301,7 +304,9 @@ class ImportLayers
 
     @log_buf = { dirty: false, text: '' }
     @log_buf[:text] << "<p>找到行號: #{start_lb}</p>"
-    start_lb.xpath("./following::span[@class='t']").each do |node|
+    # 等同 start_lb.xpath("./following::span[@class='t']")，但不必每列都撈出整份文件之後的節點
+    (first_t...@t_nodes.size).each do |i|
+      node = @t_nodes[i]
       if node['l'] > lb
         puts '-' * 20
         puts "發生錯誤, id: #{id}, 程式行號: #{__LINE__}".red
@@ -314,6 +319,29 @@ class ImportLayers
     end
 
     @log.puts @log_buf[:text] if @log_buf[:dirty]
+  end
+
+  # 每份 HTML 載入時建一次索引，取代每列都做的全文件 XPath:
+  #   @lb_index: lb 的 id => [span.lb 節點, 它之後第一個 span.t 在 @t_nodes 的位置]
+  #             同一 id 取文件中的第一個 (同 at_xpath)
+  #   @t_nodes:  依文件順序排列的 span.t
+  # 處理過程只會在 span.t 裡插入 anchor、替換文字節點，不會新增或移除
+  # span.lb / span.t，所以索引在整份文件處理期間都有效。
+  def index_html_doc
+    @lb_index = {}
+    @t_nodes = []
+    pending = []
+    @html_doc.xpath("//span[@class='lb' or @class='t']").each do |node|
+      if node['class'] == 't'
+        pending.each { |id| @lb_index[id][1] = @t_nodes.size }
+        pending.clear
+        @t_nodes << node
+      elsif !@lb_index.key?(node['id'])
+        @lb_index[node['id']] = [node, nil]
+        pending << node['id']
+      end
+    end
+    pending.each { |id| @lb_index[id][1] = @t_nodes.size }
   end
 
   def import_row_traverse(node)
