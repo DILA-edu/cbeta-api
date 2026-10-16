@@ -6,12 +6,13 @@ class OpenapiController < ApplicationController
   SPEC_PATH = Rails.root.join('doc/openapi.yaml')
 
   def show
-    spec = YAML.safe_load_file(SPEC_PATH)
-    # 版號以 VERSION 檔為準，spec 檔裡不手動維護。
-    spec['info']['version'] = Rails.configuration.x.ver
-    # 指向目前這個站台 (含 /dev、/stable 等路徑前綴)，
-    # 在文件頁試打時才會打到同一個 server。
-    spec['servers'] = [ { 'url' => root_url.chomp('/') } ]
-    render json: spec
+    spec = MtimeCache.fetch(:openapi_spec, SPEC_PATH) { YAML.safe_load_file(SPEC_PATH, freeze: true) }
+    render json: spec.merge(
+      # 版號以 VERSION 檔為準，spec 檔裡不手動維護。
+      'info' => spec['info'].merge('version' => Rails.configuration.x.ver),
+      # 指向目前這個站台 (含 /dev、/stable 等路徑前綴)，
+      # 在文件頁試打時才會打到同一個 server。
+      'servers' => [ { 'url' => root_url.chomp('/') } ]
+    )
   end
 end

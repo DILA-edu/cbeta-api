@@ -534,6 +534,8 @@ class KwicService
     begin
       @info_path = fn
       log_debug "open file: #{fn}"
+      # 每換一卷就重開 info.dat, 舊的要先關; 否則 NEAR 掃上萬卷時 file descriptor 會一直累積到 GC
+      @f_info.close if @f_info && !@f_info.closed?
       @f_info = File.open(fn, 'rb')
     rescue
       raise CbetaError.new(500), "開檔失敗: #{fn}"
@@ -1146,7 +1148,10 @@ class KwicService
   end
 
   def log_debug(msg)
-    location = caller_locations.first
+    # production 的 log level 不是 debug 時, 省下擷取 call stack 的成本 (逐卷迴圈裡會大量呼叫)
+    return unless Rails.logger.debug?
+
+    location = caller_locations(1, 1).first
     file = File.basename(location.path)
     r = "#{file}:#{location.lineno}, #{msg}"
     Rails.logger.debug r

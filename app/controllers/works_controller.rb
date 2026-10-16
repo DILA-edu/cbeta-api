@@ -93,7 +93,7 @@ class WorksController < ApplicationController
   def search_by_creator
     q = params[:creator]
     #works = Work.where("(creators_with_id IS ?) AND (creators LIKE ?)", nil, "%#{q}%").order(:n)
-    works = Work.where("creators LIKE ?", "%#{q}%").order(:n)
+    works = Work.where("creators LIKE ?", "%#{q}%").order(:n).includes(:places)
     r = []
     works.each do |w|
       r << w.to_hash
@@ -103,7 +103,7 @@ class WorksController < ApplicationController
   
   def search_by_creator_id
     q = params[:creator_id]
-    works = Work.where("creators_with_id LIKE ?", "%#{q}%").order(:n)
+    works = Work.where("creators_with_id LIKE ?", "%#{q}%").order(:n).includes(:places)
     r = []
     works.each do |w|
       r << w.to_hash
@@ -115,7 +115,7 @@ class WorksController < ApplicationController
   def search_by_creator_name
     q = params[:creator_name]
     # 尚未確認 ID：匯入時沒有任何作譯者有 ID 會存成空字串 (見 import:work_info)
-    works = Work.where(creators_with_id: [nil, '']).where("creators LIKE ?", "%#{q}%").order(:n)
+    works = Work.where(creators_with_id: [nil, '']).where("creators LIKE ?", "%#{q}%").order(:n).includes(:places)
     r = []
     works.each do |w|
       r << w.to_hash
@@ -131,7 +131,7 @@ class WorksController < ApplicationController
     r = []
     params[:dynasty].split(',').each do |q|
       next if q.empty?
-      works = Work.where("time_dynasty = ?", q).order(:n)
+      works = Work.where("time_dynasty = ?", q).order(:n).includes(:places)
       works.each do |w|
         r << w.to_hash
       end
@@ -146,7 +146,7 @@ class WorksController < ApplicationController
     y1 = params[:time_start].to_i
     y2 = params[:time_end].to_i
     #works = Work.where('time_from <= ?'vol: v1..v2).order(:n)
-    works = Work.where('(time_from between ? and ?) or (time_to between ? and ?)', y1, y2, y1, y2)
+    works = Work.where('(time_from between ? and ?) or (time_to between ? and ?)', y1, y2, y1, y2).includes(:places)
     
     r = []
     works.each do |w|
@@ -176,13 +176,13 @@ class WorksController < ApplicationController
     end
     
     r = []    
-    works = Work.where(vol: v1..v2).order(:n)
+    works = Work.where(vol: v1..v2).order(:n).includes(:places)
     works.each do |w|
       r << w.to_hash
     end
     
     # 某些 佛典 跨冊，例如 T0220 的 vol 記錄為 T05..T07
-    Work.where('vol LIKE ?', '%..%').each do |w|
+    Work.where('vol LIKE ?', '%..%').includes(:places).each do |w|
       vol1, vol2 = w.vol.split('..')
       if (vol1 <= v1) and (vol2 >= v2)
         r << w.to_hash
@@ -201,7 +201,7 @@ class WorksController < ApplicationController
     w1 = work_range_bound(c, :work_start)
     w2 = params.key?(:work_end) ? work_range_bound(c, :work_end) : w1
 
-    works = Work.where(n: w1..w2).order(:n)
+    works = Work.where(n: w1..w2).order(:n).includes(:places)
     r = []
     works.each do |w|
       r << w.to_hash

@@ -2,8 +2,17 @@ require 'ostruct'
 require_relative 'crf'
 
 class WordSegService
+  # Crf 初始化要 parse 約 7MB 的詞典 (本機 40~90ms), 之後只讀不寫, 可共用。
+  # KWIC 的 seg=1 會對每筆結果各呼叫一次 run。
+  def self.crf
+    base = Rails.configuration.x.word_seg
+    MtimeCache.fetch(:word_seg_crf, File.join(base, 'dicts/words.json'), File.join(base, 'dicts/dila.json')) do
+      Crf.new(base)
+    end
+  end
+
   def run(text)
-    crf = Crf.new(Rails.configuration.x.word_seg)
+    crf = self.class.crf
     s = text.gsub(/ /, '/')
     a = s.split(/([\n\/\.\(\)\[\]\-　．。，、？！：；「」『』《》＜＞〈〉〔〕［］【】〖〗（）…—◎])/)
     s_after_tag = ''

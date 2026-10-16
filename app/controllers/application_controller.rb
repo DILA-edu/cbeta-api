@@ -172,13 +172,16 @@ class ApplicationController < ActionController::Base
   end
 
   def log_debug(msg)
-    location = caller_locations.first
+    # log level 不是 debug 時, 省下擷取 call stack 的成本
+    return unless logger.debug?
+
+    location = caller_locations(1, 1).first
     file = File.basename(location.path)
     logger.debug "#{file}:#{location.lineno}, #{msg}"
   end
 
   def log_info(msg)
-    location = caller_locations.first
+    location = caller_locations(1, 1).first
     file = File.basename(location.path)
     logger.info "#{file}:#{location.lineno}, #{msg}"
   end

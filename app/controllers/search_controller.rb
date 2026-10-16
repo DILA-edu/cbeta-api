@@ -278,9 +278,12 @@ class SearchController < ApplicationController
       query, params: es_params, start: @start, rows: @rows, count_hits: false
     )
 
+    # 同一 n 有多筆時取 id 最小的, 與原本逐筆 find_by 相同
+    works = Work.where(n: r[:results].map { it[:work] }.compact.uniq).order(:id)
+                .each_with_object({}) { |w, hash| hash[w.n] ||= w }
     r[:results].each do |h|
       h[:highlight] = mark_title(h[:content], @q)
-      w = Work.find_by(n: h[:work])
+      w = works[h[:work]]
       next if w.nil?
 
       h[:byline] = w.byline
@@ -390,33 +393,44 @@ class SearchController < ApplicationController
   def decorate_facet!(facet_by, rows)
     case facet_by
     when 'canon'
+      names = first_by(Canon, :id2, rows.map { it[:canon] }, :name)
       rows.each do |row|
-        c = Canon.find_by id2: row[:canon]
-        row[:canon_name] = c.name unless c.nil?
+        name = names[row[:canon]]
+        row[:canon_name] = name unless name.nil?
       end
     when 'category'
       fn = Rails.root.join('data-static', 'categories.json')
       categories = JSON.parse(File.read(fn))
       rows.each { |row| row['category_name'] = categories[row[:category_id].to_s] }
     when 'creator'
+      rows.each { |row| row[:creator_id] = "A%06d" % row[:creator_id] }
+      names = first_by(Person, :id2, rows.map { it[:creator_id] }, :name)
       rows.each do |row|
-        row[:creator_id] = "A%06d" % row[:creator_id]
-        person = Person.find_by(id2: row[:creator_id])
-        if person.nil?
+        name = names[row[:creator_id]]
+        if name.nil?
           Rails.logger.debug "Person model 無此 ID: #{row[:creator_id]}"
         else
-          row[:creator_name] = person.name
+          row[:creator_name] = name
         end
       end
     when 'dynasty'
       rows.sort_by! { |x| @dynasty_order.fetch(x[:dynasty], 999) }
     when 'work'
+      titles = first_by(Work, :n, rows.map { it[:work] }, :title)
       rows.each do |row|
-        w = Work.find_by n: row[:work]
-        row['title'] = w.title unless w.nil?
+        title = titles[row[:work]]
+        row['title'] = title unless title.nil?
       end
     end
     rows
+  end
+
+  # 批次取代逐筆 find_by (facet 的 work bucket 可多達上千個)。
+  # 回傳 { key => value }; 同一 key 有多筆時取 id 最小的, 與 find_by 相同。
+  # 注意: value 為 nil 的筆也會佔住該 key, 與原本 find_by 後取欄位一致。
+  def first_by(model, key, keys, value)
+    model.where(key => keys.compact.uniq).order(:id).pluck(key, value)
+         .each_with_object({}) { |(k, v), h| h[k] = v unless h.key?(k) }
   end
 
   def add_work_info(rows)

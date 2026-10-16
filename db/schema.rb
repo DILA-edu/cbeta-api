@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_21_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_000000) do
   create_table "canons", force: :cascade do |t|
     t.integer "children_count"
     t.string "id2"
@@ -112,6 +112,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_100000) do
   create_table "places_works", id: false, force: :cascade do |t|
     t.integer "place_id", null: false
     t.integer "work_id", null: false
+    t.index ["work_id", "place_id"], name: "index_places_works_on_work_id_and_place_id"
   end
 
   create_table "terms", force: :cascade do |t|

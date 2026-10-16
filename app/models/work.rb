@@ -43,23 +43,18 @@ class Work < ActiveRecord::Base
   
   # 本部佛典的第一個 XML 主檔名
   def first_file
-    f = XmlFile.where(work: n).order(:file).first
-    if f.nil?
-      nil
-    else
-      f.file
-    end
+    first_xml_file&.file
   end
 
   def juan_start
-    f = XmlFile.where(work: n).order(:file).first
+    f = first_xml_file
     if f.nil?
       1
     else
       f.juan_start
     end
   end
-  
+
   def to_hash
     r = {
       work: n,
@@ -92,9 +87,11 @@ class Work < ActiveRecord::Base
     r[:time_from]        = time_from        unless time_from.nil?
     r[:time_to]          = time_to          unless time_to.nil?
     
-    unless places.empty?
+    # to_a: 只查一次 (empty? 再 each 會查兩次); 有 includes(:places) 時不另外查
+    place_list = places.to_a
+    unless place_list.empty?
       r[:places] = []
-      places.each do |p|
+      place_list.each do |p|
         r[:places] << {
           name: p.name,
           id: p.auth_id,
@@ -123,5 +120,14 @@ class Work < ActiveRecord::Base
       end
     end
     r
+  end
+
+  private
+
+  # first_file、juan_start 都要用, to_hash 會各呼叫一次
+  def first_xml_file
+    return @first_xml_file if defined?(@first_xml_file)
+
+    @first_xml_file = XmlFile.where(work: n).order(:file).first
   end
 end

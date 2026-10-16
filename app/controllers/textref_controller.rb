@@ -11,10 +11,14 @@ class TextrefController < ApplicationController
   def data
     headers = %w(primary_id title dynasty author edition fulltext_read fulltext_search fulltext_download image)
 
+    # canon 只有幾十筆, 先全部載入, 免得每部佛典查一次。
+    # 同一 id2 若有多筆, 取 id 最小的 (與原本 find_by 相同)。
+    canons = Canon.order(:id).each_with_object({}) { |c, h| h[c.id2] ||= c }
+
     csv_data = CSV.generate(headers: true) do |csv|
       csv << headers
       Work.where(alt: nil).order(:n).each do |w|
-        canon = Canon.find_by(id2: w.canon)
+        canon = canons[w.canon]
         msg = "TextrefController::data, canon id '#{w.canon}' 在 Canon model 裡找不到"
         raise CbetaError.new(500), msg if canon.nil?
         csv << [
