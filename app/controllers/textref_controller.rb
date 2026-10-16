@@ -9,6 +9,12 @@ class TextrefController < ApplicationController
   end
 
   def data
+    with_release_etag { render_data }
+  end
+
+  private
+
+  def render_data
     headers = %w(primary_id title dynasty author edition fulltext_read fulltext_search fulltext_download image)
 
     # canon 只有幾十筆, 先全部載入, 免得每部佛典查一次。

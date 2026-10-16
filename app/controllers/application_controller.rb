@@ -109,6 +109,7 @@ class ApplicationController < ActionController::Base
         results: []
       }
     end
+    @error_response = true if data.is_a?(Hash) && (data.key?(:error) || data.key?('error'))
 
     if (callback = jsonp_callback)
       render json: data, callback:, content_type: "application/javascript"
@@ -118,6 +119,7 @@ class ApplicationController < ActionController::Base
   end
 
   def my_render_error(code, message)
+    @error_response = true
     r = { 
       error: { code: , message: } 
     }
@@ -175,6 +177,35 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  # 內容只隨資料版本 (季號 cb.r) 與程式版號改變的端點，以 ETag 支援條件式請求。
+  #
+  # 回應裡的 time 欄位每次都不同，Rack::ETag 依內容算出的 ETag 永遠對不上，
+  # 所以由這裡依「資料版本 + 程式版號 + 完整網址 (+ extra)」指定。
+  # 內容沒變時回 304，省下產生與傳送內容。
+  #
+  # 不設 max-age: 瀏覽器每次仍會回來驗證，visits、api key 用量等統計照常記錄。
+  # 錯誤回應不帶 ETag (有些錯誤以 HTTP 200 回傳)，以免暫時性的錯誤被快取住。
+  #
+  # extra: 季中可能更新、但季號不變的來源，例如資料檔的修改時間。
+  def with_release_etag(*extra)
+    response.etag = [ Rails.configuration.cb.r, Rails.configuration.x.ver, request.fullpath, *extra ]
+    return head(:not_modified) if request.fresh?(response)
+
+    yield
+    response.delete_header('ETag') if @error_response || !response.successful?
+  rescue Exception # rubocop:disable Lint/RescueException -- 只為了拿掉 ETag, 原樣再丟出
+    response.delete_header('ETag')
+    raise
+  end
+
+  # with_release_etag 的 extra: 檔案的修改時間與大小 (不存在時為 nil)
+  def file_stamp(path)
+    st = File.stat(path)
+    [ st.mtime.to_i, st.size ]
+  rescue Errno::ENOENT
+    nil
+  end
 
   # 回傳給 client 的錯誤訊息。不回傳 backtrace（會洩漏伺服器路徑），完整錯誤寫進 log。
   # CbetaError 的訊息是寫給使用者看的，但部分訊息含檔案路徑，去掉 Rails.root 前綴；

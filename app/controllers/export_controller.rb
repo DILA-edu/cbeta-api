@@ -9,6 +9,10 @@ class ExportController < ApplicationController
   
   def all_creators2
     fn = Rails.root.join('data', 'all-creators-with-alias.json')
+    with_release_etag(file_stamp(fn)) { render_all_creators2(fn) }
+  end
+
+  private def render_all_creators2(fn)
     r = {}
 
     if File.file?(fn)

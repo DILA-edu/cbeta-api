@@ -52,16 +52,20 @@ class WorksController < ApplicationController
   end
 
   def toc
-    start = Time.now
     # work 會用來組檔案路徑，格式不對 (含缺少) 就當作查無資料
-    toc = params[:work].to_s.match?(CBETA::WORK_ID) ? get_toc_by_work_id(params[:work]) : nil
-    result = toc.nil? ? [] : [toc]
-    r = {
-      num_found: result.size,
-      time: Time.now - start,
-      results: result
-    }
-    my_render(r)
+    valid = params[:work].to_s.match?(CBETA::WORK_ID)
+    stamp = valid ? file_stamp(toc_path(params[:work])) : nil
+    with_release_etag(stamp) do
+      start = Time.now
+      toc = valid ? get_toc_by_work_id(params[:work]) : nil
+      result = toc.nil? ? [] : [toc]
+      r = {
+        num_found: result.size,
+        time: Time.now - start,
+        results: result
+      }
+      my_render(r)
+    end
   end
   
   private

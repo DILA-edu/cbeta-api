@@ -2,6 +2,12 @@ class CatalogEntryController < ApplicationController
   include ApiKeyAuthentication
 
   def index
+    with_release_etag { render_index }
+  end
+
+  private
+
+  def render_index
     if params[:vol]
       results = get_entries_by_vol(params[:vol])
       label = params[:vol]
@@ -20,9 +26,7 @@ class CatalogEntryController < ApplicationController
     }
     my_render(r)
   end
-  
-  private
-  
+
   def get_entries_by_parent(parent)
     results = []
     CatalogEntry.where(parent: parent).order(:sort).each do |ce|

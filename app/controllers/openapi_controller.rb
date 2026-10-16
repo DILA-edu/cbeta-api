@@ -6,6 +6,13 @@ class OpenapiController < ApplicationController
   SPEC_PATH = Rails.root.join('doc/openapi.yaml')
 
   def show
+    # servers 依站台而不同 (root_url)
+    with_release_etag(file_stamp(SPEC_PATH), root_url) { render_spec }
+  end
+
+  private
+
+  def render_spec
     spec = MtimeCache.fetch(:openapi_spec, SPEC_PATH) { YAML.safe_load_file(SPEC_PATH, freeze: true) }
     render json: spec.merge(
       # 版號以 VERSION 檔為準，spec 檔裡不手動維護。

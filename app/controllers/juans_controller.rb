@@ -15,10 +15,17 @@ class JuansController < ApplicationController
 
     canon = CBETA.get_canon_id_from_work_id(work)
     i = params[:juan].to_i
-    juan_line = JuanLine.find_by(work: work, juan: i)
     juan = "%03d" % i
     fn = Rails.root.join('data', 'html', canon, work, juan+'.html')
 
+    # toc=1 時另外讀 data/toc 的檔案
+    stamps = [ file_stamp(fn) ]
+    stamps << file_stamp(toc_path(work)) if params[:toc] == '1'
+    with_release_etag(*stamps) { render_juan(work, i, fn) }
+  end
+
+  private def render_juan(work, i, fn)
+    juan_line = JuanLine.find_by(work: work, juan: i)
     if File.exist? fn
       html = File.read(fn)
       # HTML 檔存在但 juan_lines 缺資料時 (匯入不一致), 仍回傳內容, uuid 為 null
