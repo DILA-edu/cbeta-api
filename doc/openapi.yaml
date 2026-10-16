@@ -1859,6 +1859,7 @@ paths:
           description: 要轉換的簡體中文。未指定時回傳空字串。
           schema:
             type: string
+            maxLength: 50000
           example: 简体转繁体
       responses:
         '200':
@@ -1868,6 +1869,13 @@ paths:
               schema:
                 type: string
               example: 簡體轉繁體
+        '400':
+          description: q 超過長度上限。
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: q 參數長度不得大於 50000 字
 
   /word_seg:
     get:
@@ -1876,7 +1884,7 @@ paths:
       description: |
         回傳以 `/` 分隔的分詞結果，例如 `/觀自在菩薩/`。
         只有一個字時直接回傳原字。缺少 `t` 時回傳「缺少 t 參數」，
-        分詞失敗時回傳「斷詞失敗」（HTTP 200）。
+        分詞失敗時回傳「斷詞失敗」，`t` 超過 50000 字時回傳錯誤訊息（皆為 HTTP 200）。
         建議改用回傳 JSON 的 `/word_seg2`。
       tags: [tools]
       parameters:
@@ -1887,6 +1895,7 @@ paths:
           schema:
             type: string
             minLength: 1
+            maxLength: 50000
           example: 觀自在菩薩
       responses:
         '200':
@@ -1911,6 +1920,7 @@ paths:
           schema:
             type: string
             minLength: 1
+            maxLength: 50000
           example: 觀自在菩薩，行深般若波羅蜜多時。
       responses:
         '200':

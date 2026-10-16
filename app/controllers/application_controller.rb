@@ -23,6 +23,18 @@ class ApplicationController < ActionController::Base
 
   MAX_QUERY_LENGTH = 40 # 全文檢索 q 參數長度上限（字數）
 
+  # 斷詞、簡轉繁每個 request 都 spawn 外部程式，處理時間與長度成正比
+  # (staging 斷詞約每千字 0.15 秒)。上限足以涵蓋一整卷經文，擋住超大輸入佔住 worker。
+  MAX_TOOL_INPUT_LENGTH = 50_000
+
+  def tool_input_too_long?(text)
+    text.to_s.size > MAX_TOOL_INPUT_LENGTH
+  end
+
+  def tool_input_length_error(name)
+    "#{name} 參數長度不得大於 #{MAX_TOOL_INPUT_LENGTH} 字"
+  end
+
   # JSONP 的 callback 會被寫進 JS 回應,只允許合法的 JS identifier
   # （含 dotted path,例如 window.foo）
   SAFE_CALLBACK = /\A[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*\z/

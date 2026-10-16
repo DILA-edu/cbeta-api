@@ -13,6 +13,11 @@ class WordSegController < ApplicationController
       return
     end
 
+    if tool_input_too_long?(params[:t])
+      render plain: tool_input_length_error('t')
+      return
+    end
+
     r = WordSegService.new.run(params[:t])
     if r.success?
       render plain: r.result
@@ -34,6 +39,11 @@ class WordSegController < ApplicationController
 
     if params[:payload].size == 1
       render json: { segmented: [params[:payload]] }
+      return
+    end
+
+    if tool_input_too_long?(params[:payload])
+      render json: { error: { code: 400, message: tool_input_length_error('payload') } }
       return
     end
 

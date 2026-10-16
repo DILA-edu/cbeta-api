@@ -67,14 +67,26 @@ class OpenapiSpecTest < ActionDispatch::IntegrationTest
     texts.each { assert_equal CBETA::SORT_ORDER.join(' '), it.strip }
   end
 
+  # 簡轉繁、斷詞的輸入不是全文檢索的查詢字串，上限另計 (MAX_TOOL_INPUT_LENGTH)
+  TOOL_PATHS = %w[/chinese_tools/sc2tc /word_seg /word_seg2].freeze
+
   # 各 API 的 q 長度上限都寫在 spec 裡，要跟程式的常數一致
   test 'q 的 maxLength 與 MAX_QUERY_LENGTH 一致' do
+    paths = @document['paths'].except(*TOOL_PATHS)
     params = @document.dig('components', 'parameters').values +
-             @document['paths'].values.flat_map { it.dig('get', 'parameters').to_a }
+             paths.values.flat_map { it.dig('get', 'parameters').to_a }
     limits = params.select { it['name'] == 'q' }.filter_map { it.dig('schema', 'maxLength') }
 
     assert_operator limits.size, :>, 1
     assert_equal [ ApplicationController::MAX_QUERY_LENGTH ], limits.uniq
+  end
+
+  test '簡轉繁、斷詞的 maxLength 與 MAX_TOOL_INPUT_LENGTH 一致' do
+    limits = TOOL_PATHS.map do |path|
+      @document.dig('paths', path, 'get', 'parameters').first.dig('schema', 'maxLength')
+    end
+
+    assert_equal [ ApplicationController::MAX_TOOL_INPUT_LENGTH ] * 3, limits
   end
 
   test '/openapi.json 的版號取自 VERSION、servers 指向目前的站台' do

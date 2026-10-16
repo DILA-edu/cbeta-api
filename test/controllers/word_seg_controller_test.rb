@@ -21,6 +21,18 @@ class WordSegControllerTest < ActionDispatch::IntegrationTest
     assert_equal({ 'error' => { 'code' => 500, 'message' => '斷詞失敗' } }, response.parsed_body)
   end
 
+  # 每個 request 都 spawn 斷詞程式，處理時間與長度成正比
+  test '超過長度上限時不執行斷詞' do
+    long = '佛' * (ApplicationController::MAX_TOOL_INPUT_LENGTH + 1)
+    replace_new(WordSegService, Object.new) do # 不該被呼叫
+      post '/word_seg2', params: { payload: long }
+      assert_equal 400, response.parsed_body.dig('error', 'code')
+
+      post '/word_seg', params: { t: long }
+      assert_match(/不得大於/, response.body)
+    end
+  end
+
   private
 
   # Minitest 6 的 stub 已拆到 minitest-mock gem，這裡自己暫時換掉 .new。
