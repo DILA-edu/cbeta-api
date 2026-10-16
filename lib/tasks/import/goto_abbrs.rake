@@ -21,7 +21,7 @@ class ImportGotoAbbrs
     inserts = []
     File.foreach(fn) do |line|
       line.chomp!
-      if line.match /^(.*?)=(.*)$/
+      if line.match(/^(.*?)=(.*)$/)
         inserts << { abbr: $1, ref: $2 }
       end
     end

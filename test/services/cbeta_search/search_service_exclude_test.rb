@@ -95,7 +95,7 @@ class CbetaSearch::SearchServiceExcludeTest < ActiveSupport::TestCase
     rows = svc.exclude_candidates(exclude_query, params: {})
 
     assert_equal 2, rows.size
-    assert_equal [1, 2], rows.map { it[:id] }
+    assert_equal([1, 2], rows.map { it[:id] })
     assert_equal 7, rows[0][:term_hits], '10 - 3'
     assert_equal 5, rows[1][:term_hits], '沒有被排除的卷, 次數不變'
     assert_equal [false, false], client.bodies.map { it['_source'] },
@@ -243,7 +243,7 @@ class CbetaSearch::SearchServiceExcludeTest < ActiveSupport::TestCase
     assert_equal 2, r[:num_found], 'num_found 取自當頁查詢的 hits.total'
     assert_equal 12, r[:total_term_hits], 'sum_a(15) - sum_b(3)'
     assert_equal [7, 5], r[:results].map { it[:term_hits] }, '當頁逐筆在 Ruby 端相減'
-    assert_equal %w[T0001 T0002], r[:results].map { it[:work] }
+    assert_equal(%w[T0001 T0002], r[:results].map { it[:work] })
   end
 
   test 'exclude_search 的當頁查詢: script_score + min_score + 分頁' do

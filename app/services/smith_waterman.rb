@@ -103,6 +103,7 @@ class SmithWaterman
       char = @str_b[x-1]
       case alignment[i-1][2]
       when :down
+        # 只在 a 前進: b 沒有字元要輸出
       when :right
         if pos[0] == @str_a.size
           r << char

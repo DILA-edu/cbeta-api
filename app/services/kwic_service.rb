@@ -633,7 +633,7 @@ class KwicService
       @f_sa[offset]
     else
       #Rails.logger.warn "read sa from file"
-      fi.seek (offset * 4)
+      fi.seek(offset * 4)
       b = fi.read(4)
       b.unpack('V')[0]
     end
@@ -642,7 +642,7 @@ class KwicService
   def read_info_block(q, offset, size)
     return read_info_block_juan(q, offset, size) if @option.key?(:juan)
 
-    @f_info.seek (offset * SuffixInfo::SIZE)
+    @f_info.seek(offset * SuffixInfo::SIZE)
     block = @f_info.read(SuffixInfo::SIZE * size)
     r = []
     (0...size).each do |i|
@@ -691,7 +691,7 @@ class KwicService
       @f_txt[offset, length]
     else
       #Rails.logger.warn "read_str from file"
-      @f_txt.seek (offset * 4)
+      @f_txt.seek(offset * 4)
       b = @f_txt.read(length * 4)
       raise "讀取 text 檔錯誤, file size: #{@size}, offset: #{offset}" if b.nil?
       @encoding_converter.convert(b)
@@ -1061,7 +1061,7 @@ class KwicService
         s = read_str(k, 10+q.size) # 前後各取5個字
         s.gsub!("\n", '　')
       
-        s.match /(.{#{wc}})?#{q}(.{#{wc}})?/ do
+        s.match(/(.{#{wc}})?#{q}(.{#{wc}})?/) do
           @prev_word_count[$1] += 1 unless $1.nil?
           @next_word_count[$2] += 1 unless $2.nil?
         end    
@@ -1077,7 +1077,7 @@ class KwicService
   
   def suffix_info(offset)
     i = offset
-    @f_info.seek (i * SuffixInfo::SIZE)
+    @f_info.seek(i * SuffixInfo::SIZE)
     b = @f_info.read(SuffixInfo::SIZE)
 
     if b.nil?

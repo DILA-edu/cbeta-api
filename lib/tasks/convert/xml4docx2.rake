@@ -214,7 +214,7 @@ class XMLForDocx2
         end
       end
     end
-    node_set = e.add_previous_sibling (r)
+    node_set = e.add_previous_sibling(r)
     e.remove
     node_set.each { traverse(it) }
   end
@@ -277,7 +277,7 @@ class XMLForDocx2
         r << node.to_s
       end
     end
-    e.add_previous_sibling (r)
+    e.add_previous_sibling(r)
     e.remove
   end
 

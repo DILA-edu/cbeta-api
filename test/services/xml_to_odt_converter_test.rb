@@ -104,7 +104,7 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
         rows = table.xpath('./table:table-row')
 
         # 每列都要湊滿 3 欄
-        assert_equal [3, 3], rows.map { |row| row.element_children.size }
+        assert_equal([3, 3], rows.map { |row| row.element_children.size })
         assert_equal 3, table.xpath('.//table:covered-table-cell').size
 
         merged = rows.first.element_children.first

@@ -6,7 +6,6 @@ require 'date'
 require 'fileutils'
 require 'json'
 require 'nokogiri'
-require 'set'
 
 # Convert CBETA XML P5a to Text
 #

@@ -271,6 +271,7 @@ class Crf
           features[d] = 'I'
         end
       when 'I'
+        # 維持 I
       when 'N'
         features[d] = feature
       else

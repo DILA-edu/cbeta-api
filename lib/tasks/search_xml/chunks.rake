@@ -165,6 +165,7 @@ class SearchXmlChunks
   def handle_element(e)
     case e.name
     when 'docNumber', 'mulu', 'rdg'
+      # 不取文字
     when 'foreign'
       return if e['place'] == 'foot'
       traverse(e)

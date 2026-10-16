@@ -6,7 +6,6 @@ require 'date'
 require 'fileutils'
 require 'json'
 require 'nokogiri'
-require 'set'
 require_relative 'html-node'
 require_relative 'x2h_share'
 
@@ -630,17 +629,17 @@ class P5aToDocusky
       xml2 << "\t<Place>#{places}</Place>\n"
     end
     
-    if i = info['time_from']
+    if (i = info['time_from'])
       xml  << "<date_not_before>#{i}</date_not_before>\n"
       xml2 << "\t<DateNotBefore>#{i}</DateNotBefore>\n"
     end
 
-    if i = info['time_to']
+    if (i = info['time_to'])
       xml  << "<date_not_after>#{i}</date_not_after>\n"
       xml2 << "\t<DateNotAfter>#{i}</DateNotAfter>\n"
     end
 
-    if s = info['dynasty']
+    if (s = info['dynasty'])
       xml  << "<time_dynasty>#{s}</time_dynasty>\n"
       xml2 << "\t<Dynasty>#{s}</Dynasty>\n"
     end

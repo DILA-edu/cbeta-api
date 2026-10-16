@@ -10,7 +10,7 @@ class WorksControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     r = JSON.parse(response.body)
-    assert_equal %w[T0001 T0262], r["results"].map { it["work"] }
+    assert_equal(%w[T0001 T0262], r["results"].map { it["work"] })
   end
 
   test "省略 work_end 時只查單一經號" do

@@ -126,6 +126,7 @@ class CheckXMLForDocx
     when 'font'
       warn "footnote 在 font 裡面, text: #{e.text}, lb: #{$lb}"
     when 'cell', 'p', 'seg'
+      # 正常位置
     else
       abort "footnote 不是在 p 裡面, parent: #{e.parent.name}, text: #{e.text}, lb: #{$lb}"
     end

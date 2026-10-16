@@ -58,6 +58,7 @@ class CbetaLineReader
     return handle_text(e) if e.text?
     case e.name
     when 'mulu', 'rdg'
+      # 目次標記與異文不取文字
     when 'g'    then e_g(e)
     when 'lb'   then e_lb(e)
     when 'note' then e_note(e)

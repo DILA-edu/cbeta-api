@@ -293,7 +293,7 @@ class GotoService
     end
 
     r = nil
-    row.lb1.match /^X(\d+)\.(\d+)([a-z])(\d+)$/ do
+    row.lb1.match(/^X(\d+)\.(\d+)([a-z])(\d+)$/) do
       r = {
         canon: 'X',
         vol: $1,

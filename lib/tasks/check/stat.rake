@@ -76,7 +76,7 @@ class CheckStat
       bn = xml_pn.basename('.*').to_s
       work_id = CBETA.get_work_id_from_file_basename(bn)
       w = Work.find_by(n: work_id)
-      return if w.vol.include?('..') # 如果跨冊 就整冊跳過
+      return nil if w.vol.include?('..') # 如果跨冊 就整冊跳過 (跳出整個 method)
       i += @works[work_id][:cjk_chars]
     end
 

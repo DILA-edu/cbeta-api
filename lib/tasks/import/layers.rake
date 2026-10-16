@@ -103,7 +103,7 @@ class ImportLayers
         mismatch: #{@mismatch}<br>
         名稱結束處文字不符<br>
         #{@work}<br>\n
-        #{row.to_s}<br>
+        #{row}<br>
       HTML
     end
   end
@@ -138,7 +138,7 @@ class ImportLayers
         mismatch: #{@mismatch}<br>
         名稱起始處文字不符
         #{@work}<br>
-        #{row.to_s}<br>
+        #{row}<br>
       HTML
     end
   end
@@ -152,7 +152,8 @@ class ImportLayers
     true
   end
 
-  def check_text(line_text, row)
+  # 比對用的是 CBETA XML 的行文字, 不是呼叫端累積的 HTML 文字 (_line_text 不使用)
+  def check_text(_line_text, row)
     line_text = @cbeta_lines[row['lb']]
     i = row['position'].to_i
     if i > line_text.size
@@ -161,7 +162,7 @@ class ImportLayers
       @log_buf[:text] << <<~MSG
         <hr>
         位置超出文字範圍<br>
-        #{row.to_s}
+        #{row}
       MSG
     end
 
@@ -311,7 +312,7 @@ class ImportLayers
         puts '-' * 20
         puts "發生錯誤, id: #{id}, 程式行號: #{__LINE__}".red
         puts %(lb: #{lb}, <span class="t" l="#{node['l']}">)
-        puts row.to_s
+        puts row.to_s # rubocop:disable Lint/RedundantStringCoercion -- CSV::Row 有 to_ary, 少了 to_s 會逐欄拆行
         abort
       end
       @html_pos = node['w'].to_i - 1
@@ -419,7 +420,7 @@ class ImportLayers
     if @html_pos >= @layer_pos
       puts "[#{__LINE__}] html_pos 已超過 layer_pos"
       puts @basename
-      puts @row.to_s
+      puts @row.to_s # rubocop:disable Lint/RedundantStringCoercion -- CSV::Row 有 to_ary, 少了 to_s 會逐欄拆行
       abort
     end
 
