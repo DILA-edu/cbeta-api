@@ -41,7 +41,8 @@ class TocNodeController < ApplicationController
   private
   
   def find_catalog(q)
-    entries = CatalogEntry.where("(label NOT LIKE '%=%') AND (label LIKE ?)", "%#{q}%")
+    # 沒有 ORDER BY 時 PostgreSQL 不保證順序; id 是匯入時的目錄順序
+    entries = CatalogEntry.where("(label NOT LIKE '%=%') AND (label LIKE ?)", "%#{q}%").order(:id)
     r = []
     entries.each do |e|
       row = { type: 'catalog', n: e.n, label: e.label }
@@ -55,7 +56,9 @@ class TocNodeController < ApplicationController
   end
   
   def find_toc(q)
-    toc_nodes = TocNode.where("label LIKE ?", "%#{q}%").order(:sort_order)
+    # 同一部佛典的節點 sort_order 相同, 只排 sort_order 時每次查詢的順序都可能不同;
+    # id 是匯入時的文件順序
+    toc_nodes = TocNode.where("label LIKE ?", "%#{q}%").order(:sort_order, :id)
     r = []
     toc_nodes.each do |t|
       row = { type: 'toc', label: t.label, label_path: label_path(t), work: t.work, lb: t.lb }
@@ -75,7 +78,7 @@ class TocNodeController < ApplicationController
   
   def find_work(q)
     works = Work.where.not(juan_list: nil) # CBETA 未收錄的不要
-    works = works.where("title LIKE ?", "%#{q}%").order(:sort_order).includes(:places)
+    works = works.where("title LIKE ?", "%#{q}%").order(:sort_order, :id).includes(:places)
     r = []
     works.each do |w|
       row = { type: 'work' }
