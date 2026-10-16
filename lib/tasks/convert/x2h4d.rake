@@ -19,10 +19,7 @@ class ConvertX2hForDownload
     x2h.convert(canon)
     
     dest = File.join(Rails.configuration.cb.dl, 'html')
-    FileUtils.rmtree(dest)
-        
-    puts "move #{tmpdir} => #{dest}"
-    FileUtils.mv tmpdir, dest
+    ConversionOutput.install(tmpdir, dest, partial: !canon.nil?)
     
     puts ElapsedTime.label(t1)
   end  

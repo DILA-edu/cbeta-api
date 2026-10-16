@@ -28,17 +28,16 @@ class ImportLines
   
   def import(arg)
     start_time = Time.now
-    $stderr.puts "import lines: #{arg}"
+    # 因為全部有個 序號 (ser_no)，必須全部執行，不能只執行部分。
+    # 過去帶參數時只刪除該部分、卻重匯全部，會讓其他藏經整份重複。
+    abort "import:lines 不支援只匯入部分 (收到參數: #{arg})，請不帶參數執行" unless arg.nil?
+
+    $stderr.puts "import lines"
     @ser_no = 0
 
     $stderr.puts "delete old data from table lines"
-    if arg.nil?
-      Line.delete_all
-    else
-      Line.where("linehead LIKE '#{arg}%'").delete_all
-    end    
-    
-    # 因為全部有個 序號，必須全部執行，不能只執行部分
+    Line.delete_all
+
     import_all
     
     puts "Line records: #{number_with_delimiter(Line.count)}"

@@ -21,7 +21,8 @@ class XMLForDocx2
     @filter = filter
     
     @dest = Pathname.new(dest)
-    @dest.rmtree
+    # 有 filter 時只轉部分, 保留其他部分的既有輸出
+    @dest.rmtree if @filter.nil?
     @dest.mkpath
 
     time_start = Time.now

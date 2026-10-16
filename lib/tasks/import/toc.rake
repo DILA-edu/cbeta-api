@@ -20,7 +20,8 @@ class ImportToc
       TocNode.delete_all
     else
       import_canon arg
-      TocNode.where("work LIKE ?", "#{arg}%").delete_all
+      # 用 canon 精確比對: work LIKE "G%" 會連 GA、GB 一起刪掉, 卻只重匯 G
+      TocNode.where(canon: arg).delete_all
     end
         
     TocNode.insert_all(@inserts)

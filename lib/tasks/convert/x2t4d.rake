@@ -25,10 +25,7 @@ class ConvertX2tForDownload
     x2t.convert(canon)
     
     dest = File.join(Rails.configuration.cb.dl, 'text')
-    FileUtils.rmtree(dest)
-    
-    puts "move #{tmpdir} => #{dest}"
-    FileUtils.mv tmpdir, dest
+    ConversionOutput.install(tmpdir, dest, partial: !canon.nil?)
 
     puts ElapsedTime.label(t1)
   end
