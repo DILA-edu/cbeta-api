@@ -3,6 +3,13 @@ require 'test_helper'
 class SearchControllerTest < ActionDispatch::IntegrationTest
   # Elasticsearch 出問題時不該回 500 加 backtrace（那會洩漏伺服器路徑），
   # 而是 502 加一句可讀的訊息，細節只留在 log。
+  # k 的成本與它成正比 (Ruby 單執行緒 Smith-Waterman), 參數驗證在查 ES 之前
+  test 'similar 的 k 超過上限時回錯誤訊息' do
+    get '/search/similar', params: { q: '是日已過命亦隨減', k: (SearchController::SIMILAR_K_MAX + 1).to_s }
+
+    assert_match(/k 參數 不得大於 #{SearchController::SIMILAR_K_MAX}/, response.parsed_body['error'])
+  end
+
   test 'Elasticsearch 連不上時回 502，不回傳 backtrace' do
     with_elasticsearch_config(url: 'http://127.0.0.1:9599') do
       get '/search', params: { q: '法鼓' }

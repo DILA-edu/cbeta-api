@@ -990,6 +990,10 @@ class KwicService
       nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, s|
         q = s.downcase
         start2, found2 = search_sa_after_open_files(q)
+        # 任一詞不在本卷就不可能符合 NEAR。ES 的 asciifolding 會讓 ES 篩出的
+        # 候選卷在 suffix array (精確比對) 裡找不到該詞, 不能當成錯誤。
+        return [] if start2.nil?
+
         pos2 = sort_by_pos(start2, found2)
         check_near(eligibles, near.to_i, q, pos2)
       end
@@ -1083,7 +1087,8 @@ class KwicService
   end
 
   def sort_by_pos(start, size)
-    abort "#{__LINE__} start is nil" if start.nil?
+    # 不可用 abort: 它丟出 SystemExit, 任何 rescue StandardError 都接不到
+    raise ArgumentError, 'sort_by_pos: start is nil' if start.nil?
     # 創建 820722 個元素，花費 1.7 秒
     a = Array.new(size) { |i| [sa(start + i), start + i] }
     a.sort

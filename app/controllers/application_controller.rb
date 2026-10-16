@@ -40,15 +40,29 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # JSONP 的 callback 會被寫進 JS 回應,只允許合法的 JS identifier
+  # （含 dotted path,例如 window.foo）
+  SAFE_CALLBACK = /\A[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*\z/
+
   def referer_cn?
     return true if Rails.env.development? and params[:cn] == "1"
-    host = 
-      if request.referer
-        request.referer.split('//').last.split('/').first
-      else
-        request.host
-      end
+    host = referer_host || request.host
     return true if host.end_with?('.cn')
+  end
+
+  # Referer 的 host (含 port)。沒有 Referer 或解析不出 host
+  # (例如空字串、"/") 時回傳 nil。
+  def referer_host
+    ref = request.referer
+    return nil if ref.blank?
+
+    ref.split('//').last&.split('/')&.first.presence
+  end
+
+  # 通過驗證的 JSONP callback 名稱; 沒帶或不合法時回傳 nil (改回傳一般 JSON)
+  def jsonp_callback
+    callback = params[:callback]
+    callback if callback.is_a?(String) && callback.match?(SAFE_CALLBACK)
   end
 
   def get_canon_from_work_id(id)
@@ -82,15 +96,9 @@ class ApplicationController < ActionController::Base
       path = a.first(3).join('/')
     end
 
-    referer = request.referer
-    referer = 
-      if referer.nil?
-        request.remote_ip
-      else
-        # referer 只記錄 host
-        referer.split('//').last.split('/').first
-      end
-    
+    # referer 只記錄 host; 沒有 referer 時記錄 IP
+    referer = referer_host || request.remote_ip
+
     sql = <<~SQL
       INSERT INTO visits (url, referer, accessed_at, count)
       VALUES (?, ?, ?, 1)
@@ -103,6 +111,9 @@ class ApplicationController < ActionController::Base
         [sql, path, referer, Date.today]
       )
     )
+  rescue StandardError => e
+    # 統計不該讓 API 呼叫失敗 (同 record_origin)
+    logger.warn "記錄 visits 失敗: #{e.class}: #{e.message}"
   end
   
   # 過渡期埋點: 記錄每個 Origin 每天的 request 數。
@@ -128,8 +139,8 @@ class ApplicationController < ActionController::Base
       }
     end
 
-    if params.key? 'callback'
-      render json: data, :callback => params['callback'], content_type: "application/javascript"
+    if (callback = jsonp_callback)
+      render json: data, callback:, content_type: "application/javascript"
     else
       render json: data
     end
@@ -215,8 +226,8 @@ class ApplicationController < ActionController::Base
     logger.warn "CbetaError(#{code}): #{e.message}"
 
     r = { error: { code:, message: e.message } }
-    if params.key? 'callback'
-      render json: r, callback: params['callback'], content_type: 'application/javascript', status: code
+    if (callback = jsonp_callback)
+      render json: r, callback:, content_type: 'application/javascript', status: code
     else
       render json: r, status: code
     end

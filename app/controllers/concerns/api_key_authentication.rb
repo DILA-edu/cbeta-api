@@ -45,10 +45,6 @@ module ApiKeyAuthentication
   # 這比只在網站公告有效。
   HINT_HEADER = 'X-CBETA-API-Key'
 
-  # JSONP 的 callback 會被寫進 JS 回應,只允許合法的 JS identifier
-  # （含 dotted path,例如 window.foo）
-  SAFE_CALLBACK = /\A[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*\z/
-
   # --- rate limit（見設計文件 6）---
   #
   # 「api key 控管」若沒有配額,key 只是身分標籤。且過渡期「未帶 key 就放行」
@@ -231,8 +227,8 @@ module ApiKeyAuthentication
 
     response.headers['WWW-Authenticate'] = %(Bearer realm="#{REALM}") if status == :unauthorized
 
-    callback = params[:callback]
-    if callback.present? && callback.match?(SAFE_CALLBACK)
+    # callback 驗證見 ApplicationController#jsonp_callback
+    if (callback = jsonp_callback)
       render json: body, callback:, content_type: 'application/javascript', status:
     else
       render json: body, status:

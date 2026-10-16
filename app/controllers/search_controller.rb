@@ -30,6 +30,9 @@ class SearchController < ApplicationController
   #
   # 本機 macOS 量到的延遲會嚴重低估，一律以 server 為準。
   SIMILAR_K = 1000
+  # k 上限: 成本與 k 成正比 (k=2000 約 2.24 秒), 5000 約 5.6 秒,
+  # 仍在 rack-timeout 預設 15 秒內。
+  SIMILAR_K_MAX = 5000
   # search/similar 第二階段 (Smith-Waterman) 的最低分數，可用 score_min 參數覆寫。
   SCORE_MIN = 16
 
@@ -682,6 +685,7 @@ class SearchController < ApplicationController
       @gain  = params.key?(:gain)  ? params[:gain].to_i : 2
       @penalty  = params.key?(:penalty)  ? params[:penalty].to_i : -1
       raise CbetaError.new(400), 'k 參數 必須 > 0' if @similar_k < 1
+      raise CbetaError.new(400), "k 參數 不得大於 #{SIMILAR_K_MAX}" if @similar_k > SIMILAR_K_MAX
       raise CbetaError.new(400), 'gain 參數 必須 >= 0' if @gain < 0
       raise CbetaError.new(400), 'penalty 參數 必須 <= 0' if @penalty > 0
     when 'notes', 'title'
@@ -1157,8 +1161,8 @@ class SearchController < ApplicationController
     logger.fatal e.backtrace.first(5).join("\n") unless e.backtrace.nil?
 
     r = { error: { code: 502, message: elasticsearch_error_message(e) } }
-    if params.key?('callback')
-      render json: r, callback: params['callback'], content_type: 'application/javascript', status: 502
+    if (callback = jsonp_callback)
+      render json: r, callback:, content_type: 'application/javascript', status: 502
     else
       render json: r, status: 502
     end
@@ -1182,8 +1186,8 @@ class SearchController < ApplicationController
 
     if e.is_a?(CbetaError) && e.code == 504
       r = { error: { code: 504, message: e.message } }
-      if params.key?('callback')
-        render json: r, callback: params['callback'], content_type: "application/javascript", status: 504
+      if (callback = jsonp_callback)
+        render json: r, callback:, content_type: "application/javascript", status: 504
       else
         render json: r, status: 504
       end
