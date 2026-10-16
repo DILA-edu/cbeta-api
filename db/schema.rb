@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_100000) do
   create_table "canons", force: :cascade do |t|
     t.integer "children_count"
     t.string "id2"
@@ -126,6 +126,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_000000) do
     t.string "file"
     t.integer "juan"
     t.string "label"
+    t.text "label_path"
     t.string "lb"
     t.string "n"
     t.string "parent"

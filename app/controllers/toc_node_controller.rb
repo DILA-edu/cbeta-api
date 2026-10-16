@@ -96,10 +96,12 @@ class TocNodeController < ApplicationController
     @work_info[n]
   end
 
-  # 同 TocNode#label_path, 但 parent 查過的不再查 (同一部佛典的節點共用祖先)。
-  # 仍以 find_by 逐一查詢: toc_nodes.n 不唯一 (例 B0002 的兩組目次共用編號),
-  # 改用 WHERE n IN (...) 批次查可能取到不同的那一筆。
+  # 目次的完整路徑: 由 import:toc 走訪時算好存在 label_path 欄位。
+  # 欄位為空 (2026-10-16 加欄位後尚未重新匯入) 時才沿 parent 逐層查,
+  # parent 查過的不再查。注意以 n 反查 parent 在 n 重複時 (例 B0002) 可能接錯祖先。
   def label_path(node)
+    return node.label_path if node.label_path.present?
+
     @toc_parent ||= Hash.new { |h, n| h[n] = TocNode.find_by(n:) }
     tokens = []
     t = node

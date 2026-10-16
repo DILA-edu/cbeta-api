@@ -31,4 +31,17 @@ class TocNodeControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, body['num_found']
     assert_match(/缺少 q 參數/, body['error'])
   end
+
+  # label_path 由 import:toc 算好存在欄位; 欄位為空 (尚未重新匯入) 時沿 parent 查
+  test 'search/toc 的 label_path 優先用欄位, 欄位為空時沿 parent 組出' do
+    get '/search/toc', params: { q: '大本經' }
+    child = response.parsed_body['results'].find { it['type'] == 'toc' }
+    assert_equal '長阿含經/第一分初大本經第一', child['label_path'], '欄位為空時沿 parent 組出'
+
+    # n 重複時以 n 反查會接錯祖先; 欄位是依實際的樹算出的, 不受影響
+    TocNode.find_by!(n: 'T0001.1').update!(label_path: '另一組目次/第一分初大本經第一')
+    get '/search/toc', params: { q: '大本經' }
+    child = response.parsed_body['results'].find { it['type'] == 'toc' }
+    assert_equal '另一組目次/第一分初大本經第一', child['label_path']
+  end
 end

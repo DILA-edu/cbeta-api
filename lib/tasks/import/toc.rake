@@ -61,15 +61,20 @@ class ImportToc
     while @toc_stack.size > level
       @toc_stack.pop
     end
+    # 祖先的標題, 與 @toc_stack 同步: 祖先數 = @toc_stack.size - 1
+    @label_stack.pop while @label_stack.size >= @toc_stack.size
 
     @toc_stack[-1] += 1
     parent, n = toc_n(@toc_stack)
+    label = e.text
 
     @inserts << {
       canon: @canon,
       parent:,
       n:,
-      label: e.text,
+      label:,
+      # 依實際走訪的樹算出, 不以 n 反查 parent (n 不唯一, 見 migration 20261016100000)
+      label_path: (@label_stack + [ label ]).join('/'),
       work: @work,
       file: @file,
       juan: @juan,
@@ -78,6 +83,7 @@ class ImportToc
     }
 
     @toc_stack << 0
+    @label_stack << label
   end
   
   def import_all
@@ -119,6 +125,7 @@ class ImportToc
   def import_work(xml_path)
     if @work != @previous_work
       @toc_stack = [0]
+      @label_stack = []
     end
     get_info_from_xml(xml_path)
     @previous_work = @work

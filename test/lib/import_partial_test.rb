@@ -34,4 +34,29 @@ class ImportPartialTest < ActiveSupport::TestCase
     assert_match(/不支援只匯入部分/, err)
     assert_equal count, Line.count
   end
+
+  # label_path 依實際走訪的樹算出, 不以 n 反查 parent
+  test 'import:toc 走訪時算出每個節點的 label_path' do
+    importer = ImportToc.allocate
+    importer.instance_variable_set(:@work, 'T0001')
+    importer.instance_variable_set(:@inserts, [])
+    importer.instance_variable_set(:@toc_stack, [ 0 ])
+    importer.instance_variable_set(:@label_stack, [])
+
+    # 第三個節點跳了一層 (level 1 之後直接 level 3), 依 n 的規則仍算 A 的子節點
+    [ [ 1, 'A' ], [ 2, 'A1' ], [ 3, 'A1a' ], [ 2, 'A2' ], [ 1, 'B' ], [ 3, 'B1' ] ].each do |level, label|
+      node = Nokogiri::XML(%(<mulu level="#{level}">#{label}</mulu>)).root
+      importer.send(:handle_mulu, node)
+    end
+
+    rows = importer.instance_variable_get(:@inserts).map { it.values_at(:n, :parent, :label_path) }
+    assert_equal [
+      [ 'T0001.1', 'T0001.', 'A' ],
+      [ 'T0001.1.1', 'T0001.1', 'A/A1' ],
+      [ 'T0001.1.1.1', 'T0001.1.1', 'A/A1/A1a' ],
+      [ 'T0001.1.2', 'T0001.1', 'A/A2' ],
+      [ 'T0001.2', 'T0001.', 'B' ],
+      [ 'T0001.2.1', 'T0001.2', 'B/B1' ]
+    ], rows
+  end
 end
