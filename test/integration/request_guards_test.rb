@@ -26,15 +26,11 @@ class RequestGuardsTest < ActionDispatch::IntegrationTest
     assert_includes referers, '127.0.0.1'
   end
 
-  test '.cn 的 Referer 仍會套用過濾' do
-    # cn_filter 含 Y (見 config/application.rb)
+  # 2026-10-16 起不再依 referer 屏蔽太虛 (TX)、印順 (Y)，由各網站自行判斷
+  test '.cn 的 Referer 不再過濾內容' do
     Line.create!(linehead: 'Y01n0001_p0001a01', work: 'Y0001', vol: 'Y01', juan: 1, ser_no: 100, html: '')
-    cn = { 'Referer' => 'https://example.cn/' }
 
-    get '/lines', params: { linehead: 'Y01n0001_p0001a01' }, headers: cn
-    assert_equal 0, response.parsed_body['num_found']
-
-    get '/lines', params: { linehead: LH1 }, headers: cn
+    get '/lines', params: { linehead: 'Y01n0001_p0001a01' }, headers: { 'Referer' => 'https://example.cn/' }
     assert_equal 1, response.parsed_body['num_found']
   end
 

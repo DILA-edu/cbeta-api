@@ -79,7 +79,6 @@ module CbData
 
     # 版號單一來源:根目錄的 VERSION 檔(方便人工與 script 讀寫)
     config.x.ver = Rails.root.join('VERSION').read.strip
-    config.cn_filter = %w[TX Y] # 太虛、印順 對 *.cn 屏蔽
 
     # --- API key 控管（見 doc/api-key-design.md 3）---
     #

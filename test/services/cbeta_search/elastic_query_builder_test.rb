@@ -52,12 +52,11 @@ class CbetaSearch::ElasticQueryBuilderTest < ActiveSupport::TestCase
                  filters_for(time: '600..700')
   end
 
-  test 'referer 是 .cn 時屏蔽 cn_filter 的藏經' do
-    builder = CbetaSearch::ElasticQueryBuilder.new(referer_cn: true)
-    body = builder.filtered_query(@parser.parse('法鼓'), params: {}, field: 'content')
+  # 2026-10-16 起不再依 referer 屏蔽任何藏經 (.cn 過濾已移除)
+  test '一般查詢沒有 must_not' do
+    body = @builder.filtered_query(@parser.parse('法鼓'), params: {}, field: 'content')
 
-    assert_equal [{ 'terms' => { 'canon' => Rails.configuration.cn_filter } }],
-                 body['bool']['must_not']
+    refute body['bool'].key?('must_not')
   end
 
   test '無 order 參數時用指定的預設排序' do

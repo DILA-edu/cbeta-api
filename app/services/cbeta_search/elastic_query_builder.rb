@@ -16,8 +16,7 @@ module CbetaSearch
 
     attr_reader :index
 
-    def initialize(referer_cn: false, index: TextIndex)
-      @referer_cn = referer_cn
+    def initialize(index: TextIndex)
       @index = index
     end
 
@@ -33,8 +32,6 @@ module CbetaSearch
       bool = { 'must' => [match_query(query, field:)] }
       filters = filters(params)
       bool['filter'] = filters if filters.any?
-      must_not = filters_must_not(params)
-      bool['must_not'] = must_not if must_not.any?
 
       { 'bool' => bool }
     end
@@ -264,13 +261,6 @@ module CbetaSearch
         append_creator(f, params[:creator])
         append_time(f, params[:time])
       end
-    end
-
-    # *.cn 對太虛、印順 屏蔽 (見 config.cn_filter)
-    def filters_must_not(_params)
-      return [] unless @referer_cn
-
-      [{ 'terms' => { 'canon' => Rails.configuration.cn_filter } }]
     end
 
     def append_terms(filters, field, value)

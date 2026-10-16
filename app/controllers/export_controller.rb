@@ -14,14 +14,6 @@ class ExportController < ApplicationController
     if File.file?(fn)
       data = MtimeCache.fetch(:all_creators2, fn) { JSON.parse(File.read(fn), freeze: true) }
 
-      if referer_cn?
-        # 快取的 data 是共用的, 不可就地 delete
-        data = data.except(
-          'A023393', # 印順法師
-          'A004819'  # 太虛
-        )
-      end
-
       r[:num_found] = data.size
       r[:results] = data
     else

@@ -23,32 +23,9 @@ class ApplicationController < ActionController::Base
 
   MAX_QUERY_LENGTH = 40 # 全文檢索 q 參數長度上限（字數）
 
-  def filter_cn?(n: nil, id: nil)
-    unless n.nil?
-      r = Rails.configuration.cn_filter.join('|')
-      return true if n.match?(/^Vol-(#{r})$/)
-    end
-
-    unless id.nil?
-      # YP 不屏蔽
-      if id =~ /^(#{CBETA::CANON})[\d ].*$/
-        canon = $1
-        return true if Rails.configuration.cn_filter.include?(canon)
-      else
-        return false
-      end
-    end
-  end
-
   # JSONP 的 callback 會被寫進 JS 回應,只允許合法的 JS identifier
   # （含 dotted path,例如 window.foo）
   SAFE_CALLBACK = /\A[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*\z/
-
-  def referer_cn?
-    return true if Rails.env.development? and params[:cn] == "1"
-    host = referer_host || request.host
-    return true if host.end_with?('.cn')
-  end
 
   # Referer 的 host (含 port)。沒有 Referer 或解析不出 host
   # (例如空字串、"/") 時回傳 nil。
@@ -77,15 +54,9 @@ class ApplicationController < ActionController::Base
     @goto_service ||= GotoService.new
   end
 
-  # 解析行首資訊/引用格式，並套用 .cn 站台的過濾
+  # 解析行首資訊/引用格式
   def goto_linehead(params)
-    r = goto_service.linehead(params)
-
-    if referer_cn? and filter_cn?(id: r[:work])
-      r = EMPTY_RESULT
-    end
-
-    r
+    goto_service.linehead(params)
   end
 
   def record_visit

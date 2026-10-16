@@ -13,11 +13,6 @@ class JuansController < ApplicationController
       return
     end
 
-    if referer_cn? and filter_cn?(id: work)
-      my_render EMPTY_RESULT
-      return
-    end
-
     canon = CBETA.get_canon_id_from_work_id(work)
     i = params[:juan].to_i
     juan_line = JuanLine.find_by(work: work, juan: i)
@@ -49,9 +44,7 @@ class JuansController < ApplicationController
       result = goto_linehead params
     elsif params.key? :canon
       result =
-        if referer_cn? and filter_cn?(id: params[:canon])
-          EMPTY_RESULT
-        elsif params.key? :vol
+        if params.key? :vol
           goto_service.by_vol params
         elsif params.key? :work
           goto_service.by_work params

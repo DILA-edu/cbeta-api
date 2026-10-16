@@ -8,11 +8,6 @@ class CatalogEntryController < ApplicationController
     elsif params[:q]
       results = get_entries_by_parent(params[:q])
       label = get_label_by_entry(params[:q])
-      if referer_cn?
-        results.reject! do |x|
-          filter_cn?(n: x[:n], id: x[:label])
-        end
-      end
     else
       results = get_entries_by_parent('root')
       label = 'CBETA 漢文佛典集成'

@@ -66,7 +66,7 @@ class SearchController < ApplicationController
 
     t1 = Time.now
     r = if @use_cache
-          key = response_cache_key("#{params}-#{@referer_cn}")
+          key = response_cache_key("#{params}")
           fetch_response_cache(key) do
             all_in_one_sub
           end
@@ -107,7 +107,7 @@ class SearchController < ApplicationController
   def similar
     t1 = Time.now
 
-    key = response_cache_key("search/similar/#{params}-#{@referer_cn}")
+    key = response_cache_key("search/similar/#{params}")
 
     r = if @use_cache
           fetch_response_cache(key) do
@@ -206,7 +206,7 @@ class SearchController < ApplicationController
     t1 = Time.now
 
     r = if @use_cache
-          key = response_cache_key("#{params}-#{@referer_cn}")
+          key = response_cache_key("#{params}")
           fetch_response_cache(key) do
             variants_sub
           end
@@ -322,7 +322,7 @@ class SearchController < ApplicationController
   # 依 index 各自快取一個 SearchService: filter_exist_in_cbeta 一次要查三個 index。
   def es_service(index = es_index)
     @es_services ||= {}
-    @es_services[index] ||= CbetaSearch::SearchService.new(referer_cn: @referer_cn, index:)
+    @es_services[index] ||= CbetaSearch::SearchService.new(index:)
   end
 
   def es_query
@@ -662,8 +662,6 @@ class SearchController < ApplicationController
   end
 
   def init
-    @referer_cn = referer_cn?
-
     unless params.key? :q
       render plain: '缺少必要參數：q'
       return false
@@ -840,8 +838,7 @@ class SearchController < ApplicationController
         juan: juan[:juan].to_i,
         around: @around,
         mark: true,
-        rows: 99999,
-        referer_cn: @referer_cn
+        rows: 99999
       }
       juan[:kwics] = kwic_boolean(se, opts)
       

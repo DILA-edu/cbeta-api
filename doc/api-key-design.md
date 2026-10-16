@@ -679,9 +679,10 @@ Define dev_path    /var/www/cbeta-api-staging
 - 刪除 `config/environments/cn.rb` —— 2026-08-21 確認 `api.cbetaonline.cn`
   廢棄不用，`cn` 環境整組退場：另一併移除 `doc/cn.md`、
   `test_remote` 的 `cn` target、`lib/tasks/quarterly` 的 `cn` 分支。
-- **不要動** `filter_cn?` / `referer_cn?` 邏輯（`app/controllers/application_controller.rb`）
-  與 `config.cn_filter`（`config/application.rb:31`）—— 那是判斷來源 referer 是否
-  `.cn` 結尾以決定內容過濾，與部署環境無關，主站仍需要。
+- 當時保留 `filter_cn?` / `referer_cn?` 邏輯與 `config.cn_filter` —— 那是依來源
+  referer 是否 `.cn` 結尾決定內容過濾，與部署環境無關，不隨 `cn` 環境一起刪。
+  （2026-10-16 已移除：過濾原本是為了 cbetaonline.cn 的屏蔽責任，該站取消後，
+  改由各網站自行判斷。）
 - 更新 `doc/deploy-rails-project.md`、`doc/apache2.md`（若有提到 slot 路徑）
 
 ### 7.4 report 限管理者（commit 4）
@@ -800,7 +801,7 @@ Define dev_path    /var/www/cbeta-api-staging
 | 不設 key expiry、不設備註名稱 | 本次範圍外，需求未提出（4.3） |
 | 不自動合併 Google/GitHub 同 email 帳號 | GitHub email 可能 private 或 nil，不可靠（4.2） |
 | 不修改 `my_render_error` | 會改變既有 client 看到的 HTTP status（3.4） |
-| 不動 `filter_cn?` / `referer_cn?` | 判斷 referer 是否 `.cn`，與部署環境無關（7.3） |
+| 不動 `filter_cn?` / `referer_cn?` | 判斷 referer 是否 `.cn`，與部署環境無關（7.3）。2026-10-16 已另行移除 |
 | ~~Origin 白名單納入版控~~ | **已推翻**：2026-08-21 主管指示不進版控，改放 `config/cb.yml`（3.3） |
 | 不修改 fail2ban 設定 | 改 Rails 上限即可讓 429 先於 ban 發生，成本最低（6.2） |
 | 不依環境區分 `set :application` | 專案中無任何 `fetch(:application)`，寫 slot 編號只會過期誤導（7.3） |

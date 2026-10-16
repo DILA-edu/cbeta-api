@@ -8,10 +8,6 @@ class WorksController < ApplicationController
       unless params[:work] =~ CBETA::WORK_ID
         raise CbetaError.new(400), "work 參數 格式錯誤"
       end
-      if referer_cn? and filter_cn?(id: params[:work])
-        my_render EMPTY_RESULT
-        return
-      end
       result = get_work_info_by_id(params[:work])
       result = [result] unless result.nil?
     elsif params.key? :creator
@@ -31,11 +27,6 @@ class WorksController < ApplicationController
     elsif params.key? :uuid # 其他方式也有 canon 參數，所以這個要排後面
       search_by_canon_uuid
       return
-    end
-
-    # 沒帶任何已知參數時 result 是 nil
-    if referer_cn?
-      result&.delete_if { filter_cn?(id: it[:work]) }
     end
 
     if result.nil?

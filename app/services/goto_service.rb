@@ -7,7 +7,7 @@
 # 但這是純 domain logic，與 request 無關,
 # rake task、MCP 等非 request 情境也需要，所以抽成 service。
 #
-# 與 request 相關的處理 (例如 .cn 站台的過濾) 留在 controller。
+# 與 request 相關的處理留在 controller。
 class GotoService
   # 組出 cbeta 行首資訊字串
   def self.get_linehead(work, file, lb)

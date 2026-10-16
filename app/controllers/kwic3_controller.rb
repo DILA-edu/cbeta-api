@@ -24,8 +24,7 @@ class Kwic3Controller < ApplicationController
     logger.debug "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
     
     @opts = { 
-      inline_note: true,
-      referer_cn: referer_cn?
+      inline_note: true
     }
     
     a = %w(sort negative_lookahead negative_lookbehind)

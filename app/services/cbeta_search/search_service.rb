@@ -87,10 +87,10 @@ module CbetaSearch
 
     attr_reader :client, :index_class, :builder
 
-    def initialize(referer_cn: false, index: TextIndex, client: ElasticClient.build)
+    def initialize(index: TextIndex, client: ElasticClient.build)
       @client = client
       @index_class = index
-      @builder = ElasticQueryBuilder.new(referer_cn:, index:)
+      @builder = ElasticQueryBuilder.new(index:)
     end
 
     # ES 的 search API 一律走 alias，實際 index 由 rake elastic:promote 切換。

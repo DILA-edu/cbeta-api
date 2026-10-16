@@ -40,8 +40,7 @@ class KwicService
     mark: false,
     kwic_w_punc: true, # 是否回傳含標點的文字
     kwic_wo_punc: false, # 是否回傳不含標點的文字
-    seg: false, # 是否自動分詞
-    referer_cn: false
+    seg: false # 是否自動分詞
   }
 
   # @param base [String] suffix array base folder
@@ -75,7 +74,6 @@ class KwicService
     t1 = Time.now
     @logger.debug "[#{Time.now}] #{__LINE__}, search(), query: #{query}, work: #{args[:work]}, juan: #{args[:juan]}"
     @option = OPTION.merge args
-    set_cache_base(@option)
 
     if @option[:sort] == 'b'
       q = query.reverse
@@ -119,7 +117,6 @@ class KwicService
 
   def search_juan(query, args={})
     @option = OPTION.merge args
-    set_cache_base(@option)
     
     q2 = query.downcase
     if @option[:sort] == 'b'
@@ -148,7 +145,6 @@ class KwicService
   def search_near(query, args={})
     t1 = Time.now
     @option = OPTION.merge args
-    set_cache_base(@option)
     
     @total_found = 0
 
@@ -1082,10 +1078,6 @@ class KwicService
     sa_results << [sa_path, start, found] unless start.nil?
 
     sa_results
-  end
-
-  def set_cache_base(args)
-    @cache = "#{Rails.configuration.cb.r}-#{args[:referer_cn]}-#{@inline_note}"
   end
 
   def sort_by_pos(start, size)
