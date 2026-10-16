@@ -4,7 +4,7 @@ class UnicodeService
   end
 
   # 決定是否採用 unicode 字元 或 unicode 通用字
-  def gaiji_unicode(g, normalize: True)
+  def gaiji_unicode(g, normalize: true)
     u = g['uni_char']
     return u unless u.blank?
 

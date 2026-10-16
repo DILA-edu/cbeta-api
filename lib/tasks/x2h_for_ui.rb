@@ -795,13 +795,18 @@ class P5aToHTMLForUI
 
     # T49n2035, <ref target="#list4">天台智者禪師○</ref>
     id = target.delete_prefix('#')
-    node = e.xpath("//*[@id='#{id}']")
+    # xpath 回傳 NodeSet 永遠不是 nil, 要用 at_xpath 才判斷得出不存在
+    node = e.at_xpath("//*[@id='#{id}']")
     if node.nil?
       puts "ref target #{target} 不存在"
       return content
     end
 
     lb = node.at_xpath("preceding::lb[1]")
+    if lb.nil?
+      puts "ref target #{target} 之前沒有 lb"
+      return content
+    end
     linehead = CBETA.get_linehead(@sutra_no, lb['n'])
     link_cbeta_linehead(linehead, content)
   end

@@ -33,8 +33,9 @@ class WorksController < ApplicationController
       return
     end
 
+    # 沒帶任何已知參數時 result 是 nil
     if referer_cn?
-      result.delete_if { filter_cn?(id: it[:work]) }
+      result&.delete_if { filter_cn?(id: it[:work]) }
     end
 
     if result.nil?
@@ -181,8 +182,12 @@ class WorksController < ApplicationController
       r << w.to_hash
     end
     
-    # 某些 佛典 跨冊，例如 T0220 的 vol 記錄為 T05..T07
+    # 某些 佛典 跨冊，例如 T0220 的 vol 記錄為 T05..T07。
+    # 字串範圍比較下 "T05..T07" 也會落在 "T05".."T06" 之間，已經加過的不要重複加。
+    added = r.to_set { it[:work] }
     Work.where('vol LIKE ?', '%..%').includes(:places).each do |w|
+      next if added.include?(w.n)
+
       vol1, vol2 = w.vol.split('..')
       if (vol1 <= v1) and (vol2 >= v2)
         r << w.to_hash

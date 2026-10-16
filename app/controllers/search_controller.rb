@@ -766,14 +766,12 @@ class SearchController < ApplicationController
   def my_facet_canon(juan, dest)
     k = juan[:canon]
 
+    # Canon 表查不到時不給 canon_name (同 decorate_facet!)，不可讓整個請求失敗
+    @canon_name[k] = Canon.find_by(id2: k)&.name unless @canon_name.key?(k)
     name = @canon_name[k]
-    if name.nil?
-      name = Canon.find_by(id2: k).name
-      @canon_name[k] = name
-    end
 
     unless dest.key?(k)
-      dest[k] = { canon: k, canon_name: name, hits: 0 }
+      dest[k] = { canon: k, canon_name: name, hits: 0 }.compact
       dest[k][:docs] = 0 unless action_name == 'similar'
     end
 

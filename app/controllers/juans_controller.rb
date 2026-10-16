@@ -26,10 +26,12 @@ class JuansController < ApplicationController
 
     if File.exist? fn
       html = File.read(fn)
+      # HTML 檔存在但 juan_lines 缺資料時 (匯入不一致), 仍回傳內容, uuid 為 null
+      logger.warn "juan_lines 缺少 #{work} 第 #{i} 卷" if juan_line.nil?
       r = {
         num_found: 1,
-        uuid: juan_line.uuid,
-        content: juan_line.content_uuid,
+        uuid: juan_line&.uuid,
+        content: juan_line&.content_uuid,
         results: [html]
       }
       r[:toc] = get_toc_by_work_id(work) if params[:toc]=='1'
@@ -114,7 +116,8 @@ class JuansController < ApplicationController
     return render_asia_not_found(uuid) if juan.nil?
 
     work = Work.find_by n: juan.work
-    
+    return render_asia_not_found(uuid) if work.nil?
+
     fn = "#{work.n}_%03d.txt" % juan.juan
     fn = Rails.root.join('public', 'download', 'text-for-asia-network', work.canon, work.n, fn)
     
@@ -141,7 +144,8 @@ class JuansController < ApplicationController
     return render_asia_not_found(uuid) if juan.nil?
 
     work = Work.find_by n: juan.work
-    
+    return render_asia_not_found(uuid) if work.nil?
+
     uri = File.join(root_url, 'download', 'text-for-asia-network', work.canon, work.n, "#{work.n}_%03d.txt" % juan.juan)
     
     r = {
