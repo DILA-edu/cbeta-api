@@ -46,7 +46,7 @@ class TocNodeController < ApplicationController
     entries.each do |e|
       row = { type: 'catalog', n: e.n, label: e.label }
       unless e.work.nil?
-        work_info = Work.get_info_by_id(e.work)
+        work_info = work_info(e.work)
         row.merge! work_info
       end
       r << row
@@ -58,8 +58,8 @@ class TocNodeController < ApplicationController
     toc_nodes = TocNode.where("label LIKE ?", "%#{q}%").order(:sort_order)
     r = []
     toc_nodes.each do |t|
-      row = { type: 'toc', label: t.label, label_path: t.label_path, work: t.work, lb: t.lb }
-      w = Work.get_info_by_id(t.work)
+      row = { type: 'toc', label: t.label, label_path: label_path(t), work: t.work, lb: t.lb }
+      w = work_info(t.work)
       if w.nil?
         # 這裡原本是 abort, 在 Passenger worker 裡會直接殺掉整個 process。
         logger.fatal "Error get_info_by_id(#{t.work})"
@@ -75,7 +75,7 @@ class TocNodeController < ApplicationController
   
   def find_work(q)
     works = Work.where.not(juan_list: nil) # CBETA 未收錄的不要
-    works = works.where("title LIKE ?", "%#{q}%").order(:sort_order)
+    works = works.where("title LIKE ?", "%#{q}%").order(:sort_order).includes(:places)
     r = []
     works.each do |w|
       row = { type: 'work' }
@@ -85,6 +85,28 @@ class TocNodeController < ApplicationController
     r
   end
   
+  # 同一部佛典常有上百個目次節點 (例: q=金剛 1042 筆只來自 343 部),
+  # 原本每個節點都重查一次。結果與逐筆呼叫 Work.get_info_by_id 相同。
+  # 回傳的 Hash 會被多筆 row merge!, 但不會被修改。
+  def work_info(n)
+    @work_info ||= Hash.new { |h, key| h[key] = Work.get_info_by_id(key) }
+    @work_info[n]
+  end
+
+  # 同 TocNode#label_path, 但 parent 查過的不再查 (同一部佛典的節點共用祖先)。
+  # 仍以 find_by 逐一查詢: toc_nodes.n 不唯一 (例 B0002 的兩組目次共用編號),
+  # 改用 WHERE n IN (...) 批次查可能取到不同的那一筆。
+  def label_path(node)
+    @toc_parent ||= Hash.new { |h, n| h[n] = TocNode.find_by(n:) }
+    tokens = []
+    t = node
+    until t.nil?
+      tokens.unshift t.label
+      t = @toc_parent[t.parent]
+    end
+    tokens.join('/')
+  end
+
   def search_by_query_term
     q = params[:q]
     if q.match(/^(#{CBETA::CANON})\d{2,3}$/) # ex: T01
