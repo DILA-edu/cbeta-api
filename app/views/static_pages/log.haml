@@ -11,6 +11,30 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-10-16 Version 5.15.3
+%ul
+  %li 加快 search/toc。
+  %li
+    修正 search/toc：同一部佛典的目次結果，每次查詢的順序可能不同；
+    改為固定依目錄、經文的順序。
+
+%h3 2026-10-16 Version 5.15.1
+%ul
+  %li
+    chinese_tools/sc2tc、word_seg、word_seg2 的輸入上限為 50000 字，超過時回傳錯誤
+    (sc2tc 為 HTTP 400，word_seg、word_seg2 沿用各自原本的錯誤格式)。
+
+%h3 2026-10-16 Version 5.15.0
+%ul
+  %li
+    juans、works/toc、catalog_entry、export/all_creators2、api/collections、textref/data、
+    openapi.json 支援條件式請求 (ETag)：內容沒有變更時回傳 HTTP 304，
+    瀏覽器可直接使用已快取的內容。
+
+%h3 2026-10-16 Version 5.14.2
+%ul
+  %li 加快 search/all_in_one 的 NEAR 查詢，常用字的組合尤其明顯。
+
 %h3 2026-10-16 Version 5.14.0
 %ul
   %li
@@ -48,6 +72,12 @@
   %li
     加快 textref/data、api/collections、works (依作譯者、朝代、年代、冊號查詢)、
     search/title、export/all_creators2、word_seg。
+
+%h3 2026-10-10 Version 5.11.2
+%ul
+  %li
+    juans/goto：CBETA 未收錄、內容與其他典籍相同的典籍 (例如 X0344 同 T1782)，
+    改為回傳 HTTP 404 並指出對應的典籍 (原本回傳錯誤)。
 
 %h3 2026-10-07 Version 5.11.1
 %ul
