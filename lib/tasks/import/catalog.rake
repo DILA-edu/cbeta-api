@@ -43,10 +43,14 @@ class ImportCatalog
   
   def import
     open_log
-    $stderr.puts "destroy old catalog entries"
-    CatalogEntry.delete_all
-    import_file("bulei/bulei.txt", "CBETA", label: "部類目錄")
-    import_file("nav/advance_nav.txt", "orig", label: "原書目錄")
+    # 包在 transaction 裡: 來源要從 GitHub 抓, 抓取失敗或中途 abort 時整個 rollback,
+    # 不會留下目錄被清空或只匯入一半的狀態。
+    ActiveRecord::Base.transaction do
+      $stderr.puts "destroy old catalog entries"
+      CatalogEntry.delete_all
+      import_file("bulei/bulei.txt", "CBETA", label: "部類目錄")
+      import_file("nav/advance_nav.txt", "orig", label: "原書目錄")
+    end
   end
   
   private
@@ -86,7 +90,9 @@ class ImportCatalog
       line.rstrip!
       line =~ /\A(\t*)(.*)\z/
       level = $1.size + 1
-      text = $2.gsub(/&(CB|M)\d+;/, '●')
+      # 缺字的 entity 換成 ●，其餘要 escape: 原本直接放進 attribute，遇到 " < & 時
+      # Nokogiri 的 recover 模式會默默截斷資料
+      text = CGI.escapeHTML($2.gsub(/&(CB|M)\d+;/, '●'))
       xml << close_node(level)
       prefix = "  " * level
       xml << %(\n#{prefix}<node text="#{text}">)

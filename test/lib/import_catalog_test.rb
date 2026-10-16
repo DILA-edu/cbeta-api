@@ -94,6 +94,28 @@ class ImportCatalogTest < ActiveSupport::TestCase
     assert_equal 0, CatalogEntry.count
   end
 
+  test '來源文字含 " < & 時完整保留, 不被截斷' do
+    response = Struct.new(:status, :body).new(200, %(部類\n\tA "B" <C> & D &CB00001;\n))
+    Faraday.define_singleton_method(:get) { |*| response }
+
+    xml = @importer.send(:read_catalog_text, 'https://example.org/test.txt')
+    texts = Nokogiri::XML(xml).xpath('//node').map { it['text'] }
+
+    assert_equal [ '部類', 'A "B" <C> & D ●' ], texts
+  ensure
+    Faraday.singleton_class.remove_method(:get)
+    FileUtils.rm_f(%w[txt xml].map { Rails.root.join('log', "catalog-test.#{it}") })
+  end
+
+  test '匯入中途失敗時整個 rollback, 舊目錄保持完整' do
+    CatalogEntry.create!(n: 'CBETA.001', parent: 'CBETA', label: '舊的部類', sort: 1)
+    @importer.define_singleton_method(:open_log) { @log = StringIO.new }
+    @importer.define_singleton_method(:import_file) { |*, **| raise 'Failed to fetch file' }
+
+    assert_raises(RuntimeError) { capture_io { @importer.import } }
+    assert CatalogEntry.exists?(n: 'CBETA.001')
+  end
+
   private
 
   def build_node(text)
