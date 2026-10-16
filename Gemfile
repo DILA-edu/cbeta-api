@@ -26,6 +26,9 @@ group :development, :test do
 
   # RuboCop: 採用 Rails 官方 omakase 規則集, 設定見 .rubocop.yml
   gem 'rubocop-rails-omakase', require: false
+
+  # 檢查 Gemfile.lock 中已知有安全漏洞的 gem: bin/bundler-audit
+  gem 'bundler-audit', require: false
 end
 
 group :development do
