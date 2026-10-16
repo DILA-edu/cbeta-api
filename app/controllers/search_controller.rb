@@ -48,6 +48,8 @@ class SearchController < ApplicationController
               with: :elasticsearch_error_handler
 
   def initialize
+    # 必須呼叫 super: ActionController::Metal#initialize 會初始化 @_request 等內部狀態
+    super
     log_debug "SearchController initialize"
   end
   
@@ -725,7 +727,7 @@ class SearchController < ApplicationController
   end
 
   def mark_title(title, query)
-    r = ''
+    r = +''
     title.each_char do |c|
       if query.include?(c)
         r << "<mark>#{c}</mark>"

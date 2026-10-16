@@ -91,7 +91,7 @@ class SmithWaterman
   end
   
   def alignment_inspect_b
-    r = ""
+    r = +""
     x = 0
     
     alignment.each_with_index do |pos, i|
@@ -210,7 +210,7 @@ class SmithWaterman
   end
 
   def paint_char_in_a(s)
-    r = ''
+    r = +''
     s.chars.each do |c|
       if @str_a.include?(c)
         r << "<em>#{c}</em>"
