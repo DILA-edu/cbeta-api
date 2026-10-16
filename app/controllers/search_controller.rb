@@ -30,8 +30,9 @@ class SearchController < ApplicationController
   #
   # 本機 macOS 量到的延遲會嚴重低估，一律以 server 為準。
   SIMILAR_K = 1000
-  # k 上限: 成本與 k 成正比 (k=2000 約 2.24 秒), 5000 約 5.6 秒,
-  # 仍在 rack-timeout 預設 15 秒內。
+  # k 上限: 成本與 k 成正比 (k=2000 約 2.24 秒), 5000 約 5.6 秒。
+  # server 的 rack-timeout 是 300 秒 (Apache 的 RACK_TIMEOUT_SERVICE_TIMEOUT)，
+  # 不能靠它擋住大 k: 一個請求會佔住 Passenger process 好幾分鐘。
   SIMILAR_K_MAX = 5000
   # search/similar 第二階段 (Smith-Waterman) 的最低分數，可用 score_min 參數覆寫。
   SCORE_MIN = 16
