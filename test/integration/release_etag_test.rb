@@ -13,6 +13,16 @@ class ReleaseEtagTest < ActionDispatch::IntegrationTest
     assert_empty response.body
   end
 
+  # 304 只用於 GET / HEAD; 這些端點也接受 POST
+  test 'POST 帶 If-None-Match 時仍回傳完整內容' do
+    get '/api/collections'
+    etag = response.headers['ETag']
+
+    post '/api/collections', headers: { 'If-None-Match' => etag }
+    assert_response :success
+    assert_not_empty response.body
+  end
+
   test '回應含每次不同的 time 欄位時, ETag 仍然固定' do
     get '/works/toc', params: { work: 'T0001' }
     first = response.headers['ETag']

@@ -203,7 +203,8 @@ class ApplicationController < ActionController::Base
   # extra: 季中可能更新、但季號不變的來源，例如資料檔的修改時間。
   def with_release_etag(*extra)
     response.etag = [ Rails.configuration.cb.r, Rails.configuration.x.ver, request.fullpath, *extra ]
-    return head(:not_modified) if request.fresh?(response)
+    # 304 只用於 GET / HEAD (HTTP 規範); 這些端點也接受 POST, POST 一律回傳完整內容
+    return head(:not_modified) if (request.get? || request.head?) && request.fresh?(response)
 
     yield
     response.delete_header('ETag') if @error_response || !response.successful?
