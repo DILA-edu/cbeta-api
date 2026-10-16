@@ -9,10 +9,6 @@ gem 'rails', '~> 8.1.2'
 gem 'sqlite3', '~> 2.7', '>= 2.7.2'
 # Use Puma as the app server
 gem 'puma', '~> 7.1'
-# Use Uglifier as compressor for JavaScript assets
-gem 'uglifier', '>= 1.3.0'
-# Use CoffeeScript for .coffee assets and views
-gem 'coffee-rails', '~> 5.0.0'
 # See https://github.com/rails/execjs#readme for more supported runtimes
 #gem 'therubyracer', platforms: :ruby
 
@@ -20,9 +16,6 @@ gem 'coffee-rails', '~> 5.0.0'
 # 不知道是不是 turbolinks 造成？
 # Turbolinks makes navigating your web application faster. Read more: https://github.com/turbolinks/turbolinks
 #gem 'turbolinks', '~> 5'
-
-# Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
-gem 'jbuilder'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.1.0', require: false
@@ -45,9 +38,6 @@ group :development do
 end
 
 group :test do
-  # Adds support for Capybara system testing and selenium driver
-  gem 'capybara', '>= 2.15'
-  gem 'selenium-webdriver'
   # test_remote/run.rb 用來輸出測試結果
   gem 'minitest-reporters'
   # 以 OpenAPI 3.1 spec 驗證 API 回應（test_remote/test_openapi_*.rb）
@@ -66,7 +56,6 @@ end
 gem 'cbeta', '~> 4.3'
 
 gem "haml-rails"
-gem 'time_diff'
 #gem 'zhongwen_tools'
 gem 'chronic_duration'
 
@@ -93,7 +82,6 @@ gem 'rubyzip'
 gem 'colorize'
 gem 'diff-lcs'
 gem 'unihan2', '>= 1.2.0'
-gem 'open3'
 gem 'faraday'
 # accounts DB 備份到 Firebase (Firestore REST API) 用的 service account 認證。
 # 刻意不用 google-cloud-firestore: 它依賴 grpc native extension, 見 doc/accounts-backup.md
@@ -115,7 +103,3 @@ gem 'omniauth-google-oauth2'
 gem 'omniauth-github'
 gem 'omniauth-rails_csrf_protection'
 
-# fix error: cannot load such file -- net/smtp
-gem 'net-smtp', require: false
-gem 'net-imap', require: false
-gem 'net-pop', require: false
