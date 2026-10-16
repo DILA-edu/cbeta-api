@@ -11,6 +11,44 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-10-16 Version 5.14.0
+%ul
+  %li
+    Referer 為 .cn 網域時，不再屏蔽太虛大師全書 (TX)、印順法師佛學著作集 (Y)
+    的內容及這兩位作者，所有來源一律回傳相同的結果。
+
+%h3 2026-10-16 Version 5.13.4
+%ul
+  %li 修正 works：以冊號範圍 (vol_start、vol_end) 查詢時，跨冊的佛典 (例如 T0220) 會重複出現兩次。
+  %li 修正 search/all_in_one、search/similar：計算 facet 時，遇到不在藏經清單中的藏經代碼會回傳錯誤。
+  %li Asia Network API (/api/sections/*)：卷存在但對應的佛典資料缺漏時，改為回傳 HTTP 404 (原本回傳錯誤)。
+
+%h3 2026-10-16 Version 5.13.3
+%ul
+  %li
+    修正 search/all_in_one：不加引號、含空格的查詢詞 (例如 Pāli Text Society)，
+    KWIC 原本把每個字分開標示，term_hits 也分開計算 (變成三倍)；
+    改為整個詞組一起標示與計數，與全文檢索的計數一致。
+  %li 修正 search/all_in_one：Exclude 查詢的詞組含 | 等字元時，排除條件不會生效。
+  %li
+    加快 search/facet、search/variants，以及 search/all_in_one 的
+    Exclude 查詢加上 facet=1 (例如 "菩薩" -"諸菩薩")。
+
+%h3 2026-10-16 Version 5.13.1
+%ul
+  %li 修正 search/kwic、search/all_in_one：NEAR 查詢的第二個詞不在某一卷時，整個查詢會失敗。
+  %li 修正 Referer 標頭為空字串時，所有 API 都會回傳錯誤。
+  %li
+    JSONP 的 callback 參數只接受合法的 JavaScript 名稱 (例如 jQuery123_456、window.foo)，
+    不合法時改為回傳一般 JSON。
+  %li
+    lines：前後行數 (before、after) 與行首範圍 (linehead_start 至 linehead_end)
+    上限為 20000 行，超過時回傳錯誤 (HTTP 400)。最大的單卷約 16500 行，取一整卷不受影響。
+  %li search/similar：k 參數上限為 5000，超過時回傳錯誤。
+  %li
+    加快 textref/data、api/collections、works (依作譯者、朝代、年代、冊號查詢)、
+    search/title、export/all_creators2、word_seg。
+
 %h3 2026-10-07 Version 5.11.1
 %ul
   %li
