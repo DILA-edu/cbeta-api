@@ -21,7 +21,8 @@ class ExportController < ApplicationController
       r[:num_found] = data.size
       r[:results] = data
     else
-      r[:error] = { code: 500, message: "File not found: #{fn}" } 
+      # 不回傳伺服器的絕對路徑
+      r[:error] = { code: 500, message: "File not found: #{fn.relative_path_from(Rails.root)}" }
     end
 
     my_render(r)
@@ -37,7 +38,8 @@ class ExportController < ApplicationController
       r[:num_found] = data.size
       r[:results] = data
     else
-      r[:error] = { code: 500, message: "File not found: #{fn}" } 
+      # 不回傳伺服器的絕對路徑
+      r[:error] = { code: 500, message: "File not found: #{fn.relative_path_from(Rails.root)}" }
     end
 
     my_render(r)

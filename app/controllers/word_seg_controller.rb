@@ -49,7 +49,6 @@ class WordSegController < ApplicationController
 
     r = WordSegService.new.run(params[:payload])
     if r.success?
-      puts r.result
       r.result.sub!(/^\//, '')
       render json: { segmented: r.result.split('/') }
     else

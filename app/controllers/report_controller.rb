@@ -24,7 +24,7 @@ class ReportController < WebController
     a = @visits.values
     @max = a.max
     @sum = a.sum(0)
-    @avg = @sum / a.size
+    @avg = a.empty? ? 0 : @sum / a.size
     
     @visit_keys = @visits.keys.paginate(page: params[:page])
 
@@ -68,6 +68,8 @@ class ReportController < WebController
     return Date.today if h.nil?
     return Date.parse(h) if h.kind_of?(String)
     Date.new(h['year'].to_i, h['month'].to_i, h['day'].to_i)
+  rescue Date::Error
+    raise ActionController::BadRequest, "日期格式錯誤: #{h}"
   end
 
   def daily_csv

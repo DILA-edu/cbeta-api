@@ -84,4 +84,19 @@ class ReportControllerTest < ActionDispatch::IntegrationTest
     get report_daily_url(format: 'csv')
     assert_response :forbidden
   end
+
+  test '沒有任何 visits 時流量報表照常顯示' do
+    Visit.delete_all
+    sign_in(admin: true)
+
+    get report_daily_url
+    assert_response :success
+  end
+
+  test '日期格式錯誤時回 400' do
+    sign_in(admin: true)
+
+    get report_url_url, params: { d1: '2026-13-45' }
+    assert_response :bad_request
+  end
 end

@@ -25,7 +25,9 @@ class JuanLine < ActiveRecord::Base
   end
   
   def self.get_juan_by_vol_work_lb(vol, work, lb)
-    jl = JuanLine.where("vol=? AND work=? AND lb<=?", vol, work, lb).last
+    # 依 lb 取最後一筆，不能依 id: 卷的順序不一定跟著頁碼走，
+    # 例如 X1546 第 3 卷 (0154a01) 在冊內排在第 2 卷 (0163b01) 之前
+    jl = JuanLine.where("vol=? AND work=? AND lb<=?", vol, work, lb).order(:lb).last
     return nil if jl.nil?
     return jl.juan
   end

@@ -153,7 +153,8 @@ class ApplicationController < ActionController::Base
     logger.warn msg
 
     logger.debug "start #{controller_name}##{action_name} #{@start_time}"
-    logger.debug params.inspect
+    # 經 filter_parameters 過濾; block 形式在 log level 非 debug 時不組字串
+    logger.debug { request.filtered_parameters.inspect }
   end
 
   def log_debug(msg)
