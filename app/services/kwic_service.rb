@@ -160,6 +160,20 @@ class KwicService
       results: hits
     }
   end
+
+  # 與 search_near 的 num_found 相同，但不讀卷文字、不組 KWIC 字串。
+  # all_in_one 的 NEAR 要先逐卷計數才能過濾、排 facet、分頁，
+  # 原本對所有候選卷 (可達數千卷) 都產生完整 KWIC，最後只用到當頁。
+  def count_near(query, args={})
+    @option = OPTION.merge args
+    @total_found = 0
+
+    unless @option.key? :juan
+      raise CbetaError.new(400), "KWIC near 必須指定 juan 參數"
+    end
+
+    near_matches(query).count { |matches| near_match?(matches) }
+  end
   
   private
   
@@ -776,6 +790,18 @@ class KwicService
     end
   end
 
+  # read_text_near 會不會回傳 nil (後面的詞都與前一個詞完全重疊)，
+  # 但不讀卷文字、不組字串。判斷必須與 read_text_near 完全一致。
+  def near_match?(matches)
+    m1 = matches.first
+    prev_p2 = get_t2_offset_by_t1_offset(m1[:pos_sa][0] + m1[:term].size - 1)
+
+    matches[1..].any? do |m|
+      p2 = get_t2_offset_by_t1_offset(m[:pos_sa][0] + m[:term].size - 1)
+      p2 > prev_p2
+    end
+  end
+
   def read_text_near(matches)
     m1 = matches.first
     offset_wo_punc = m1[:pos_sa][0]
@@ -970,45 +996,8 @@ class KwicService
 
   # 單卷範圍內 做 NEAR 搜尋
   def search_near_juan(query, _args={})
-    sa_path = sa_rel_path
-    return nil unless open_files(sa_path)
-
-    if query.match(/^"(\S+)" (NEAR\/(\d+) .*)$/)
-      q1 = $1.downcase
-      nears = $2
-      start1, found1 = search_sa_after_open_files(q1)
-      return [] if start1.nil?
-
-      pos1 = sort_by_pos(start1, found1)
-      eligibles = {
-        terms: [q1],
-        pos_group: pos1.map { |x| [x] }
-      }
-
-      nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, s|
-        q = s.downcase
-        start2, found2 = search_sa_after_open_files(q)
-        # 任一詞不在本卷就不可能符合 NEAR。ES 的 asciifolding 會讓 ES 篩出的
-        # 候選卷在 suffix array (精確比對) 裡找不到該詞, 不能當成錯誤。
-        return [] if start2.nil?
-
-        pos2 = sort_by_pos(start2, found2)
-        check_near(eligibles, near.to_i, q, pos2)
-      end
-    else
-      raise CbetaError.new(400), "NEAR 語法錯誤 query: #{query}"
-    end
-
     hits = []
-    eligibles[:pos_group].each do |pos_group|
-      a = []
-      pos_group.each_with_index do |v, i|
-        a << { 
-          pos_sa: v,
-          term: eligibles[:terms][i]
-        }
-      end
-      a.sort_by! { |x| x[:pos_sa].first }
+    near_matches(query).each do |a|
       kwic = read_text_near(a)
       unless kwic.nil?
         offset_wo_punc = a[0][:pos_sa][0]
@@ -1019,7 +1008,46 @@ class KwicService
     end
     hits
   end
-  
+
+  # 單卷內符合 NEAR 距離條件的各組位置: [[{ pos_sa:, term: }, ...], ...]，
+  # 每組依位置排序。search_near_juan (產生 KWIC) 與 count_near (只計數) 共用。
+  def near_matches(query)
+    open_files(sa_rel_path)
+
+    unless query.match(/^"(\S+)" (NEAR\/(\d+) .*)$/)
+      raise CbetaError.new(400), "NEAR 語法錯誤 query: #{query}"
+    end
+
+    q1 = $1.downcase
+    nears = $2
+    start1, found1 = search_sa_after_open_files(q1)
+    return [] if start1.nil?
+
+    pos1 = sort_by_pos(start1, found1)
+    eligibles = {
+      terms: [q1],
+      pos_group: pos1.map { |x| [x] }
+    }
+
+    nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, s|
+      q = s.downcase
+      start2, found2 = search_sa_after_open_files(q)
+      # 任一詞不在本卷就不可能符合 NEAR。ES 的 asciifolding 會讓 ES 篩出的
+      # 候選卷在 suffix array (精確比對) 裡找不到該詞, 不能當成錯誤。
+      return [] if start2.nil?
+
+      pos2 = sort_by_pos(start2, found2)
+      check_near(eligibles, near.to_i, q, pos2)
+    end
+
+    eligibles[:pos_group].map do |pos_group|
+      a = pos_group.each_with_index.map do |v, i|
+        { pos_sa: v, term: eligibles[:terms][i] }
+      end
+      a.sort_by! { |x| x[:pos_sa].first }
+    end
+  end
+
   def search_sa(sa_path, q)
     return nil unless open_files(sa_path)
     search_sa_after_open_files(q)

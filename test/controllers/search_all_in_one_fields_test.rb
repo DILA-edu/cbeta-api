@@ -27,6 +27,7 @@ class SearchAllInOneFieldsTest < ActionDispatch::IntegrationTest
   class FakeKwicService
     def search(*) = { num_found: 1, results: [ KWIC.merge('work' => 'T0026', 'juan' => 47) ] }
     def search_near(*) = { num_found: 1, results: [ KWIC.dup ] }
+    def count_near(*) = 1 # 與 search_near 的 num_found 一致
   end
 
   test 'fields 沒列 juan 時仍回傳 KWIC 與行首資訊' do

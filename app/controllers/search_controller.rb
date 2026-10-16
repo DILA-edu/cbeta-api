@@ -524,8 +524,9 @@ class SearchController < ApplicationController
     end
 
     if query.type == :near
-      # 呼叫 KWIC 過濾 NEAR, 並取得所有出處、行號
-      kwic_by_juan(r)
+      # 逐卷以 KWIC 的規則計數並過濾 (只計數、不產生 KWIC 字串)，
+      # KWIC 等分頁後只對當頁產生。
+      near_count_by_juan(r)
       r[:num_found] = r[:results].size
       r[:total_term_hits] = r[:results].sum { it[:term_hits] }
     end
@@ -543,7 +544,7 @@ class SearchController < ApplicationController
     end
 
     if params[:fields].nil? or params[:fields].include?('kwic')
-      kwic_by_juan(r) unless query.type == :near
+      kwic_by_juan(r)
     end
 
     if r.key?(:results)
@@ -857,6 +858,15 @@ class SearchController < ApplicationController
     end
   end
   
+  # NEAR: 逐卷計算符合筆數 (與 kwic_boolean 的 num_found 相同)，去掉 0 筆的卷
+  def near_count_by_juan(r)
+    se = KwicService.new(Rails.configuration.x.kwic.base, @inline_note)
+    r[:results].each do |juan|
+      juan[:term_hits] = se.count_near(@q, work: juan[:work], juan: juan[:juan].to_i)
+    end
+    r[:results].select! { it[:term_hits].positive? }
+  end
+
   # boolean search 回傳 kwic
   def kwic_boolean(se, opts)
     if @q.match?(/ NEAR\/(\d+) /)
