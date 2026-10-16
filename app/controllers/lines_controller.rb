@@ -63,48 +63,6 @@ class LinesController < ApplicationController
     end
   end
   
-  def filter_html(html)
-    @notes = {}
-    doc = Nokogiri::HTML(html)
-    r = filter_traverse(doc.root)
-    r.strip
-  end
-  
-  def filter_node(e)
-    return e.text if e.text?
-    
-    r = ''
-    case e.name
-    when 'a'
-      if e['class'] == 'noteAnchor'
-        n = e['href'][1..-1]
-        @notes[n] = @html_doc.at_css("##{n}").text
-        r = %(<a class="noteAnchor" href="##{n}"></a>)
-      end
-    when 'span'
-      puts e['id']
-      r = case e['class']
-      when 'lb'
-        e.to_html
-      when 'lineInfo'
-        ''
-      else
-        filter_traverse(e)
-      end
-    else
-      r = filter_traverse(e)
-    end
-    r
-  end
-  
-  def filter_traverse(e)
-    r = ''
-    e.children.each { |c| 
-      r += filter_node(c)
-    }
-    r    
-  end  
-  
   def get_next_lines(linehead, after, result)
     line = Line.find_by(linehead:)
     return if line.nil? # linehead 不存在: 不加前後行, 結果為空

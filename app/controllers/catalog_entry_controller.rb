@@ -70,56 +70,6 @@ class CatalogEntryController < ApplicationController
     entry.label
   end
 
-  def handle_alt(alt)
-    if alt.size <= 6
-      r = Work.get_info_by_id(alt)
-    else
-      # 格式是 cbeta 行首資訊
-      if alt.match(/^([A-Z])\d{2,3}n(\w{5})p(\d{4}[a-z]\d\d)$/)
-        work_id = $1 + $2
-        lb = $3
-        work_id.sub!(/^(.*?)_$/, '\1')
-        r = Work.get_info_by_id(work_id)
-        r[:lb] = lb
-      else
-        abort "#{__LINE__} alt format error: #{alt}"
-      end
-    end
-    r
-  end
-  
-  def handle_alts(alt)
-    r = []
-    alts = alt.split('+')
-    alts.each do |a|
-      r << handle_alt(a)
-    end
-    r
-  end
-
-  def logical_work(node)
-    w = Work.find_by n: node.work
-    if w.alt.nil?
-      r = physical_work(node, w)
-      r = [r]
-    else
-      r = handle_alts(w.alt)
-    end
-    r
-  end
-  
-  def non_work_node(node)
-    r = { 
-      n: node.n,
-      label: node.label 
-    }
-    unless node.juan_start.nil?
-      r[:juan_start] = ce.juan_start
-      r[:juan_end] = ce.juan_end
-    end
-    r
-  end
-  
   # ce: catalog entry
   def get_info_from_work_node(ce, data)
     data[:work] = ce.work
@@ -150,23 +100,4 @@ class CatalogEntryController < ApplicationController
     work
   end
   
-  def physical_work(ce_node, work_node)
-    data = { 
-      work: work_node.n,
-      label: work_node.n
-    }
-    if ce_node.file.nil?
-      data[:file] = work_node.vol + 'n' + work_node.n[1..-1]
-    else
-      data[:file] = ce_node.file
-    end
-    if ce_node.juan_start.nil?
-      juan = "#{work_node.juan}卷"
-    else
-      juan = "#{ce_node.juan_start}~#{ce_node.juan_end}卷"
-    end
-    data[:label] += " #{work_node.title} (#{juan})"
-    data
-  end
-
 end

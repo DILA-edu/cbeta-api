@@ -7,22 +7,21 @@ require 'pp'
 #   search_sa_according_to_option
 #     sa_rel_path
 #     search_sa
-#   #exclude_filter
 #   sort_word_count
 #   paginate
 #     result_hash
-#       sa_block
 #       read_info_block
 #       read_text_for_info_array
 # search_juan
 #   search_sa_juan
 #   result_hash
-# search_near
-#   check_near
+# search_near / count_near
+#   near_matches
 #     open_files
 #     sort_by_pos
-#     read_text_near
-#       read_str
+#     check_near
+#   read_text_near (search_near) / near_match? (count_near)
+#     read_str
 
 class KwicService
   attr_reader :config, :size, :text
@@ -375,64 +374,6 @@ class KwicService
     rows.sort_by! { |x| x.last }
     eligibles[:terms] << q2
     eligibles[:pos_group] = rows
-  end
-
-  def exclude_filter(sa_results, q)
-    s1 = @option[:negative_lookbehind] 
-    s2 = @option[:negative_lookahead]  
-    
-    return sa_results if s1.nil? and s2.nil?
-
-    Rails.logger.warn "exclude_filter, q: #{q}"
-    @total_found = 0
-
-    if @option[:sort] == 'b'
-      s1 = @option[:negative_lookahead].reverse
-      s2 = @option[:negative_lookbehind].reverse
-    end
-    
-    s1, n1 = negative_pattern(s1)
-    s2, n2 = negative_pattern(s2)
-    
-    size = n2 + q.size + n1
-    
-    if not s1.nil? and not s2.nil?
-      regexp = Regexp.new("(?<!#{s1})#{q}(?!#{s2})")
-    elsif s2.nil?
-      regexp = Regexp.new("(?<!#{s1})#{q}")
-    else
-      regexp = Regexp.new("#{q}(?!#{s2})")
-    end
-    
-    r = []
-    sa_results.each do |sa_path, start, found|
-      next unless open_files(sa_path)
-      a = []
-      (0...found).each do |i|
-        j = sa(start+i)
-        k = j<n1 ? 0 : j-n1
-        s = read_str(k, size)
-        s.gsub!("\n", '　')
-        
-        if regexp.match(s)
-          if a.empty?
-            a << (i..i)
-          else
-            range = a.last
-            if i == (range.end + 1)
-              a[-1] = (range.first..i)
-            else
-              a << (i..i)
-            end
-          end
-        end
-      end
-      a.each do |range|
-        @total_found += range.size
-        r << [sa_path, start+range.first, range.size]
-      end
-    end
-    r
   end
 
   def exclude_filter2(info_array, q)
@@ -980,16 +921,6 @@ class KwicService
     read_i32(@f_sa, offset)
   end
   
-  def sa_block(offset, size)
-    if @f_sa.kind_of?(Array)
-      @f_sa[offset, size]
-    else
-      @f_sa.seek(offset * 4)
-      b = @f_sa.read(4 * size)
-      b.unpack('V*')
-    end
-  end
-
   def sa_rel_path
     File.join(@option[:work], "%03d" % @option[:juan])
   end
@@ -1144,11 +1075,6 @@ class KwicService
     @next_word_count.sort! { |x,y| y[1] <=> x[1] }
   end
   
-  def suffix(rank, size)
-    i = sa(rank)
-    read_chars(i, size)
-  end
-
   def suffix_info(offset)
     i = offset
     @f_info.seek (i * SuffixInfo::SIZE)

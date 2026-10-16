@@ -123,18 +123,6 @@ class SearchController < ApplicationController
     my_render r
   end
 
-  # 目前 config/routes.rb 沒有對應的 route
-  def test
-    remove_puncs_from_query
-
-    if @q.empty?
-      my_render(empty_result)
-      return
-    end
-
-    my_render es_search(default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT)
-  end
-
   # 與 index 的差別只在說明文件: 查詢語法由 CbetaSearch::QueryParser 統一解析，
   # 因此兩個 endpoint 的行為相同。
   def extended
@@ -186,18 +174,6 @@ class SearchController < ApplicationController
     my_render r
   end
   
-  # 目前 config/routes.rb 沒有對應的 route
-  def fuzzy
-    remove_puncs_from_query
-
-    if @q.empty?
-      my_render(empty_result)
-      return
-    end
-
-    my_render es_search(default_sort: CbetaSearch::ElasticQueryBuilder::SCORE_SORT)
-  end
-
   # 根據異體字表，回傳各種可能異體字串及搜尋結果筆數
   # 效率測試：
   #   * 無上正等正覺
@@ -439,27 +415,6 @@ class SearchController < ApplicationController
   def first_by(model, key, keys, value)
     model.where(key => keys.compact.uniq).order(:id).pluck(key, value)
          .each_with_object({}) { |(k, v), h| h[k] = v unless h.key?(k) }
-  end
-
-  def add_work_info(rows)
-    rows.each do |row|
-      w = Work.find_by n: row[:work]
-      next if w.nil?
-      
-      info = w.to_hash
-      info.delete :juan # 要保留搜尋結果回傳的卷數
-      row.merge! info
-
-      #xf = XmlFile.find_by work: row[:work], vol: row[:vol]
-      #unless xf.nil?
-      #  row[:file] = xf.file
-      #end
-      
-      # 例 J28nB214, CBETA 僅部份收錄
-      #unless row.key? :file
-      #  row[:file] = w.first_file
-      #end
-    end
   end
 
   def all_in_one_group_by_work(r)

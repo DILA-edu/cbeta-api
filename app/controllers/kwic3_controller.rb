@@ -91,41 +91,6 @@ class Kwic3Controller < ApplicationController
     my_render r
   end
   
-  def extended
-    t1 = Time.now
-    
-    #@opts[:rows] = 0 unless @opts.key? :rows
-    
-    q = params[:q]
-    q.sub!(/\-\s+\S+/, '')
-    q.sub!(/[&|]/, '')
-    q.sub!(/~\d+/, '')
-    
-    keywords = q.split(/[ "]+/)
-    keywords.shift if keywords.first.empty?
-    
-    hits = {}
-    keywords.each do |k|
-      @se.search(k, @opts)[:results].each do |row|
-        hits[row['lb']] = row
-      end
-    end
-    
-    results = []
-    hits.keys.sort.each do |k|
-      results << hits[k]
-    end
-    
-    r = {
-      query_string: keywords.join(' '),
-      time: Time.now - t1,
-      total_term_hits: results.size,
-      results: results
-    }
-    
-    my_render r
-  end
-
   private
 
   def juan_check_params
