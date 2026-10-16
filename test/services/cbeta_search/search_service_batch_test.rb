@@ -31,41 +31,50 @@ class CbetaSearch::SearchServiceBatchTest < ActiveSupport::TestCase
     { 'buckets' => rows.map { |key, docs, hits| { 'key' => key, 'doc_count' => docs, 'hits' => { 'value' => hits } } } }
   end
 
-  test 'facets 一次 request 取回多個維度, 各自依 hits 遞減' do
-    client = FakeClient.new(search: [ { 'aggregations' => {
-      'facet_canon' => buckets([ 'T', 5, 7.0 ], [ 'X', 6, 9.0 ]),
-      'facet_work' => buckets([ 'T0001', 2, 3.0 ])
-    } } ])
+  def facet_response(*rows) = { 'aggregations' => { 'facet' => buckets(*rows) } }
+
+  test 'facets 一次 _msearch 取回多個維度, 各自依 hits 遞減' do
+    client = FakeClient.new(msearch: [ { 'responses' => [
+      facet_response([ 'T', 5, 7.0 ], [ 'X', 6, 9.0 ]),
+      facet_response([ 'T0001', 2, 3.0 ])
+    ] } ])
     svc = CbetaSearch::SearchService.new(client:)
 
     r = svc.facets(phrase('法鼓'), params: {}, facet_bys: %w[canon work])
 
-    assert_equal 1, client.search_bodies.size
+    assert_empty client.search_bodies
+    assert_equal 1, client.msearch_bodies.size
     assert_equal %w[canon work], r.keys
     assert_equal [ { canon: 'X', docs: 6, hits: 9 }, { canon: 'T', docs: 5, hits: 7 } ], r['canon']
     assert_equal [ { work: 'T0001', docs: 2, hits: 3 } ], r['work']
-
-    aggs = client.search_bodies.first['aggs']
-    assert_equal 'canon', aggs.dig('facet_canon', 'terms', 'field')
-    assert_equal 'work', aggs.dig('facet_work', 'terms', 'field')
-    assert_equal 0, client.search_bodies.first['size']
   end
 
-  test 'facet (單一維度) 與 facets 的查詢內容相同' do
-    single = FakeClient.new(search: [ { 'aggregations' => { 'facet_dynasty' => buckets([ '唐', 1, 1.0 ]) } } ])
-    multi = FakeClient.new(search: [ { 'aggregations' => { 'facet_dynasty' => buckets([ '唐', 1, 1.0 ]) } } ])
+  # 不可把多個維度合併成一個查詢的多個 aggregation (scripted_metric 會少算),
+  # 每個子查詢都必須與單一維度的 #facet 完全相同。
+  test 'facets 的每個子查詢與 facet (單一維度) 完全相同' do
+    singles = %w[canon dynasty].map do |f|
+      c = FakeClient.new(search: [ facet_response ])
+      CbetaSearch::SearchService.new(client: c).facet(phrase('法鼓'), params: {}, facet_by: f)
+      c.search_bodies.first
+    end
+    multi = FakeClient.new(msearch: [ { 'responses' => [ facet_response, facet_response ] } ])
+    CbetaSearch::SearchService.new(client: multi).facets(phrase('法鼓'), params: {}, facet_bys: %w[canon dynasty])
 
-    a = CbetaSearch::SearchService.new(client: single).facet(phrase('法鼓'), params: {}, facet_by: 'dynasty')
-    b = CbetaSearch::SearchService.new(client: multi).facets(phrase('法鼓'), params: {}, facet_bys: %w[dynasty])
-
-    assert_equal a, b['dynasty']
-    assert_equal single.search_bodies, multi.search_bodies
+    assert_equal [ {}, singles[0], {}, singles[1] ], multi.msearch_bodies.first
   end
 
   test 'facets 不支援的維度回 400' do
     svc = CbetaSearch::SearchService.new(client: FakeClient.new)
     error = assert_raises(CbetaError) { svc.facets(phrase('法鼓'), params: {}, facet_bys: %w[canon foo]) }
     assert_equal 400, error.code
+  end
+
+  test 'facets 單筆失敗時回 502' do
+    client = FakeClient.new(msearch: [ { 'responses' => [ facet_response, { 'error' => { 'type' => 'x' } } ] } ])
+    error = assert_raises(CbetaError) do
+      CbetaSearch::SearchService.new(client:).facets(phrase('法鼓'), params: {}, facet_bys: %w[canon work])
+    end
+    assert_equal 502, error.code
   end
 
   test 'hit_count_all 一次 _msearch, 每筆的 body 與 hit_count 相同' do

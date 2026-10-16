@@ -369,12 +369,7 @@ module CbetaSearch
 
         responses = client.msearch(index:, body:).dig('responses') || []
         batch.each_with_index do |phrase, i|
-          response = responses[i] || {}
-          # _msearch 的單筆失敗不會丟例外，不可默默當成 0 次
-          if response['error'] || !response.key?('aggregations')
-            raise CbetaError.new(502), "Elasticsearch _msearch 第 #{i} 筆失敗: #{response['error'] || '無 aggregations'}"
-          end
-
+          response = msearch_response!(responses, i)
           result[phrase] = response.dig('aggregations', 'total_term_hits', 'value').to_f.round
         end
       end
@@ -426,41 +421,21 @@ module CbetaSearch
     # 舊版用 Manticore 的 GROUPBY() + SUM(weight())，ES 改用 terms aggregation
     # 搭配 scripted_metric 子 aggregation。
     def facet(query, params:, facet_by:, field: nil)
-      facets(query, params:, facet_bys: [facet_by], field:)[facet_by]
+      response = client.search(index:, body: facet_body(query, params:, facet_by:, field:))
+      facet_rows(response, facet_by)
     end
 
-    # 多個 facet 一次 request: 回傳 { facet_by => rows }，rows 格式同 #facet。
-    # 原本每個維度各發一次，同一個查詢在 ES 裡要比對五次。
-    # size 為 0，不取 hit，沒有 top-k 剪枝的問題 (見 #search 註解)，
-    # 各 aggregation 拿到的 _score 與分開查詢相同。
+    # 多個 facet 一次送出: 回傳 { facet_by => rows }，rows 格式同 #facet。
+    #
+    # 用 _msearch 送出「與 #facet 完全相同」的多個查詢，省下 HTTP 往返。
+    # 不可合併成一個查詢裡的多個 terms aggregation: staging 實測 (2026-10-16)
+    # 「法鼓」的 canon hits 總和從 1582 (= total_term_hits) 變成 1551，
+    # 多個 aggregation 同時讀 _score 時 scripted_metric 拿到的分數不完整。
     def facets(query, params:, facet_bys:, field: nil)
-      field ||= default_field
-      fields = facet_bys.to_h { |f| [f, facet_field_and_key(f)] }
-
-      body = @builder.search_body(query, params:, field:)
-      body['size'] = 0
-      body['aggs'] = fields.to_h do |facet_by, (es_field, _key)|
-        [
-          facet_agg_name(facet_by),
-          {
-            'terms' => { 'field' => es_field, 'size' => FACET_MAX },
-            'aggs' => { 'hits' => SUM_SCORE_AGG }
-          }
-        ]
-      end
-
-      response = client.search(index:, body:)
-      fields.to_h do |facet_by, (_es_field, key)|
-        buckets = response.dig('aggregations', facet_agg_name(facet_by), 'buckets') || []
-        rows = buckets.map do |bucket|
-          {
-            key => bucket['key'],
-            docs: bucket['doc_count'],
-            hits: bucket.dig('hits', 'value').to_f.round
-          }
-        end
-        rows.sort_by! { |row| -row[:hits] }
-        [facet_by, rows]
+      body = facet_bys.flat_map { |f| [{}, facet_body(query, params:, facet_by: f, field:)] }
+      responses = client.msearch(index:, body:).dig('responses') || []
+      facet_bys.each_with_index.to_h do |facet_by, i|
+        [facet_by, facet_rows(msearch_response!(responses, i), facet_by)]
       end
     end
 
@@ -572,7 +547,44 @@ module CbetaSearch
             "start 參數超出範圍: #{start}, start + rows 不得超過 #{IndexBase::MAX_RESULT_WINDOW}"
     end
 
-    def facet_agg_name(facet_by) = "facet_#{facet_by}"
+    def facet_body(query, params:, facet_by:, field: nil)
+      field ||= default_field
+      es_field, _key = facet_field_and_key(facet_by)
+
+      body = @builder.search_body(query, params:, field:)
+      body['size'] = 0
+      body['aggs'] = {
+        'facet' => {
+          'terms' => { 'field' => es_field, 'size' => FACET_MAX },
+          'aggs' => { 'hits' => SUM_SCORE_AGG }
+        }
+      }
+      body
+    end
+
+    def facet_rows(response, facet_by)
+      _es_field, key = facet_field_and_key(facet_by)
+      buckets = response.dig('aggregations', 'facet', 'buckets') || []
+      rows = buckets.map do |bucket|
+        {
+          key => bucket['key'],
+          docs: bucket['doc_count'],
+          hits: bucket.dig('hits', 'value').to_f.round
+        }
+      end
+      rows.sort_by! { |row| -row[:hits] }
+      rows
+    end
+
+    # _msearch 的單筆失敗不會丟例外，不可默默當成沒有結果
+    def msearch_response!(responses, i)
+      response = responses[i] || {}
+      if response['error'] || !response.key?('aggregations')
+        raise CbetaError.new(502), "Elasticsearch _msearch 第 #{i} 筆失敗: #{response['error'] || '無 aggregations'}"
+      end
+
+      response
+    end
 
     # facet 名稱 → [ES 欄位, 回傳的 key]。與舊 facet_by_sphinx 的欄位對應一致。
     def facet_field_and_key(facet_by)
