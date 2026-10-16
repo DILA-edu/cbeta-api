@@ -43,12 +43,9 @@ class ImportWorkInfo
     @stat_cat = Hash.new { |h, k| h[k] = stat_hash }
     @work_type = {}
 
-    XmlFile.delete_all
-    Place.delete_all
-    Person.delete_all
-
-    import_from_authority
-    import_from_xml
+    # 包在 transaction 裡: 中途 abort (例如 XML 裡的佛典在 authority 找不到) 時整個 rollback,
+    # 不會留下「舊資料已清空、新資料只匯入一半」的狀態, API 在匯入期間也一直讀到完整的舊資料。
+    ActiveRecord::Base.transaction { replace_tables }
 
     dynasty_combine_and_sort
     dynasty_write_count
@@ -78,6 +75,18 @@ class ImportWorkInfo
   end
   
   private
+
+  def replace_tables
+    XmlFile.delete_all
+    Place.delete_all
+    # HABTM 的 join table 不會隨 Place.delete_all 清掉; 原本會一季一季累積
+    # 指向已刪除 place 的列 (2026-10 staging: 9945 列中 9180 列)。
+    ActiveRecord::Base.connection.delete('DELETE FROM places_works')
+    Person.delete_all
+
+    import_from_authority
+    import_from_xml
+  end
 
   def stat_hash
     { 
