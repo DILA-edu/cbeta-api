@@ -43,6 +43,13 @@ module CbetaSearch
     # 上萬筆 —— 見 #exclude_search。這裡的模式只是「要什麼才拿什麼」。
     SOURCE_MODES = %i[full light none].freeze
 
+    # cursor 分段 (見 #cursor_search)
+    CURSOR_START = '*'
+    # 一段的筆數上限。notes 一萬筆約 5 MB，CBETA Online 匯出 33 萬筆約分 33 段。
+    CURSOR_MAX_ROWS = 10_000
+    # 兩段之間最多可以隔多久。每取一段就重新計時。
+    CURSOR_KEEP_ALIVE = '5m'
+
     # composite aggregation 每頁的 bucket 數
     COMPOSITE_BATCH_SIZE = 10_000
 
@@ -105,7 +112,7 @@ module CbetaSearch
                track_total_hits: true, rescore_window: nil)
       field ||= default_field
       t1 = Time.now
-      validate_window!(start, rows)
+      rows = window_rows(start, rows)
       # ES 不接受同時有 rescore 與 sort，兩個都傳多半是呼叫端誤會，直接擋下來。
       raise ArgumentError, 'rescore_window 與 default_sort 互斥' if rescore_window && default_sort
 
@@ -149,6 +156,67 @@ module CbetaSearch
       result[:total_term_hits] = total_term_hits unless total_term_hits.nil?
       result[:cache_key] = nil
       result[:results] = rows
+      result
+    end
+
+    # cursor 分段取回 (search/notes 的 cursor 參數)。
+    #
+    # start + rows 受 max_result_window (10 萬) 限制，而 notes 單字查詢可達 33 萬筆
+    # (「明」)，CBETA Online 匯出要能取回全部，因此提供 cursor:
+    # 第一段傳 CURSOR_START，之後傳上一段回傳的 next_cursor，next_cursor 為 nil 表示結束。
+    #
+    # 用 point in time (PIT) + search_after 而不是單純 search_after:
+    # notes 沒有唯一的排序欄位 (同一行可有多條註，n 沒有 doc_values，_id 不能排序)，
+    # 只能靠 _doc 當 tiebreaker，而 _doc 在 segment 合併後會變。PIT 固定住 segment，
+    # ES 自動補上 _shard_doc 當 tiebreaker; 也固定住當時 alias 指向的 index，
+    # 中途換季不會錯位。每段的成本固定，與第幾段無關。
+    #
+    # cursor 內容是 base64url(JSON)，帶 PIT id、search_after，以及查詢條件的摘要
+    # (換了 q 或篩選條件卻沿用舊 cursor 時報錯，而不是默默回傳另一個查詢的結果)。
+    # Exclude 的 num_found 要全部掃過才知道，只在第一段算一次，之後由 cursor 帶著走。
+    def cursor_search(query, params:, cursor:, rows: 20, field: nil, default_sort: nil)
+      field ||= default_field
+      t1 = Time.now
+      rows = rows.to_i
+      raise CbetaError.new(400), 'rows 參數必須 >= 1' if rows < 1
+
+      rows = [rows, CURSOR_MAX_ROWS].min
+      digest = cursor_digest(query, params, field)
+      state = cursor == CURSOR_START ? open_cursor(query, params:, field:) : decode_cursor(cursor, digest)
+      exclude = query.type == :exclude
+      base = exclude ? Query.new(type: :phrase, raw: query.raw, phrase: query.phrase) : query
+
+      body = @builder.search_body(base, params:, field:)
+      body['size'] = rows
+      body['sort'] = @builder.sort(params, default: default_sort)
+      body['track_scores'] = true
+      body['track_total_hits'] = !exclude
+      body['pit'] = { 'id' => state['p'], 'keep_alive' => CURSOR_KEEP_ALIVE }
+      body['search_after'] = state['a'] if state['a']
+      response = cursor_request(body)
+      hits = response.dig('hits', 'hits') || []
+
+      results = exclude ? cursor_exclude_rows(hits, query, params:, field:) : hits.map { row_from_hit(it, query) }
+      next_cursor =
+        if hits.size < rows
+          close_cursor(response['pit_id'] || state['p'])
+          nil
+        else
+          encode_cursor(state.merge('p' => response['pit_id'] || state['p'], 'a' => hits.last['sort'], 'd' => digest))
+        end
+
+      result = { query_string: query.raw, time: nil }
+      if exclude
+        result[:num_found] = state['n']
+        result[:total_term_hits] = state['t']
+      else
+        result[:num_found] = response.dig('hits', 'total', 'value').to_i
+        result[:total_term_hits] = hit_count(query, params:, field:) if query.es_countable?
+      end
+      result[:cache_key] = nil
+      result[:next_cursor] = next_cursor
+      result[:results] = results
+      result[:time] = Time.now - t1
       result
     end
 
@@ -206,7 +274,7 @@ module CbetaSearch
     # 描述的是同一類「Lucene 剪枝下 _score 不完整」的現象。
     def exclude_search(query, params:, start:, rows:, field: nil, default_sort: nil)
       field ||= default_field
-      validate_window!(start, rows)
+      rows = window_rows(start, rows)
       excluded = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
       base = Query.new(type: :phrase, raw: query.raw, phrase: query.phrase)
       minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
@@ -439,12 +507,49 @@ module CbetaSearch
       end
     end
 
+    # 沒有相減下推的 index (notes) 做 Exclude 的 facet 用:
+    # 逐筆以 _id 相減 (同 #exclude_by_candidates)，回傳相減後仍 > 0 的各筆
+    # { term_hits:, canon:, category:, ... }，交給 SearchController#my_facet 累加。
+    # 候選只取 my_facet 要用的欄位 (LIGHT_SOURCE_FIELDS)。
+    def exclude_facet_rows(query, params:, field: nil)
+      field ||= default_field
+      excluded = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
+      base = Query.new(type: :phrase, raw: query.raw, phrase: query.phrase)
+      minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
+      subtract = simple_search(minus, params:, field:)
+
+      body = @builder.search_body(base, params:, field:)
+      body['_source'] = LIGHT_SOURCE_FIELDS
+      body['size'] = SCROLL_BATCH_SIZE
+      body['track_scores'] = true
+      body['sort'] = [{ '_doc' => { 'order' => 'asc' } }]
+
+      rows = []
+      each_scroll_hit(body) do |hit|
+        hits = term_hits_from_score(hit['_score']) - subtract.fetch(hit['_id'].to_i, 0)
+        next unless hits.positive?
+
+        source = hit['_source'] || {}
+        row = LIGHT_SOURCE_FIELDS.to_h { |f| [f.to_sym, source[f]] }
+        row[:category] = row[:category].to_s
+        row[:creators_with_id] = row[:creators_with_id].to_s
+        rows << row.merge(term_hits: hits)
+      end
+      rows
+    end
+
     private
 
     # 以 search_after 逐批取回 [[_id, 出現次數], ...]，不讀 _source。
     # 呼叫端負責在 body 裡設好 sort (要能唯一決定順序)。
     def scroll_scores(body)
       rows = []
+      each_scroll_hit(body) { |hit| rows << [hit['_id'].to_i, term_hits_from_score(hit['_score'])] }
+      rows
+    end
+
+    # 以 search_after 逐批取回全部 hit，逐筆 yield。
+    def each_scroll_hit(body, &)
       search_after = nil
       loop do
         body['search_after'] = search_after if search_after
@@ -452,12 +557,79 @@ module CbetaSearch
         hits = response.dig('hits', 'hits') || []
         break if hits.empty?
 
-        hits.each { |hit| rows << [hit['_id'].to_i, term_hits_from_score(hit['_score'])] }
+        hits.each(&)
         break if hits.size < SCROLL_BATCH_SIZE
 
         search_after = hits.last['sort']
       end
-      rows
+    end
+
+    # 第一段: 開 PIT。Exclude 另外全部掃過一次，取得 num_found 與 total_term_hits
+    # (與非 cursor 的 Exclude 查詢成本相同，見 #exclude_by_candidates)。
+    def open_cursor(query, params:, field:)
+      state = { 'p' => client.open_point_in_time(index:, keep_alive: CURSOR_KEEP_ALIVE)['id'] }
+      if query.type == :exclude
+        r = exclude_by_candidates(query, params:, start: 0, rows: 0, field:, default_sort: nil)
+        state['n'] = r[:num_found]
+        state['t'] = r[:total_term_hits]
+      end
+      state
+    end
+
+    def decode_cursor(cursor, digest)
+      state = JSON.parse(Base64.urlsafe_decode64(cursor.to_s))
+      raise ArgumentError unless state.is_a?(Hash) && state['p'].is_a?(String) && state['a'].is_a?(Array)
+      raise CbetaError.new(400), 'cursor 與查詢條件不符，請以 cursor=* 重新開始' if state['d'] != digest
+
+      state
+    rescue ArgumentError, JSON::ParserError
+      raise CbetaError.new(400), 'cursor 參數無效'
+    end
+
+    def encode_cursor(state) = Base64.urlsafe_encode64(JSON.generate(state), padding: false)
+
+    # 查詢條件的摘要: q、篩選、排序、搜尋欄位。
+    def cursor_digest(query, params, field)
+      Digest::SHA256.hexdigest(JSON.generate([query.raw, params.sort.to_h, field]))[0, 16]
+    end
+
+    # 帶 PIT 的 search 不可指定 index (index 由 PIT 決定)。
+    # PIT 過期 (超過 CURSOR_KEEP_ALIVE 沒有取下一段) 時 ES 回 404。
+    def cursor_request(body)
+      client.search(index: nil, body:)
+    rescue Elastic::Transport::Transport::Errors::NotFound => e
+      raise unless e.message.include?('search_context_missing')
+
+      raise CbetaError.new(400), 'cursor 已過期，請以 cursor=* 重新開始'
+    end
+
+    # 最後一段: 釋放 PIT。失敗也無妨，keep_alive 到期後 ES 會自行釋放。
+    def close_cursor(pit_id)
+      client.close_point_in_time(body: { id: pit_id })
+    rescue StandardError => e
+      Rails.logger.warn "close_point_in_time 失敗: #{e.message}"
+    end
+
+    # cursor 的 Exclude: 當段的主要詞組結果，只對這幾筆查排除字串的次數再相減，
+    # 相減後 <= 0 的去掉，因此一段可能少於 rows 筆。
+    def cursor_exclude_rows(hits, query, params:, field:)
+      return [] if hits.empty?
+
+      excluded = "#{query.exclude_prefix}#{query.phrase}#{query.exclude_suffix}"
+      minus = Query.new(type: :phrase, raw: excluded, phrase: excluded)
+      ids = hits.map { it['_id'] }
+      body = @builder.search_body(minus, params:, field:)
+      body['query'] = { 'bool' => { 'must' => [body['query']], 'filter' => [{ 'ids' => { 'values' => ids } }] } }
+      body['_source'] = false
+      body['size'] = ids.size
+      body['track_total_hits'] = false
+      subtract = (client.search(index:, body:).dig('hits', 'hits') || [])
+                 .to_h { [it['_id'], term_hits_from_score(it['_score'])] }
+
+      hits.filter_map do |hit|
+        term_hits = term_hits_from_score(hit['_score']) - subtract.fetch(hit['_id'], 0)
+        row_from_hit(hit, query, term_hits:) if term_hits.positive?
+      end
     end
 
     # EXCLUDE_SCRIPT 回傳的是相減前的 a，當頁這幾筆再於 Ruby 端減掉 b。
@@ -538,13 +710,16 @@ module CbetaSearch
 
     # Elasticsearch 的 from + size 有 index.max_result_window 上限
     # (見 IndexBase::MAX_RESULT_WINDOW)，超過會被 ES 拒絕。
-    # 舊版是由 estimate_max_matches 算出 max_matches 再擋，這裡直接擋在上限。
-    def validate_window!(start, rows)
-      window = start.to_i + rows.to_i
-      return if window <= IndexBase::MAX_RESULT_WINDOW
+    #
+    # rows 超過時截到上限，回傳截過的 rows，只有 start 本身超出才報錯。
+    # 舊版 Manticore 是由 max_matches 靜默截斷，CBETA Online 的匯出
+    # 一直是送 rows=9999999 取「全部」，報錯會讓匯出失敗。
+    def window_rows(start, rows)
+      start = start.to_i
+      max = IndexBase::MAX_RESULT_WINDOW
+      raise CbetaError.new(400), "start 參數超出範圍: #{start}, 不得大於 #{max - 1}" if start >= max
 
-      raise CbetaError.new(400),
-            "start 參數超出範圍: #{start}, start + rows 不得超過 #{IndexBase::MAX_RESULT_WINDOW}"
+      [rows.to_i, max - start].min
     end
 
     def facet_body(query, params:, facet_by:, field: nil)

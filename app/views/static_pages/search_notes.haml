@@ -39,3 +39,22 @@
 
 %h2 排序
 %p 預設依藏經、冊號、行號排序。
+
+%h2 分段取回全部結果 (cursor)
+%p
+  start + rows 不得超過 100,000（rows 超過時自動截斷）。
+  要取回超過 10 萬筆的結果（例如匯出），請改用 cursor 參數分段取回：
+%ol
+  %li 第一段傳 cursor=*，rows 為每段筆數（上限 10,000，超過時自動截斷）。
+  %li 回傳的 next_cursor 原封不動傳給下一段的 cursor 參數；q 與篩選、排序參數須與第一段相同。
+  %li next_cursor 為 null 表示已取完。
+%p 例：#{link_to_url '/search/notes?q=明&rows=10000&cursor=*'}
+%p.text-muted
+  cursor 不能與 start 同時使用。兩段之間超過 5 分鐘未取下一段，cursor 會過期，須以 cursor=* 重新開始。
+  Exclude 查詢的一段可能少於 rows 筆（被排除的條目不回傳），以 next_cursor 是否為 null 判斷結束。
+  請依序取回，每分鐘的請求數受限流規範（見 API 文件）。
+
+%h2 facet
+%p
+  facet=1 回傳藏經、部類、作譯者、朝代、佛典五種 facet。
+  NEAR 查詢的 hits 與 docs 相同（符合的條目數）；Exclude 查詢的 hits 為排除後的出現次數。

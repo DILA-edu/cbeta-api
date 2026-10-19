@@ -11,6 +11,24 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-10-19 Version 5.17.0
+%ul
+  %li
+    search/notes 新增 cursor 參數，可分段取回超過 10 萬筆的結果（例如匯出），詳見：
+    =link_to_url '/static_pages/search_notes'
+  %li
+    search/all_in_one、search/notes、search/title 等：start + rows 超過 100,000 時，
+    rows 改為自動截斷，不再回傳錯誤（all_in_one、title 與 4.x 相同）。start 本身仍不得超過 99,999。
+    search/notes 要取回超過 10 萬筆請改用 cursor。
+  %li
+    search/notes 的 NEAR 與 Exclude 查詢恢復支援 facet=1（5.0.0 起回傳錯誤）。
+    NEAR 的 facet hits 改為與 docs 相同（符合的條目數），
+    數字會比 4.x 小：4.x 的 hits 是各關鍵詞出現次數的加總，並非 NEAR 組合的次數。
+  %li
+    說明：search/notes 的 Exclude 自 5.0.0 起與全文檢索 (search/all_in_one) 同樣以出現次數相減，
+    出現次數全部被排除的條目才不回傳；4.x 是只要含有排除字串就不回傳。
+    因此筆數較 4.x 多，例如 "菩薩" -"諸菩薩"：12,691 筆 → 13,002 筆。
+
 %h3 2026-10-16 Version 5.15.3
 %ul
   %li 加快 search/toc。

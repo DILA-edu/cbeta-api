@@ -591,12 +591,25 @@ paths:
 
         注意：
         - 參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
-        - `facet=1` 不支援 NEAR 與 Exclude 語法，會回傳 `LegacyError`。
+        - `start + rows` 不得超過 100,000，`rows` 超過時自動截斷。要取回超過 10 萬筆的結果（例如匯出），請用 `cursor` 參數分段取回。
+        - `facet=1` 的 NEAR 查詢：`hits` 與 `docs` 相同（符合的條目數）；Exclude 查詢：`hits` 為排除後的出現次數。
         - 不支援括號分組 (…)、鄰近運算子 `~n` 與 `&` 運算子，會回傳 `LegacyError` 說明原因。
         - 缺少 `q` 或 `q` 為空字串時回傳純文字訊息，不是 JSON。
       tags: [search]
       parameters:
         - $ref: '#/components/parameters/searchQ'
+        - name: cursor
+          in: query
+          description: |
+            分段取回全部結果。第一段傳 `*`，之後傳上一段回傳的 `next_cursor`，`next_cursor` 為 null 表示已取完。
+
+            - 每段筆數由 `rows` 決定，上限 10,000（超過時自動截斷）。
+            - 不能與 `start` 同時使用；`q` 與篩選、排序參數須與第一段相同，否則回傳 `LegacyError`。
+            - 兩段之間超過 5 分鐘未取下一段，cursor 會過期，須以 `*` 重新開始。
+            - Exclude 查詢的一段可能少於 `rows` 筆（被排除的條目不回傳），請以 `next_cursor` 判斷是否結束。
+          schema:
+            type: string
+          example: '*'
         - name: around
           in: query
           description: 夾注的 `highlight` 欄位，關鍵字前後保留的字數。
@@ -2236,7 +2249,7 @@ components:
     searchStart:
       name: start
       in: query
-      description: 分頁回傳起始位置。
+      description: 分頁回傳起始位置，上限 99,999。
       schema:
         type: integer
         minimum: 0
@@ -2244,7 +2257,7 @@ components:
     searchRows:
       name: rows
       in: query
-      description: 每頁回傳筆數。
+      description: 每頁回傳筆數。`start + rows` 超過 100,000 時自動截斷。
       schema:
         type: integer
         minimum: 0
@@ -2606,6 +2619,9 @@ components:
         cache_key:
           type: 'null'
           description: 固定為 null。`q` 去除標點後為空時不回傳。
+        next_cursor:
+          type: [string, 'null']
+          description: 只有帶 `cursor` 參數時回傳。下一段的 cursor；null 表示已取完。
         results:
           type: array
           items:

@@ -192,7 +192,7 @@ Manticore 的 `charset_table = non_cjk` + `ngram_len = 1` 是「CJK 逐字切、
 | 3 | 排序值平手時的順序 | 不可預期的內部 doc id 順序（實測同一部典籍的卷 3 會排在卷 1 前面） | 一律補上 `canon_order, work, juan` 作為最後比較依據，分頁結果可預期 |
 | 4 | `search` / `search/extended` 的 NEAR 與 Exclude | 被當成詞組的一部分，搜不到 | 支援。Exclude 有精確的 `total_term_hits`；NEAR 只回 `num_found`（精確計數請用 `all_in_one`，那裡有 KWIC 逐卷計算） |
 | 5 | 不支援的語法 | Manticore 自行解讀（結果難預期） | 括號分組、`~n`、`&` 一律回 400 並說明 |
-| 6 | `start` 超出範圍 | 由 `max_matches`（99,999）決定 | `start + rows` 上限 100,000（`index.max_result_window`），超過回 400 |
+| 6 | `start` 超出範圍 | 由 `max_matches`（99,999）決定，`rows` 過大時靜默截斷 | `start + rows` 上限 100,000（`index.max_result_window`）：`rows` 過大時截斷（5.17.0 起，原本回 400，CBETA Online 匯出送 `rows=9999999` 因此失敗），`start` 本身超過 99,999 回 400。`search/notes` 另有 `cursor` 參數可分段取回超過 10 萬筆的結果（PIT + `search_after`） |
 | 7 | `search/facet` 遇到 NEAR／Exclude | 當成詞組，回空陣列 | 回 400。intervals 的 `_score` 不是出現次數，加總出來的 `hits` 沒有意義 |
 
 ## 部署待辦

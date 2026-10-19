@@ -147,12 +147,8 @@ class SearchController < ApplicationController
       return
     end
 
-    r = es_search(index: CbetaSearch::NotesIndex)
-
-    if params[:facet] == '1'
-      # key 的順序與舊版一致
-      r['facet'] = es_facets(%w[category creator dynasty work canon], index: CbetaSearch::NotesIndex)
-    end
+    r = params.key?(:cursor) ? notes_cursor_search : es_search(index: CbetaSearch::NotesIndex)
+    r['facet'] = notes_facets if params[:facet] == '1'
 
     notes_highlight(r)
     my_render r
@@ -362,16 +358,68 @@ class SearchController < ApplicationController
 
   # 多個 facet 維度一次查詢 (見 SearchService#facets)，回傳 { facet_by => rows }，
   # key 的順序依 facet_bys。
-  def es_facets(facet_bys, index: es_index)
-    # NEAR / Exclude 走 intervals，_score 不是出現次數，加總得到的 hits 沒有意義。
+  #
+  # hits_as_docs: hits 改填 docs (筆數)。NEAR 走 intervals，_score 不是出現次數，
+  # 但 docs 由 terms aggregation 直接算出，與分數無關。
+  def es_facets(facet_bys, index: es_index, hits_as_docs: false)
     # 舊版是把整串當詞組 (搜不到、回空陣列)，這裡改成明確報錯。
-    unless es_query.es_countable?
+    unless es_query.es_countable? || hits_as_docs
       raise CbetaError.new(400), 'facet 不支援 NEAR 與 Exclude 語法'
     end
 
     read_dynasty_order if facet_bys.include?('dynasty')
     all = es_service(index).facets(es_query, params: es_params, facet_bys:, field: @text_field)
-    facet_bys.to_h { |f| [f, decorate_facet!(f, all[f])] }
+    facet_bys.to_h do |f|
+      if hits_as_docs
+        # facet_rows 已依分數加總排序，換成 docs 之後要重排
+        all[f].each { it[:hits] = it[:docs] }
+        all[f].sort_by! { -it[:docs] }
+      end
+      [f, decorate_facet!(f, all[f])]
+    end
+  end
+
+  # search/notes 的 cursor 分段 (見 SearchService#cursor_search)。
+  # cursor 取代 start: 兩者同時給就無從判斷要從哪裡開始。
+  def notes_cursor_search
+    raise CbetaError.new(400), 'cursor 不能與 start 同時使用' if @start.positive?
+
+    es_service(CbetaSearch::NotesIndex).cursor_search(
+      es_query, params: es_params, cursor: params[:cursor], rows: @rows, field: @text_field
+    )
+  end
+
+  # search/notes 的 facet，key 的順序與舊版一致。
+  #
+  # 舊版 Manticore 的 notes 原生支援 NEAR / Exclude，facet 也照常回傳；
+  # 2026-10 CBETA Online 試用時發現 ES 版擋掉了，補回:
+  #   * NEAR: hits = docs (符合的條目數)。舊版的 hits 是 Manticore wordcount
+  #     (各關鍵詞出現次數加總)，不是 NEAR 組合的次數，沒有明確意義。
+  #   * Exclude: notes 沒有相減下推 (見 IndexBase.exclude_pushdown?)，
+  #     逐筆相減後在 Ruby 端累加，hits 為相減後的次數，與 total_term_hits 同語意。
+  def notes_facets
+    facet_bys = %w[category creator dynasty work canon]
+    case es_query.type
+    when :near
+      es_facets(facet_bys, index: CbetaSearch::NotesIndex, hits_as_docs: true)
+    when :exclude
+      rows = es_service(CbetaSearch::NotesIndex).exclude_facet_rows(
+        es_query, params: es_params, field: @text_field
+      )
+      notes_my_facet(rows)
+    else
+      es_facets(facet_bys, index: CbetaSearch::NotesIndex)
+    end
+  end
+
+  # my_facet 的結果依 hits 遞減 (朝代依朝代順序)，與 es_facets 的排序一致。
+  def notes_my_facet(rows)
+    @canon_name = {}
+    read_dynasty_order
+    my_facet(rows).to_h do |k, list|
+      list = k == :dynasty ? list.sort_by { @dynasty_order.fetch(it[:dynasty], 999) } : list.sort_by { -it[:hits] }
+      [k.to_s, list]
+    end
   end
 
   def decorate_facet!(facet_by, rows)
