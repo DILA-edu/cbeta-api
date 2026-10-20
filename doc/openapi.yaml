@@ -1602,10 +1602,16 @@ paths:
         `q` 的格式若是佛典編號（例如 `T0001`）或「冊號 + 經號」（例如 `T01n0001`），
         則改為依編號直接取得佛典。
 
+        結果多時（例如「序」約 6,500 筆、3.7MB）建議以 `start` / `rows` 分頁，
+        或以 `type` 只取某一類；未帶 `rows` 時一次回傳全部。
+
         參數錯誤時 HTTP status 仍是 200，錯誤訊息放在 `error` 欄位。
       tags: [catalog]
       parameters:
         - $ref: '#/components/parameters/toc_q'
+        - $ref: '#/components/parameters/toc_start'
+        - $ref: '#/components/parameters/toc_rows'
+        - $ref: '#/components/parameters/toc_type'
         - $ref: '#/components/parameters/callback'
       responses:
         '200':
@@ -1625,6 +1631,9 @@ paths:
       tags: [catalog]
       parameters:
         - $ref: '#/components/parameters/toc_q'
+        - $ref: '#/components/parameters/toc_start'
+        - $ref: '#/components/parameters/toc_rows'
+        - $ref: '#/components/parameters/toc_type'
         - $ref: '#/components/parameters/callback'
       responses:
         '200':
@@ -1640,6 +1649,10 @@ paths:
                   summary: q=阿含 (三種 type 各取一筆)
                   value:
                     num_found: 155
+                    counts:
+                      catalog: 13
+                      work: 10
+                      toc: 132
                     time: 0.42
                     results:
                     - type: catalog
@@ -2263,6 +2276,31 @@ components:
         minimum: 0
         default: 20
 
+    toc_start:
+      name: start
+      in: query
+      description: 分頁回傳起始位置。
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    toc_rows:
+      name: rows
+      in: query
+      description: 每頁回傳筆數。未帶時一次回傳全部；`0` 只回傳 `num_found` 與 `counts`。
+      schema:
+        type: integer
+        minimum: 0
+    toc_type:
+      name: type
+      in: query
+      description: |
+        只取某幾類結果，多個以逗號分隔，例如 `toc` 或 `catalog,work`。
+        結果仍依「部類目錄 → 經名 → 目次」的順序，與參數裡的先後無關。
+        未帶時三類都取。
+      schema:
+        type: string
+      example: toc
     toc_q:
       name: q
       in: query
@@ -3408,15 +3446,32 @@ components:
     TocSearchList:
       type: object
       additionalProperties: false
-      required: [num_found, time, results]
+      required: [num_found, counts, time, results]
       properties:
         num_found:
           type: integer
+          description: 符合的總筆數；帶 `type` 時為篩選後的總筆數。
+        counts:
+          type: object
+          description: 各類結果的總筆數，不受 `type`、`start`、`rows` 影響。
+          additionalProperties: false
+          required: [catalog, work, toc]
+          properties:
+            catalog:
+              type: integer
+              description: 部類目錄
+            work:
+              type: integer
+              description: 經名
+            toc:
+              type: integer
+              description: 佛典內目次
         time:
           type: number
           description: 伺服器處理時間（秒）。
         results:
           type: array
+          description: 依「部類目錄 → 經名 → 目次」的順序，取 `start` 起的 `rows` 筆。
           items:
             oneOf:
               - $ref: '#/components/schemas/TocSearchCatalogHit'

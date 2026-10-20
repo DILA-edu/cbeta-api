@@ -5,6 +5,16 @@
 
 =render partial: 'q-length-limit'
 
+%h2 分頁
+%p
+  結果多時可用 start、rows 分頁，例如每頁 20 筆的第 2 頁：
+  =link_to_url '/search/toc?q=序&start=20&rows=20'
+%p
+  未帶 rows 時一次回傳全部。回傳的 counts 是各類（catalog 部類目錄、work 經名、toc 目次）的總筆數。
+%p
+  以 type 只取某幾類，多個以逗號分隔，例如只取目次：
+  =link_to_url '/search/toc?q=序&type=toc&rows=20'
+
 %p
   參數與回傳格式的完整說明 (含回傳範例)，見 API 文件：
   = link_to_url '/docs#tag/catalog/GET/search/toc', 'search/toc'

@@ -2,6 +2,9 @@ class TocNodeController < ApplicationController
   include ApiKeyAuthentication
   include TocNodeHelper
 
+  # 結果依這個順序串接: 部類目錄 → 經名 → 目次
+  TYPES = %w[catalog work toc].freeze
+
   def index
     # q 為 nil 或空字串時, search_by_query_term 的 else 分支會變成
     # LIKE '%%' 全表掃描 (catalog + work + toc 三張表, 且每筆再查一次 work info),
@@ -17,11 +20,15 @@ class TocNodeController < ApplicationController
       return
     end
 
+    error = parse_paging_params
+    if error
+      my_render(num_found: 0, results: [], error:)
+      return
+    end
+
     start = Time.now
     result = search_by_query_term
     return if performed? # 冊號查詢已 redirect 到 catalog_entry
-
-    result = [] if result.nil?
 
     result.each do |r|
       if r.key?(:work) and r.key?(:file) and r.key?(:lb)
@@ -30,7 +37,8 @@ class TocNodeController < ApplicationController
     end
 
     r = {
-      num_found: result.size,
+      num_found: @num_found,
+      counts: @counts,
       time: Time.now - start,
       results: result
     }
@@ -39,10 +47,89 @@ class TocNodeController < ApplicationController
   end
   
   private
-  
-  def find_catalog(q)
+
+  # start: 起始位置; rows: 筆數, 未帶時全部回傳 (維持舊行為);
+  # type: 只取某幾類, 逗號分隔。格式錯誤時回傳錯誤訊息。
+  def parse_paging_params
+    @start = 0
+    @rows = nil
+    @types = TYPES
+
+    %i[start rows].each do |key|
+      next unless params.key?(key)
+      return "#{key} 參數須為 0 以上的整數" unless params[key].to_s.match?(/\A\d+\z/)
+
+      instance_variable_set("@#{key}", params[key].to_i)
+    end
+
+    if params[:type].present?
+      types = params[:type].to_s.split(',').map(&:strip).reject(&:empty?)
+      invalid = types - TYPES
+      return "type 參數不正確: #{invalid.join(',')}; 可用值: #{TYPES.join(', ')}" if invalid.any?
+
+      # 依 TYPES 的順序, 與參數裡的先後無關
+      @types = TYPES & types
+    end
+    nil
+  end
+
+  # 依佛典編號直接取得的結果筆數很少, 全部組好再切
+  def paginate_rows(rows)
+    @counts = TYPES.index_with { |t| rows.count { it[:type] == t } }
+    rows = rows.select { @types.include?(it[:type]) }
+    @num_found = rows.size
+    rows = rows.drop(@start)
+    @rows.nil? ? rows : rows.first(@rows)
+  end
+
+  # 關鍵詞查詢: 先數各類筆數, 再只對落在 start ~ start + rows 範圍內的部分
+  # 下 OFFSET / LIMIT 組資料。每筆都要附佛典資訊, 全部組完再切就省不到時間。
+  def paginate_scopes(scopes)
+    @counts = scopes.transform_values(&:count)
+    @num_found = @types.sum { @counts[it] }
+
+    result = []
+    offset = @start
+    remaining = @rows
+    @types.each do |type|
+      break if remaining == 0
+
+      count = @counts[type]
+      if offset >= count
+        offset -= count
+        next
+      end
+
+      relation = scopes[type].offset(offset)
+      unless remaining.nil?
+        take = [ remaining, count - offset ].min
+        relation = relation.limit(take)
+        remaining -= take
+      end
+      result.concat(send("find_#{type}", relation))
+      offset = 0
+    end
+    result
+  end
+
+  def catalog_scope(q)
     # 沒有 ORDER BY 時 PostgreSQL 不保證順序; id 是匯入時的目錄順序
-    entries = CatalogEntry.where("(label NOT LIKE '%=%') AND (label LIKE ?)", "%#{q}%").order(:id)
+    CatalogEntry.where("(label NOT LIKE '%=%') AND (label LIKE ?)", "%#{q}%").order(:id)
+  end
+
+  def work_scope(q)
+    Work.where.not(juan_list: nil) # CBETA 未收錄的不要
+        .where("title LIKE ?", "%#{q}%").order(:sort_order, :id)
+  end
+
+  def toc_scope(q)
+    # 同一部佛典的節點 sort_order 相同, 只排 sort_order 時每次查詢的順序都可能不同;
+    # id 是匯入時的文件順序
+    # 佛典不在 works 表的節點不回傳 (find_toc 會略過), 先排除才不會算進筆數
+    TocNode.where("label LIKE ?", "%#{q}%").where(work: Work.select(:n)).order(:sort_order, :id)
+  end
+
+  def find_catalog(entries)
     r = []
     entries.each do |e|
       row = { type: 'catalog', n: e.n, label: e.label }
@@ -55,10 +142,7 @@ class TocNodeController < ApplicationController
     r
   end
   
-  def find_toc(q)
-    # 同一部佛典的節點 sort_order 相同, 只排 sort_order 時每次查詢的順序都可能不同;
-    # id 是匯入時的文件順序
-    toc_nodes = TocNode.where("label LIKE ?", "%#{q}%").order(:sort_order, :id)
+  def find_toc(toc_nodes)
     r = []
     toc_nodes.each do |t|
       row = { type: 'toc', label: t.label, label_path: label_path(t), work: t.work, lb: t.lb }
@@ -76,11 +160,9 @@ class TocNodeController < ApplicationController
     r
   end
   
-  def find_work(q)
-    works = Work.where.not(juan_list: nil) # CBETA 未收錄的不要
-    works = works.where("title LIKE ?", "%#{q}%").order(:sort_order, :id).includes(:places)
+  def find_work(works)
     r = []
-    works.each do |w|
+    works.includes(:places).each do |w|
       row = { type: 'work' }
       row.merge! w.to_hash
       r << row
@@ -116,7 +198,7 @@ class TocNodeController < ApplicationController
     q = params[:q]
     if q.match(/^(#{CBETA::CANON})\d{2,3}$/) # ex: T01
       ce = CatalogEntry.find_by_vol(q)
-      return [] if ce.nil?
+      return paginate_rows([]) if ce.nil?
 
       # 呼叫端 (index) 看到 performed? 就不再 render
       redirect_to controller: 'catalog_entry', action: 'index', q: ce.n
@@ -124,11 +206,11 @@ class TocNodeController < ApplicationController
     elsif q.match(/^(#{CBETA::CANON})\d{2,3}n(\w{4,5})$/) # ex: T01n0001
       q = $1 + $2
       w = Work.find_by n: q
-      return [] if w.nil?
+      return paginate_rows([]) if w.nil?
 
       row = { type: 'work' }
       row.merge! w.to_hash
-      result = [row]
+      result = paginate_rows([ row ])
     elsif q.match(CBETA::WORK_ID) # ex: T0001, JB271, ZWa073
       works = Work.where("n LIKE ?", "#{q}%")
       result = []
@@ -137,10 +219,13 @@ class TocNodeController < ApplicationController
         row.merge! w.to_hash
         result << row
       end
+      result = paginate_rows(result)
     else
-      result = find_catalog(q)
-      result.concat(find_work(q))
-      result.concat(find_toc(q))
+      result = paginate_scopes(
+        'catalog' => catalog_scope(q),
+        'work' => work_scope(q),
+        'toc' => toc_scope(q)
+      )
     end
     result
   end
