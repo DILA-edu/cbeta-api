@@ -143,6 +143,7 @@ Manticore 的 `charset_table = non_cjk` + `ngram_len = 1` 是「CJK 逐字切、
 - **`pattern` tokenizer 可行**：`[拉丁字母數字]+|[^\s]` —— 連續拉丁字母算一個 token，其他每個非空白字元各一個。實測完全對應 Manticore（含 □、▆、PUA、康熙部首、相容漢字）。
 
 另外加 `asciifolding` token filter，對應 `non_cjk` 的變音符號折疊（實測 production：`Ananda` 與 `Ānanda` 同得 52 卷）。
+KWIC suffix array 在建檔與查詢時也用 `KwicFolding` 做同樣的折疊（5.18.1 起），否則 ES 篩出的卷在 KWIC 會找不到該詞。
 
 ### 2. `term_hits` 用 `script_score` 除以 token 數，不是 query boost
 

@@ -11,6 +11,14 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-10-21 Version 5.18.1
+%ul
+  %li
+    KWIC 比對改為不區分拉丁字母的變音符號，與全文檢索一致。
+    例如搜 Pali Text 也會找到寫成 Pāli Text 的內容；原本 search/all_in_one
+    會回報 num_found 有筆數、results 卻是空的。顯示的文字仍保留原本的變音符號。
+    (無法逐字對應的少數字元，例如 æ、ß，仍須輸入原字。)
+
 %h3 2026-10-20 Version 5.18.0
 %ul
   %li

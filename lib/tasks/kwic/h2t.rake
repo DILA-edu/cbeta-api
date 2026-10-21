@@ -45,7 +45,8 @@ class KwicHtml2Text
     s1 = @builder.read_html_file(rel_path)
     @size += s1.size
     
-    s1.downcase!
+    # 與查詢端同一套正規化 (小寫 + 變音符號折疊)，見 KwicFolding
+    s1 = KwicFolding.normalize(s1)
     s2 = s1.reverse
     write_text(s1, s2)
     

@@ -74,12 +74,9 @@ class KwicService
     @logger.debug "[#{Time.now}] #{__LINE__}, search(), query: #{query}, work: #{args[:work]}, juan: #{args[:juan]}"
     @option = OPTION.merge args
 
-    if @option[:sort] == 'b'
-      q = query.reverse
-    else
-      q = query
-    end
-    
+    q = KwicFolding.normalize(query)
+    q = q.reverse if @option[:sort] == 'b'
+
     @total_found = 0
     sa_results = search_sa_according_to_option(q)
     sort_word_count(q, sa_results) if @option[:word_count] > 0
@@ -117,7 +114,7 @@ class KwicService
   def search_juan(query, args={})
     @option = OPTION.merge args
     
-    q2 = query.downcase
+    q2 = KwicFolding.normalize(query)
     if @option[:sort] == 'b'
       keywords = q2.reverse
     else
@@ -379,12 +376,12 @@ class KwicService
   def exclude_filter2(info_array, q)
     # 前面不要出現的字
     if @option.key?(:negative_lookbehind)
-      exclude_prefix(info_array, q, @option[:negative_lookbehind])
+      exclude_prefix(info_array, q, KwicFolding.normalize(@option[:negative_lookbehind]))
     end
 
     # 後面不要出現的字
     if @option.key?(:negative_lookahead)
-      exclude_suffix(info_array, q, @option[:negative_lookahead])
+      exclude_suffix(info_array, q, KwicFolding.normalize(@option[:negative_lookahead]))
     end
   end
 
@@ -949,7 +946,7 @@ class KwicService
       raise CbetaError.new(400), "NEAR 語法錯誤 query: #{query}"
     end
 
-    q1 = $1.downcase
+    q1 = KwicFolding.normalize($1)
     nears = $2
     start1, found1 = search_sa_after_open_files(q1)
     return [] if start1.nil?
@@ -961,10 +958,9 @@ class KwicService
     }
 
     nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, s|
-      q = s.downcase
+      q = KwicFolding.normalize(s)
       start2, found2 = search_sa_after_open_files(q)
-      # 任一詞不在本卷就不可能符合 NEAR。ES 的 asciifolding 會讓 ES 篩出的
-      # 候選卷在 suffix array (精確比對) 裡找不到該詞, 不能當成錯誤。
+      # 任一詞不在本卷就不可能符合 NEAR。
       return [] if start2.nil?
 
       pos2 = sort_by_pos(start2, found2)
