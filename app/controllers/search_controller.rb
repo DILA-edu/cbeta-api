@@ -943,12 +943,12 @@ class SearchController < ApplicationController
 
     # 允許標點差異的 regular expression
     q2 = @q.sub(/\A"(.*)"\z/, '\1')
-    s = q2.chars.join("[【】，〔－〕＊。]*")
+    s = q2.chars.map { |c| Regexp.escape(c) }.join("[【】，〔－〕＊。]*")
     log_debug "notes_highlight, exp: #{s}"
     exp = Regexp.new(s)
 
     r[:results].each do |h|
-      h[:highlight] = h[:content_w_puncs].gsub(q1, "<mark>#{q1}</mark>")
+      h[:highlight] = h[:content_w_puncs].gsub(q1, '<mark>\0</mark>')
       unless h[:highlight].include?('<mark>')
         h[:highlight] = h[:content_w_puncs].gsub(exp, '<mark>\0</mark>')
       end

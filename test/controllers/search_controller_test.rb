@@ -96,6 +96,19 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # q 由使用者輸入，其中的 regex 特殊字元必須當成一般字元比對
+  test 'notes_highlight 將 q 中的 regex 特殊字元視為一般字元' do
+    { '般若' => '般若', '般若$' => '般，若$', '般若\\' => '般，若\\', '般若{}' => '般。若{}' }.each do |q, text|
+      c = SearchController.new
+      c.params = ActionController::Parameters.new(q: q)
+      c.instance_variable_set(:@q, q)
+      r = { results: [ { content_w_puncs: "#{text}經", content: '', note_place: 'foot' } ] }
+      c.send(:notes_highlight, r)
+
+      assert_equal "<mark>#{text}</mark>經", r[:results][0][:highlight], "q: #{q}"
+    end
+  end
+
   private
 
   # 暫時改寫 Elasticsearch 設定；SearchService 每個 request 都會重新讀，

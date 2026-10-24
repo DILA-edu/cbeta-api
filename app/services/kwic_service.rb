@@ -1057,7 +1057,7 @@ class KwicService
         s = read_str(k, 10+q.size) # 前後各取5個字
         s.gsub!("\n", '　')
       
-        s.match(/(.{#{wc}})?#{q}(.{#{wc}})?/) do
+        s.match(/(.{#{wc}})?#{Regexp.escape(q)}(.{#{wc}})?/) do
           @prev_word_count[$1] += 1 unless $1.nil?
           @next_word_count[$2] += 1 unless $2.nil?
         end    
