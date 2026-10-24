@@ -955,12 +955,12 @@ class SearchController < ApplicationController
 
   def kwic_boolean_exclude(se, opts)
     q = @q.sub(/^"(.*)"$/, '\1')
-    @exclude.match(/^#{q}(.*)$/) do
+    @exclude.match(/^#{Regexp.escape(q)}(.*)$/) do
       opts[:negative_lookahead] = $1
       return se.search_juan(q, opts)
     end
 
-    @exclude.match(/^(.*?)#{q}$/) do
+    @exclude.match(/^(.*?)#{Regexp.escape(q)}$/) do
       opts[:negative_lookbehind] = $1
       t1 = Time.now
       r = se.search_juan(q, opts)
@@ -1183,12 +1183,12 @@ class SearchController < ApplicationController
 
     # 允許標點差異的 regular expression
     q2 = @q.sub(/\A"(.*)"\z/, '\1')
-    s = q2.chars.join("[【】，〔－〕＊。]*")
+    s = q2.chars.map { |c| Regexp.escape(c) }.join("[【】，〔－〕＊。]*")
     log_debug "notes_highlight, exp: #{s}"
     exp = Regexp.new(s)
 
     r[:results].each do |h|
-      h[:highlight] = h[:content_w_puncs].gsub(q1, "<mark>#{q1}</mark>")
+      h[:highlight] = h[:content_w_puncs].gsub(q1, '<mark>\0</mark>')
       unless h[:highlight].include?('<mark>')
         h[:highlight] = h[:content_w_puncs].gsub(exp, '<mark>\0</mark>')
       end
