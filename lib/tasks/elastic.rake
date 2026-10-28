@@ -2,13 +2,125 @@
 #
 # <type> 是 text / notes / titles / chunks 其中之一 (省略時為 text)。
 # 見 doc/elasticsearch-migration.md
+INDEX_CLASSES = {
+  'text' => 'CbetaSearch::TextIndex',
+  'notes' => 'CbetaSearch::NotesIndex',
+  'titles' => 'CbetaSearch::TitlesIndex',
+  'chunks' => 'CbetaSearch::ChunksIndex'
+}.freeze
+
+# 驗收用的查詢清單。涵蓋對外承諾的 7 種查詢語法、各個 filter、排序與 facet。
+GOLDEN_CASES = [
+  ['basic_phrase',       'search',              { q: '法鼓' }],
+  ['basic_ahan',         'search',              { q: '阿含' }],
+  # AND / OR / NOT 走 all_in_one: 舊版 search 與 search/extended 會把已含雙引號的 q
+  # 再包一層引號, 語法因此失效 (實測 q="法鼓" 得到「法」AND「鼓」的結果),
+  # 所以基準取自語法正確的 all_in_one。詳見 doc/elasticsearch-migration.md
+  ['ext_and',            'search/all_in_one',   { q: '"法鼓" "迦葉佛"', fields: 'work,juan,term_hits' }],
+  ['ext_or',             'search/all_in_one',   { q: '"波羅蜜" | "波羅密"', fields: 'work,juan,term_hits' }],
+  ['ext_not',            'search/all_in_one',   { q: '"迦葉" !"迦葉佛"', fields: 'work,juan,term_hits' }],
+  ['aio_near2',          'search/all_in_one',   { q: '"法鼓" NEAR/7 "迦葉"', fields: 'work,juan,term_hits' }],
+  ['aio_near3',          'search/all_in_one',   { q: '"老子" NEAR/7 "道" NEAR/3 "經"', fields: 'work,juan,term_hits' }],
+  ['aio_exclude_suffix', 'search/all_in_one',   { q: '"舍利" -"舍利弗"', fields: 'work,juan,term_hits' }],
+  ['aio_exclude_prefix', 'search/all_in_one',   { q: '"直心" -"正直心"', fields: 'work,juan,term_hits' }],
+  ['latin_pali',         'search',              { q: 'Pāli Text Society' }],
+  ['latin_ananda',       'search',              { q: 'Ānanda' }],
+  ['latin_ananda_plain', 'search',              { q: 'Ananda' }],
+  ['latin_apostrophe',   'search',              { q: "samantato \\'nantanāvāptiśāsani" }],
+  ['gaiji_zzs',          'search',              { q: '[幻-ㄠ+糸]' }],
+  ['cjk_compat',         'search',              { q: "\u{2F8BB}" }],
+  ['kangxi_radical',     'search',              { q: '⾔' }],
+  ['filter_canon',       'search',              { q: '法鼓', canon: 'T' }],
+  ['filter_canon_multi', 'search',              { q: '法鼓', canon: 'T,X' }],
+  ['filter_category',    'search',              { q: '法鼓', category: '阿含部類' }],
+  ['filter_creator',     'search',              { q: '法鼓', creator: 'A001583' }],
+  ['filter_dynasty',     'search',              { q: '法鼓', dynasty: '唐' }],
+  ['filter_time_range',  'search',              { q: '法鼓', time: '600..700' }],
+  ['filter_work_type',   'search',              { q: '法鼓', work_type: 'textbody' }],
+  ['filter_note0',       'search',              { q: '法鼓', note: '0' }],
+  ['order_term_hits',    'search',              { q: '法鼓', order: 'term_hits' }],
+  ['order_time_from',    'search',              { q: '法鼓', order: 'time_from' }],
+  ['paginate',           'search',              { q: '法鼓', start: '100', rows: '5' }],
+  ['facet_canon',        'search/facet/canon',   { q: '法鼓' }],
+  ['facet_dynasty',      'search/facet/dynasty', { q: '法鼓' }],
+  ['facet_category',     'search/facet/category', { q: '法鼓' }],
+  ['sc',                 'search/sc',           { q: '观世音' }],
+
+  # --- 第二期: notes index ---
+  ['notes_phrase',       'search/notes',        { q: '"法鼓"' }],
+  ['notes_and',          'search/notes',        { q: '"法鼓" "印順"' }],
+  ['notes_or',           'search/notes',        { q: '"波羅蜜" | "波羅密"' }],
+  ['notes_not',          'search/notes',        { q: '"迦葉" !"迦葉佛"' }],
+  # NEAR 的距離邊界在 5.1.0 改成「相隔 <= n 字」(與說明頁及 KwicService 一致)，
+  # 比 Manticore 的「相隔 < n 字」多一個字；intervals 的 _score 不是出現次數，
+  # 所以也沒有 total_term_hits。見 doc/elasticsearch-migration.md 的 F-1 第 3b 項。
+  # /dev 已在 5.1.0，這一項的 golden 因此是新行為，不再預期 DIFF。
+  ['notes_near',         'search/notes',        { q: '"阿含" NEAR/5 "迦葉"' }],
+  ['notes_filter_canon', 'search/notes',        { q: '"法鼓"', canon: 'T' }],
+  ['notes_facet',        'search/notes',        { q: '"法鼓"', facet: '1' }],
+  ['notes_paginate',     'search/notes',        { q: '"法鼓"', start: '20', rows: '5' }],
+
+  # --- 第二期: titles index ---
+  # 只比對 num_found: 相關度排序由 Manticore proximity_bm25 換成 Lucene BM25，
+  # 順序本來就會不同 (見 doc/elasticsearch-migration.md 的 F-2)。
+  ['title_1char',        'search/title',        { q: '經' }],
+  ['title_2char',        'search/title',        { q: '法鼓' }],
+  ['title_5char',        'search/title',        { q: '觀無量壽經' }],
+  ['title_long',         'search/title',        { q: '大般若波羅蜜多經' }],
+  ['variants_text',      'search/variants',     { q: '著衣持鉢' }],
+  ['variants_title',     'search/variants',     { q: '神咒', scope: 'title' }],
+
+  # --- 第三期: chunks index (search/similar) ---
+  # 這幾項預期會 DIFF。/dev 的 similar 還是 Manticore (5.1.0 只搬到 titles)，
+  # 因此 golden 是貨真價實的 Manticore 基準。第一階段的 top k 候選由
+  # 「Manticore quorum + proximity_bm25」換成「Elasticsearch quorum + Lucene BM25」，
+  # 兩種相關度演算法本來就不同，進入 Smith-Waterman 的 500 筆候選不會完全一樣
+  # (已定案接受，見 §H 第 2 項)。另外「卷首／卷尾除外」的判斷在舊版是失效的
+  # (position_in_juan 沒被 SELECT)，這次一併修正，結果會比舊版多幾筆。
+  # 逐筆比對沒有意義，量化差異請用 rake elastic:compare_similar。
+  ['similar_gatha',      'search/similar',      { q: '諸惡莫作，眾善奉行，自淨其意，是諸佛教' }],
+  ['similar_mind',       'search/similar',      { q: '若人欲了知，三世一切佛，應觀法界性，一切唯心造' }],
+  ['similar_moon',       'search/similar',      { q: '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。' }],
+  ['similar_filter',     'search/similar',      { q: '是日已過，命亦隨減，如少水魚，斯有何樂', canon: 'T' }],
+  ['similar_facet',      'search/similar',      { q: '斷愛欲，轉諸結，慢無間等，究竟苦邊', facet: '1' }]
+].freeze
+
+# 只保留穩定、可比對的欄位，避免 fixture 太大或被無關變動影響。
+GOLDEN_RESULT_FIELDS = %w[work juan term_hits q hits linehead].freeze
+
+# compare_similar 的三個識別層級，由寬到嚴。
+#
+# 只看 linehead 會嚴重低估「改變候選順序」的變更: similar_rm_duplicate 依
+# node[:id] 相鄰去重、保留先出現的那個，順序一變，同一段經文就可能改由相鄰的
+# chunk 代表 (chunks 每 100 字、前後重疊 50 字)，linehead 因此不同。
+# 5.7.0 加入相鄰度重排時實測: linehead 重疊率只有 54.6%，但逐筆檢查
+# 一個相似句都沒有漏 —— 判斷品質要看 juan 與 mark 這兩層。
+SIMILAR_LEVELS = {
+  juan: ['卷 (work+juan)', ->(row) { [row['work'], row['juan']] }],
+  mark: ['相似句 (再含比對區域)', ->(row) { [row['work'], row['juan'], similar_marked_text(row)] }],
+  linehead: ['結果筆數 (再含 linehead)', ->(row) { [row['work'], row['juan'], row['linehead']] }]
+}.freeze
+
+# compare_similar 用的查詢，取自說明頁 search_similar 的範例。
+SIMILAR_QUERIES = [
+  '已得善提捨不證',
+  '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。',
+  '諸惡莫作，眾善奉行，自淨其意，是諸佛教',
+  '斷愛欲，轉諸結，慢無間等，究竟苦邊',
+  '若人欲了知，三世一切佛，應觀法界性，一切唯心造',
+  '是日已過，命亦隨減，如少水魚，斯有何樂'
+].freeze
+
+# API 有每分鐘的呼叫上限 (見 ApiKeyAuthentication)，連續打會拿到 429，
+# 所以請求之間留間隔，遇到 429 再等久一點重試。
+GOLDEN_REQUEST_INTERVAL = 0.3
+GOLDEN_RETRY_WAIT = 20
+
+# cat API 的回傳格式依 server 而異 (text 或 JSON)，所以固定要 JSON 自己排版，
+# 不要直接把回傳值當字串處理。
+INDEX_COLUMNS = %w[index docs.count store.size health].freeze
+
 namespace :elastic do
-  INDEX_CLASSES = {
-    'text' => 'CbetaSearch::TextIndex',
-    'notes' => 'CbetaSearch::NotesIndex',
-    'titles' => 'CbetaSearch::TitlesIndex',
-    'chunks' => 'CbetaSearch::ChunksIndex'
-  }.freeze
   desc '啟動本機 Elasticsearch (Docker Compose)'
   task :start do
     ensure_docker_daemon!
@@ -168,98 +280,6 @@ namespace :elastic do
     puts '註: 若本機 data/search-xml/*.xml 與 golden 來源不同季，差異會落在資料版本上。'
   end
 
-  # 驗收用的查詢清單。涵蓋對外承諾的 7 種查詢語法、各個 filter、排序與 facet。
-  GOLDEN_CASES = [
-    ['basic_phrase',       'search',              { q: '法鼓' }],
-    ['basic_ahan',         'search',              { q: '阿含' }],
-    # AND / OR / NOT 走 all_in_one: 舊版 search 與 search/extended 會把已含雙引號的 q
-    # 再包一層引號, 語法因此失效 (實測 q="法鼓" 得到「法」AND「鼓」的結果),
-    # 所以基準取自語法正確的 all_in_one。詳見 doc/elasticsearch-migration.md
-    ['ext_and',            'search/all_in_one',   { q: '"法鼓" "迦葉佛"', fields: 'work,juan,term_hits' }],
-    ['ext_or',             'search/all_in_one',   { q: '"波羅蜜" | "波羅密"', fields: 'work,juan,term_hits' }],
-    ['ext_not',            'search/all_in_one',   { q: '"迦葉" !"迦葉佛"', fields: 'work,juan,term_hits' }],
-    ['aio_near2',          'search/all_in_one',   { q: '"法鼓" NEAR/7 "迦葉"', fields: 'work,juan,term_hits' }],
-    ['aio_near3',          'search/all_in_one',   { q: '"老子" NEAR/7 "道" NEAR/3 "經"', fields: 'work,juan,term_hits' }],
-    ['aio_exclude_suffix', 'search/all_in_one',   { q: '"舍利" -"舍利弗"', fields: 'work,juan,term_hits' }],
-    ['aio_exclude_prefix', 'search/all_in_one',   { q: '"直心" -"正直心"', fields: 'work,juan,term_hits' }],
-    ['latin_pali',         'search',              { q: 'Pāli Text Society' }],
-    ['latin_ananda',       'search',              { q: 'Ānanda' }],
-    ['latin_ananda_plain', 'search',              { q: 'Ananda' }],
-    ['latin_apostrophe',   'search',              { q: "samantato \\'nantanāvāptiśāsani" }],
-    ['gaiji_zzs',          'search',              { q: '[幻-ㄠ+糸]' }],
-    ['cjk_compat',         'search',              { q: "\u{2F8BB}" }],
-    ['kangxi_radical',     'search',              { q: '⾔' }],
-    ['filter_canon',       'search',              { q: '法鼓', canon: 'T' }],
-    ['filter_canon_multi', 'search',              { q: '法鼓', canon: 'T,X' }],
-    ['filter_category',    'search',              { q: '法鼓', category: '阿含部類' }],
-    ['filter_creator',     'search',              { q: '法鼓', creator: 'A001583' }],
-    ['filter_dynasty',     'search',              { q: '法鼓', dynasty: '唐' }],
-    ['filter_time_range',  'search',              { q: '法鼓', time: '600..700' }],
-    ['filter_work_type',   'search',              { q: '法鼓', work_type: 'textbody' }],
-    ['filter_note0',       'search',              { q: '法鼓', note: '0' }],
-    ['order_term_hits',    'search',              { q: '法鼓', order: 'term_hits' }],
-    ['order_time_from',    'search',              { q: '法鼓', order: 'time_from' }],
-    ['paginate',           'search',              { q: '法鼓', start: '100', rows: '5' }],
-    ['facet_canon',        'search/facet/canon',   { q: '法鼓' }],
-    ['facet_dynasty',      'search/facet/dynasty', { q: '法鼓' }],
-    ['facet_category',     'search/facet/category', { q: '法鼓' }],
-    ['sc',                 'search/sc',           { q: '观世音' }],
-
-    # --- 第二期: notes index ---
-    ['notes_phrase',       'search/notes',        { q: '"法鼓"' }],
-    ['notes_and',          'search/notes',        { q: '"法鼓" "印順"' }],
-    ['notes_or',           'search/notes',        { q: '"波羅蜜" | "波羅密"' }],
-    ['notes_not',          'search/notes',        { q: '"迦葉" !"迦葉佛"' }],
-    # NEAR 的距離邊界在 5.1.0 改成「相隔 <= n 字」(與說明頁及 KwicService 一致)，
-    # 比 Manticore 的「相隔 < n 字」多一個字；intervals 的 _score 不是出現次數，
-    # 所以也沒有 total_term_hits。見 doc/elasticsearch-migration.md 的 F-1 第 3b 項。
-    # /dev 已在 5.1.0，這一項的 golden 因此是新行為，不再預期 DIFF。
-    ['notes_near',         'search/notes',        { q: '"阿含" NEAR/5 "迦葉"' }],
-    ['notes_filter_canon', 'search/notes',        { q: '"法鼓"', canon: 'T' }],
-    ['notes_facet',        'search/notes',        { q: '"法鼓"', facet: '1' }],
-    ['notes_paginate',     'search/notes',        { q: '"法鼓"', start: '20', rows: '5' }],
-
-    # --- 第二期: titles index ---
-    # 只比對 num_found: 相關度排序由 Manticore proximity_bm25 換成 Lucene BM25，
-    # 順序本來就會不同 (見 doc/elasticsearch-migration.md 的 F-2)。
-    ['title_1char',        'search/title',        { q: '經' }],
-    ['title_2char',        'search/title',        { q: '法鼓' }],
-    ['title_5char',        'search/title',        { q: '觀無量壽經' }],
-    ['title_long',         'search/title',        { q: '大般若波羅蜜多經' }],
-    ['variants_text',      'search/variants',     { q: '著衣持鉢' }],
-    ['variants_title',     'search/variants',     { q: '神咒', scope: 'title' }],
-
-    # --- 第三期: chunks index (search/similar) ---
-    # 這幾項預期會 DIFF。/dev 的 similar 還是 Manticore (5.1.0 只搬到 titles)，
-    # 因此 golden 是貨真價實的 Manticore 基準。第一階段的 top k 候選由
-    # 「Manticore quorum + proximity_bm25」換成「Elasticsearch quorum + Lucene BM25」，
-    # 兩種相關度演算法本來就不同，進入 Smith-Waterman 的 500 筆候選不會完全一樣
-    # (已定案接受，見 §H 第 2 項)。另外「卷首／卷尾除外」的判斷在舊版是失效的
-    # (position_in_juan 沒被 SELECT)，這次一併修正，結果會比舊版多幾筆。
-    # 逐筆比對沒有意義，量化差異請用 rake elastic:compare_similar。
-    ['similar_gatha',      'search/similar',      { q: '諸惡莫作，眾善奉行，自淨其意，是諸佛教' }],
-    ['similar_mind',       'search/similar',      { q: '若人欲了知，三世一切佛，應觀法界性，一切唯心造' }],
-    ['similar_moon',       'search/similar',      { q: '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。' }],
-    ['similar_filter',     'search/similar',      { q: '是日已過，命亦隨減，如少水魚，斯有何樂', canon: 'T' }],
-    ['similar_facet',      'search/similar',      { q: '斷愛欲，轉諸結，慢無間等，究竟苦邊', facet: '1' }]
-  ].freeze
-
-  # 只保留穩定、可比對的欄位，避免 fixture 太大或被無關變動影響。
-  GOLDEN_RESULT_FIELDS = %w[work juan term_hits q hits linehead].freeze
-
-  # compare_similar 的三個識別層級，由寬到嚴。
-  #
-  # 只看 linehead 會嚴重低估「改變候選順序」的變更: similar_rm_duplicate 依
-  # node[:id] 相鄰去重、保留先出現的那個，順序一變，同一段經文就可能改由相鄰的
-  # chunk 代表 (chunks 每 100 字、前後重疊 50 字)，linehead 因此不同。
-  # 5.7.0 加入相鄰度重排時實測: linehead 重疊率只有 54.6%，但逐筆檢查
-  # 一個相似句都沒有漏 —— 判斷品質要看 juan 與 mark 這兩層。
-  SIMILAR_LEVELS = {
-    juan: ['卷 (work+juan)', ->(row) { [row['work'], row['juan']] }],
-    mark: ['相似句 (再含比對區域)', ->(row) { [row['work'], row['juan'], similar_marked_text(row)] }],
-    linehead: ['結果筆數 (再含 linehead)', ->(row) { [row['work'], row['juan'], row['linehead']] }]
-  }.freeze
-
   desc '比較兩個環境的 search/similar 結果，' \
        '例：rake \'elastic:compare_similar[https://cbdata.dila.edu.tw/stable,http://localhost:3000]\''
   task :compare_similar, %i[base_a base_b] => :environment do |_task, args|
@@ -315,16 +335,6 @@ namespace :elastic do
     MSG
   end
 
-  # compare_similar 用的查詢，取自說明頁 search_similar 的範例。
-  SIMILAR_QUERIES = [
-    '已得善提捨不證',
-    '菩薩清涼月，遊於畢竟空，垂光照三界，心法無不現。',
-    '諸惡莫作，眾善奉行，自淨其意，是諸佛教',
-    '斷愛欲，轉諸結，慢無間等，究竟苦邊',
-    '若人欲了知，三世一切佛，應觀法界性，一切唯心造',
-    '是日已過，命亦隨減，如少水魚，斯有何樂'
-  ].freeze
-
   # 取回 search/similar 的原始 results，識別 key 由 SIMILAR_LEVELS 各自產生。
   # 同一個區塊在兩邊的 id 不同 (index 重建過)，因此一律以內容欄位識別。
   def fetch_similar_rows(base, q)
@@ -370,11 +380,6 @@ namespace :elastic do
   def golden_path
     Rails.root.join('test', 'fixtures', 'files', 'search_golden.json')
   end
-
-  # API 有每分鐘的呼叫上限 (見 ApiKeyAuthentication)，連續打會拿到 429，
-  # 所以請求之間留間隔，遇到 429 再等久一點重試。
-  GOLDEN_REQUEST_INTERVAL = 0.3
-  GOLDEN_RETRY_WAIT = 20
 
   def fetch_golden_case(base, endpoint, params)
     require 'faraday'
@@ -440,10 +445,6 @@ namespace :elastic do
 
     { same:, message: same ? '一致' : messages.join('; ') }
   end
-
-  # cat API 的回傳格式依 server 而異 (text 或 JSON)，所以固定要 JSON 自己排版，
-  # 不要直接把回傳值當字串處理。
-  INDEX_COLUMNS = %w[index docs.count store.size health].freeze
 
   def print_indices(client)
     # 回傳值是 Elasticsearch::API::Response，取 body 才拿得到真正的 Array。

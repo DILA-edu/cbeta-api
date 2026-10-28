@@ -1,11 +1,9 @@
 class CreatePlaces < ActiveRecord::Migration[6.0]
   def change
-    def change
-      remove_column :works, :place_name, :string
-      remove_column :works, :place_id,   :string
-      remove_column :works, :place_long, :float
-      remove_column :works, :place_lat,  :float
-    end
+    remove_column :works, :place_name, :string
+    remove_column :works, :place_id,   :string
+    remove_column :works, :place_long, :float
+    remove_column :works, :place_lat,  :float
 
     create_table :places do |t|
       t.string :auth_id, index: { unique: true }
