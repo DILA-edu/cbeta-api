@@ -42,4 +42,13 @@ class JuansControllerTest < ActionDispatch::IntegrationTest
     r = JSON.parse(response.body)
     assert_equal 404, r.dig("error", "code")
   end
+
+  # 卷跨冊時續段也是一列 (uuid 為 NULL), 卷清單不能因此重複
+  test 'Asia Network 卷清單不含跨冊的續段' do
+    JuanLine.create!(work: 'T0001', vol: 'T02', juan: 1, seq: 2, lb: '0001a01')
+
+    get "/api/resources/#{works(:t0001).uuid}/sections"
+
+    assert_equal([ '10000000-0000-0000-0000-000000000001' ], response.parsed_body.map { it['uuid'] })
+  end
 end

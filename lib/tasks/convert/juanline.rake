@@ -10,6 +10,11 @@ end
 require 'cbeta'
 
 # 根據 CBETA XML P5a 取得每卷的起始行號、結束行號
+#
+# 輸出 data/juan-line/{canon}/{work}.json, 每卷是一個段落陣列, 一冊一段:
+#   { "17": [ { "vol": "L130", "lb_begin": "0876b01", "lb_end": "0886b12" },
+#             { "vol": "L131", "lb_begin": "0001a01", "lb_end": "..." } ] }
+# 沒有跨冊的卷只有一段。
 class Juanline
   def produce
     @in = Rails.application.config.cbeta_xml
@@ -62,14 +67,17 @@ class Juanline
           abort 'lb 在 milestone 之前' if juan.nil?
           abort 'lb 在 milestone 之前' unless data.key? juan
 
-          j = data[juan]
+          j = data[juan].last
           j[:lb_begin] = lb unless j.key? :lb_begin
           j[:lb_end] = lb
         end
       when 'milestone'
         if e['unit']=='juan'
           juan = e['n']
-          data[juan] = { vol: vol }
+          # 卷跨冊時, 後一冊的 XML 會再出現同一卷的 milestone, 接著記成新的一段。
+          # 原本直接覆寫, 前半冊的起始行號因此遺失。
+          segments = (data[juan] ||= [])
+          segments << { vol: vol } unless segments.last&.dig(:vol) == vol
         end
       end
     end

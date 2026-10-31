@@ -35,14 +35,14 @@
   %p /api/sections/{uuid}
   %p
     例：
-    - uuid = JuanLine.find_by(work: 'T0001', juan: 1).uuid
+    - uuid = JuanLine.first_segment.find_by(work: 'T0001', juan: 1).uuid
     = link_to_url "/api/sections/#{uuid}"
 
   %h4 Get the list of all content units for a section
   %p /api/sections/{uuid}/content_units
   %p
     例：
-    - uuid = JuanLine.find_by(work: 'T0001', juan: 1).uuid
+    - uuid = JuanLine.first_segment.find_by(work: 'T0001', juan: 1).uuid
     = link_to_url "/api/sections/#{uuid}/content_units"
 
 %h2 Documentation

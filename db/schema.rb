@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_31_000000) do
   create_table "canons", force: :cascade do |t|
     t.integer "children_count"
     t.string "id2"
@@ -62,12 +62,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_100000) do
     t.integer "juan"
     t.string "lb"
     t.string "lb_end"
+    t.integer "seq", default: 1, null: false
     t.string "uuid"
     t.string "vol"
     t.string "work"
     t.index ["uuid"], name: "index_juan_lines_on_uuid", unique: true
     t.index ["vol", "lb"], name: "index_juan_lines_on_vol_and_lb", unique: true
-    t.index ["work", "juan"], name: "index_juan_lines_on_work_and_juan"
+    t.index ["work", "juan", "seq"], name: "index_juan_lines_on_work_and_juan_and_seq", unique: true
   end
 
   create_table "lb_maps", force: :cascade do |t|

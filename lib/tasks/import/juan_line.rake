@@ -48,7 +48,11 @@ class ImportJuanLine
   def import_file(fn)
     s = File.read(fn)
     juans = JSON.parse(s)
-    juans.each_pair do |k, v|
+    juans.each_pair do |k, segments|
+      unless segments.is_a?(Array)
+        abort "#{fn} 是舊格式 (每卷一個物件), 請先執行 rake convert:juanline"
+      end
+
       id = "#{@work}_%03d" % k.to_i
       abort "#{id} 在 data-static/uuid/juans.json 不存在" unless @juan_uuids.key? id
       
@@ -61,28 +65,33 @@ class ImportJuanLine
         @uuids << uuid1
       end
       
-      # 某些 lb 不是數字開頭，例如 Y01n0001_pa001a02
-      # a001 的排序會變成在 0001 的後面
-      # 把它改成 0000a001 讓排序變成在 0001 前面
-      lb = v['lb_begin']
-      lb = "0000#{lb}" unless lb.match(/^\d/)
+      # 一段一列 (卷跨冊時有多段); uuid 只放在第一段
+      segments.each.with_index(1) do |v, seq|
+        # 某些 lb 不是數字開頭，例如 Y01n0001_pa001a02
+        # a001 的排序會變成在 0001 的後面
+        # 把它改成 0000a001 讓排序變成在 0001 前面
+        lb = v['lb_begin']
+        lb = "0000#{lb}" unless lb.match(/^\d/)
 
-      vol_lb = v['vol'] + lb
-      if @vol_lbs.include?(vol_lb)
-        abort "發生錯誤：vol+lb 重複： vol: #{v['vol']}, lb: #{lb}".red
-      else
-        @vol_lbs << vol_lb
+        vol_lb = v['vol'] + lb
+        if @vol_lbs.include?(vol_lb)
+          abort "發生錯誤：vol+lb 重複： vol: #{v['vol']}, lb: #{lb}".red
+        else
+          @vol_lbs << vol_lb
+        end
+
+        first = seq == 1
+        @inserts << {
+          vol: v['vol'],
+          work: @work,
+          juan: k,
+          seq:,
+          lb: lb,
+          lb_end: v['lb_end'],
+          uuid: (uuid1 if first),
+          content_uuid: (uuid2 if first)
+        }
       end
-      
-      @inserts << {
-        vol: v['vol'],
-        work: @work,
-        juan: k,
-        lb: lb,
-        lb_end: v['lb_end'],
-        uuid: uuid1,
-        content_uuid: uuid2
-      }
     end
   end
   

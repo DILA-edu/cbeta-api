@@ -25,7 +25,7 @@ class JuansController < ApplicationController
   end
 
   private def render_juan(work, i, fn)
-    juan_line = JuanLine.find_by(work: work, juan: i)
+    juan_line = JuanLine.first_segment.find_by(work: work, juan: i)
     if File.exist? fn
       html = File.read(fn)
       # HTML 檔存在但 juan_lines 缺資料時 (匯入不一致), 仍回傳內容, uuid 為 null
@@ -95,7 +95,7 @@ class JuansController < ApplicationController
     work = Work.find_by uuid: uuid
     return render_asia_not_found(uuid) if work.nil?
 
-    juans = JuanLine.where(work: work.n).order(:juan)
+    juans = JuanLine.first_segment.where(work: work.n).order(:juan)
     
     r = []
     juans.each do |j|
@@ -112,7 +112,7 @@ class JuansController < ApplicationController
   
   def content_for_asia_network
     uuid = params[:uuid]
-    juan = JuanLine.find_by uuid: uuid
+    juan = JuanLine.first_segment.find_by uuid: uuid
     return render_asia_not_found(uuid) if juan.nil?
 
     work = Work.find_by n: juan.work
@@ -140,7 +140,7 @@ class JuansController < ApplicationController
   
   def show_for_asia_network
     uuid = params[:uuid]
-    juan = JuanLine.find_by uuid: uuid
+    juan = JuanLine.first_segment.find_by uuid: uuid
     return render_asia_not_found(uuid) if juan.nil?
 
     work = Work.find_by n: juan.work

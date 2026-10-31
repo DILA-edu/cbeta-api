@@ -1,4 +1,13 @@
+# 每卷的起訖行號, 一冊一段: 卷跨冊時 (例: L1557 卷 17 由 L130 接到 L131) 有多列,
+# seq 從 1 起算。uuid / content_uuid 只放在 seq = 1 那列。
 class JuanLine < ActiveRecord::Base
+  scope :first_segment, -> { where(seq: 1) }
+
+  # 某卷依序跨過的冊號, 例: vols('L1557', 17) → ["L130", "L131"]
+  def self.vols(work, juan)
+    where(work:, juan:).order(:seq).pluck(:vol)
+  end
+
   def self.find_by_vol(vol)
     jl = JuanLine.where(vol: vol).order(:lb).first
     if jl.nil?
@@ -10,7 +19,7 @@ class JuanLine < ActiveRecord::Base
     
   # 取得某經、某卷 的 第一個 lb 及其冊數
   def self.get_first_lb_by_work_juan(work, juan)
-    jl = JuanLine.where("work=? AND juan=?", work, juan).first
+    jl = JuanLine.first_segment.where("work=? AND juan=?", work, juan).first
     raise CbetaError.new(404), "找不到 佛典編號: #{work}, 卷號: #{juan}" if jl.nil?
 
     lb = jl.lb
