@@ -99,6 +99,10 @@ module ApiKeyAuthentication
                store: RATE_LIMIT_STORE,
                scope: 'cbeta-api-user',
                if: -> { api_key_used? && !internal_ip? }
+
+    # 無效 key 的 401 放在 rate limit 之後: 先回 401 會讓 callback chain 停住,
+    # 帶無效 key 就完全不受限 (每次還要查一次 DB)。這樣它會算進 IP 的匿名額度。
+    before_action :reject_invalid_key, if: -> { @invalid_api_key }
   end
 
   private
@@ -108,7 +112,8 @@ module ApiKeyAuthentication
 
     if token.present?
       @current_api_key = ApiKey.authenticate(token)
-      return reject_invalid_key if @current_api_key.nil?
+      # 401 由 included 裡的 before_action 在 rate limit 之後回
+      return @invalid_api_key = true if @current_api_key.nil?
 
       record_api_key_use
       return

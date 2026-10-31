@@ -136,6 +136,9 @@ class WorksController < ApplicationController
   end
   
   def search_by_time_range
+    # 少了 time_end 會變成 between 600 and 0, 靜默回空結果
+    raise CbetaError.new(400), "缺少 time_end 參數" unless params.key?(:time_end)
+
     validate_param_int(:time_start)
     validate_param_int(:time_end)
 

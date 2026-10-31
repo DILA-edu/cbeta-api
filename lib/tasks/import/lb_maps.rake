@@ -15,10 +15,13 @@ class ImportLbMaps
   def import()
     start_time = Time.now
 
-    $stderr.puts "delete old data"
-    LbMap.delete_all
-    
-    import_all
+    # 包在 transaction 裡: 中途 abort / 例外時保留舊資料, 不會留下空表或只匯一半
+    LbMap.transaction do
+      $stderr.puts "delete old data"
+      LbMap.delete_all
+
+      import_all
+    end
     puts "LbMap records: #{number_with_delimiter(LbMap.count)}"
     
     puts ElapsedTime.label(start_time)

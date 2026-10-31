@@ -71,7 +71,7 @@ class SearchController < ApplicationController
 
     t1 = Time.now
     r = if @use_cache
-          key = response_cache_key("#{params}")
+          key = response_cache_key(params_cache_key)
           fetch_response_cache(key) do
             all_in_one_sub
           end
@@ -112,7 +112,7 @@ class SearchController < ApplicationController
   def similar
     t1 = Time.now
 
-    key = response_cache_key("search/similar/#{params}")
+    key = response_cache_key("search/similar/#{params_cache_key}")
 
     r = if @use_cache
           fetch_response_cache(key) do
@@ -183,7 +183,7 @@ class SearchController < ApplicationController
     t1 = Time.now
 
     r = if @use_cache
-          key = response_cache_key("#{params}")
+          key = response_cache_key(params_cache_key)
           fetch_response_cache(key) do
             variants_sub
           end
@@ -317,6 +317,14 @@ class SearchController < ApplicationController
 
   def response_cache_key(suffix)
     "#{Rails.configuration.cb.r}/#{Rails.configuration.x.ver}/#{suffix}"
+  end
+
+  # JSONP 的 callback、jQuery 防快取的 _ 每次都不同, 放進 key 會每次 miss,
+  # 還各寫一筆 30 天的 entry; 排序後參數順序不同也算同一個 key
+  CACHE_KEY_IGNORED_PARAMS = %w[callback _ cache].freeze
+
+  def params_cache_key
+    params.to_unsafe_h.except(*CACHE_KEY_IGNORED_PARAMS).sort.to_h.to_s
   end
 
   def fetch_response_cache(key, &)
@@ -699,6 +707,10 @@ class SearchController < ApplicationController
     @inline_note = params.key?(:note) ? params[:note]=='1' : true
     @score_min = params.key?(:score_min) ? params[:score_min].to_i : SCORE_MIN
     # note=0 (不含夾注) 只有 text index 有對應欄位; notes / titles index 沒有。
+    # notes / titles / chunks index 沒有 work_type 欄位, 帶了這個 filter 一律 0 筆
+    if params.key?(:work_type) && es_index != CbetaSearch::TextIndex
+      raise CbetaError.new(400), "#{action_name} 不支援 work_type 參數"
+    end
     @text_field =
       if es_index == CbetaSearch::TextIndex && !@inline_note
         'content_without_notes'

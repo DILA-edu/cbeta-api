@@ -21,9 +21,17 @@ class RequestGuardsTest < ActionDispatch::IntegrationTest
     get '/lines', params: { linehead: LH1 }, headers: { 'Referer' => 'https://example.org:8080/a/b' }
     get '/lines', params: { linehead: LH1 }, headers: { 'Referer' => '' }
 
-    referers = Visit.where(url: '/lines', accessed_at: Date.today).pluck(:referer)
+    referers = Visit.where(url: '/lines', accessed_at: Date.current).pluck(:referer)
     assert_includes referers, 'example.org:8080'
     assert_includes referers, '127.0.0.1'
+  end
+
+  test 'Referer 的 query 裡另有 URL 時仍記錄原本的 host' do
+    get '/lines', params: { linehead: LH1 }, headers: { 'Referer' => 'https://a.example.org/p?u=https://b.example.com/x' }
+
+    referers = Visit.where(url: '/lines', accessed_at: Date.current).pluck(:referer)
+    assert_includes referers, 'a.example.org'
+    assert_not_includes referers, 'b.example.com'
   end
 
   # 2026-10-16 起不再依 referer 屏蔽太虛 (TX)、印順 (Y)，由各網站自行判斷

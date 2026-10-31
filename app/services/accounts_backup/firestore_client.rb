@@ -24,9 +24,10 @@ module AccountsBackup
     class Error < StandardError; end
 
     def self.from_config(config)
-      credentials = Google::Auth::ServiceAccountCredentials.make_creds(
-        json_key_io: File.open(config.credentials), scope: SCOPE
-      )
+      # make_creds 讀完就不再用到這個檔, 用 block 形式才會關檔
+      credentials = File.open(config.credentials) do |f|
+        Google::Auth::ServiceAccountCredentials.make_creds(json_key_io: f, scope: SCOPE)
+      end
       new(project_id: config.project_id, database_id: config.database_id, credentials:)
     end
 

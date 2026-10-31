@@ -168,4 +168,16 @@ class ApiRateLimitTest < ActionDispatch::IntegrationTest
     assert ApiKeyAuthentication::KEYED_LIMIT < fail2ban_effective_limit
     assert ApiKeyAuthentication::ANONYMOUS_LIMIT < fail2ban_effective_limit
   end
+
+  # 原本 401 會停住 callback chain, 兩個 rate_limit 都不會執行
+  test '帶無效 key 也算進 IP 的匿名額度' do
+    invalid = { 'Authorization' => 'Bearer cbeta_invalid' }
+    ApiKeyAuthentication::ANONYMOUS_LIMIT.times do
+      call(headers: invalid)
+      assert_response :unauthorized
+    end
+
+    call(headers: invalid)
+    assert_response :too_many_requests
+  end
 end

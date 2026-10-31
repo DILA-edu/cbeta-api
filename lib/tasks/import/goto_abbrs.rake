@@ -15,8 +15,6 @@ class ImportGotoAbbrs
   end
   
   def import()
-    GotoAbbr.delete_all
-    
     fn = File.join(@base, 'goto', 'goto-list.txt')
     inserts = []
     File.foreach(fn) do |line|
@@ -26,7 +24,11 @@ class ImportGotoAbbrs
       end
     end
     
-    GotoAbbr.insert_all(inserts)
+    # 包在 transaction 裡: 中途 abort / 例外時保留舊資料, 不會留下空表或只匯一半
+    GotoAbbr.transaction do
+      GotoAbbr.delete_all
+      GotoAbbr.insert_all(inserts)
+    end
     s = number_with_delimiter(GotoAbbr.count)
     puts "GotoAbbr records: #{s}"
   end

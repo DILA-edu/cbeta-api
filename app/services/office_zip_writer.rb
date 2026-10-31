@@ -18,7 +18,9 @@ class OfficeZipWriter
   end
 
   def write
-    Zip::OutputStream.open(@path) do |zip|
+    # suppress_extra_fields: rubyzip 3 預設替每個 entry 加 Zip64 extra field,
+    # ODF 規定 mimetype entry 不得有 extra field, 否則 file/libmagic 等工具認不出格式
+    Zip::OutputStream.open(@path, suppress_extra_fields: true) do |zip|
       @entries.each do |name, content|
         if @stored.include?(name)
           zip.put_next_entry(name, nil, nil, Zip::Entry::STORED)

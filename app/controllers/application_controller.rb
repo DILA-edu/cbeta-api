@@ -45,7 +45,9 @@ class ApplicationController < ActionController::Base
     ref = request.referer
     return nil if ref.blank?
 
-    ref.split('//').last&.split('/')&.first.presence
+    # 只去掉開頭的 scheme: 用 split('//').last 的話, query 裡另有 URL 時
+    # (https://a.org/p?u=https://b.com/x) 會記成 b.com
+    ref.sub(%r{\A[a-z][a-z0-9+.\-]*:}i, '').delete_prefix('//').split(%r{[/?#]}).first.presence
   end
 
   # 通過驗證的 JSONP callback 名稱; 沒帶或不合法時回傳 nil (改回傳一般 JSON)
@@ -91,7 +93,9 @@ class ApplicationController < ActionController::Base
 
     Visit.connection.execute(
       Visit.sanitize_sql_array(
-        [sql, path, referer, Date.today]
+        # Date.current (config.time_zone) 與 OriginStat / ApiKeyUsage 一致;
+        # Date.today 用的是 OS 時區
+        [sql, path, referer, Date.current]
       )
     )
   rescue StandardError => e
@@ -174,7 +178,8 @@ class ApplicationController < ActionController::Base
 
   def validate_param_int(k)
     return unless params.key?(k)
-    unless params[k] =~ /\A\d+\z/
+    # 先確認是字串: k[]=1 這類 array 參數沒有 =~, 會變成 NoMethodError
+    unless params[k].is_a?(String) && params[k].match?(/\A\d+\z/)
       raise CbetaError.new(400), "#{k} 必須是數字"
     end
   end

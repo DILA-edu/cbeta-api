@@ -157,4 +157,16 @@ class TocNodeControllerTest < ActionDispatch::IntegrationTest
       assert body['error'].present?, params.inspect
     end
   end
+
+  # 冊號查詢會 redirect 到 catalog_entry, 原本丟掉 callback, JSONP client 收到純 JSON
+  test 'search/toc 冊號 redirect 時保留 callback' do
+    CatalogEntry.create!(parent: 'orig-T', n: 'orig-T.001', label: 'T01 阿含部上', sort: 1)
+
+    get '/search/toc', params: { q: 'T01', callback: 'cb' }
+    assert_redirected_to %r{q=orig-T\.001}
+    assert_match(/callback=cb/, response.location)
+
+    get '/search/toc', params: { q: 'T01' }
+    assert_no_match(/callback/, response.location)
+  end
 end

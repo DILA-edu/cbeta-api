@@ -86,4 +86,18 @@ class WorksControllerTest < ActionDispatch::IntegrationTest
     get '/works', params: { canon: 'T', vol_start: 8, vol_end: 9 }
     assert_not_includes response.parsed_body['results'].map { it['work'] }, 'T0220'
   end
+
+  test 'time_start 少了 time_end 時回錯誤' do
+    get '/works', params: { time_start: 300 }
+
+    assert_equal 400, response.parsed_body.dig('error', 'code')
+    assert_match(/time_end/, response.parsed_body.dig('error', 'message'))
+  end
+
+  test '數字參數為 array 時回 400 而不是 500' do
+    get '/works', params: { time_start: [ '300' ], time_end: '500' }
+
+    assert_equal 400, response.parsed_body.dig('error', 'code')
+  end
+
 end

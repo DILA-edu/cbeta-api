@@ -15,15 +15,17 @@ class ImportVars
   
   def import
     t1 = Time.now
-    puts "清除舊資料"
-    Variant.delete_all
-    
     @total = 0
     @inserts = []
     read_variants
 
-    puts "insert_all"
-    Variant.insert_all(@inserts)
+    # 包在 transaction 裡: 中途 abort / 例外時保留舊資料, 不會留下空表或只匯一半
+    Variant.transaction do
+      puts "清除舊資料"
+      Variant.delete_all
+      puts "insert_all"
+      Variant.insert_all(@inserts)
+    end
 
     puts "Variant records: #{number_with_delimiter(Variant.count)}"
     puts "total vars: #{number_with_delimiter(@total)}"

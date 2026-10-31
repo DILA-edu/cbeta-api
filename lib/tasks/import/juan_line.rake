@@ -13,9 +13,6 @@ class ImportJuanLine
   end
   
   def import
-    $stderr.puts "delete all records from table: juan_lines"
-    JuanLine.delete_all
-    
     @inserts = []
     @uuids = Set.new
     @vol_lbs = Set.new
@@ -28,7 +25,12 @@ class ImportJuanLine
       import_canon(path)
     end
 
-    JuanLine.insert_all(@inserts)
+    # 包在 transaction 裡: 中途 abort / 例外時保留舊資料, 不會留下空表或只匯一半
+    JuanLine.transaction do
+      $stderr.puts "delete all records from table: juan_lines"
+      JuanLine.delete_all
+      JuanLine.insert_all(@inserts)
+    end
     puts "JuanLine records: #{number_with_delimiter(JuanLine.count)}"
   end
   

@@ -11,6 +11,20 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-10-31 Version 5.18.7
+%ul
+  %li
+    search/notes、search/title、search/similar 帶 work_type 參數時回傳錯誤訊息
+    (這幾個索引沒有 work_type 欄位，原本一律回 0 筆)。
+  %li
+    works 以 time_start 查詢時必須同時指定 time_end，否則回傳錯誤 (原本靜默回空結果)。
+  %li
+    search/toc 以冊號查詢 (例如 T01) 轉址時保留 JSONP 的 callback 參數。
+  %li
+    帶無效 API key 的請求也計入每個 IP 的流量限制。
+  %li
+    odt 檔的 mimetype 不再帶 zip extra field，符合 ODF 規範。
+
 %h3 2026-10-31 Version 5.18.6
 %ul
   %li

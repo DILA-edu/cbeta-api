@@ -94,6 +94,24 @@ class SearchAllInOneFieldsTest < ActionDispatch::IntegrationTest
     Rails.cache = original
   end
 
+  # callback、_ 每次都不同, 原本放進 key 會每次 miss
+  test '回應快取的 key 不含 callback、_，也不受參數順序影響' do
+    original = Rails.cache
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
+    service = CountingSearchService.new
+
+    replace_new(CbetaSearch::SearchService, service) do
+      replace_new(KwicService, FakeKwicService.new) do
+        get '/search/all_in_one?q=%E6%B3%95%E9%BC%93&rows=1&callback=cb1&_=1'
+        get '/search/all_in_one?rows=1&q=%E6%B3%95%E9%BC%93&callback=cb2&_=2'
+        assert_equal 1, service.calls
+        assert response.body.start_with?('/**/cb2('), 'callback 仍依本次 request'
+      end
+    end
+  ensure
+    Rails.cache = original
+  end
+
   class CountingSearchService < FakeSearchService
     attr_reader :calls
 

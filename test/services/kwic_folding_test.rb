@@ -13,12 +13,22 @@ class KwicFoldingTest < ActiveSupport::TestCase
     assert_equal 'n̄', KwicFolding.normalize('N̄') # 字母 + 組合符號
   end
 
+  # NFD 拆不開, 但 Elasticsearch 的 asciifolding 會折成單一字母
+  test '折疊 NFD 拆不開的字母' do
+    assert_equal 'soren lodz d h i', KwicFolding.normalize('Søren Łódź Đ ħ ı')
+  end
+
+  # İ downcase 後會變成 i + U+0307 兩個字元, 之後的 offset 會整個錯開
+  test 'İ 折成 i, 字元數不變' do
+    assert_equal 'istanbul', KwicFolding.normalize('İstanbul')
+  end
+
   test 'CJK 不受影響' do
     assert_equal '阿含經', KwicFolding.normalize('阿含經')
   end
 
   test '字元數不變' do
-    s = 'Pāli Text Ṭhāna æ ß N̄ 阿含 ñāṇa'
+    s = 'Pāli Text Ṭhāna æ ß N̄ 阿含 ñāṇa İ Ø Ł'
     assert_equal s.size, KwicFolding.normalize(s).size
   end
 end

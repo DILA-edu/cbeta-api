@@ -22,9 +22,6 @@ class ImportSynonym
     @log = File.open(Rails.root.join('log', 'import-synonym.log'), 'w')
     validate
 
-    $stderr.puts "清除舊資料"
-    Term.delete_all
-
     $stderr.puts "匯入新資料"
 
     read_synonyms
@@ -38,7 +35,12 @@ class ImportSynonym
       inserts << { term:, synonyms: s }
     end
 
-    Term.insert_all(inserts)
+    # 包在 transaction 裡: 中途 abort / 例外時保留舊資料, 不會留下空表或只匯一半
+    Term.transaction do
+      $stderr.puts "清除舊資料"
+      Term.delete_all
+      Term.insert_all(inserts)
+    end
     puts "Term records: #{number_with_delimiter(Term.count)}"
   end
 

@@ -11,13 +11,16 @@ class ImportCanons
   end
   
   def import
-    Canon.delete_all
     fn = File.join(Rails.application.config.cbeta_data, 'canons.yml')
     canons = YAML.load_file(fn)
-    canons.each do |id, v|
-      uuid = @canon_uuid[id]
-      Canon.find_or_create_by(id2: id, uuid: uuid) do |c|
-        c.name = v['short']
+    # 包在 transaction 裡: 中途 abort / 例外時保留舊資料, 不會留下空表或只匯一半
+    Canon.transaction do
+      Canon.delete_all
+      canons.each do |id, v|
+        uuid = @canon_uuid[id]
+        Canon.find_or_create_by(id2: id, uuid: uuid) do |c|
+          c.name = v['short']
+        end
       end
     end
   end

@@ -25,6 +25,19 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  # ODF 規定 mimetype 不得有 extra field; 工具靠 offset 38 的 magic 判斷是 odt。
+  # rubyzip 3 預設會加 Zip64 extra field, 把 mimetype 字串往後推
+  test "mimetype 的 local header 沒有 extra field" do
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'out.odt')
+      XmlToOdtConverter.new(SAMPLE_XML).convert(path)
+
+      header = File.binread(path, 38 + XmlToOdtConverter::MIMETYPE.bytesize)
+      assert_equal 0, header[28, 2].unpack1('v'), 'extra field length'
+      assert_equal "mimetype#{XmlToOdtConverter::MIMETYPE}", header[30..]
+    end
+  end
+
   test "圖片存進 Pictures 並登記在 manifest" do
     with_odt(SAMPLE_XML, figures_dir: FIGURES) do |odt, _warnings|
       # 同一張圖用了三次 (body 兩次 + footnote 一次), 只存一份

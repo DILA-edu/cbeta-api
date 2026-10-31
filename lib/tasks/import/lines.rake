@@ -35,10 +35,13 @@ class ImportLines
     $stderr.puts "import lines"
     @ser_no = 0
 
-    $stderr.puts "delete old data from table lines"
-    Line.delete_all
+    # 包在 transaction 裡: 中途 abort / 例外時保留舊資料, 不會留下空表或只匯一半
+    Line.transaction do
+      $stderr.puts "delete old data from table lines"
+      Line.delete_all
 
-    import_all
+      import_all
+    end
     
     puts "Line records: #{number_with_delimiter(Line.count)}"
     $stderr.puts ElapsedTime.label(start_time)

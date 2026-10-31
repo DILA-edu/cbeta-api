@@ -17,6 +17,8 @@ class CbetaLineReader
   def read(xml_path)
     @lines = {}
     @lb = nil
+    # 例: X01n0001.xml → X
+    @canon = CBETA.get_canon_from_vol(File.basename(xml_path).split('n').first)
     doc = File.open(xml_path) { |f| Nokogiri::XML(f) }
     doc.remove_namespaces!
     traverse(doc.root)
@@ -38,12 +40,18 @@ class CbetaLineReader
         r = g['norm_big5_char']
       end
     end
-    @lines[@lb] << r
+    @lines[@lb] << r unless @lb.nil?
   end
 
+  # 只取本藏的行: 卍續藏 XML 夾著新文豐版的 <lb ed="R150">, 當成新的一行
+  # 會把文字記到不存在的行號下, 頁碼重複時還會清掉已讀到的行
+  # (同 x2h_for_ui、notes.rake 的 e_lb)
   def e_lb(e)
+    return if e['type'] == 'old'
+    return if e['ed'] && e['ed'] != @canon
+
     @lb = e['n']
-    @lines[@lb] = ''
+    @lines[@lb] = +''
   end
 
   def e_note(e)

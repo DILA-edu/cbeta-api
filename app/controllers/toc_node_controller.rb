@@ -207,7 +207,8 @@ class TocNodeController < ApplicationController
       return paginate_rows([]) if ce.nil?
 
       # 呼叫端 (index) 看到 performed? 就不再 render
-      redirect_to controller: 'catalog_entry', action: 'index', q: ce.n
+      # JSONP 的 callback 要一起帶過去, 否則導過去回的是純 JSON
+      redirect_to controller: 'catalog_entry', action: 'index', q: ce.n, callback: jsonp_callback
       return
     elsif q.match(/^(#{CBETA::CANON})\d{2,3}n(\w{4,5})$/) # ex: T01n0001
       q = $1 + $2

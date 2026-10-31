@@ -120,6 +120,15 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # notes / titles / chunks index 沒有 work_type 欄位, 原本帶了就靜默回 0 筆
+  test 'notes、title、similar 帶 work_type 時回錯誤訊息' do
+    %w[notes title similar].each do |action|
+      get "/search/#{action}", params: { q: '法鼓', work_type: '一般' }
+
+      assert_match(/不支援 work_type/, response.parsed_body['error'], action)
+    end
+  end
+
   test 'rack-timeout 逾時回 504' do
     SearchController.alias_method :__orig_all_in_one, :all_in_one
     SearchController.define_method(:all_in_one) do

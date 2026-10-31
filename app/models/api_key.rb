@@ -35,7 +35,10 @@ class ApiKey < AccountsRecord
   # 回傳 [api_key, plaintext_token]
   def self.generate!(user)
     token = "#{TOKEN_PREFIX}#{SecureRandom.urlsafe_base64(TOKEN_BYTES)}"
-    api_key = create!(user:, token_digest: digest(token), token_hint: hint(token))
+    # 鎖住 user: 數量上限是先 count 再 create, 同時送出的兩個 request 會都通過
+    api_key = user.with_lock do
+      create!(user:, token_digest: digest(token), token_hint: hint(token))
+    end
     [api_key, token]
   end
 
