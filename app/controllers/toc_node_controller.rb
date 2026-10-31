@@ -112,21 +112,27 @@ class TocNodeController < ApplicationController
     result
   end
 
+  # q 裡的 % _ 要當一般字元比對, 否則 q=% 等於 LIKE '%%%' 全表掃描 (見 index 的說明)。
+  # 搭配的 SQL 要寫 ESCAPE '\': SQLite (測試環境) 的 LIKE 預設沒有 escape 字元。
+  def like_pattern(q)
+    "%#{ActiveRecord::Base.sanitize_sql_like(q)}%"
+  end
+
   def catalog_scope(q)
     # 沒有 ORDER BY 時 PostgreSQL 不保證順序; id 是匯入時的目錄順序
-    CatalogEntry.where("(label NOT LIKE '%=%') AND (label LIKE ?)", "%#{q}%").order(:id)
+    CatalogEntry.where("(label NOT LIKE '%=%') AND (label LIKE ? ESCAPE '\\')", like_pattern(q)).order(:id)
   end
 
   def work_scope(q)
     Work.where.not(juan_list: nil) # CBETA 未收錄的不要
-        .where("title LIKE ?", "%#{q}%").order(:sort_order, :id)
+        .where("title LIKE ? ESCAPE '\\'", like_pattern(q)).order(:sort_order, :id)
   end
 
   def toc_scope(q)
     # 同一部佛典的節點 sort_order 相同, 只排 sort_order 時每次查詢的順序都可能不同;
     # id 是匯入時的文件順序
     # 佛典不在 works 表的節點不回傳 (find_toc 會略過), 先排除才不會算進筆數
-    TocNode.where("label LIKE ?", "%#{q}%").where(work: Work.select(:n)).order(:sort_order, :id)
+    TocNode.where("label LIKE ? ESCAPE '\\'", like_pattern(q)).where(work: Work.select(:n)).order(:sort_order, :id)
   end
 
   def find_catalog(entries)

@@ -32,6 +32,9 @@ class Kwic3Controller < ApplicationController
     
     a = %w(around juan rows start word_count)
     a.each {|s| @opts[s.to_sym] = params[s].to_i if params.key? s }
+    %i[start rows].each do |k|
+      raise CbetaError.new(400), "#{k} 參數 不得小於 0" if @opts.fetch(k, 0) < 0
+    end
     
     @opts[:inline_note]  = false if params['note']         == '0'
     @opts[:place]        = true  if params['place']        == '1'
@@ -62,7 +65,8 @@ class Kwic3Controller < ApplicationController
 
     t1 = Time.now
     logger.debug "#{File.basename(__FILE__)}, line: #{__LINE__}, kwic q: #{@q}"
-    if @q.match?(/ NEAR\/(\d+) /)
+    # 與 CbetaSearch::QueryParser 的 NEAR token 規則一致 (前面不必有空格, 後面接空白)
+    if @q.match?(%r{NEAR/\d+(?=\s|\z)})
       logger.debug "search near"
       h = @se.search_near(@q, @opts)
     else

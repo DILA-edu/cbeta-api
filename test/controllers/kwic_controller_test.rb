@@ -29,4 +29,13 @@ class KwicControllerTest < ActionDispatch::IntegrationTest
     # Rails 的 JSONP 會加上 /**/ 前綴（防 JSON hijacking）
     assert_match(%r{\A/\*\*/cb\(}, response.body)
   end
+
+  test 'search/kwic 的 start / rows 為負數時回 400' do
+    %i[start rows].each do |key|
+      get '/search/kwic', params: { q: '佛', work: 'T0001', juan: 1, key => -3 }
+
+      assert_response :bad_request
+      assert_match(/#{key} 參數 不得小於 0/, response.parsed_body.dig('error', 'message'))
+    end
+  end
 end

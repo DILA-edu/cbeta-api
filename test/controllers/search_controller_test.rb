@@ -109,6 +109,32 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # SearchController 的 rescue_from Exception 會蓋過 ApplicationController 的
+  # timeout handler, 原本逾時回 HTTP 200; 408 又會讓部分 client 自動重送
+  # 負數原本送進 Elasticsearch (回 502), 兩段式分頁則取到最後幾筆
+  test 'start / rows 為負數時回錯誤訊息' do
+    %i[start rows].each do |key|
+      get '/search/all_in_one', params: { q: '法鼓', key => -3 }
+
+      assert_match(/#{key} 參數 不得小於 0/, response.parsed_body['error'])
+    end
+  end
+
+  test 'rack-timeout 逾時回 504' do
+    SearchController.alias_method :__orig_all_in_one, :all_in_one
+    SearchController.define_method(:all_in_one) do
+      raise Rack::Timeout::RequestTimeoutException, request.env
+    end
+
+    get '/search/all_in_one', params: { q: '法鼓' }
+
+    assert_response :gateway_timeout
+    assert_equal 504, response.parsed_body.dig('error', 'code')
+  ensure
+    SearchController.alias_method :all_in_one, :__orig_all_in_one
+    SearchController.remove_method :__orig_all_in_one
+  end
+
   private
 
   # 暫時改寫 Elasticsearch 設定；SearchService 每個 request 都會重新讀，

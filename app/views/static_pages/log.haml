@@ -11,6 +11,28 @@
 
 %h2#v5 Version 5.x
 
+%h3 2026-10-31 Version 5.18.6
+%ul
+  %li
+    search/kwic 修正：單卷的 kwic_wo_punc 回傳的前後文與命中位置不符；
+    sort=b 時 negative_lookbehind、negative_lookahead 排除錯對象；
+    NEAR 搭配 sort=b 時結果錯誤 (NEAR 現在忽略 sort 參數)；
+    NEAR 的詞彼此包含時前後文重複輸出文字。
+  %li
+    NEAR 的空白規則統一：多個空格、tab，或 NEAR 前面沒有空格時，
+    search/all_in_one 的筆數與 KWIC 原本可能是 0 或漏掉第三個詞。
+  %li
+    works 以冊號範圍查詢時，跨冊佛典 (例如 T0220) 只要與查詢範圍有重疊就會回傳；
+    原本查詢範圍放寬反而會少掉。
+  %li
+    search/toc、works 的 creator 系列參數中的 % 與 _ 改為照字面比對。
+  %li
+    changes 的 lb 參數若不是單一字串，視同未帶參數。
+  %li
+    search 系列與 search/kwic 的 start、rows 為負數時回傳錯誤訊息。
+  %li
+    請求逾時改回 HTTP 504 (原本 search 系列回 200，其他回 408)。
+
 %h3 2026-10-24 Version 5.18.4
 %ul
   %li

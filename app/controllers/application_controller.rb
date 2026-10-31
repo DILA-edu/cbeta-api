@@ -252,12 +252,14 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # 回 504 而不是 408: 408 表示 client 送 request 太慢, 部分 client 會自動重送,
+  # 等於把逾時的重查詢再跑一次。
   def handle_request_timeout(e)
     logger.warn(e.class)
-    render json: { 
-      error: { 
-        code: 504, message: "#{e.class} Request timed out." 
-      } 
-    }, status: :request_timeout
+    render json: {
+      error: {
+        code: 504, message: "#{e.class} Request timed out."
+      }
+    }, status: :gateway_timeout
   end
 end

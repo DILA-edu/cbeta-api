@@ -4,23 +4,24 @@ class ChangesController < ApplicationController
   include ApiKeyAuthentication
 
   def index
-    if params[:lb].blank? and params[:work].blank?
+    # 用 permit 後的值判斷: lb[]=x 這類非 scalar 參數不算 blank, 但會被 permit 丟掉,
+    # 結果變成 Change.where({}) 回傳整張表。
+    conditions = params.permit(:lb, :work, :juan)
+    if conditions[:lb].blank? and conditions[:work].blank?
       my_render(error: "lb 參數 與 work 參數 不能都是空的。")
       return
     end
 
     if params.key?(:juan)
-      if params.key?(:work)
-        params[:juan] = params[:juan].to_i 
+      if conditions[:work].present?
+        conditions[:juan] = conditions[:juan].to_i
       else
         my_render(error: "必須有 work 參數，才能指定 juan 參數。")
         return
       end
     end
 
-    @changes = Change.where(
-        params.permit(:lb, :work, :juan)
-      ).select(
+    @changes = Change.where(conditions).select(
         # 不回傳 id，因為它只是 RDB 流水號，不保證永久性
         :work, :juan, :lb, :html, :ver, :del_chars, :ins_chars
       ).order(ver: :desc)

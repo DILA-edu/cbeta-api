@@ -23,6 +23,16 @@ class TocNodeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # q 裡的 % _ 原本直接進 LIKE, q=% 等於 LIKE '%%%' 全表掃描, 繞過上面的空 q 防護
+  test 'search/toc 的 q 含 % _ 時當成一般字元比對' do
+    [ '%', '_' ].each do |q|
+      get '/search/toc', params: { q: q }
+
+      assert_response :success
+      assert_equal 0, response.parsed_body['num_found'], "q=#{q}"
+    end
+  end
+
   # 未帶 q 參數時原本會是 NoMethodError (undefined method 'match' for nil) 造成 500。
   test "search/toc 未帶 q 參數不應 500" do
     get '/search/toc'

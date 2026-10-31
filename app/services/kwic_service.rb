@@ -140,7 +140,7 @@ class KwicService
 
   def search_near(query, args={})
     t1 = Time.now
-    @option = OPTION.merge args
+    @option = near_option(args)
     
     @total_found = 0
 
@@ -161,7 +161,7 @@ class KwicService
   # all_in_one 的 NEAR 要先逐卷計數才能過濾、排 facet、分頁，
   # 原本對所有候選卷 (可達數千卷) 都產生完整 KWIC，最後只用到當頁。
   def count_near(query, args={})
-    @option = OPTION.merge args
+    @option = near_option(args)
     @total_found = 0
 
     unless @option.key? :juan
@@ -172,7 +172,14 @@ class KwicService
   end
   
   private
-  
+
+  # NEAR 的位置計算 (sort_by_pos、check_near、read_text_near) 都假設正序全文;
+  # sort=b 會讀倒序的 all-b.txt / sa-b.dat, 單卷 info.dat 卻是正序, 結果完全錯位。
+  # NEAR 結果本來就依位置排序, 所以忽略 sort 參數。
+  def near_option(args)
+    OPTION.merge(args).merge(sort: OPTION[:sort])
+  end
+
   def add_place_info(info_array)
     info_array.each do |data|
       w = Work.find_by n: data['work']
@@ -376,12 +383,23 @@ class KwicService
   def exclude_filter2(info_array, q)
     # 前面不要出現的字
     if @option.key?(:negative_lookbehind)
-      exclude_prefix(info_array, q, KwicFolding.normalize(@option[:negative_lookbehind]))
+      prefix = KwicFolding.normalize(@option[:negative_lookbehind])
+      # sort=b 時全文與 q 都是倒序: 原文在 q 前面的字, 在倒序全文裡接在 q 後面
+      if @option[:sort] == 'b'
+        exclude_suffix(info_array, q, prefix.reverse)
+      else
+        exclude_prefix(info_array, q, prefix)
+      end
     end
 
     # 後面不要出現的字
     if @option.key?(:negative_lookahead)
-      exclude_suffix(info_array, q, KwicFolding.normalize(@option[:negative_lookahead]))
+      suffix = KwicFolding.normalize(@option[:negative_lookahead])
+      if @option[:sort] == 'b'
+        exclude_prefix(info_array, q, suffix.reverse)
+      else
+        exclude_suffix(info_array, q, suffix)
+      end
     end
   end
 
@@ -705,7 +723,7 @@ class KwicService
     if @option[:kwic_w_punc] or @option[:kwic_wo_punc]
       if @option[:kwic_wo_punc]
         info_array.each do |data|      
-          data['kwic_no_punc'] = read_text_wo_punc(data[:sa_offset], q)
+          data['kwic_no_punc'] = read_text_wo_punc(text_offset(data), q)
         end
       end
 
@@ -716,7 +734,7 @@ class KwicService
           elsif @option[:kwic_wo_punc]
             data['kwic'] = data['kwic_no_punc']
           else
-            data['kwic'] = read_text_wo_punc(data[:sa_offset], q)
+            data['kwic'] = read_text_wo_punc(text_offset(data), q)
           end
         end
       end
@@ -730,6 +748,13 @@ class KwicService
 
   # read_text_near 會不會回傳 nil (後面的詞都與前一個詞完全重疊)，
   # 但不讀卷文字、不組字串。判斷必須與 read_text_near 完全一致。
+  # 命中位置在 (目前開啟的) 不含標點全文裡的 offset。
+  # 單卷的 read_info_block_juan 存的 :sa_offset 是 suffix array 的 index
+  # (exclude_prefix / exclude_suffix 要用), 跨卷的 read_info_block 存的則已經是 sa() 的值。
+  def text_offset(data)
+    @option.key?(:juan) ? sa(data[:sa_offset]) : data[:sa_offset]
+  end
+
   def near_match?(matches)
     m1 = matches.first
     prev_p2 = get_t2_offset_by_t1_offset(m1[:pos_sa][0] + m1[:term].size - 1)
@@ -776,7 +801,8 @@ class KwicService
         next 
       end
       
-      p1 = get_t2_offset_by_t1_offset(offset1)
+      # 與上一個詞部分重疊時, 重疊的字已經在上一個 <mark> 裡
+      p1 = [ get_t2_offset_by_t1_offset(offset1), prev_p2 + 1 ].max
       size = p1 - prev_p2 - 1
       s = read_str_with_punc(text, prev_p2+1, size)
       r << abridge_note(s)
@@ -792,7 +818,8 @@ class KwicService
 
     return nil unless found
 
-    r + read_str_with_punc(text, p2+1, @option[:around])
+    # 用 prev_p2: 最後一個詞若被略過 (完全重疊), p2 會小於已輸出的位置
+    r + read_str_with_punc(text, prev_p2+1, @option[:around])
   end
   
   # t1_offset: 不含標點
@@ -807,7 +834,7 @@ class KwicService
 
     text = cache_fetch_juan_text(data['vol'], data['work'], data['juan'])
     
-    r = ''
+    r = +''
 
     # 如果 sort=b, offset 指向 q 的最後一個字，要先將 pointer 移至 q 的第一個字
     if @option[:sort] == 'b'
@@ -942,12 +969,13 @@ class KwicService
   def near_matches(query)
     open_files(sa_rel_path)
 
-    unless query.match(/^"(\S+)" (NEAR\/(\d+) .*)$/)
+    # 與 Elasticsearch 端用同一個 parser, 空白、詞內空格的規則才會一致
+    parsed = CbetaSearch::QueryParser.new.parse(query)
+    unless parsed.type == :near
       raise CbetaError.new(400), "NEAR 語法錯誤 query: #{query}"
     end
 
-    q1 = KwicFolding.normalize($1)
-    nears = $2
+    q1, *rest = parsed.near_terms.map { KwicFolding.normalize(it) }
     start1, found1 = search_sa_after_open_files(q1)
     return [] if start1.nil?
 
@@ -957,14 +985,13 @@ class KwicService
       pos_group: pos1.map { |x| [x] }
     }
 
-    nears.scan(/NEAR\/(\d+) "(\S+)"/).each do |near, s|
-      q = KwicFolding.normalize(s)
+    rest.zip(parsed.near_distances).each do |q, near|
       start2, found2 = search_sa_after_open_files(q)
       # 任一詞不在本卷就不可能符合 NEAR。
       return [] if start2.nil?
 
       pos2 = sort_by_pos(start2, found2)
-      check_near(eligibles, near.to_i, q, pos2)
+      check_near(eligibles, near, q, pos2)
     end
 
     eligibles[:pos_group].map do |pos_group|

@@ -89,7 +89,7 @@ class WorksController < ApplicationController
   def search_by_creator
     q = params[:creator]
     #works = Work.where("(creators_with_id IS ?) AND (creators LIKE ?)", nil, "%#{q}%").order(:n)
-    works = Work.where("creators LIKE ?", "%#{q}%").order(:n).includes(:places)
+    works = Work.where("creators LIKE ? ESCAPE '\\'", "%#{Work.sanitize_sql_like(q.to_s)}%").order(:n).includes(:places)
     r = []
     works.each do |w|
       r << w.to_hash
@@ -99,7 +99,7 @@ class WorksController < ApplicationController
   
   def search_by_creator_id
     q = params[:creator_id]
-    works = Work.where("creators_with_id LIKE ?", "%#{q}%").order(:n).includes(:places)
+    works = Work.where("creators_with_id LIKE ? ESCAPE '\\'", "%#{Work.sanitize_sql_like(q.to_s)}%").order(:n).includes(:places)
     r = []
     works.each do |w|
       r << w.to_hash
@@ -111,7 +111,7 @@ class WorksController < ApplicationController
   def search_by_creator_name
     q = params[:creator_name]
     # 尚未確認 ID：匯入時沒有任何作譯者有 ID 會存成空字串 (見 import:work_info)
-    works = Work.where(creators_with_id: [nil, '']).where("creators LIKE ?", "%#{q}%").order(:n).includes(:places)
+    works = Work.where(creators_with_id: [nil, '']).where("creators LIKE ? ESCAPE '\\'", "%#{Work.sanitize_sql_like(q.to_s)}%").order(:n).includes(:places)
     r = []
     works.each do |w|
       r << w.to_hash
@@ -184,7 +184,8 @@ class WorksController < ApplicationController
       next if added.include?(w.n)
 
       vol1, vol2 = w.vol.split('..')
-      if (vol1 <= v1) and (vol2 >= v2)
+      # 兩個範圍有重疊就算 (原本要求佛典涵蓋整個查詢範圍, 查 T06..T08 反而找不到 T0220)
+      if (vol1 <= v2) and (vol2 >= v1)
         r << w.to_hash
       end
     end

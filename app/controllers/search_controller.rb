@@ -48,6 +48,10 @@ class SearchController < ApplicationController
               Faraday::Error,
               with: :elasticsearch_error_handler
 
+  # ApplicationController 的 timeout handler 會被上面的 rescue_from Exception 蓋過
+  # (子類別的 handler 優先), 逾時會變成 HTTP 200 + 錯誤訊息, 所以這裡要再註冊一次。
+  rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_request_timeout
+
   def initialize
     # 必須呼叫 super: ActionController::Metal#initialize 會初始化 @_request 等內部狀態
     super
@@ -686,6 +690,10 @@ class SearchController < ApplicationController
     @use_cache = params.key?(:cache) ? (params[:cache]=='1') : true
     @start  = params.key?(:start)  ? params[:start].to_i  : 0
     @rows   = params.key?(:rows)   ? params[:rows].to_i   : 20
+    # 負數送進 Elasticsearch 的 from / size 會回 400 (變成 502),
+    # 兩段式分頁的 ary[-3, 20] 則會取到最後幾筆
+    raise CbetaError.new(400), 'start 參數 不得小於 0' if @start < 0
+    raise CbetaError.new(400), 'rows 參數 不得小於 0' if @rows < 0
     @around = params.key?(:around) ? params[:around].to_i : 10
     @facet  = params.key?(:facet)  ? params[:facet].to_i  : 0
     @inline_note = params.key?(:note) ? params[:note]=='1' : true
@@ -873,7 +881,8 @@ class SearchController < ApplicationController
 
   # boolean search 回傳 kwic
   def kwic_boolean(se, opts)
-    if @q.match?(/ NEAR\/(\d+) /)
+    # 用 parser 的判斷, 不另用 regex: 規則不同時 ("法鼓"NEAR/7 "迦葉") 會走錯分支
+    if @mode == 'near'
       return se.search_near(@q, opts)
     end
 
