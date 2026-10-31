@@ -144,8 +144,12 @@ class WorksController < ApplicationController
 
     y1 = params[:time_start].to_i
     y2 = params[:time_end].to_i
-    #works = Work.where('time_from <= ?'vol: v1..v2).order(:n)
-    works = Work.where('(time_from between ? and ?) or (time_to between ? and ?)', y1, y2, y1, y2).includes(:places)
+    # 成立期間與查詢範圍有重疊就算。原本只看起或迄是否落在範圍內,
+    # 期間完整涵蓋查詢範圍的 (例: 384~417 查 400~410) 會漏掉。
+    # 只有起或迄其中一個時, 當成單一年份。
+    works = Work.where(
+      'COALESCE(time_from, time_to) <= ? AND COALESCE(time_to, time_from) >= ?', y2, y1
+    ).includes(:places)
     
     r = []
     works.each do |w|

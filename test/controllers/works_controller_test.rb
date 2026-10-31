@@ -100,4 +100,14 @@ class WorksControllerTest < ActionDispatch::IntegrationTest
     assert_equal 400, response.parsed_body.dig('error', 'code')
   end
 
+  # 原本只看起或迄是否落在範圍內, 成立期間涵蓋整個查詢範圍的會漏掉
+  test '成立期間與時間範圍有重疊就回傳' do
+    # fixture T0001: 384 ~ 417
+    { [ 400, 410 ] => true, [ 300, 390 ] => true, [ 410, 500 ] => true, [ 300, 383 ] => false, [ 418, 500 ] => false }.each do |(y1, y2), expected|
+      get '/works', params: { time_start: y1, time_end: y2 }
+
+      works = response.parsed_body['results'].map { it['work'] }
+      assert_equal expected, works.include?('T0001'), "#{y1}..#{y2}"
+    end
+  end
 end

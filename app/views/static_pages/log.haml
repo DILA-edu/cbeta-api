@@ -19,6 +19,9 @@
   %li
     works 以 time_start 查詢時必須同時指定 time_end，否則回傳錯誤 (原本靜默回空結果)。
   %li
+    works 以時間範圍查詢時，佛典成立期間與查詢範圍有重疊即符合；
+    原本成立期間完整涵蓋查詢範圍的佛典會漏掉。
+  %li
     search/toc 以冊號查詢 (例如 T01) 轉址時保留 JSONP 的 callback 參數。
   %li
     帶無效 API key 的請求也計入每個 IP 的流量限制。

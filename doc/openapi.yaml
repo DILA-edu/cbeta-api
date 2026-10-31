@@ -1489,7 +1489,7 @@ paths:
           example: '2'
         - name: time_start
           in: query
-          description: 成立年代範圍起（西元年），須同時指定 `time_end`。
+          description: 成立年代範圍起（西元年），須同時指定 `time_end`。佛典的成立期間與查詢範圍有重疊即符合。
           schema:
             type: integer
           example: 600
