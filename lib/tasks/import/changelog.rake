@@ -58,8 +58,9 @@ class ImportChangelog
     text = html.gsub(/\[[^\]]+\]/, '一') # 組字式 取代為一個字元
 
     r = 0
+    # 有 capture group 時 block 收到的是 [字串], 要取 x[0] 才是字數
     text.scan(%r{<span class="#{type}">([^<]*)</span>}) do |x|
-      r += x.size
+      r += x[0].size
     end
 
     r

@@ -5,6 +5,7 @@
 2015.10.24 by Ray Chou
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <iostream>
 #include <fstream>
@@ -71,6 +72,11 @@ void suffix_array(char *arg, string dir) {
 
   // 開檔並移至檔尾
   f_text.open(fn_text, ios::binary|ios::ate);
+  // 開檔失敗時 tellg() 是 -1, N 會變成極大值
+  if (!f_text) {
+    cerr << "sa.cpp: 無法開啟 " << fn_text << "\n";
+    exit(1);
+  }
   streampos size_in_bytes = f_text.tellg();
   unsigned int N = size_in_bytes / 4;
   // cout << "size is: " << size_in_bytes << " bytes.\n";
@@ -101,7 +107,9 @@ void suffix_array(char *arg, string dir) {
   /* 第二回合 以前2個字元排序，
      第三回合 以前4個字元排序，依此類推。不斷倍增。 */
  
-  for (unsigned int m=2; m<=N; m*=2) {
+  // 條件用 m/2 < N: 寫成 m <= N 時, N 不是 2 的冪就少排最後一輪,
+  // 共用前綴超過 m 的 suffix 之間順序不定 (例: "aaa" 會排成 2,0,1)。
+  for (unsigned int m=2; m/2 < N; m*=2) {
     // cout << dir << m << endl << flush;
     // 運用上回合的名次，排序所有後綴。
     // 每個後綴，拿前m個字元，先比前半段、再比後半段。

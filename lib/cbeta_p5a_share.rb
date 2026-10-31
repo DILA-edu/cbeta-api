@@ -174,18 +174,19 @@ module CbetaP5aShare
     @notes_mod[@juan][n] = s
 
     label = case subtype
-            when 'biao' then " data-label='標#{n[-2..-1]}'"
-            when 'jie' then " data-label='解#{n[-2..-1]}'"
-            when 'ke' then " data-label='科#{n[-2..-1]}'"
-            else ''
+            when 'biao' then "標#{n[-2..-1]}"
+            when 'jie' then "解#{n[-2..-1]}"
+            when 'ke' then "科#{n[-2..-1]}"
             end
 
+    # text 模式只要純文字編號, 不能帶 html 的 data-label 屬性
     if @format == 'text'
-      label = n[-3..-1].sub(/^0+/, '') if label.empty?
+      label ||= n[-3..-1].sub(/^0+/, '')
       @block_notes << "[#{label}] #{s}"
       return "[#{label}]"
     end
 
+    label = " data-label='#{label}'" unless label.nil?
     "<a class='noteAnchor' href='#n#{n}'#{label}></a>"
   end
 

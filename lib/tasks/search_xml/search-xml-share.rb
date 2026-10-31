@@ -21,7 +21,7 @@ module SearchXmlShare
 
     data[:category]     = w.category
     data[:category_ids] = w.category_ids
-    data[:alt]          = w.juan_list  unless exclude.include?(:alt) or w.alt.nil?
+    data[:alt]          = w.alt        unless exclude.include?(:alt) or w.alt.nil?
     data[:juan_list]    = w.juan_list  unless exclude.include?(:juan_list)
     data[:juan_start]   = w.juan_start unless exclude.include?(:juan_start)
     

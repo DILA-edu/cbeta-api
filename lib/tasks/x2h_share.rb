@@ -79,12 +79,14 @@ module P5aToHtmlShare
 
       caesura = a[i-1]
       if caesura.match(/<caesura ([^>]*?)\/>/)
+        # 先存起來: 下一個 match 會改掉 $1 (同 x2h_for_ui.rb)
+        style = $1
         if caesura.match(/text\-indent: ?(\-?\d+)em/)
           s = line_space($1)
         else
           s = ''
         end
-        r += "#{s}<div class='lg-cell' #{$1}>#{v}</div>\n"
+        r += "#{s}<div class='lg-cell' #{style}>#{v}</div>\n"
       else
         r += "<div class='lg-cell'>#{v}</div>\n"
       end
