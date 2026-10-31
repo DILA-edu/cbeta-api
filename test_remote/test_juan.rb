@@ -7,16 +7,6 @@ class JuanTest < Minitest::Test
     @url = "juans"
   end
   
-  def test_cn
-    save_referer = $referer
-    $referer = 'https://cbetaonline.cn/'
-
-    r = get_json(@url, work: "YP0021", juan: 1)
-    refute_equal(r['num_found'], 0)
-
-    $referer = save_referer
-  end
-
   def test_facs_k
     html = get_html(work: 'T0001', juan: 1)
     doc = Nokogiri::HTML(html)

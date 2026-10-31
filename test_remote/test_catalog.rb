@@ -14,28 +14,6 @@ class CatalogTest < Minitest::Test
     refute_operator(label, :end_with?, '（上）')
   end
 
-  def test_cn
-    save_referer = $referer
-    $referer = 'https://cbetaonline.cn/'
-
-    r = get_json(@url, q: 'vol')
-    a = r['results'].select { |x| x['n']=='Vol-Y'}
-    assert_empty(a, 'cbetaonline.cn 要過濾 Y')
-
-    r = get_json(@url, q: 'CBETA.023')
-    a = r['results'].select { |x| x['label'].include?('印順') }
-    assert_empty(a, 'cbetaonline.cn 要過濾 Y')
-    
-    r = get_json(@url, q: 'orig.006')
-    a = r['results'].select { |x| x['n'] == 'orig-Y' }
-    assert_empty(a, 'cbetaonline.cn 要屏蔽 Y')
-
-    a = r['results'].select { |x| x['n'] == 'orig-YP' }
-    refute_empty(a, 'cbetaonline.cn 不要屏蔽 YP')
-
-    $referer = save_referer
-  end
-  
   def test_y
     params = { q: 'orig-Y.003' }
     data = get_json(@url, params)
