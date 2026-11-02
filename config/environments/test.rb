@@ -22,6 +22,12 @@ Rails.application.configure do
   config.consider_all_requests_local = true
   config.cache_store = :null_store
 
+  # Sprockets 的 cache 不寫進 tmp/cache/assets: 在 main 跑過測試後切回 dev,
+  # 會讀到 main 留下的 cache 而去載入 dev 已移除的 coffee-rails (LoadError)。
+  config.assets.configure do |env|
+    env.cache = Sprockets::Cache::MemoryStore.new
+  end
+
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
 
