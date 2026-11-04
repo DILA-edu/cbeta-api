@@ -1047,8 +1047,8 @@ class P5aToHTMLForUI
   def handle_chars(text, mode)
     r = +''
     text.each_char do |char|
-      # "㉑" (U+3251) unicode 3.2 列為特例允許
-      if @us.level1?(char) or char == "㉑"
+      # 超出 Unicode 3.0 的特例字元 (如 ㉑) 已由 level1? 處理
+      if @us.level1?(char)
         r << char
       else
         gid = @gaijis.unicode_to_cb(char)
