@@ -516,6 +516,8 @@ class XMLForDocx1
   end
 
   def e_lb(e)
+    # <lb type="forced"/> 沒有 ed 也沒有 n, 不是新的一行
+    return '' if e['type'] == 'forced'
     return '' if e['ed'].start_with?('R')
     
     @lb = e['n']

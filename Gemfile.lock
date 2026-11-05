@@ -113,7 +113,7 @@ GEM
     capistrano-rails (1.7.0)
       capistrano (~> 3.1)
       capistrano-bundler (>= 1.1, < 3)
-    cbeta (4.3.0)
+    cbeta (4.3.1)
       csv (~> 3.3, >= 3.3.2)
       nokogiri (~> 1.19.1, >= 1.19.4)
     chronic_duration (0.10.6)
@@ -576,7 +576,7 @@ CHECKSUMS
   capistrano-bundler (2.2.0) sha256=47b4cf2ea17ea132bb0a5cabc5663443f5190a54f4da5b322d04e1558ff1468c
   capistrano-passenger (0.2.1) sha256=07a1d25edd5c1d909c19d4fe45fe2ea5f11200569f6967f6bff1d605ade98e13
   capistrano-rails (1.7.0) sha256=aca57455e8c5435785e0f938e16aa5b79c263694a755e1dca1c5d1743b40aae7
-  cbeta (4.3.0) sha256=7fe1a67f13316a050d5245ad77271596562b71942c83be5a11e5a29d76fad406
+  cbeta (4.3.1) sha256=2019e10da8b88ba321613ae40b162981cbc02c0fc49a30e165e9e406917a8ba4
   chronic_duration (0.10.6) sha256=fac58d4147d3183a40811400380cafcef049f2bb02421d2fd1c6e685fbe8facc
   colorize (1.1.0) sha256=30b5237f0603f6662ab8d1fc2bd4a96142b806c6415d79e45ef5fdc6a0cfc837
   concurrent-ruby (1.3.8) sha256=b2f1be836e968ccc78ccfce277ea79c72a88633f22306782c16ff23fb415d1e1

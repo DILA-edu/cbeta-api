@@ -46,8 +46,10 @@ class CbetaLineReader
   # 只取本藏的行: 卍續藏 XML 夾著新文豐版的 <lb ed="R150">, 當成新的一行
   # 會把文字記到不存在的行號下, 頁碼重複時還會清掉已讀到的行
   # (同 x2h_for_ui、notes.rake 的 e_lb)
+  # <lb type="forced"/> 是行內強制換行 (例如 YP30 表格 cell 內), 沒有 n 也沒有 ed,
+  # 不是新的一行, 文字要接在原本那行
   def e_lb(e)
-    return if e['type'] == 'old'
+    return if %w[old forced].include?(e['type'])
     return if e['ed'] && e['ed'] != @canon
 
     @lb = e['n']

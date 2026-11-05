@@ -801,7 +801,8 @@ class P5aToHTMLForUI
       return content
     end
 
-    lb = node.at_xpath("preceding::lb[1]")
+    # 略過沒有行號的 <lb type="forced"/>
+    lb = node.at_xpath("preceding::lb[@n][1]")
     if lb.nil?
       puts "ref target #{target} 之前沒有 lb"
       return content
