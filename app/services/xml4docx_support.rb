@@ -50,17 +50,20 @@ module Xml4docxSupport
     end
   end
 
-  def list_xml(node)
+  # list 自己的 margin-left (例如 rend="m1") 跟 CSS 一樣會累加到底下各層:
+  # parent_margin 是外層 list 累積下來的 point 數
+  def list_xml(node, parent_margin = 0)
     level = positive_integer(node['level'], 1)
     type = node['type'].to_s.empty? ? 'bullet' : node['type'].to_s
+    margin = parent_margin + (paragraph_indents_points(style_for(node))[:left] || 0)
 
     node.xpath('./item').each_with_index.map do |item, index|
-      item_xml(item, level, type, index)
+      item_xml(item, { level: level, type: type, margin: margin }, index)
     end.join
   end
 
-  def item_xml(item, level, type, index)
-    list_context = { level: level, type: type }
+  def item_xml(item, list_context, index)
+    type = list_context[:type]
     marker = list_marker(type, index)
 
     item.element_children.map.with_index do |child, child_index|
@@ -68,7 +71,7 @@ module Xml4docxSupport
       when 'p'
         paragraph_xml(child, list_context: list_context, prefix: child_index.zero? ? marker : nil)
       when 'list'
-        list_xml(child)
+        list_xml(child, list_context[:margin])
       when 'seg'
         synthetic = Nokogiri::XML::Node.new('p', @xml)
         synthetic.add_child(child.dup)
@@ -342,6 +345,25 @@ module Xml4docxSupport
     points.positive? ? points : nil
   rescue ArgumentError
     nil
+  end
+
+  # margin-left / text-indent 只會出現 Nem 或 0 (例如 1em、-1em、-0em、0), 回傳 em 數;
+  # 其他單位不支援, 回傳 nil
+  def em_length(value)
+    match = value.to_s.strip.match(/\A(-?\d+(?:\.\d+)?)(em)?\z/)
+    return nil unless match
+    return nil if match[2].nil? && match[1].to_f.nonzero?
+
+    match[1].to_f
+  end
+
+  # 段落的 em 以該段落自己的字級為準 (同 CSS), 沒指定就用 default 的字級
+  def paragraph_indents_points(style)
+    font_size = font_size_points(merge_styles(@default_style, style)['font-size']) || 12
+    margin = em_length(style['margin-left'])
+    indent = em_length(style['text-indent'])
+
+    { left: margin && margin * font_size, first_line: indent && indent * font_size }
   end
 
   def bold?(value)

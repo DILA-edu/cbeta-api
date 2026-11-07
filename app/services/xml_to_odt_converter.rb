@@ -471,12 +471,27 @@ class XmlToOdtConverter
       attributes << %(fo:background-color="#{fill}")
     end
 
-    if list_context
-      indent = [list_context[:level], 1].max * LIST_INDENT_CM
-      attributes << %(fo:margin-left="#{format_length(indent)}cm")
-    end
+    attributes.concat(indentation_attributes(style, list_context))
 
     attributes.empty? ? '' : %(<style:paragraph-properties #{attributes.join(' ')}/>)
+  end
+
+  # list 層級縮排、list 自己的 margin-left 與段落的 margin-left 相加; fo:margin-left 只能出現一次
+  def indentation_attributes(style, list_context)
+    indents = paragraph_indents_points(style)
+    left = indents[:left] && points_to_cm(indents[:left])
+    if list_context
+      left = (left || 0) + ([list_context[:level], 1].max * LIST_INDENT_CM) + points_to_cm(list_context[:margin])
+    end
+
+    attributes = []
+    attributes << %(fo:margin-left="#{format_length(left)}cm") if left
+    attributes << %(fo:text-indent="#{format_length(points_to_cm(indents[:first_line]))}cm") if indents[:first_line]
+    attributes
+  end
+
+  def points_to_cm(points)
+    points * 2.54 / 72
   end
 
   # ODF 的西文/中日韓/複雜文種字型與大小是分開的屬性, 三者都要設才會一致

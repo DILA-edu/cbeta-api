@@ -323,6 +323,42 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "margin-left 與 text-indent 依段落字級換算成 cm" do
+    styles = '<style name="m1">margin-left:1em</style>'
+    body = '<p rend="m1">a</p>' \
+           '<p style="margin-left:2em;text-indent:-1em">b</p>' \
+           '<p style="font-size:18;margin-left:2em">c</p>' \
+           '<list level="1" type="none"><item><p rend="m1">d</p></item></list>'
+
+    Dir.mktmpdir do |dir|
+      with_odt(write_xml(dir, body, styles: styles)) do |odt, _warnings|
+        content = odt['content.xml']
+        # 12pt = 0.423cm
+        assert_includes content, 'fo:margin-left="0.423cm"'
+        assert_includes content, 'fo:margin-left="0.847cm" fo:text-indent="-0.423cm"'
+        assert_includes content, 'fo:margin-left="1.27cm"'
+        # list 縮排 1.27cm 加上段落的 0.423cm
+        assert_includes content, 'fo:margin-left="1.693cm"'
+      end
+    end
+  end
+
+  test "list 自己的 margin-left 累加到底下各層段落" do
+    styles = '<style name="m1">margin-left:1em</style>'
+    body = '<list level="1" rend="m1"><item><p>a</p>' \
+           '<list level="2" rend="m1"><item><p>b</p></item></list>' \
+           '</item></list>'
+
+    Dir.mktmpdir do |dir|
+      with_odt(write_xml(dir, body, styles: styles)) do |odt, _warnings|
+        content = odt['content.xml']
+        # level 1: 1.27cm + 0.423cm; level 2: 2.54cm + 0.423cm × 2
+        assert_includes content, 'fo:margin-left="1.693cm"'
+        assert_includes content, 'fo:margin-left="3.387cm"'
+      end
+    end
+  end
+
   test "語言標成 zxx, LibreOffice 就不會做拼字與文法檢查" do
     with_odt(SAMPLE_XML, figures_dir: FIGURES) do |odt, _warnings|
       assert_includes odt['styles.xml'], 'fo:language="zxx" fo:country="none"'
@@ -371,14 +407,14 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     File.binwrite(path, "GIF89a".b + [width, height].pack('v2') + "\x00\x00\x00".b)
   end
 
-  def write_xml(dir, body)
+  def write_xml(dir, body, styles: '')
     path = File.join(dir, 'input.xml')
     File.write(path, <<~XML)
       <?xml version="1.0" encoding="UTF-8"?>
       <document>
         <settings>
           <footer>第 {Page} 頁／共 {NumPages} 頁</footer>
-          <styles><style name="default">font-size:12</style></styles>
+          <styles><style name="default">font-size:12</style>#{styles}</styles>
         </settings>
         <body>#{body}</body>
       </document>

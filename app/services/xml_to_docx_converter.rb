@@ -547,22 +547,38 @@ class XmlToDocxConverter
   def paragraph_properties_xml(style, list_context)
     props = []
 
+    # 子元素順序依 CT_PPrBase 的 schema sequence: pStyle → shd → ind → jc
     props << "<w:pStyle w:val=\"#{escape_xml(style['_pstyle'])}\"/>" if style['_pstyle']
-
-    if (alignment = alignment_value(style['text-align'] || style['cell-align']))
-      props << "<w:jc w:val=\"#{alignment}\"/>"
-    end
 
     if (fill = color_value(style['background-color']))
       props << "<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"#{fill}\"/>"
     end
 
-    if list_context
-      left = [list_context[:level], 1].max * 720
-      props << "<w:ind w:left=\"#{left}\"/>"
+    if (ind = indentation_xml(style, list_context))
+      props << ind
+    end
+
+    if (alignment = alignment_value(style['text-align'] || style['cell-align']))
+      props << "<w:jc w:val=\"#{alignment}\"/>"
     end
 
     props.empty? ? '' : "<w:pPr>#{props.join}</w:pPr>"
+  end
+
+  # list 層級縮排、list 自己的 margin-left 與段落的 margin-left 相加; 一個 w:pPr 只能有一個 w:ind
+  def indentation_xml(style, list_context)
+    indents = paragraph_indents_points(style)
+    left = indents[:left] && (indents[:left] * 20).round
+    left = (left || 0) + ([list_context[:level], 1].max * 720) + (list_context[:margin] * 20).round if list_context
+
+    attributes = []
+    attributes << %(w:left="#{left}") if left
+    if (first_line = indents[:first_line])
+      twips = (first_line * 20).round.abs
+      attributes << (first_line.negative? ? %(w:hanging="#{twips}") : %(w:firstLine="#{twips}"))
+    end
+
+    attributes.empty? ? nil : "<w:ind #{attributes.join(' ')}/>"
   end
 
   # extra 是額外的 rPr 子元素, 由呼叫端負責放在符合 CT_RPr 順序的位置

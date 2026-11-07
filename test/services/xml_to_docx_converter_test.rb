@@ -244,6 +244,47 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "margin-left 與 text-indent 依段落字級換算成 w:ind" do
+    styles = '<style name="m1">margin-left:1em</style>' \
+             '<style name="h">font-size:18;margin-left:2em;text-align:center</style>'
+    body = '<p rend="m1">a</p>' \
+           '<p style="margin-left:2em;text-indent:-1em">b</p>' \
+           '<p style="margin-left:0;text-indent:2em">c</p>' \
+           '<p rend="h">d</p>' \
+           '<list level="1" type="none"><item><p rend="m1">e</p></item></list>'
+
+    Dir.mktmpdir do |dir|
+      with_docx(write_xml(dir, body, styles: styles)) do |docx, _warnings|
+        document = docx['word/document.xml']
+        assert_includes document, '<w:pStyle w:val="m1"/><w:ind w:left="240"/>'
+        assert_includes document, '<w:ind w:left="480" w:hanging="240"/>'
+        assert_includes document, '<w:ind w:left="0" w:firstLine="480"/>'
+        # em 以段落自己的字級 18pt 為準; w:ind 要排在 w:jc 前面
+        assert_includes document, '<w:ind w:left="720"/><w:jc w:val="center"/>'
+        # list 縮排 720 加上段落的 240, 只能有一個 w:ind
+        assert_includes document, '<w:ind w:left="960"/>'
+      end
+    end
+  end
+
+  test "list 自己的 margin-left 累加到底下各層段落" do
+    styles = '<style name="m1">margin-left:1em</style>'
+    body = '<list level="1" rend="m1"><item><p>a</p>' \
+           '<list level="2" rend="m1"><item><p>b</p></item></list>' \
+           '<list level="2" type="none"><item><p rend="m1">c</p></item></list>' \
+           '</item></list>'
+
+    Dir.mktmpdir do |dir|
+      with_docx(write_xml(dir, body, styles: styles)) do |docx, _warnings|
+        document = docx['word/document.xml']
+        # level 1: 720 + list m1 240
+        assert_includes document, '<w:ind w:left="960"/>'
+        # level 2 兩段: 1440 + 外層 m1 240 + 內層 list 或段落的 m1 240
+        assert_equal 2, document.scan('<w:ind w:left="1920"/>').size
+      end
+    end
+  end
+
   test "package 各 part 都是合法 XML" do
     with_docx(SAMPLE_XML, figures_dir: FIGURES) do |docx, _warnings|
       docx.each do |name, content|
@@ -301,12 +342,12 @@ class XmlToDocxConverterTest < ActiveSupport::TestCase
     File.binwrite(path, "GIF89a".b + [width, height].pack('v2') + "\x00\x00\x00".b)
   end
 
-  def write_xml(dir, body)
+  def write_xml(dir, body, styles: '')
     path = File.join(dir, 'input.xml')
     File.write(path, <<~XML)
       <?xml version="1.0" encoding="UTF-8"?>
       <document>
-        <settings><styles><style name="default">font-size:12</style></styles></settings>
+        <settings><styles><style name="default">font-size:12</style>#{styles}</styles></settings>
         <body>#{body}</body>
       </document>
     XML
