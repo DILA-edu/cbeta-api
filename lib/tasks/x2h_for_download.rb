@@ -217,13 +217,14 @@ class P5aToHTMLForDownload
       end
     end
 
-    if gid.start_with?('SD')
-      return g['symbol'] unless g['symbol'].blank?
-      return "<span class='siddam' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
-    end
-    
-    if gid.start_with?('RJ')
-      return "<span class='ranja' roman='#{g['romanized']}' code='#{gid}' char='#{g['char']}'/>"
+    # 下載版 HTML 沒有 CBETA Online 的 JS 可把悉曇/蘭札字填進空 span，
+    # 直接輸出羅馬轉寫 (與下載版 txt、epub 相同)
+    if gid.start_with?('SD') || gid.start_with?('RJ')
+      return g['symbol'] if gid.start_with?('SD') && g['symbol'].present?
+
+      css = gid.start_with?('SD') ? 'siddam' : 'ranja'
+      text = g['romanized'].presence || "[#{gid}]"
+      return "<span class='#{css}' data-gid='#{gid}'>#{text}</span>"
     end
    
     default = ''
