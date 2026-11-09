@@ -217,14 +217,10 @@ class P5aToHTMLForDownload
       end
     end
 
-    # 下載版 HTML 沒有 CBETA Online 的 JS 可把悉曇/蘭札字填進空 span，
-    # 直接輸出羅馬轉寫 (與下載版 txt、epub 相同)
     if gid.start_with?('SD') || gid.start_with?('RJ')
       return g['symbol'] if gid.start_with?('SD') && g['symbol'].present?
 
-      css = gid.start_with?('SD') ? 'siddam' : 'ranja'
-      text = g['romanized'].presence || "[#{gid}]"
-      return "<span class='#{css}' data-gid='#{gid}'>#{text}</span>"
+      return siddham_html(gid, g)
     end
    
     default = ''
@@ -255,6 +251,37 @@ class P5aToHTMLForDownload
 
     default = g['composition'] if default.empty?
     %(<span class="gaiji" data-gid="#{gid}">#{default}</span>)
+  end
+
+  # 悉曇字 (SD)、蘭札字 (RJ): 字圖 + 羅馬轉寫 (ruby 標在上方)。
+  # 下載版要能離線閱讀, 字圖以 data URI 內嵌。
+  # 圖檔來源: cb.git 下的 sd-gif、rj-gif (github.com/cbeta-org/sd-gif)
+  def siddham_html(gid, g)
+    css = gid.start_with?('SD') ? 'siddam' : 'ranja'
+    roman = g['romanized'].presence && CGI.escapeHTML(g['romanized'])
+    src = siddham_img_src(gid)
+
+    if src.nil?
+      @log.puts "缺悉曇/蘭札字圖: #{gid}"
+      return "<span class='#{css}' data-gid='#{gid}'>#{roman || "[#{gid}]"}</span>"
+    end
+
+    img = "<img src='#{src}' alt='#{roman || gid}'>"
+    return "<span class='#{css}' data-gid='#{gid}'>#{img}</span>" if roman.nil?
+
+    "<ruby class='#{css}' data-gid='#{gid}'>#{img}<rt>#{roman}</rt></ruby>"
+  end
+
+  def siddham_img_src(gid)
+    @siddham_img_src ||= {}
+    return @siddham_img_src[gid] if @siddham_img_src.key?(gid)
+
+    folder = gid.start_with?('SD') ? 'sd-gif' : 'rj-gif'
+    fn = File.join(Rails.configuration.cb.git, folder, gid[3, 2], "#{gid}.gif")
+    @siddham_img_src[gid] =
+      if File.exist?(fn)
+        "data:image/gif;base64,#{Base64.strict_encode64(File.binread(fn))}"
+      end
   end
 
   def e_graphic(e)
