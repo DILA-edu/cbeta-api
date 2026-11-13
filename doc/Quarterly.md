@@ -41,9 +41,11 @@ symlink，換 slot 只改伺服器上的 symlink，見 [annual-rotation.md](annu
 
 https://rubygems.org/gems/cbeta
 
-* 缺字資料要更新
-  * cbeta_gaiji.json
-  * cbeta_sanskrit.json
+只有在**新增藏經 ID**或**新典籍有卷跨冊**時才需要更新 gem（`CANON`、`SORT_ORDER`、
+`lib/data/canons.csv` 等），見 [new-works.md](new-works.md)。
+
+缺字資料不必再更新 gem：app 直接讀 cbeta_gaiji repo 的 `cbeta_gaiji.json`、
+`cbeta_sanskrit.json`（見 `lib/my_cbeta_share.rb`），gem 裡附帶的那兩份用不到。
 
 ## UUID
 
