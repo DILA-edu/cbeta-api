@@ -118,9 +118,10 @@ job 會延後約 2 分鐘才執行：sync 會略過 1 分鐘內才更新的列�
 
    service account 走 IAM，不受 rules 限制；rules 只擋 client SDK，
    而這份資料不該被任何 client 讀到。
-3. Google Cloud console →「IAM 與管理」→「服務帳戶」→「建立服務帳戶」，
-   角色只給 **Cloud Datastore User**（`roles/datastore.user`）。建好後在「金鑰」分頁
-   新增 JSON 金鑰並下載。
+3. Google Cloud console →「IAM 與管理 (IAM & Admin)」→「服務帳戶 (Service Accounts)」→「建立服務帳戶 (Create service account)」，
+   - Permissions
+     - Role: 清單裡選 Datastore => Cloud Datastore User。
+     - 建好後在「金鑰 (Keys)」分頁 => Add key => Create new key => Key type 選 JSON => Create => 會自動下載 JSON 檔案
    - 不要用 Firebase「專案設定 → 服務帳戶」產生的 Admin SDK 金鑰，權限大得多。
    - 若建立金鑰時被組織政策 `iam.disableServiceAccountKeyCreation` 擋住，
      要請組織管理員為這個專案解除。
