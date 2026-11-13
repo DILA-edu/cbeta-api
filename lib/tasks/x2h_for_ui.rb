@@ -1074,7 +1074,7 @@ class P5aToHTMLForUI
     end
 
     # cbeta xml 文字之間會有多餘的換行
-    s.gsub!(/[\n\r]/, '')
+    s.gsub!(/[ \t]*[\r\n][ \t]*/, '')
     return '' if s.empty?
 
     text_size = @cbs.remove_puncs(s).size

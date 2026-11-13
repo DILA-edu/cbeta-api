@@ -83,7 +83,7 @@ class CbetaLineReader
     return '' if e.parent.name == 'app'
 
     # 只移除多餘換行,標點/空格保留(與 cbeta gem 產生 HTML 時一致)
-    s = s.gsub(/[\n\r]/, '')
+    s = s.gsub(/[ \t]*[\r\n][ \t]*/, '')
     @lines[@lb] << s
   end
 

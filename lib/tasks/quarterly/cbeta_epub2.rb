@@ -726,7 +726,7 @@ eos
     end
 
     # cbeta xml 文字之間會有多餘的換行
-    s.gsub!(/[\n\r]/, '')
+    s.gsub!(/[ \t]*[\r\n][ \t]*/, '')
 
     # xml p5a 裡面會直接採用 unicode
     # 例如：B01n0001, p. 71a03, 「將𥸩此文」的「𥸩」（經查該字為 extension-b 字元 U+25E29）

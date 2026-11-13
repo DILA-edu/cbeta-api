@@ -394,7 +394,7 @@ class SearchXmlNotes
     return '' if e.parent.name == 'app'
 
     # cbeta xml 文字之間會有多餘的換行
-    s.gsub(/[\n\r]/, '')
+    s.gsub!(/[ \t]*[\r\n][ \t]*/, '')
     
     # 校注都不算 offset, 不管是否在夾注裡
     # 夾注也要算 offset, 如果在校注裡 就不算

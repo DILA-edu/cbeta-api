@@ -332,7 +332,7 @@ class P5aToText
       return '' if e.parent.name == 'tt' && e.parent.at_xpath('ttr')
     end
 
-    s.gsub(/[\r\n\t]/, '')
+    s.gsub(/[ \t]*[\r\n][ \t]*|\t/, '')
   end
 
   def handle_vol(vol)

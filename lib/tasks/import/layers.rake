@@ -68,6 +68,9 @@ class ImportLayers
     @log.close
     puts @count
     puts ElapsedTime.label(t1)
+
+    # 有不符就以非 0 結束，讓 quarterly runner 停在這裡，不要接著打包 HTML
+    abort "import:layers 有 #{@mismatch} 筆文字不符" if @mismatch.positive?
   rescue CbetaError => e
     puts "Error code: #{e.code}"
     abort e.message

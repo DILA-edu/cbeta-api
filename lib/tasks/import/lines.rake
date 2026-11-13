@@ -362,7 +362,7 @@ class ImportLines
     end
 
     # cbeta xml 文字之間會有多餘的換行
-    s.gsub!(/[\n\r]/, '')
+    s.gsub!(/[ \t]*[\r\n][ \t]*/, '')
     
     # 把 & 轉為 &amp;
     CGI.escapeHTML(s)    
