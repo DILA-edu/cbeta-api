@@ -92,7 +92,7 @@ Define dev_path    /var/www/cbeta-api-staging
    cap staging deploy:restart
    ```
 
-7. 把新 production 的 Elasticsearch alias 切到該季的 index（**三個 index 都要**）：
+7. 把新 production 的 Elasticsearch alias 切到該季的 index（**四個 index 都要**）：
 
    ```sh
    cd /var/www/cbeta-api-production/current
@@ -101,6 +101,7 @@ Define dev_path    /var/www/cbeta-api-staging
    RAILS_ENV=production bundle exec rake 'elastic:promote[text,cbeta_text_staging_2026r3_001]'
    RAILS_ENV=production bundle exec rake 'elastic:promote[notes,cbeta_notes_staging_2026r3_001]'
    RAILS_ENV=production bundle exec rake 'elastic:promote[titles,cbeta_titles_staging_2026r3_001]'
+   RAILS_ENV=production bundle exec rake 'elastic:promote[chunks,cbeta_chunks_staging_2026r3_001]'
    ```
 
    為什麼需要這一步：ES 的 index 名帶**季號**、alias 帶**角色**。季度流程是在

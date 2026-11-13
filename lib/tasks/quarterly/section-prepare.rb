@@ -62,7 +62,7 @@ module SectionPrepare
 
   def step_import_juanline
     run_step '匯入 各卷起始行 (rake import:juanline)' do
-      system 'bundle exec rake import:juanline'
+      command 'rake import:juanline'
     end
   end
 

@@ -56,6 +56,17 @@ https://rubygems.org/gems/cbeta
 
 編輯 config/cb.yml
 
+`rake quarterly` 是互動式的，每個 section、step 都要按鍵確認。
+若要逐步、非互動地執行（例如放在 tmux 裡跑，或交給 AI agent 執行），改用：
+
+```sh
+bundle exec rake quarterly:steps                  # 列出所有步驟
+bundle exec rake 'quarterly:step[zip_html]'       # 執行單一步驟（step_ 前綴可省略）
+```
+
+非互動模式下 `confirm` 的訊息照樣印出、但不等待，執行者要自己讀輸出判斷。
+步驟的先後順序以 `lib/tasks/quarterly/quarterly.rb` 的 `run` 與各 section 為準。
+
 執行 rake quarterly 會自動執行以下工作:
 
 * 更新、取得 Github Repositories, 參考 update-github.md
@@ -76,8 +87,10 @@ https://rubygems.org/gems/cbeta
 根據 CBETA 給的「忽略清單」編輯：
 
 * `/home/ray/cbeta-change-log/`
-  * 2024R3-ignore-puncs.txt
-  * 2024R3-ignore-all.txt
+  * `<季號>-ignore-puncs.txt`，例：2026R3-ignore-puncs.txt
+  * `<季號>-ignore-all.txt`，例：2026R3-ignore-all.txt
+
+季號即 `cb.yml` 的 `r`，每季大更新都要換成當季的檔名。
 
 如果檔案不存在，就表示 沒有要忽略的。
 

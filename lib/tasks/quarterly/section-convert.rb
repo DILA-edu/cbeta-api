@@ -113,12 +113,12 @@ module SectionConvert
     run_step '全部 text 壓縮成一個 zip 檔' do
       t1 = Time.now
       Dir.chdir(@config[:download]) do
-        system "ln -sf text-for-asia-network cbeta-text"
-        system "zip -r -X temp.zip cbeta-text"
-        system "mv temp.zip cbeta-text.zip"
+        command "ln -sf text-for-asia-network cbeta-text"
+        command "zip -r -X temp.zip cbeta-text"
+        command "mv temp.zip cbeta-text.zip"
 
-        system "zip -r -X temp.zip cbeta-text-with-notes"
-        system "mv temp.zip cbeta-text-with-notes.zip"
+        command "zip -r -X temp.zip cbeta-text-with-notes"
+        command "mv temp.zip cbeta-text-with-notes.zip"
       end
       puts ElapsedTime.label(t1)
     end

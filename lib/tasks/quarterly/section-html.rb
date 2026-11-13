@@ -1,33 +1,44 @@
 module SectionHTML
   def run_section_html
     run_section "產生 HTML, xml4docx 供 Heaven 比對 (section-html.rb)" do
-      run_step 'convert xml to html (rake convert:x2h)' do
-        command "rake 'convert:x2h[#{@config[:publish]}]'"
-      end
-  
-      run_step '匯入佛寺志等 Layers' do
-        command "rake import:layers"
-      end
-  
-      run_step 'check html (rake check:html)' do
-        command 'rake check:html'
-      end
+      step_convert_x2h
+      step_import_layers
+      step_check_html
+      step_zip_html
+      step_convert_xml4docx
+      step_zip_xml4docx
+    end
+  end
 
-      run_step '打包 html 給 heaven' do
-        step_zip_html
-      end
+  def step_convert_x2h
+    run_step 'convert xml to html (rake convert:x2h)' do
+      command "rake 'convert:x2h[#{@config[:publish]}]'"
+    end
+  end
 
-      run_step 'convert xml to xml4docx (rake convert:xml4docx)' do
-        command "rake convert:xml4docx"
-      end
+  def step_import_layers
+    run_step '匯入佛寺志等 Layers' do
+      command "rake import:layers"
+    end
+  end
 
-      run_step '打包 xml4docx 給 heaven' do
-        step_zip_xml4docx
-      end
+  def step_check_html
+    run_step 'check html (rake check:html)' do
+      command 'rake check:html'
+    end
+  end
+
+  def step_convert_xml4docx
+    run_step 'convert xml to xml4docx (rake convert:xml4docx)' do
+      command "rake convert:xml4docx"
     end
   end
 
   def step_zip_html
+    run_step('打包 html 給 heaven') { zip_html }
+  end
+
+  def zip_html
     t = Time.now.strftime('%Y-%m-%d-%H%M')
     bn = "html-#{t}.zip"
     dest = Rails.root.join("public", "download", bn)
@@ -49,6 +60,10 @@ module SectionHTML
   end
 
   def step_zip_xml4docx
+    run_step('打包 xml4docx 給 heaven') { zip_xml4docx }
+  end
+
+  def zip_xml4docx
     t = Time.now.strftime('%Y-%m-%d-%H%M')
     bn = "xml4docx-#{t}.zip"
     dest = Rails.root.join("public", "download", bn)

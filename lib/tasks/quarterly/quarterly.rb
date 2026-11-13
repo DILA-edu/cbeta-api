@@ -11,7 +11,10 @@ class Quarterly
   require_relative 'section-kwic'
   require_relative 'section-download-ebooks'
 
-  def initialize
+  # interactive: false 時不等鍵盤輸入 (供 rake quarterly:step 使用),
+  # confirm 的訊息照樣印出, 由執行者自行判讀。
+  def initialize(interactive: true)
+    @interactive = interactive
     @config = get_config
     puts "Environment: #{Rails.env}"
     confirm("請先確認 Rails 環境 是否正確")
@@ -36,6 +39,22 @@ class Quarterly
       run_section_kwic
       run_section_download_ebooks
     end
+  end
+
+  # 可單獨執行的步驟 (各 section 裡的 step_* method)
+  def self.step_names
+    (instance_methods + private_instance_methods).grep(/\Astep_/).sort
+  end
+
+  # 非互動執行單一步驟
+  def run_one_step(name)
+    name = name.to_s.strip
+    name = "step_#{name}" unless name.start_with?('step_')
+    unless self.class.step_names.include?(name.to_sym)
+      abort "沒有這個步驟: #{name}\n可用的步驟: rake quarterly:steps"
+    end
+
+    Dir.chdir(@work_dir) { send(name) }
   end
 
   def copy_folder(src, dest, exclude: [], verbose: true)
@@ -94,6 +113,11 @@ class Quarterly
 
   def confirm(msg)
     puts msg
+    unless @interactive
+      puts '(非互動模式, 不等待確認)'
+      return
+    end
+
     print "按 q 脫離，按任意鍵繼續："
     c = STDIN.getch
     puts
@@ -114,6 +138,13 @@ class Quarterly
   def run_step(label)
     @step_count += 1
     puts "\nStep #{@section_count}.#{@step_count}: #{label}"
+    unless @interactive
+      puts "[#{Time.now}] 開始"
+      yield
+      puts "[#{Time.now}] 結束"
+      return
+    end
+
     print 'Continue? 按 Enter 繼續，按 s 跳過，按 q 脫離 '
     c = STDIN.getch.chomp
     puts
