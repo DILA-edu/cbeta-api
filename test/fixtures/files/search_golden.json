@@ -1,7 +1,7 @@
 {
   "basic_phrase": {
-    "num_found": 1106,
-    "total_term_hits": 1582,
+    "num_found": 1109,
+    "total_term_hits": 1591,
     "results": [
       {
         "work": "T0270",
@@ -31,8 +31,8 @@
     ]
   },
   "basic_ahan": {
-    "num_found": 3098,
-    "total_term_hits": 15838,
+    "num_found": 3147,
+    "total_term_hits": 16114,
     "results": [
       {
         "work": "A1267",
@@ -93,8 +93,8 @@
     ]
   },
   "ext_or": {
-    "num_found": 7379,
-    "total_term_hits": 117059,
+    "num_found": 7407,
+    "total_term_hits": 117308,
     "results": [
       {
         "work": "T0099",
@@ -124,8 +124,8 @@
     ]
   },
   "ext_not": {
-    "num_found": 5296,
-    "total_term_hits": 25594,
+    "num_found": 5313,
+    "total_term_hits": 25643,
     "results": [
       {
         "work": "T0001",
@@ -217,8 +217,8 @@
     ]
   },
   "aio_exclude_suffix": {
-    "num_found": 5199,
-    "total_term_hits": 33095,
+    "num_found": 5210,
+    "total_term_hits": 33147,
     "results": [
       {
         "work": "T0001",
@@ -248,8 +248,8 @@
     ]
   },
   "aio_exclude_prefix": {
-    "num_found": 1244,
-    "total_term_hits": 2868,
+    "num_found": 1252,
+    "total_term_hits": 2882,
     "results": [
       {
         "work": "T0099",
@@ -295,8 +295,8 @@
     ]
   },
   "latin_ananda": {
-    "num_found": 52,
-    "total_term_hits": 94,
+    "num_found": 53,
+    "total_term_hits": 95,
     "results": [
       {
         "work": "B0198",
@@ -326,8 +326,8 @@
     ]
   },
   "latin_ananda_plain": {
-    "num_found": 52,
-    "total_term_hits": 94,
+    "num_found": 53,
+    "total_term_hits": 95,
     "results": [
       {
         "work": "B0198",
@@ -586,8 +586,8 @@
     ]
   },
   "filter_work_type": {
-    "num_found": 1103,
-    "total_term_hits": 1579,
+    "num_found": 1106,
+    "total_term_hits": 1588,
     "results": [
       {
         "work": "T0270",
@@ -617,8 +617,8 @@
     ]
   },
   "filter_note0": {
-    "num_found": 1093,
-    "total_term_hits": 1557,
+    "num_found": 1096,
+    "total_term_hits": 1566,
     "results": [
       {
         "work": "T0270",
@@ -648,8 +648,8 @@
     ]
   },
   "order_term_hits": {
-    "num_found": 1106,
-    "total_term_hits": 1582,
+    "num_found": 1109,
+    "total_term_hits": 1591,
     "results": [
       {
         "work": "T0270",
@@ -679,8 +679,8 @@
     ]
   },
   "order_time_from": {
-    "num_found": 1106,
-    "total_term_hits": 1582,
+    "num_found": 1109,
+    "total_term_hits": 1591,
     "results": [
       {
         "work": "T0492a",
@@ -710,9 +710,14 @@
     ]
   },
   "paginate": {
-    "num_found": 1106,
-    "total_term_hits": 1582,
+    "num_found": 1109,
+    "total_term_hits": 1591,
     "results": [
+      {
+        "work": "T1006",
+        "juan": 3,
+        "term_hits": 2
+      },
       {
         "work": "T1189",
         "juan": 1,
@@ -731,11 +736,6 @@
       {
         "work": "T1531",
         "juan": 1,
-        "term_hits": 2
-      },
-      {
-        "work": "T1715",
-        "juan": 2,
         "term_hits": 2
       }
     ]
@@ -774,16 +774,16 @@
         "canon_name": "印順法師集"
       },
       {
+        "canon": "YP",
+        "docs": 19,
+        "hits": 41,
+        "canon_name": "演培法師全集"
+      },
+      {
         "canon": "GA",
         "docs": 34,
         "hits": 38,
         "canon_name": "佛寺志彙刊"
-      },
-      {
-        "canon": "YP",
-        "docs": 16,
-        "hits": 32,
-        "canon_name": "演培法師全集"
       },
       {
         "canon": "TX",
@@ -849,8 +849,8 @@
       },
       {
         "category_id": 23,
-        "docs": 201,
-        "hits": 321,
+        "docs": 204,
+        "hits": 330,
         "category_name": "新編部類"
       },
       {
@@ -892,7 +892,7 @@
     ]
   },
   "sc": {
-    "hits": 9949
+    "hits": 9962
   },
   "notes_phrase": {
     "num_found": 60,
@@ -1077,7 +1077,7 @@
     ]
   },
   "title_1char": {
-    "num_found": 2272,
+    "num_found": 2280,
     "results": [
       {
         "work": "T0070",
@@ -1115,7 +1115,7 @@
     ]
   },
   "title_5char": {
-    "num_found": 51,
+    "num_found": 52,
     "results": [
       {
         "work": "T1749",
@@ -1140,11 +1140,15 @@
     ]
   },
   "title_long": {
-    "num_found": 248,
+    "num_found": 250,
     "results": [
       {
         "work": "T0220",
         "juan": 600
+      },
+      {
+        "work": "G2388",
+        "juan": 4
       },
       {
         "work": "T0251",
@@ -1156,10 +1160,6 @@
       },
       {
         "work": "T0254",
-        "juan": 1
-      },
-      {
-        "work": "T0255",
         "juan": 1
       }
     ]
@@ -1193,7 +1193,7 @@
     ]
   },
   "similar_gatha": {
-    "num_found": 210,
+    "num_found": 269,
     "results": [
       {
         "work": "B0006",
@@ -1201,59 +1201,59 @@
         "linehead": "B06n0006_p0290b14"
       },
       {
-        "work": "X0743",
-        "juan": 1,
-        "linehead": "X44n0743_p0337b17"
+        "work": "X0679",
+        "juan": 5,
+        "linehead": "X38n0679_p0221a05"
       },
       {
-        "work": "G2590",
+        "work": "X0720",
         "juan": 9,
-        "linehead": "G155n2590_p0489a12"
+        "linehead": "X40n0720_p0557c07"
       },
       {
-        "work": "T0125",
-        "juan": 1,
-        "linehead": "T02n0125_p0551a10"
+        "work": "Y0008",
+        "juan": 15,
+        "linehead": "Y08n0008_p0196a01"
       },
       {
-        "work": "T0210",
-        "juan": 2,
-        "linehead": "T04n0210_p0567a28"
+        "work": "B0147",
+        "juan": 9,
+        "linehead": "B26n0147_p0402a12"
       }
     ]
   },
   "similar_mind": {
-    "num_found": 130,
+    "num_found": 162,
     "results": [
+      {
+        "work": "D8896",
+        "juan": 2,
+        "linehead": "D37n8896_p0057b06"
+      },
+      {
+        "work": "T1833",
+        "juan": 1,
+        "linehead": "T43n1833_p0811a19"
+      },
+      {
+        "work": "X0815",
+        "juan": 1,
+        "linehead": "X49n0815_p0480c05"
+      },
       {
         "work": "JB241",
         "juan": 5,
-        "linehead": "J29nB241_p0591a01"
+        "linehead": "J29nB241_p0590c28"
       },
       {
-        "work": "JB044",
-        "juan": 3,
-        "linehead": "J19nB044_p0182b15"
-      },
-      {
-        "work": "JB277",
-        "juan": 1,
-        "linehead": "J32nB277_p0573a16"
-      },
-      {
-        "work": "ZW0068",
-        "juan": 1,
-        "linehead": "ZW08n0068_p0087a19"
-      },
-      {
-        "work": "X1474",
-        "juan": 1,
-        "linehead": "X74n1474_p0374b14"
+        "work": "JB348",
+        "juan": 7,
+        "linehead": "J36nB348_p0386a06"
       }
     ]
   },
   "similar_moon": {
-    "num_found": 28,
+    "num_found": 29,
     "results": [
       {
         "work": "T1736",
@@ -1261,24 +1261,24 @@
         "linehead": "T36n1736_p0653c11"
       },
       {
-        "work": "Y0012",
-        "juan": 1,
-        "linehead": "Y12n0012_p0032a10"
+        "work": "T1733",
+        "juan": 7,
+        "linehead": "T35n1733_p0237c01"
       },
       {
-        "work": "Y0040",
+        "work": "X0582",
+        "juan": 3,
+        "linehead": "X27n0582_p0517c08"
+      },
+      {
+        "work": "T1720",
         "juan": 1,
-        "linehead": "Y42n0040_p0032a10"
+        "linehead": "T34n1720_p0362c24"
       },
       {
         "work": "T1733",
-        "juan": 7,
-        "linehead": "T35n1733_p0237c05"
-      },
-      {
-        "work": "X0638",
-        "juan": 33,
-        "linehead": "X34n0638_p0874a04"
+        "juan": 20,
+        "linehead": "T35n1733_p0485c14"
       }
     ]
   },
@@ -1296,19 +1296,19 @@
         "linehead": "T04n0212_p0616b09"
       },
       {
-        "work": "T2121",
-        "juan": 48,
-        "linehead": "T53n2121_p0257c08"
+        "work": "T0212",
+        "juan": 2,
+        "linehead": "T04n0212_p0616b21"
+      },
+      {
+        "work": "T0210",
+        "juan": 1,
+        "linehead": "T04n0210_p0559a22"
       },
       {
         "work": "T0212",
         "juan": 3,
-        "linehead": "T04n0212_p0621b22"
-      },
-      {
-        "work": "T2122",
-        "juan": 48,
-        "linehead": "T53n2122_p0651b01"
+        "linehead": "T04n0212_p0621b19"
       }
     ]
   },
@@ -1316,19 +1316,19 @@
     "num_found": 30,
     "results": [
       {
-        "work": "Y0030",
-        "juan": 7,
-        "linehead": "Y32n0030_p0735a15"
-      },
-      {
         "work": "T0099",
         "juan": 37,
         "linehead": "T02n0099_p0268b05"
       },
       {
         "work": "Y0030",
-        "juan": 3,
-        "linehead": "Y31n0030_p0111a10"
+        "juan": 7,
+        "linehead": "Y32n0030_p0735a15"
+      },
+      {
+        "work": "T0099",
+        "juan": 17,
+        "linehead": "T02n0099_p0119b18"
       },
       {
         "work": "T0099",
@@ -1336,14 +1336,14 @@
         "linehead": "T02n0099_p0104b21"
       },
       {
-        "work": "T0099",
-        "juan": 17,
-        "linehead": "T02n0099_p0119b18"
+        "work": "Y0030",
+        "juan": 3,
+        "linehead": "Y31n0030_p0111a09"
       }
     ]
   },
   "_meta": {
     "source": "https://cbdata.dila.edu.tw/dev",
-    "fetched_at": "2026-09-10T15:58:13+08:00"
+    "fetched_at": "2026-11-17T17:14:12+08:00"
   }
 }
