@@ -112,17 +112,40 @@ class CbetaSearch::IndexDefinitionsTest < ActiveSupport::TestCase
     assert_equal 'cbeta_titles_current', aliases[:titles]
   end
 
-  # staging 與 production 是同一台機器、共用同一個 Elasticsearch，
-  # index 名稱撞在一起會互相覆蓋。
-  test 'versioned_index_name: production 與 staging 不會撞名' do
+  STAGING_NOTES = Class.new(CbetaSearch::NotesIndex) do
+    def self.index_alias = 'cbeta_notes_staging'
+  end
+
+  # 名稱不帶角色：staging 建的 index 上線時 production 直接 promote 過去用
+  test 'versioned_index_name: production 與 staging 推導出同一個名稱' do
     assert_equal 'cbeta_notes_2026r3_001',
                  CbetaSearch::NotesIndex.versioned_index_name('2026R3')
+    assert_equal 'cbeta_notes_2026r3_003', STAGING_NOTES.versioned_index_name('2026R3', '003')
+  end
 
-    staging = Class.new(CbetaSearch::NotesIndex) do
-      def self.index_alias = 'cbeta_notes_staging'
+  test 'versioned_index_name: 其他 alias 名稱只去掉 _current / _staging' do
+    test_notes = Class.new(CbetaSearch::NotesIndex) do
+      def self.index_alias = 'cbeta_notes_test'
     end
 
-    assert_equal 'cbeta_notes_staging_2026r3_001', staging.versioned_index_name('2026R3')
+    assert_equal 'cbeta_notes_test_2026r3_001', test_notes.versioned_index_name('2026R3')
+  end
+
+  test 'rebuild_blockers: 只被自己 (staging) 指著的 index 可以原地重建' do
+    assert_empty STAGING_NOTES.rebuild_blockers([])
+    assert_empty STAGING_NOTES.rebuild_blockers(%w[cbeta_notes_staging])
+  end
+
+  test 'rebuild_blockers: production 在用的 index 不准重建' do
+    assert_equal %w[cbeta_notes_current],
+                 STAGING_NOTES.rebuild_blockers(%w[cbeta_notes_staging cbeta_notes_current])
+    assert_equal %w[cbeta_notes_current],
+                 CbetaSearch::NotesIndex.rebuild_blockers(%w[cbeta_notes_current])
+  end
+
+  test 'rebuild_blockers: production 不准重建 staging 在用的 index' do
+    assert_equal %w[cbeta_notes_staging],
+                 CbetaSearch::NotesIndex.rebuild_blockers(%w[cbeta_notes_staging])
   end
 
   test 'versioned_index_name: 名稱不可以等於 alias（ES 會拒絕）' do

@@ -98,10 +98,10 @@ Define dev_path    /var/www/cbeta-api-staging
    cd /var/www/cbeta-api-production/current
    RAILS_ENV=production bundle exec rake elastic:info    # 先看各 alias 指向哪個 index
 
-   RAILS_ENV=production bundle exec rake 'elastic:promote[text,cbeta_text_staging_2026r3_001]'
-   RAILS_ENV=production bundle exec rake 'elastic:promote[notes,cbeta_notes_staging_2026r3_001]'
-   RAILS_ENV=production bundle exec rake 'elastic:promote[titles,cbeta_titles_staging_2026r3_001]'
-   RAILS_ENV=production bundle exec rake 'elastic:promote[chunks,cbeta_chunks_staging_2026r3_001]'
+   RAILS_ENV=production bundle exec rake 'elastic:promote[text,cbeta_text_2026r3_003]'
+   RAILS_ENV=production bundle exec rake 'elastic:promote[notes,cbeta_notes_2026r3_003]'
+   RAILS_ENV=production bundle exec rake 'elastic:promote[titles,cbeta_titles_2026r3_003]'
+   RAILS_ENV=production bundle exec rake 'elastic:promote[chunks,cbeta_chunks_2026r3_003]'
    ```
 
    為什麼需要這一步：ES 的 index 名帶**季號**、alias 帶**角色**。季度流程是在
@@ -109,10 +109,11 @@ Define dev_path    /var/www/cbeta-api-staging
    production 後讀的是 `cbeta_*_current`，那些 alias 還指著上一季的 index。
    （這是原子操作，隨時可以 promote 回舊 index 退版。）
 
-   index 名稱裡的 `staging` 只是「建立當時是哪個角色」的痕跡，不影響它為
-   production 服務；判斷依據一律是 alias。名稱由
-   `CbetaSearch::IndexBase.versioned_index_name` 從 alias 推導，
-   目的是讓兩個角色在同一個 Elasticsearch 上不會撞名。
+   index 名稱只帶種類、季號、序號，不帶角色（5.18.16 起；之前建的叫
+   `cbeta_*_staging_<季號>_<序號>`）。實際名稱以 `rake elastic:info` 看到的
+   staging alias 指向為準，2026R3 是 `_003`。
+   promote 之後兩個角色指向同一個 index，在 staging 換到下一季之前不能重建它
+   （`elastic:rebuild` 會擋，見 doc/elasticsearch-deploy.md「index 命名的改變」）。
 
 
 8. 用 `cap production slot:which` / `cap staging slot:which` 驗證。

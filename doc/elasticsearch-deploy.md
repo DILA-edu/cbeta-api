@@ -237,6 +237,21 @@ cbeta_text_staging  cbeta_text_2026r3_001
 舊的 `cbeta_text_2026r3_001` 是 staging 用**舊命名**建的。它佔用的正是
 production 將來輪到 2026R3 時要用的名字，所以這次升級順便換掉。
 
+**5.18.16 起改回不帶角色**：index 名稱只有種類、季號、序號（例 `cbeta_text_2026r3_003`），
+角色只由 alias 表示。季度流程在 staging 建 index，上線時 production 直接 promote 到同一個
+index，名稱帶 `staging` 反而容易誤會。撞名改由重建前的檢查把關
+（`IndexBase.rebuild_blockers`）：
+
+| 指向該 index 的 alias | 能否重建 |
+|---|---|
+| 沒有 | 可以 |
+| 只有自己這個角色的 staging alias | 可以原地重建（重建期間 staging 搜尋中斷） |
+| 有 `*_current`（production） | 不行 |
+| 有另一個角色的 alias | 不行 |
+
+所以同一季的 index 序號固定用同一個也沒關係，例如 2027-03 XML 定案後 staging 直接重建
+`2027r1_001`；但 R3 上線後、staging 換季前，兩個角色都指著 `2026r3_003`，這段期間不能重建它。
+
 ### staging（5.0.x → 5.1.0）
 
 ⚠️ **`titles.xml` 一定要用新版重新產生**。5.1.0 起 titles.xml 多了朝代／部類／

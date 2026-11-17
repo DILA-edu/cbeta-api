@@ -44,6 +44,9 @@ module CbetaSearch
     # 每個 bulk request 的文件數。子類別可依文件大小調整。
     DEFAULT_BATCH_SIZE = 200
 
+    # alias 結尾的角色 (production / staging)，index 名稱不帶它
+    ROLE_SUFFIX = /_(current|staging)\z/
+
     # 查詢詞經 analyzer 之後的 token 數。
     def self.token_count(text)
       text.to_s.scan(TOKEN_RE).size
@@ -65,13 +68,24 @@ module CbetaSearch
 
       # 版本化的 index 名稱，例 cbeta_notes_2026r3_001。
       #
-      # 由 alias 推導而不是寫死 "cbeta_" 前綴: staging 與 production 是同一台機器、
-      # 共用同一個 Elasticsearch，index 名稱撞在一起會互相覆蓋。
+      # 名稱只帶種類、季號、序號，不帶角色：季度流程在 staging 建好 index，
+      # 上線時 production 的 alias 直接 promote 到同一個 index，角色只由 alias 表示。
       #   cbeta_notes_current  (production) → cbeta_notes_2026r3_001
-      #   cbeta_notes_staging  (staging)    → cbeta_notes_staging_2026r3_001
+      #   cbeta_notes_staging  (staging)    → cbeta_notes_2026r3_001
+      # 兩個角色共用同一個 Elasticsearch，撞名由 .rebuild_blockers 把關
+      # (別的角色正在用的 index 不准重建)。
       def versioned_index_name(release, serial = '001')
-        base = index_alias.delete_suffix('_current')
+        base = index_alias.sub(ROLE_SUFFIX, '')
         "#{base}_#{release.to_s.downcase}_#{serial}"
+      end
+
+      # 重建 index_name 前的檢查。aliases 是目前指向該 index 的所有 alias，
+      # 回傳會擋下重建的那些 (空陣列表示可以重建)：
+      # - production 的 alias (*_current)：線上正在用，絕不能砍掉重建
+      # - 別的角色的 alias：例如 R3 上線後、staging 換季前，兩個角色指向同一個 index
+      # 只被自己這個角色 (staging) 指著的 index 可以原地重建，重建期間搜尋會中斷。
+      def rebuild_blockers(aliases)
+        aliases.select { |a| a.end_with?('_current') || a != index_alias }
       end
 
       def batch_size

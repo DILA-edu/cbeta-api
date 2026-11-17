@@ -497,19 +497,29 @@ namespace :elastic do
     name
   end
 
-  # create_index / rebuild 會先刪掉同名 index。如果那個 index 正是 alias
-  # 指向的 (也就是線上查詢正在用的)，重建期間全站搜尋會壞掉，所以先擋下來。
+  # create_index / rebuild 會先刪掉同名 index。production 或另一個角色正在用的
+  # index 不准重建 (規則見 IndexBase.rebuild_blockers)；只有自己 (staging) 在用的
+  # 可以原地重建，例如 2027-03 XML 定案後 staging 重建 2027r1_001。
   def refuse_if_live!(type, index_name)
-    alias_name = index_class(type).index_alias
-    live = begin
-      CbetaSearch::ElasticClient.build.indices.get_alias(name: alias_name, ignore_unavailable: true).keys
-    rescue StandardError
-      []
-    end
-    return unless live.include?(index_name)
+    klass = index_class(type)
+    aliases = index_aliases(index_name)
+    blockers = klass.rebuild_blockers(aliases)
 
-    abort "#{index_name} 正是 alias #{alias_name} 指向的 index，重建它會讓線上搜尋中斷。\n" \
-          '請改用新的版本編號建立，完成後再用 rake elastic:promote 切換 alias。'
+    if blockers.any?
+      abort "#{index_name} 正被 alias #{blockers.join(', ')} 使用，重建它會讓該環境的搜尋中斷。\n" \
+            '請改用新的序號建立，完成後再用 rake elastic:promote 切換 alias。'
+    end
+
+    return if aliases.empty?
+
+    puts "注意：#{index_name} 是 alias #{klass.index_alias} 目前指向的 index，" \
+         '重建期間這個環境的搜尋會中斷。'
+  end
+
+  # 指向 index_name 的所有 alias；index 不存在時回傳空陣列。
+  def index_aliases(index_name)
+    response = CbetaSearch::ElasticClient.build.indices.get_alias(index: index_name, ignore_unavailable: true)
+    response.dig(index_name, 'aliases')&.keys || []
   end
 
   def import_xml(type, index_name, xml_path = nil)
