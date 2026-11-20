@@ -238,7 +238,16 @@ class XmlToOdtConverter
       column += 1
     end
 
-    "<table:table-row>#{cells}</table:table-row>"
+    "<table:table-row#{row_style_attribute(table_style)}>#{cells}</table:table-row>"
+  end
+
+  # 悉漢雙行對照 (width:auto) 的一格是 悉曇字/羅馬轉寫/漢字 三行, 不可跨頁拆開。
+  # 這類格子常夾註腳, row 跨頁分割時 LibreOffice (Windows) 版面計算會卡死。
+  # 一般 table 的 row 可能很長, 禁止分割會撐爆頁面, 所以只套 width:auto
+  def row_style_attribute(table_style)
+    return '' unless auto_width?(table_style)
+
+    %( table:style-name="#{auto_style_name('table-row', 'Tr', '<style:table-row-properties fo:keep-together="always"/>')}")
   end
 
   def covered_cells_xml(count)

@@ -181,6 +181,24 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "width:auto table 的 row 不可跨頁分割, 一般 table 不限制" do
+    Dir.mktmpdir do |dir|
+      body = '<table cols="1"><row><cell>甲</cell></row></table>' \
+             '<table style="width:auto"><row><cell>乙</cell></row><row><cell>丙</cell></row></table>'
+      with_odt(write_xml(dir, body)) do |odt, _warnings|
+        doc = Nokogiri::XML(odt['content.xml'])
+        keep_together = doc.xpath('//table:table').map do |table|
+          table.xpath('./table:table-row').map do |row|
+            name = row['table:style-name']
+            name && doc.at_xpath(%(//style:style[@style:name="#{name}"]/style:table-row-properties))&.[]('fo:keep-together')
+          end
+        end
+
+        assert_equal [[nil], %w[always always]], keep_together
+      end
+    end
+  end
+
   test "table 預設有框線, style 寫 border:none 時連補位的空 cell 都不畫" do
     Dir.mktmpdir do |dir|
       body = '<table cols="1"><row><cell>甲</cell></row></table>' \
