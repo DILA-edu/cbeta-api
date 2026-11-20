@@ -41,6 +41,7 @@ class XmlToOdtConverter
   CONTENT_WIDTH_CM = PAGE_WIDTH_CM - (PAGE_MARGIN_CM * 2)
   # 圖片以 96 DPI 換算 cm
   CM_PER_PIXEL = 2.54 / 96
+  TWIPS_PER_CM = 1440 / 2.54
   # 圖片最大尺寸: 版面可用寬高
   # 高度留 10% 餘裕, 否則整頁高的圖會把同段落的文字擠到上一頁, 留下大片空白
   MAX_IMAGE_WIDTH_CM = CONTENT_WIDTH_CM
@@ -51,6 +52,8 @@ class XmlToOdtConverter
   LIST_INDENT_CM = 1.27
   TABLE_BORDER = '0.5pt solid #808080'
   TABLE_CELL_PADDING_CM = 0.141
+  # 連續的悉漢雙行對照 table 之間的距離 (約半行)
+  TABLE_SEPARATION_CM = 0.3
 
   # 中文字型只套在 asian, 西文另外指定, 否則英文與羅馬轉寫會被中文字型撐開字距
   WESTERN_FONT = 'Times New Roman'
@@ -161,15 +164,40 @@ class XmlToOdtConverter
     style = merge_styles(inherited_style, style_for(node))
     rows = node.xpath('./row').to_a
     column_count = table_column_count(node, rows)
-    width = table_width_cm(style)
+    column_widths = auto_width?(style) ? estimated_column_widths_cm(rows, column_count, style) : nil
+    width = column_widths ? column_widths.sum : table_width_cm(style)
+    margin_top = follows_table?(node) ? TABLE_SEPARATION_CM : nil
     @table_count += 1
 
     <<~XML
-      <table:table table:name="Table#{@table_count}" table:style-name="#{table_style_name(width)}">
-        <table:table-column table:style-name="#{table_column_style_name(width / column_count)}" table:number-columns-repeated="#{column_count}"/>
+      <table:table table:name="Table#{@table_count}" table:style-name="#{table_style_name(width, margin_top)}">
+        #{table_columns_xml(column_widths || [width / column_count] * column_count)}
         #{table_rows_xml(rows, style)}
       </table:table>
     XML
+  end
+
+  # 連續的 table 若有一個是 width:auto (悉漢雙行對照), 上下會緊貼在一起, 中間留一點距離。
+  # 一般 table 維持緊貼, 看起來像同一個 table
+  def follows_table?(node)
+    previous = node.previous_element
+    return false unless previous&.name == 'table'
+
+    auto_width?(style_for(previous)) || auto_width?(style_for(node))
+  end
+
+  # width:auto (例如悉漢雙行對照的 table_tt) 依內容估欄寬, 與 docx 版同一套估算
+  def estimated_column_widths_cm(rows, column_count, style)
+    max_width = (CONTENT_WIDTH_CM * TWIPS_PER_CM).floor
+    estimated_column_widths(rows, column_count, style, max_width)&.map { |twips| twips / TWIPS_PER_CM }
+  end
+
+  # 相鄰同寬的欄合併成一個 table:table-column, 用 number-columns-repeated 表示
+  def table_columns_xml(widths)
+    widths.chunk_while { |a, b| format_length(a) == format_length(b) }.map do |group|
+      repeated = group.size > 1 ? %( table:number-columns-repeated="#{group.size}") : ''
+      %(<table:table-column table:style-name="#{table_column_style_name(group.first)}"#{repeated}/>)
+    end.join
   end
 
   def table_width_cm(style)
@@ -440,8 +468,9 @@ class XmlToOdtConverter
     auto_style_name('text', 'T', properties)
   end
 
-  def table_style_name(width)
-    properties = %(<style:table-properties style:width="#{format_length(width)}cm" table:align="left" style:writing-mode="page"/>)
+  def table_style_name(width, margin_top = nil)
+    margin = margin_top ? %( fo:margin-top="#{format_length(margin_top)}cm") : ''
+    properties = %(<style:table-properties style:width="#{format_length(width)}cm"#{margin} table:align="left" style:writing-mode="page"/>)
 
     auto_style_name('table', 'Ta', properties)
   end

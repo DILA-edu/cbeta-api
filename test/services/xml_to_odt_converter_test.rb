@@ -141,6 +141,46 @@ class XmlToOdtConverterTest < ActiveSupport::TestCase
     end
   end
 
+  test "style 寫 width:auto 時依內容估欄寬, table 寬度為各欄總和" do
+    Dir.mktmpdir do |dir|
+      body = '<table style="width:auto"><row><cell>乙</cell><cell>丙丙丙丙</cell></row></table>'
+      with_odt(write_xml(dir, body)) do |odt, _warnings|
+        content = odt['content.xml']
+        doc = Nokogiri::XML(content)
+        columns = doc.xpath('//table:table-column')
+        assert_equal 2, columns.size
+
+        widths = columns.map do |column|
+          content.match(/style:name="#{column['table:style-name']}".*?style:column-width="([\d.]+)cm"/m)[1].to_f
+        end
+        narrow, wide = widths
+        assert_operator narrow, :<, wide
+        assert_operator narrow + wide, :<, 7
+
+        table_style = doc.at_xpath('//table:table')['table:style-name']
+        table_width = content.match(/style:name="#{table_style}".*?style:width="([\d.]+)cm"/m)[1].to_f
+        assert_in_delta narrow + wide, table_width, 0.01
+      end
+    end
+  end
+
+  test "連續的 width:auto table 之間留距離, 一般 table 維持緊貼" do
+    Dir.mktmpdir do |dir|
+      body = '<table cols="1"><row><cell>甲</cell></row></table>' \
+             '<table cols="1"><row><cell>乙</cell></row></table>' \
+             '<table style="width:auto"><row><cell>丙</cell></row></table>' \
+             '<table style="width:auto"><row><cell>丁</cell></row></table>'
+      with_odt(write_xml(dir, body)) do |odt, _warnings|
+        content = odt['content.xml']
+        margins = Nokogiri::XML(content).xpath('//table:table').map do |table|
+          content.match(/style:name="#{table['table:style-name']}".*?<style:table-properties([^>]*)>/m)[1][/fo:margin-top="([^"]+)"/, 1]
+        end
+
+        assert_equal [nil, nil, '0.3cm', '0.3cm'], margins
+      end
+    end
+  end
+
   test "table 預設有框線, style 寫 border:none 時連補位的空 cell 都不畫" do
     Dir.mktmpdir do |dir|
       body = '<table cols="1"><row><cell>甲</cell></row></table>' \
